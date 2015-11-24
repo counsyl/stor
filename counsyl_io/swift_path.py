@@ -1,0 +1,382 @@
+from counsyl_io import settings
+import os
+import path
+import cStringIO
+
+
+class SwiftPath(path.path):
+    """
+    Provides the ability to manipulate and access resources on swift
+    with a similar interface to the path library.
+    """
+    swift_drive = 'swift://'
+
+    def __new__(cls, swift_path):
+        """Constructs a swift path.
+
+        Override the __new__ method for path.path so that one argument
+        is required.
+
+        Args:
+            swift_path (str): A path that matches the format of
+                "swift://{tenant_name}/{container_name}/{rest_of_path}".
+                Only "swift://" is required in the path.
+        """
+        if not swift_path.startswith(cls.swift_drive):
+            raise ValueError('path must start with {}'.format(cls.swift_drive))
+        return super(SwiftPath, cls).__new__(cls, swift_path)
+
+    def __repr__(self):
+        return 'SwiftPath("{}")'.format(self)
+
+    def get_parts(self):
+        """Returns the path parts (excluding swift://) as a list of strings.
+        """
+        if len(self) > len(self.swift_drive):
+            return self[len(self.swift_drive):].split('/')
+        else:
+            return []
+
+    @property
+    def tenant(self):
+        """Returns the tenant name from the path or return None
+        """
+        parts = self.get_parts()
+        return parts[0] if len(parts) > 0 and parts[0] else None
+
+    @property
+    def container(self):
+        """Returns the container name from the path or None.
+        """
+        parts = self.get_parts()
+        return parts[1] if len(parts) > 1 and parts[1] else None
+
+    @property
+    def resource(self):
+        """Returns the resource or None.
+
+        A resource can be a single object or a prefix to objects.
+        Note that it's important to keep the trailing slash in a resource
+        name for prefix queries.
+        """
+        parts = self.get_parts()
+        joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
+
+        return path.path(joined_resource) if joined_resource else None
+
+    def _get_swift_connection_options(self):
+        """Returns options for constructing SwiftServices and Connections.
+        """
+        from swiftclient import service
+
+        options = dict(
+            service._default_global_options,
+            **dict(service._default_local_options, **{
+                'os_tenant_name': self.tenant,
+                'os_auth_url': os.environ.get('OS_AUTH_URL',
+                                              settings.swift_default_auth_url)
+            })
+        )
+        service.process_options(options)
+        return options
+
+    def _get_swift_service(self):
+        """Initialize a swift service based on the path.
+
+        Uses the tenant name of the path and an auth url to instantiate
+        the swift service. The OS_AUTH_URL environment variable is used
+        as the authentication url if set, otherwise the default auth
+        url setting is used.
+
+        Returns:
+            A swiftclient.service.SwiftService instance.
+        """
+        from swiftclient import service
+
+        return service.SwiftService(self._get_swift_connection_options())
+
+    def _get_swift_connection(self):
+        """Initialize a swift client connection based on the path.
+
+        The python-swiftclient package offers a couple ways to access data,
+        with a raw Connection object being a lower-level interface to swift.
+        For cases like reading individual objects, a raw Connection object
+        is easier to utilize.
+        """
+        from swiftclient import service
+
+        return service.get_conn(self._get_swift_connection_options())
+
+    def open(self, mode='r'):
+        """Opens a single resource using swift's get_object.
+
+        Args:
+            mode (str): The mode of file IO. Reading is the only supported
+                mode.
+
+        Returns:
+            A StringIO object with the contents of the object.
+
+        Raises:
+            swiftclient.exceptions.ClientException on invalid swift requests.
+        """
+        if mode not in ('r', 'rb'):
+            raise ValueError('only read-only mode ("r" and "rb") is supported')
+
+        connection = self._get_swift_connection()
+        headers, content = connection.get_object(self.container, self.resource)
+        return cStringIO.StringIO(content)
+
+    def list(self, starts_with=None):
+        """List contents using the resource of the path as a prefix.
+
+        Args:
+            starts_with (str): Allows for an additional search path to
+                be appended to the resource of the swift path. Note that the
+                current resource path is treated as a directory.
+
+        Returns:
+            A generator of SwiftPath objects for every path in the listing.
+
+        Raises:
+            Raises any errors that are found in the returned results.
+        """
+        service = self._get_swift_service()
+        tenant = self.tenant
+        prefix = self.resource / starts_with if starts_with else self.resource
+        batched_results = service.list(container=self.container, options={
+            'prefix': prefix
+        })
+
+        for batched_result in batched_results:
+            if 'error' in batched_result:
+                raise batched_result['error']
+
+            container = batched_result['container']
+            for obj in batched_result['listing']:
+                if container:
+                    yield SwiftPath('swift://{}/{}/{}'.format(tenant,
+                                                              container,
+                                                              obj['name']))
+                else:
+                    yield SwiftPath('swift://{}/{}'.format(tenant,
+                                                           obj['name']))
+
+    def glob(self, pattern):
+        """Globs all objects in the path with the pattern.
+
+        This glob is only compatible with patterns that end in * because of
+        swift's inability to do searches other than prefix queries.
+
+        Note that this method assumes the current resource is a directory path
+        and treats it as such. For example, if the user has a swift path of
+        swift://tenant/container/my_dir (without the trailing slash), this
+        method will perform a swift query with a prefix of mydir/pattern
+
+        Returns:
+            A generator of SwiftPath objects for every matching path.
+        """
+        if pattern.count('*') > 1:
+            raise ValueError('multiple pattern globs not supported')
+        if '*' in pattern and not pattern.endswith('*'):
+            raise ValueError('only prefix queries are supported')
+
+        return self.list(starts_with=pattern.replace('*', ''))
+
+    def first(self):
+        """Returns the first result from the list results of the path.
+
+        Raises:
+            swiftclient.service.SwiftError when an error occurs.
+        """
+        return next(self.list(), None)
+
+    def exists(self):
+        """Returns True if the path exists, False otherwise.
+
+        Raises:
+            swiftclient.service.SwiftError when a non-404 error occurs.
+        """
+        from swiftclient.service import SwiftError
+
+        try:
+            return bool(self.first())
+        except SwiftError as e:
+            # Return false if the container doesnt exist
+            if e.exception.http_status == 404:
+                return False
+            raise
+
+    def _eval_swift_results_or_error(self, results):
+        """Evaluate iterable results from swift or error.
+
+        Args:
+            results (list|dict): Results returned from a swift command
+                (such as "download" or "upload").
+
+        Raises:
+            swiftclient.service.SwiftError when an error occurs.
+        """
+        results = [results] if isinstance(results, dict) else results
+        for r in results:
+            if 'error' in r:
+                raise r['error']
+
+    def download(self, output_dir=None, remove_prefix=False):
+        """Downloads a path.
+
+        Args:
+            output_dir (str): The output directory to download results to.
+                If None, results are downloaded to the working directory.
+            remove_prefix (bool): Removes the prefix in the path from the
+                downloaded results. For example, if our swift path is
+                swift://tenant/container/my_prefix, all results under my_prefix
+                will be downloaded without my_prefix attached to them if
+                remove_prefix is true.
+
+        Raises:
+            swiftclient.service.SwiftError when a download error occurs.
+        """
+        service = self._get_swift_service()
+        results = service.download(self.container, options={
+            'prefix': self.resource,
+            'out_directory': output_dir,
+            'remove_prefix': remove_prefix,
+        })
+        self._eval_swift_results_or_error(results)
+
+    def _walk_upload_names(self, upload_names):
+        """Walk all files and directories.
+
+        Args:
+            upload_names (list): A list of file or directory names to upload.
+
+        Returns:
+            A list of all files and empty directories under the upload_names.
+
+        Raises:
+            ValueError if a provided upload name is not a file or a directory.
+        """
+        walked_upload_names = []
+        for upload_name in upload_names:
+            if os.path.isfile(upload_name):
+                walked_upload_names.append(upload_name)
+            elif os.path.isdir(upload_name):
+                for (_dir, _ds, _fs) in os.walk(upload_name):
+                    if not (_ds + _fs):
+                        # Ensure that empty directories are uploaded as well
+                        walked_upload_names.append(_dir)
+                    else:
+                        walked_upload_names.extend([
+                            os.path.join(_dir, _f) for _f in _fs
+                        ])
+            else:
+                raise ValueError('file "{}" not found'.format(upload_name))
+
+        return walked_upload_names
+
+    def upload(self,
+               upload_names,
+               segment_size=None,
+               use_slo=False,
+               segment_container=None,
+               leave_segments=False,
+               changed=False,
+               object_name=None):
+        """Uploads a list of files and directories to swift.
+
+        Args:
+            upload_names (list): A list of file and directory names to upload.
+            segment_size (int|str): Upload files in segments no larger than
+                <segment_size> (in bytes) and then create a "manifest" file
+                that will download all the segments as if it were the original
+                file. Sizes may also be expressed as bytes with the B suffix,
+                kilobytes with the K suffix, megabytes with the M suffix or
+                gigabytes with the G suffix.'
+            use_slo (bool): When used in conjunction with segment_size, it
+                will create a Static Large Object instead of the default
+                Dynamic Large Object.
+            segment_container (str): Upload the segments into the specified
+                container. If not specified, the segments will be uploaded to
+                a <container>_segments container to not pollute the main
+                <container> listings.
+            leave_segments (bool): Indicates that you want the older segments
+                of manifest objects left alone (in the case of overwrites).
+            changed (bool): Only upload files that have changed since the last
+                upload.
+            object_name (str): Upload file and name object to <object_name>.
+                If uploading dir, use <object_name> as object prefix instead
+                of the folder name.
+
+            Raises:
+                swiftclient.service.SwiftError if any of the uploads fail.
+        """
+        service = self._get_swift_service()
+        upload_names = self._walk_upload_names(upload_names)
+        results = service.upload(
+            self.container, upload_names, options={
+                'segment_size': segment_size,
+                'use_slo': use_slo,
+                'segment_container': segment_container,
+                'leave_segments': leave_segments,
+                'changed': changed,
+                'object_name': object_name
+            })
+        self._eval_swift_results_or_error(results)
+
+    def remove(self):
+        """Removes a single object.
+
+        Raises:
+            ValueError if an invalid path is provided.
+            swiftclient.service.SwiftError if the deletion fails.
+        """
+        if not self.container or not self.resource:
+            raise ValueError('path must contain a container and resource to '
+                             'remove')
+
+        service = self._get_swift_service()
+        results = service.delete(self.container, [self.resource])
+        self._eval_swift_results_or_error(results)
+
+    def rmtree(self):
+        """Removes a resource and all of its contents.
+
+        Raises:
+            swiftclient.service.SwiftError if the deletion fails.
+        """
+        service = self._get_swift_service()
+        if not self.resource:
+            results = service.delete(self.container)
+        else:
+            to_delete = [p.resource for p in self.list()]
+            results = service.delete(self.container, to_delete)
+        self._eval_swift_results_or_error(results)
+
+    def post(self, options=None):
+        """Post operations on the path.
+
+        Args:
+            options (dict): A dictionary containing options to override the
+                global options specified during the service object creation.
+                These options are applied to all post operations performed by
+                this call, unless overridden on a per object basis. Possible
+                options are given below:
+                    {
+                        'meta': [],
+                        'headers': [],
+                        'read_acl': None,   # For containers only
+                        'write_acl': None,  # For containers only
+                        'sync_to': None,    # For containers only
+                        'sync_key': None    # For containers only
+                    }
+
+        Raises:
+            swiftclient.service.SwiftError if the post fails.
+        """
+        if not self.container or self.resource:
+            raise ValueError('post only works on container paths')
+
+        service = self._get_swift_service()
+        results = service.post(container=self.container, options=options)
+        self._eval_swift_results_or_error(results)
