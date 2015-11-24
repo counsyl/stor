@@ -93,3 +93,7 @@ dist: venv
 .PHONY: sdist
 sdist: dist
 	@echo "runs dist"
+
+.PHONY: version
+version:
+	@echo ${VERSION}

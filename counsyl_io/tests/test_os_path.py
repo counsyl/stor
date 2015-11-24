@@ -21,4 +21,4 @@ class TestNew(unittest.TestCase):
 class TestAbsexpand(unittest.TestCase):
     def test_absexpand(self):
         p = OSPath().absexpand()
-        self.assertTrue(p.endswith('counsyl_io'))
+        self.assertTrue(p.endswith('counsyl-io'))

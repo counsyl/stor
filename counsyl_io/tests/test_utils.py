@@ -6,14 +6,14 @@ import unittest
 class TestChdir(unittest.TestCase):
     def test_chdir(self):
         p = os_path.OSPath().absexpand()
-        self.assertTrue(p.endswith('counsyl_io'))
+        self.assertTrue(p.endswith('counsyl-io'))
 
         with utils.chdir(p / 'counsyl_io' / 'tests'):
             p = os_path.OSPath().absexpand()
             self.assertTrue(p.endswith('tests'))
 
         p = os_path.OSPath().absexpand()
-        self.assertTrue(p.endswith('counsyl_io'))
+        self.assertTrue(p.endswith('counsyl-io'))
 
 
 class TestNamedTemporaryDirectory(unittest.TestCase):

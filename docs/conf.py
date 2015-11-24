@@ -4,18 +4,15 @@
 import inspect
 import os
 import re
+import subprocess
 
 
 def get_version():
     """
-    Extracts the version number from the version.py file.
+    Extracts the version number from setup.py
     """
-    VERSION_FILE = '../path/__init__.py'
-    mo = re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]', open(VERSION_FILE, 'rt').read(), re.M)
-    if mo:
-        return mo.group(1)
-    else:
-        raise RuntimeError('Unable to find version string in {0}.'.format(VERSION_FILE))
+    proc = subprocess.Popen(['make', 'version'], cwd='..', stdout=subprocess.PIPE)
+    return proc.communicate()[0]
 
 
 # -- General configuration ------------------------------------------------
@@ -36,7 +33,7 @@ source_suffix = '.rst'
 master_doc = 'toc'
 
 # General information about the project.
-project = u'counsyl-path.py'
+project = u'counsyl-io'
 copyright = u'2015, Counsyl Inc.'
 
 # The short X.Y version.
