@@ -1,0 +1,297 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Utils &mdash; counsyl-io 0.0.1
+ documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="counsyl-io 0.0.1
+ documentation" href="index.html"/>
+        <link rel="next" title="Contributing" href="contributing.html"/>
+        <link rel="prev" title="Path" href="path.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> counsyl-io
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">counsyl-io Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="path.html">Path</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="toc.html">counsyl-io</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="toc.html">Docs</a> &raquo;</li>
+      
+    <li>Utils</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/utils.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="utils">
+<span id="id1"></span><h1>Utils<a class="headerlink" href="#utils" title="Permalink to this headline">¶</a></h1>
+<p>Counsyl IO also comes with various I/O utilities. Descriptions and examples of these utilities are provided below.</p>
+<span class="target" id="module-counsyl_io.utils"></span><dl class="function">
+<dt id="counsyl_io.utils.chdir">
+<code class="descclassname">counsyl_io.utils.</code><code class="descname">chdir</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#counsyl_io.utils.chdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>A context manager for changing into a directory.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dirname</strong> (<a class="reference external" href="http://python.readthedocs.org/en/v2.7.2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The directory name to change into.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">counsyl_io.utils</span> <span class="kn">import</span> <span class="n">chdir</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">chdir</span><span class="p">(</span><span class="s">&#39;my/other_dir&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>   <span class="c"># Do operations using d as the current directory</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="counsyl_io.utils.walk_files_and_dirs">
+<code class="descclassname">counsyl_io.utils.</code><code class="descname">walk_files_and_dirs</code><span class="sig-paren">(</span><em>files_and_dirs</em><span class="sig-paren">)</span><a class="headerlink" href="#counsyl_io.utils.walk_files_and_dirs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Walk all files and directories.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>files_and_dirs</strong> (<em>List[str]</em>) &#8211; All file or directory names to walk.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">All files and empty directories under files_and_dirs.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">List[str]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code> &#8211;
+The provided upload name is not a file or a directory.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">counsyl_io.utils</span> <span class="kn">import</span> <span class="n">walk_files_and_dirs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">walk_files_and_dirs</span><span class="p">([</span><span class="s">&#39;file_name&#39;</span><span class="p">,</span> <span class="s">&#39;dir_name&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">results</span>
+<span class="go">[&#39;file_name&#39;, &#39;dir_name/file1&#39;, &#39;dir_name/file2&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="counsyl_io.utils.NamedTemporaryDirectory">
+<code class="descclassname">counsyl_io.utils.</code><code class="descname">NamedTemporaryDirectory</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwds</em><span class="sig-paren">)</span><a class="headerlink" href="#counsyl_io.utils.NamedTemporaryDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context manager for creating and deleting temporary directory.</p>
+<p>Mimics the behavior of tempfile.NamedTemporaryFile.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>suffix</strong> (<a class="reference external" href="http://python.readthedocs.org/en/v2.7.2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; If specified, the dir name will end with it.</li>
+<li><strong>prefix</strong> (<a class="reference external" href="http://python.readthedocs.org/en/v2.7.2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; If specified, the dir name will start with it,
+otherwise &#8216;tmp&#8217; is used.</li>
+<li><strong>dir</strong> (<a class="reference external" href="http://python.readthedocs.org/en/v2.7.2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; If specified, the dir will be created in this
+directory.</li>
+<li><strong>change_dir</strong> (<a class="reference external" href="http://python.readthedocs.org/en/v2.7.2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If specified, will change to the temporary
+directory.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Yields:</th><td class="field-body"><p class="first last"><em>OSPath</em> &#8211;
+The temporary directory.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Name is CamelCase to match tempfile.NamedTemporaryFile.</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">counsyl_io.utils</span> <span class="kn">import</span> <span class="n">NamedTemporaryDirectory</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">NamedTemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c"># Do operations within &quot;d&quot;, which will be deleted afterwards</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="path.html" class="btn btn-neutral" title="Path" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc.
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1
+',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
