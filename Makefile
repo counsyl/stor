@@ -38,6 +38,13 @@ docs:
 	pip install -r requirements-docs.txt
 	$(WITH_VENV) cd docs && make html
 
+
+.PHONY: publish-docs
+publish-docs: docs
+	touch docs/_build/html/.nojekyll
+	git subtree push --prefix docs/_build/html origin gh-pages
+	
+
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
