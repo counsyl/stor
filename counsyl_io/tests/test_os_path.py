@@ -1,6 +1,14 @@
+from counsyl_io import path
 from counsyl_io.os_path import OSPath
 import os
 import unittest
+
+
+class TestFactory(unittest.TestCase):
+    def test_os_path_returned(self):
+        # Verify the factory behaves as expected with os paths
+        p = path('my/os/path')
+        self.assertTrue(isinstance(p, OSPath))
 
 
 class TestNew(unittest.TestCase):

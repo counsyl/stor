@@ -36,7 +36,7 @@ develop: venv
 .PHONY: docs
 docs:
 	pip install -r requirements-docs.txt
-	cd docs && make html
+	$(WITH_VENV) cd docs && make html
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
@@ -58,6 +58,7 @@ clean:
 	rm -f $(TEST_OUTPUT)
 	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
+	cd docs && make clean
 
 .PHONY: teardown
 teardown:
@@ -81,7 +82,7 @@ VERSION=`$(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*
 
 .PHONY: tag
 tag: ##[distribution] Tag the release.
-tag:
+tag: venv
 	echo "Tagging version as ${VERSION}"
 	git tag -a ${VERSION} -m 'Version ${VERSION}'
 	# We won't push changes or tags here allowing the pipeline to do that, so we don't accidentally do that locally.

@@ -1,10 +1,11 @@
 from counsyl_io import settings
+from counsyl_io import utils
 import os
-import path
+from path import Path
 import cStringIO
 
 
-class SwiftPath(path.path):
+class SwiftPath(Path):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
@@ -14,7 +15,7 @@ class SwiftPath(path.path):
     def __new__(cls, swift_path):
         """Constructs a swift path.
 
-        Override the __new__ method for path.path so that one argument
+        Override the __new__ method for Path so that one argument
         is required.
 
         Args:
@@ -62,7 +63,7 @@ class SwiftPath(path.path):
         parts = self.get_parts()
         joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
 
-        return path.path(joined_resource) if joined_resource else None
+        return Path(joined_resource) if joined_resource else None
 
     def _get_swift_connection_options(self):
         """Returns options for constructing SwiftServices and Connections.
@@ -89,7 +90,7 @@ class SwiftPath(path.path):
         url setting is used.
 
         Returns:
-            A swiftclient.service.SwiftService instance.
+            swiftclient.service.SwiftService: The service instance.
         """
         from swiftclient import service
 
@@ -115,10 +116,11 @@ class SwiftPath(path.path):
                 mode.
 
         Returns:
-            A StringIO object with the contents of the object.
+            cStringIO: The contents of the object.
 
         Raises:
-            swiftclient.exceptions.ClientException on invalid swift requests.
+            swiftclient.exceptions.ClientException: The swift request is
+                invalid.
         """
         if mode not in ('r', 'rb'):
             raise ValueError('only read-only mode ("r" and "rb") is supported')
@@ -136,10 +138,10 @@ class SwiftPath(path.path):
                 current resource path is treated as a directory.
 
         Returns:
-            A generator of SwiftPath objects for every path in the listing.
+            Generator[SwiftPath]: Every path in the listing.
 
         Raises:
-            Raises any errors that are found in the returned results.
+            Exception: An error was found in the returned results.
         """
         service = self._get_swift_service()
         tenant = self.tenant
@@ -174,7 +176,7 @@ class SwiftPath(path.path):
         method will perform a swift query with a prefix of mydir/pattern
 
         Returns:
-            A generator of SwiftPath objects for every matching path.
+            Generator[SwiftPath]: Every matching path.
         """
         if pattern.count('*') > 1:
             raise ValueError('multiple pattern globs not supported')
@@ -187,15 +189,19 @@ class SwiftPath(path.path):
         """Returns the first result from the list results of the path.
 
         Raises:
-            swiftclient.service.SwiftError when an error occurs.
+            swiftclient.service.SwiftError: A swift error happened.
         """
         return next(self.list(), None)
 
     def exists(self):
-        """Returns True if the path exists, False otherwise.
+        """Checks existence of the path.
+        Returns True if the path exists, False otherwise.
+
+        Returns:
+            bool: True if the path exists, False otherwise.
 
         Raises:
-            swiftclient.service.SwiftError when a non-404 error occurs.
+            swiftclient.service.SwiftError: A non-404 swift error happened.
         """
         from swiftclient.service import SwiftError
 
@@ -215,7 +221,7 @@ class SwiftPath(path.path):
                 (such as "download" or "upload").
 
         Raises:
-            swiftclient.service.SwiftError when an error occurs.
+            swiftclient.service.SwiftError: A swift error happened.
         """
         results = [results] if isinstance(results, dict) else results
         for r in results:
@@ -235,7 +241,7 @@ class SwiftPath(path.path):
                 remove_prefix is true.
 
         Raises:
-            swiftclient.service.SwiftError when a download error occurs.
+            swiftclient.service.SwiftError: A swift error happened.
         """
         service = self._get_swift_service()
         results = service.download(self.container, options={
@@ -244,36 +250,6 @@ class SwiftPath(path.path):
             'remove_prefix': remove_prefix,
         })
         self._eval_swift_results_or_error(results)
-
-    def _walk_upload_names(self, upload_names):
-        """Walk all files and directories.
-
-        Args:
-            upload_names (list): A list of file or directory names to upload.
-
-        Returns:
-            A list of all files and empty directories under the upload_names.
-
-        Raises:
-            ValueError if a provided upload name is not a file or a directory.
-        """
-        walked_upload_names = []
-        for upload_name in upload_names:
-            if os.path.isfile(upload_name):
-                walked_upload_names.append(upload_name)
-            elif os.path.isdir(upload_name):
-                for (_dir, _ds, _fs) in os.walk(upload_name):
-                    if not (_ds + _fs):
-                        # Ensure that empty directories are uploaded as well
-                        walked_upload_names.append(_dir)
-                    else:
-                        walked_upload_names.extend([
-                            os.path.join(_dir, _f) for _f in _fs
-                        ])
-            else:
-                raise ValueError('file "{}" not found'.format(upload_name))
-
-        return walked_upload_names
 
     def upload(self,
                upload_names,
@@ -309,10 +285,10 @@ class SwiftPath(path.path):
                 of the folder name.
 
             Raises:
-                swiftclient.service.SwiftError if any of the uploads fail.
+                swiftclient.service.SwiftError: A swift upload failed.
         """
         service = self._get_swift_service()
-        upload_names = self._walk_upload_names(upload_names)
+        upload_names = utils.walk_files_and_dirs(upload_names)
         results = service.upload(
             self.container, upload_names, options={
                 'segment_size': segment_size,
@@ -328,8 +304,8 @@ class SwiftPath(path.path):
         """Removes a single object.
 
         Raises:
-            ValueError if an invalid path is provided.
-            swiftclient.service.SwiftError if the deletion fails.
+            ValueError: The path is invalid.
+            swiftclient.service.SwiftError: A swift deletion failed.
         """
         if not self.container or not self.resource:
             raise ValueError('path must contain a container and resource to '
@@ -343,7 +319,7 @@ class SwiftPath(path.path):
         """Removes a resource and all of its contents.
 
         Raises:
-            swiftclient.service.SwiftError if the deletion fails.
+            swiftclient.service.SwiftError: The deletion fails.
         """
         service = self._get_swift_service()
         if not self.resource:
@@ -361,7 +337,8 @@ class SwiftPath(path.path):
                 global options specified during the service object creation.
                 These options are applied to all post operations performed by
                 this call, unless overridden on a per object basis. Possible
-                options are given below:
+                options are given below::
+
                     {
                         'meta': [],
                         'headers': [],
@@ -372,7 +349,7 @@ class SwiftPath(path.path):
                     }
 
         Raises:
-            swiftclient.service.SwiftError if the post fails.
+            swiftclient.service.SwiftError: The post fails.
         """
         if not self.container or self.resource:
             raise ValueError('post only works on container paths')

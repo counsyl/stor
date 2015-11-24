@@ -19,6 +19,7 @@ def get_version():
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
     #'sphinx.ext.viewcode',
 ]
 
@@ -33,7 +34,7 @@ master_doc = 'toc'
 
 # General information about the project.
 project = u'counsyl-io'
-copyright = u'2015, Counsyl Inc.'
+copyright = u'2015, Counsyl Inc'
 
 # The short X.Y version.
 version = get_version()
@@ -81,7 +82,7 @@ html_show_sphinx = False
 html_show_copyright = True
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = '{{ repo_name }}doc'
+htmlhelp_basename = 'counsyl-io-doc'
 
 
 # -- Options for LaTeX output ---------------------------------------------

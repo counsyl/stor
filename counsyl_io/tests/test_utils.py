@@ -1,18 +1,45 @@
-from counsyl_io import os_path
+from counsyl_io import path
 from counsyl_io import utils
 import unittest
 
 
+class TestWalkFilesAndDirs(unittest.TestCase):
+    def test_w_dir(self):
+        # Create an empty directory for this test in ./swift_upload. This
+        # is because git doesnt allow a truly empty directory to be checked
+        # in
+        swift_dir = path(__file__).absexpand().parent / 'swift_upload'
+        with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            self.assertEquals(set(uploads), set([
+                swift_dir / 'file1',
+                tmp_dir,
+                swift_dir / 'data_dir' / 'file2',
+            ]))
+
+    def test_w_file(self):
+        name = path(__file__).absexpand().parent / 'swift_upload' / 'file1'
+
+        uploads = utils.walk_files_and_dirs([name])
+        self.assertEquals(set(uploads), set([name]))
+
+    def test_w_invalid_file(self):
+        name = path(__file__).absexpand().parent / 'swift_upload' / 'invalid'
+
+        with self.assertRaises(ValueError):
+            utils.walk_files_and_dirs([name])
+
+
 class TestChdir(unittest.TestCase):
     def test_chdir(self):
-        p = os_path.OSPath().absexpand()
+        p = path().absexpand()
         self.assertTrue(p.endswith('counsyl-io'))
 
         with utils.chdir(p / 'counsyl_io' / 'tests'):
-            p = os_path.OSPath().absexpand()
+            p = path().absexpand()
             self.assertTrue(p.endswith('tests'))
 
-        p = os_path.OSPath().absexpand()
+        p = path().absexpand()
         self.assertTrue(p.endswith('counsyl-io'))
 
 
@@ -21,7 +48,7 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
         tmp_d = None
         with utils.NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.assertTrue(tmp_d.exists())
-            p = os_path.OSPath().absexpand()
+            p = path().absexpand()
             self.assertTrue(tmp_d in p)
 
         self.assertFalse(tmp_d.exists())

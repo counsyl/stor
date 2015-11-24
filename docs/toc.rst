@@ -6,5 +6,7 @@ Table of Contents
 
    index
    installation
+   path
+   utils
    contributing
    release_notes

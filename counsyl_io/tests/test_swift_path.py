@@ -1,11 +1,17 @@
+from counsyl_io import path
 from counsyl_io import settings
-from counsyl_io.os_path import OSPath
 from counsyl_io.swift_path import SwiftPath
-from counsyl_io import utils
 import mock
 from swiftclient.service import SwiftError
 from test import test_support
 import unittest
+
+
+class TestFactory(unittest.TestCase):
+    def test_swift_path_returned(self):
+        # Verify the factory behaves as expected with swift paths
+        p = path('swift://my/swift/path')
+        self.assertTrue(isinstance(p, SwiftPath))
 
 
 class TestNew(unittest.TestCase):
@@ -335,41 +341,11 @@ class TestDownload(unittest.TestCase):
             })
 
 
-class TestWalkUploadNames(unittest.TestCase):
-    def test_w_dir(self):
-        # Create an empty directory for this test in ./swift_upload. This
-        # is because git doesnt allow a truly empty directory to be checked
-        # in
-        swift_path = SwiftPath('swift://tenant')
-        swift_dir = OSPath(__file__).absexpand().parent / 'swift_upload'
-        with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
-            uploads = swift_path._walk_upload_names([swift_dir])
-            self.assertEquals(set(uploads), set([
-                swift_dir / 'file1',
-                tmp_dir,
-                swift_dir / 'data_dir' / 'file2',
-            ]))
-
-    def test_w_file(self):
-        name = OSPath(__file__).absexpand().parent / 'swift_upload' / 'file1'
-
-        swift_path = SwiftPath('swift://tenant')
-        uploads = swift_path._walk_upload_names([name])
-        self.assertEquals(set(uploads), set([name]))
-
-    def test_w_invalid_file(self):
-        name = OSPath(__file__).absexpand().parent / 'swift_upload' / 'invalid'
-
-        swift_path = SwiftPath('swift://tenant')
-        with self.assertRaises(ValueError):
-            swift_path._walk_upload_names([name])
-
-
 @mock.patch.object(SwiftPath, '_get_swift_service', autospec=True)
-@mock.patch.object(SwiftPath, '_walk_upload_names', autospec=True)
+@mock.patch('counsyl_io.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(unittest.TestCase):
-    def test_false(self, mock_walk_upload_names, mock_service):
-        mock_walk_upload_names.return_value = ['file1', 'file2']
+    def test_false(self, mock_walk_files_and_dirs, mock_service):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         swift_service = mock.Mock()
         swift_service.upload.return_value = []
         mock_service.return_value = swift_service
