@@ -65,7 +65,12 @@ clean:
 	rm -f $(TEST_OUTPUT)
 	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
+
+
+.PHONY: clean-docs
+clean-docs:
 	cd docs && make clean
+
 
 .PHONY: teardown
 teardown:
@@ -73,7 +78,7 @@ teardown:
 
 .PHONY: lint
 lint: venv
-	$(WITH_VENV) flake8 -v counsyl_io/
+	$(WITH_VENV) flake8 -v $(PACKAGE_NAME)/
 
 .PHONY: test
 test: venv
