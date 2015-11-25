@@ -4,4 +4,6 @@ Release Notes
 v0.1
 ----
 
-* This is the initial release of counsyl-path.
+* The initial release of counsyl-io.
+* Provides a path factory that creates SwiftPath and OSPath objects.
+* Provides various utilities for file system procedures.

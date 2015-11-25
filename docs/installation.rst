@@ -3,8 +3,8 @@ Installation
 
 To install the latest release, type::
 
-    pip install counsyl-path
+    pip install counsyl-io
 
 To install the latest code directly from source, type::
 
-    pip install git+git://github.counsyl.com/dev/counsyl-path.py.git
+    pip install git+git://github.counsyl.com/dev/counsyl-io.git

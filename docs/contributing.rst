@@ -25,7 +25,3 @@ When in the project directory::
 
     make docs
     open docs/_build/html/index.html
-
-Release Checklist
------------------
-
