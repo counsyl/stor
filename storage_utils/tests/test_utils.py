@@ -1,3 +1,4 @@
+import os
 from storage_utils import path
 from storage_utils import utils
 import unittest
@@ -33,14 +34,15 @@ class TestWalkFilesAndDirs(unittest.TestCase):
 class TestChdir(unittest.TestCase):
     def test_chdir(self):
         p = path().absexpand()
-        self.assertTrue(p.endswith('counsyl-storage-utils'))
+        project_name = os.path.basename(os.getcwd())
+        self.assertTrue(p.endswith(project_name))
 
         with utils.chdir(p / 'storage_utils' / 'tests'):
             p = path().absexpand()
             self.assertTrue(p.endswith('tests'))
 
         p = path().absexpand()
-        self.assertTrue(p.endswith('counsyl-storage-utils'))
+        self.assertTrue(p.endswith(project_name))
 
 
 class TestNamedTemporaryDirectory(unittest.TestCase):

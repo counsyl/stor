@@ -29,4 +29,5 @@ class TestNew(unittest.TestCase):
 class TestAbsexpand(unittest.TestCase):
     def test_absexpand(self):
         p = OSPath().absexpand()
-        self.assertTrue(p.endswith('counsyl-storage-utils'))
+        project_name = os.path.basename(os.getcwd())
+        self.assertTrue(p.endswith(project_name))
