@@ -51,6 +51,6 @@ class OSPath(Path):
         Examples:
             >>> p = OSPath('my/local/path')
             >>> print p.absexpand()
-            /Users/wes/counsyl/counsyl-io/my/local/path
+            /Users/wes/counsyl/counsyl-storage-utils/my/local/path
         """
         return self.expand().abspath()

@@ -1,6 +1,6 @@
-# counsyl-io
+# counsyl-storage-utils
 
-Counsyl IO provides utilities for performing Posix file system IO and accessing object-based storage. The documentation for Counsyl IO can be viewed at https://github.counsyl.com/pages/dev/counsyl-io/
+This project provides utilities for performing Posix file system IO and accessing object-based storage. The documentation for Counsyl Storage Utils can be viewed at https://github.counsyl.com/pages/dev/counsyl-storage-utils/
 
 
 ## Running the Tests

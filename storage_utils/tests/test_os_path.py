@@ -1,5 +1,5 @@
-from counsyl_io import path
-from counsyl_io.os_path import OSPath
+from storage_utils import path
+from storage_utils.os_path import OSPath
 import os
 import unittest
 
@@ -29,4 +29,4 @@ class TestNew(unittest.TestCase):
 class TestAbsexpand(unittest.TestCase):
     def test_absexpand(self):
         p = OSPath().absexpand()
-        self.assertTrue(p.endswith('counsyl-io'))
+        self.assertTrue(p.endswith('counsyl-storage-utils'))

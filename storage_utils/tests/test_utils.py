@@ -1,5 +1,5 @@
-from counsyl_io import path
-from counsyl_io import utils
+from storage_utils import path
+from storage_utils import utils
 import unittest
 
 
@@ -33,14 +33,14 @@ class TestWalkFilesAndDirs(unittest.TestCase):
 class TestChdir(unittest.TestCase):
     def test_chdir(self):
         p = path().absexpand()
-        self.assertTrue(p.endswith('counsyl-io'))
+        self.assertTrue(p.endswith('counsyl-storage-utils'))
 
-        with utils.chdir(p / 'counsyl_io' / 'tests'):
+        with utils.chdir(p / 'storage_utils' / 'tests'):
             p = path().absexpand()
             self.assertTrue(p.endswith('tests'))
 
         p = path().absexpand()
-        self.assertTrue(p.endswith('counsyl-io'))
+        self.assertTrue(p.endswith('counsyl-storage-utils'))
 
 
 class TestNamedTemporaryDirectory(unittest.TestCase):

@@ -1,6 +1,6 @@
-from counsyl_io import path
-from counsyl_io import settings
-from counsyl_io.swift_path import SwiftPath
+from storage_utils import path
+from storage_utils import settings
+from storage_utils.swift_path import SwiftPath
 import mock
 from swiftclient.service import SwiftError
 from test import test_support
@@ -342,7 +342,7 @@ class TestDownload(unittest.TestCase):
 
 
 @mock.patch.object(SwiftPath, '_get_swift_service', autospec=True)
-@mock.patch('counsyl_io.utils.walk_files_and_dirs', autospec=True)
+@mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(unittest.TestCase):
     def test_false(self, mock_walk_files_and_dirs, mock_service):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']

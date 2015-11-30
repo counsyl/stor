@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from counsyl_io.os_path import OSPath
+from storage_utils.os_path import OSPath
 import os
 import tempfile
 
@@ -17,7 +17,7 @@ def walk_files_and_dirs(files_and_dirs):
         ValueError: The provided upload name is not a file or a directory.
 
     Examples:
-        >>> from counsyl_io.utils import walk_files_and_dirs
+        >>> from storage_utils.utils import walk_files_and_dirs
         >>> results = walk_files_and_dirs(['file_name', 'dir_name'])
         >>> print results
         ['file_name', 'dir_name/file1', 'dir_name/file2']
@@ -49,7 +49,7 @@ def chdir(dirname):
         dirname (str): The directory name to change into.
 
     Examples:
-        >>> from counsyl_io.utils import chdir
+        >>> from storage_utils.utils import chdir
         >>> with chdir('my/other_dir') as d:
         >>>    # Do operations using d as the current directory
     """
@@ -84,7 +84,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
         Name is CamelCase to match tempfile.NamedTemporaryFile.
 
     Examples:
-        >>> from counsyl_io.utils import NamedTemporaryDirectory
+        >>> from storage_utils.utils import NamedTemporaryDirectory
         >>> with NamedTemporaryDirectory() as d:
         >>>     # Do operations within "d", which will be deleted afterwards
     """

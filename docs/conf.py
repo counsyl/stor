@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# counsyl-io documentation build configuration file
+# counsyl-storage-utils documentation build configuration file
 import os
 import subprocess
 
@@ -33,7 +33,7 @@ source_suffix = '.rst'
 master_doc = 'toc'
 
 # General information about the project.
-project = u'counsyl-io'
+project = u'counsyl-storage-utils'
 copyright = u'2015, Counsyl Inc'
 
 # The short X.Y version.
@@ -82,7 +82,7 @@ html_show_sphinx = False
 html_show_copyright = True
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'counsyl-io-doc'
+htmlhelp_basename = 'counsyl-storage-utils-doc'
 
 
 # -- Options for LaTeX output ---------------------------------------------

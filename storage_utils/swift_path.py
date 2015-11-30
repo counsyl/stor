@@ -1,5 +1,5 @@
-from counsyl_io import settings
-from counsyl_io import utils
+from storage_utils import settings
+from storage_utils import utils
 import os
 from path import Path
 import cStringIO

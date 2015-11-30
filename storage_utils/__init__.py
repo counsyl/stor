@@ -1,5 +1,5 @@
-from counsyl_io import os_path
-from counsyl_io import swift_path
+from storage_utils import os_path
+from storage_utils import swift_path
 
 
 def path(*args):
@@ -7,17 +7,17 @@ def path(*args):
 
     Examples:
 
-        >>> from counsyl_io import path
+        >>> from storage_utils import path
         >>> p = path('/my/local/path')
         >>> print type(p)
-        <class 'counsyl_io.os_path.OSPath'>
+        <class 'storage_utils.os_path.OSPath'>
         >>> print p.exists()
         False
 
-        >>> from counsyl_io import path
+        >>> from storage_utils import path
         >>> p = path('swift://tenant/container/object')
         >>> print type(p)
-        <class 'counsyl_io.swift_path.SwiftPath'>
+        <class 'storage_utils.swift_path.SwiftPath'>
         >>> print p.exists()
         False
     """
