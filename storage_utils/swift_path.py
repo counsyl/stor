@@ -4,6 +4,15 @@ from path import Path
 import cStringIO
 
 
+class SwiftConfigurationError(Exception):
+    """Thrown when swift is not configured properly.
+
+    Swift needs the OS_USERNAME and OS_PASSWORD env
+    variables configured in order to operate.
+    """
+    pass
+
+
 class SwiftPath(Path):
     """
     Provides the ability to manipulate and access resources on swift
@@ -64,8 +73,17 @@ class SwiftPath(Path):
 
     def _get_swift_connection_options(self):
         """Returns options for constructing SwiftServices and Connections.
+
+        raises:
+            SwiftConfigurationError: The needed swift environment variables
+                aren't set.
         """
         from swiftclient import service
+
+        if 'OS_PASSWORD' not in os.environ or 'OS_USERNAME' not in os.environ:
+            raise SwiftConfigurationError('OS_USERNAME and OS_PASSWORD '
+                                          'environment vars must be set for '
+                                          'Swift authentication')
 
         options = dict(
             service._default_global_options,

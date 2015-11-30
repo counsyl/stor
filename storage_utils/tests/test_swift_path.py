@@ -1,4 +1,5 @@
 from storage_utils import path
+from storage_utils.swift_path import SwiftConfigurationError
 from storage_utils.swift_path import SwiftPath
 import mock
 from swiftclient.service import SwiftError
@@ -81,20 +82,37 @@ class TestResource(unittest.TestCase):
 
 
 class TestGetSwiftConnectionOptions(unittest.TestCase):
-    def test_w_os_auth_url_env_var(self):
-        env = test_support.EnvironmentVarGuard()
-        env.set('OS_AUTH_URL', 'env_auth_url')
+    def setUp(self):
+        self.env = test_support.EnvironmentVarGuard()
+        self.env.set('OS_USERNAME', 'username')
+        self.env.set('OS_PASSWORD', 'password')
+
+    def test_wo_username(self):
+        self.env.unset('OS_USERNAME')
         swift_path = SwiftPath('swift://tenant/')
-        with env:
+        with self.env:
+            with self.assertRaises(SwiftConfigurationError):
+                swift_path._get_swift_connection_options()
+
+    def test_wo_password(self):
+        self.env.unset('OS_PASSWORD')
+        swift_path = SwiftPath('swift://tenant/')
+        with self.env:
+            with self.assertRaises(SwiftConfigurationError):
+                swift_path._get_swift_connection_options()
+
+    def test_w_os_auth_url_env_var(self):
+        self.env.set('OS_AUTH_URL', 'env_auth_url')
+        swift_path = SwiftPath('swift://tenant/')
+        with self.env:
             options = swift_path._get_swift_connection_options()
             self.assertEquals(options['os_auth_url'], 'env_auth_url')
             self.assertEquals(options['os_tenant_name'], 'tenant')
 
     def test_w_default_setting(self):
-        env = test_support.EnvironmentVarGuard()
-        env.unset('OS_AUTH_URL')
+        self.env.unset('OS_AUTH_URL')
         swift_path = SwiftPath('swift://tenant/')
-        with env:
+        with self.env:
             options = swift_path._get_swift_connection_options()
             self.assertEquals(options['os_auth_url'],
                               SwiftPath.default_auth_url)
