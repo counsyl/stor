@@ -1,5 +1,4 @@
 from storage_utils import path
-from storage_utils import settings
 from storage_utils.swift_path import SwiftPath
 import mock
 from swiftclient.service import SwiftError
@@ -98,7 +97,7 @@ class TestGetSwiftConnectionOptions(unittest.TestCase):
         with env:
             options = swift_path._get_swift_connection_options()
             self.assertEquals(options['os_auth_url'],
-                              settings.swift_default_auth_url)
+                              SwiftPath.default_auth_url)
             self.assertEquals(options['os_tenant_name'], 'tenant')
 
 

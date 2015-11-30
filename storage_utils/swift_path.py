@@ -1,4 +1,3 @@
-from storage_utils import settings
 from storage_utils import utils
 import os
 from path import Path
@@ -11,6 +10,7 @@ class SwiftPath(Path):
     with a similar interface to the path library.
     """
     swift_drive = 'swift://'
+    default_auth_url = 'https://oak1-prd-osn02.counsyl.com/auth/v2.0'
 
     def __new__(cls, swift_path):
         """Constructs a swift path.
@@ -75,7 +75,7 @@ class SwiftPath(Path):
             **dict(service._default_local_options, **{
                 'os_tenant_name': self.tenant,
                 'os_auth_url': os.environ.get('OS_AUTH_URL',
-                                              settings.swift_default_auth_url)
+                                              self.default_auth_url)
             })
         )
         service.process_options(options)
