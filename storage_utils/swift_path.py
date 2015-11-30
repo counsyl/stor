@@ -12,20 +12,17 @@ class SwiftPath(Path):
     swift_drive = 'swift://'
     default_auth_url = 'https://oak1-prd-osn02.counsyl.com/auth/v2.0'
 
-    def __new__(cls, swift_path):
-        """Constructs a swift path.
-
-        Override the __new__ method for Path so that one argument
-        is required.
+    def __init__(self, swift_path):
+        """Validates swift path is in the proper format.
 
         Args:
             swift_path (str): A path that matches the format of
                 "swift://{tenant_name}/{container_name}/{rest_of_path}".
-                Only "swift://" is required in the path.
+                The "swift://" prefix is required in the path.
         """
-        if not swift_path.startswith(cls.swift_drive):
-            raise ValueError('path must start with {}'.format(cls.swift_drive))
-        return super(SwiftPath, cls).__new__(cls, swift_path)
+        if not swift_path.startswith(self.swift_drive):
+            raise ValueError('path must have {}'.format(self.swift_drive))
+        return super(SwiftPath, self).__init__(swift_path)
 
     def __repr__(self):
         return 'SwiftPath("{}")'.format(self)

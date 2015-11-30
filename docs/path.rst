@@ -39,8 +39,6 @@ OSPath
 .. autoclass:: storage_utils.os_path.OSPath
     :members:
 
-    .. automethod:: __new__
-
 
 SwiftPath
 ---------
@@ -49,5 +47,3 @@ SwiftPath
 .. automodule:: storage_utils.swift_path 
 .. autoclass:: storage_utils.swift_path.SwiftPath
     :members:
-
-    .. automethod:: __new__
