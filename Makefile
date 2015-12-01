@@ -98,24 +98,8 @@ dist: venv
 	$(WITH_VENV) python setup.py sdist
 
 .PHONY: publish-docs
-publish-docs: clean-docs docs
-	@echo "Initializing gh-pages branch"
-	$(eval BRANCH := $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p'))
-	-git checkout --orphan gh-pages && \
-	git rm --cached -r . && \
-	touch .nojekyll && \
-	git add .nojekyll && \
-	git commit -m "create github pages, ignore jekyll" && \
-	git push origin gh-pages && \
-	git checkout -f "${BRANCH}"
-	@echo "Updating and publishing docs"
-	git checkout gh-pages && \
-	git pull origin gh-pages && \
-	cp -r docs/_build/html/* . && \
-	git add -f *.html *.js *.inv _static _sources && \
-	git commit -m "Published docs" && \
-	git push origin gh-pages; \
-	git checkout -f "${BRANCH}";
+publish-docs: docs
+	./publish-docs.sh
 
 .PHONY: sdist
 sdist: dist
