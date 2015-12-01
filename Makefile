@@ -99,7 +99,7 @@ dist: venv
 
 .PHONY: publish-docs
 publish-docs: docs
-	./publish-docs.sh
+	./publish_docs.sh
 
 .PHONY: sdist
 sdist: dist
