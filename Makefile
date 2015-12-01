@@ -28,14 +28,14 @@ $(VENV_ACTIVATE): requirements*.txt
 	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) pip install -r requirements-docs.txt --index-url=${PIP_INDEX_URL}
 	touch $@
 
 develop: venv
 	$(WITH_VENV) python setup.py develop
 
 .PHONY: docs
-docs:
-	pip install -r requirements-docs.txt
+docs: venv
 	$(WITH_VENV) cd docs && make html
 	
 
