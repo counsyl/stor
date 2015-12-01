@@ -28,6 +28,6 @@ With this interface, one can write code that is compatible with Swift and Posix 
 
 In Depth Documentation
 ----------------------
-Along with a generic ``path`` factory, this project provides interfaces that are specific to accessing Posix file systems (``OSPath``) and for Swift object-based storage (``SwiftPath``). These interfaces are documented in the :ref:`path` section.
+Along with a generic ``path`` factory, this project provides interfaces that are specific to accessing Posix file systems (``Path``) and for Swift object-based storage (``SwiftPath``). These interfaces are documented in the :ref:`path` section.
 
 Counsyl Storage Utils also provides some utilities related to file system procedures. These are described in the :ref:`utils` section.

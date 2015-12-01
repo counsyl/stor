@@ -6,7 +6,6 @@ Counsyl Storage Utils comes with the ability to create paths in a similar manner
 
 * A ``path`` factory function that is used to construct the appropriate object based on the path. This is the primary interface that should be used for obtaining access to resources.
 * A ``SwiftPath`` object that is returned if the path starts with "swift://". This class provides the ability to access Swift object storage using a restricted version of path.py. Along with inheriting from ``Path`` (in the package from above), it provides several other methods specific to Swift object storage that are documented in more detail.
-* An ``OSPath`` object that is returned for all other paths. This class inherits from ``Path`` and provides other custom methods for path manipulation that are documented in more detail.
 
 
 Path Factory
