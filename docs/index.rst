@@ -1,4 +1,4 @@
-counsyl-storage-util Documentation
+counsyl-storage-utils Documentation
 ===================================
 Counsyl Storage Utils provides utilities for performing Posix file system IO and accessing object-based storage. Below is a quick start for using the core ``path`` functionality of this module. Other low-level interfaces are described in the later sections
 
