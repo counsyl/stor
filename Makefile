@@ -103,6 +103,19 @@ tag: venv
 dist: venv
 	$(WITH_VENV) python setup.py sdist
 
+.PHONY: dist-docs
+dist-docs: docs
+        $(eval BRANCH := $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p'))
+        git add -f docs/_build/html && \
+        (git checkout --orphan gh-pages; git checkout gh-pages) && \
+        git rm --cached -r . && \
+        touch .nojekyll && \
+        git add *html *inv *js _sources _static .nojekyll && \
+        git commit -m "Published docs at version ${VERSION}" && \
+        git push origin gh-pages
+        echo "Switching branch ${BRANCH}"
+        git checkout -f "${BRANCH}"
+
 .PHONY: sdist
 sdist: dist
 	@echo "runs dist"
