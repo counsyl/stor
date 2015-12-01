@@ -98,7 +98,7 @@ dist: venv
 	$(WITH_VENV) python setup.py sdist
 
 .PHONY: dist-docs
-dist-docs: clean-docs docs
+publish-docs: clean-docs docs
 	@echo "Initializing gh-pages branch"
 	$(eval BRANCH := $(shell git branch | sed -n -e 's/^\* \(.*\)/\1/p'))
 	-git checkout --orphan gh-pages && \
