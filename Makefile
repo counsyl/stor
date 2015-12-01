@@ -3,7 +3,7 @@
 
 PACKAGE_NAME=storage_utils
 TEST_OUTPUT?=nosetests.xml
-PYPI?=https://pypi.counsyl.com/counsyl/prod/+simple/
+PYPI_INDEX_URL?=https://pypi.counsyl.com/counsyl/prod/+simple/
 
 ifdef TOX_ENV
 	TOX_ENV_FLAG := -e $(TOX_ENV)
@@ -25,9 +25,9 @@ venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
 	test -f $@ || virtualenv --python=python2.7 $(VENV_DIR)
-	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PYPI}
-	$(WITH_VENV) pip install -e . --index-url=${PYPI}
-	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PYPI}
+	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PYPI_INDEX_URL}
+	$(WITH_VENV) pip install -e . --index-url=${PYPI_INDEX_URL}
+	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PYPI_INDEX_URL}
 	touch $@
 
 develop: venv
