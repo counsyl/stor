@@ -98,7 +98,7 @@ dist: venv
 	$(WITH_VENV) python setup.py sdist
 
 .PHONY: publish-docs
-publish-docs: docs
+publish-docs:
 	./publish_docs.sh
 
 .PHONY: sdist
