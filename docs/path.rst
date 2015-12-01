@@ -28,16 +28,7 @@ By using the ``path`` factory function, users can write code that is portable ac
 * ``rmtree``: Removes a directory and all resources it contains.
 
 .. NOTE::
-   ``OSPath`` fully implements the above methods, but ``SwiftPath`` may only partially implement the method (e.g. only allowing prefix globbing). Read the ``SwiftPath`` documentation below about restrictions on the methods.
-
-
-OSPath
-------
-``OSPath`` objects returned from the ``path`` factory fully support all operations from the `path.py <https://pypi.python.org/pypi/path.py>`_ project. For a full listing of the supported methods, look at the `path API <https://pythonhosted.org/path.py/api.html>`_. Additional methods on ``OSPath`` are described below:
-
-.. automodule:: storage_utils.os_path 
-.. autoclass:: storage_utils.os_path.OSPath
-    :members:
+   ``Path`` fully implements the above methods, but ``SwiftPath`` may only partially implement the method (e.g. only allowing prefix globbing). Read the ``SwiftPath`` documentation below about restrictions on the methods.
 
 
 SwiftPath

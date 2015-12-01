@@ -9,7 +9,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
         # Create an empty directory for this test in ./swift_upload. This
         # is because git doesnt allow a truly empty directory to be checked
         # in
-        swift_dir = path(__file__).absexpand().parent / 'swift_upload'
+        swift_dir = path(__file__).expand().abspath().parent / 'swift_upload'
         with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
             uploads = utils.walk_files_and_dirs([swift_dir])
             self.assertEquals(set(uploads), set([
@@ -19,13 +19,15 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             ]))
 
     def test_w_file(self):
-        name = path(__file__).absexpand().parent / 'swift_upload' / 'file1'
+        name = (path(__file__).expand().abspath().parent /
+                'swift_upload' / 'file1')
 
         uploads = utils.walk_files_and_dirs([name])
         self.assertEquals(set(uploads), set([name]))
 
     def test_w_invalid_file(self):
-        name = path(__file__).absexpand().parent / 'swift_upload' / 'invalid'
+        name = (path(__file__).expand().abspath().parent /
+                'swift_upload' / 'invalid')
 
         with self.assertRaises(ValueError):
             utils.walk_files_and_dirs([name])
@@ -33,15 +35,15 @@ class TestWalkFilesAndDirs(unittest.TestCase):
 
 class TestChdir(unittest.TestCase):
     def test_chdir(self):
-        p = path().absexpand()
+        p = path('.').expand().abspath()
         project_name = os.path.basename(os.getcwd())
         self.assertTrue(p.endswith(project_name))
 
         with utils.chdir(p / 'storage_utils' / 'tests'):
-            p = path().absexpand()
+            p = path('.').expand().abspath()
             self.assertTrue(p.endswith('tests'))
 
-        p = path().absexpand()
+        p = path('.').expand().abspath()
         self.assertTrue(p.endswith(project_name))
 
 
@@ -50,7 +52,7 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
         tmp_d = None
         with utils.NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.assertTrue(tmp_d.exists())
-            p = path().absexpand()
+            p = path('.').expand().abspath()
             self.assertTrue(tmp_d in p)
 
         self.assertFalse(tmp_d.exists())

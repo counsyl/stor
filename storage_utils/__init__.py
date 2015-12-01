@@ -1,8 +1,8 @@
-from storage_utils import os_path
+from path import Path
 from storage_utils import swift_path
 
 
-def path(*args):
+def path(p):
     """A factory function for returning a path based on its prefix.
 
     Examples:
@@ -21,7 +21,7 @@ def path(*args):
         >>> print p.exists()
         False
     """
-    if len(args) == 1 and args[0].startswith('swift://'):
-        return swift_path.SwiftPath(args[0])
+    if p.startswith('swift://'):
+        return swift_path.SwiftPath(p)
     else:
-        return os_path.OSPath(*args)
+        return Path(p)

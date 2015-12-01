@@ -1,6 +1,6 @@
 from contextlib import contextmanager
-from storage_utils.os_path import OSPath
 import os
+from path import Path
 import tempfile
 
 
@@ -78,7 +78,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
             directory.
 
     Yields:
-        OSPath: The temporary directory.
+        Path: The temporary directory.
 
     Note:
         Name is CamelCase to match tempfile.NamedTemporaryFile.
@@ -88,7 +88,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
         >>> with NamedTemporaryDirectory() as d:
         >>>     # Do operations within "d", which will be deleted afterwards
     """
-    tempdir = OSPath(tempfile.mkdtemp(suffix, prefix, dir))
+    tempdir = Path(tempfile.mkdtemp(suffix, prefix, dir))
     if change_dir:
         with chdir(str(tempdir)):
             yield tempdir
