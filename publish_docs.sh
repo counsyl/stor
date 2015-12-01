@@ -33,7 +33,7 @@ DOC_FILES=`cd docs/_build/html && find . -not -path '*/\.*' -not -path .`
 cp -r docs/_build/html/* .
 git add -f .nojekyll $DOC_FILES
 git commit -m "Published docs"
-git push origin gh-pages
+git push origin gh-pages --force
 
 # Remove the trap and exit normally
 trap - EXIT
