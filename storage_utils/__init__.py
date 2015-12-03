@@ -1,7 +1,3 @@
-from path import Path
-from storage_utils import swift_path
-
-
 def path(p):
     """A factory function for returning a path based on its prefix.
 
@@ -22,6 +18,8 @@ def path(p):
         False
     """
     if p.startswith('swift://'):
-        return swift_path.SwiftPath(p)
+        from storage_utils.swift_path import SwiftPath
+        return SwiftPath(p)
     else:
+        from path import Path
         return Path(p)
