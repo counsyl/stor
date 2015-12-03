@@ -48,7 +48,7 @@ class TestChdir(unittest.TestCase):
 
 
 class TestNamedTemporaryDirectory(unittest.TestCase):
-    def test_wo_chdir(self):
+    def test_w_chdir(self):
         tmp_d = None
         with utils.NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.assertTrue(tmp_d.exists())
@@ -57,7 +57,7 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
 
         self.assertFalse(tmp_d.exists())
 
-    def test_w_chdir(self):
+    def test_wo_chdir(self):
         tmp_d = None
         with utils.NamedTemporaryDirectory() as tmp_d:
             self.assertTrue(tmp_d.exists())
