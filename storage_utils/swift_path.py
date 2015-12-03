@@ -13,7 +13,7 @@ class SwiftConfigurationError(Exception):
     pass
 
 
-class SwiftPath(Path):
+class SwiftPath(str):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
@@ -35,6 +35,17 @@ class SwiftPath(Path):
 
     def __repr__(self):
         return 'SwiftPath("{}")'.format(self)
+
+    def __add__(self, more):
+        return SwiftPath(super(SwiftPath, self).__add__(more))
+
+    def __div__(self, rel):
+        """Join two path components, adding a separator character if needed.
+        """
+        return SwiftPath(os.path.join(self, rel))
+
+    # Make the / operator work even when true division is enabled.
+    __truediv__ = __div__
 
     def get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings.

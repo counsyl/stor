@@ -22,6 +22,20 @@ class TestRepr(SwiftTestCase):
         self.assertEquals(eval(repr(swift_path)), swift_path)
 
 
+class TestPathManipulations(SwiftTestCase):
+    def test_add(self):
+        swift_path = SwiftPath('swift://t')
+        swift_path = swift_path + 'added'
+        self.assertTrue(isinstance(swift_path, SwiftPath))
+        self.assertEquals(swift_path, 'swift://tadded')
+
+    def test_div(self):
+        swift_path = SwiftPath('swift://t')
+        swift_path = swift_path / 'c' / 'p'
+        self.assertTrue(isinstance(swift_path, SwiftPath))
+        self.assertEquals(swift_path, 'swift://t/c/p')
+
+
 class TestTenant(SwiftTestCase):
     def test_tenant_none(self):
         swift_path = SwiftPath('swift://')
