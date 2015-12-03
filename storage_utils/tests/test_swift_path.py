@@ -3,6 +3,7 @@ from storage_utils.swift_path import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
 import os
+from path import Path
 from swiftclient.service import SwiftError
 
 
@@ -24,14 +25,14 @@ class TestRepr(SwiftTestCase):
 
 class TestPathManipulations(SwiftTestCase):
     def test_add(self):
-        swift_path = SwiftPath('swift://t')
-        swift_path = swift_path + 'added'
+        swift_path = SwiftPath('swift://a')
+        swift_path = swift_path + 'b' + Path('c')
         self.assertTrue(isinstance(swift_path, SwiftPath))
-        self.assertEquals(swift_path, 'swift://tadded')
+        self.assertEquals(swift_path, 'swift://abc')
 
     def test_div(self):
         swift_path = SwiftPath('swift://t')
-        swift_path = swift_path / 'c' / 'p'
+        swift_path = swift_path / 'c' / Path('p')
         self.assertTrue(isinstance(swift_path, SwiftPath))
         self.assertEquals(swift_path, 'swift://t/c/p')
 
