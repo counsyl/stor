@@ -9,6 +9,11 @@ Counsyl Storage Utils comes with the ability to create paths in a similar manner
 .. autofunction:: storage_utils.is_posix_path
 .. autofunction:: storage_utils.is_swift_path
 
+These three functions are the only ones that should be used when constructing or checking paths. In other words, ``Path`` or ``SwiftPath`` objects should never be explicitly instantiated or used.
+
+.. NOTE::
+    It's okay to repeatedly call ``path`` on any ``Path`` object since it will return itself.
+
 
 Common Path Methods
 -------------------
