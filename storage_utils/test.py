@@ -7,24 +7,35 @@ import unittest
 class SwiftTestCase(unittest.TestCase):
     """A test class that mocks out the swift service.
 
+    SwiftTestCase should be used in all tests that might hit Swift
+    object-based storage in order to prevent network calls or hitting
+    production storage.
+
     This class provides the following variables for use in testing:
 
     - mock_swift_service: A mock of the SwiftService class defined in
-        swiftclient.service.
+      swiftclient.service.
+
     - mock_swift_get_conn: A mock of the get_conn function in the
-        swiftclient.service module
+      swiftclient.service module
+
     - mock_swift_conn: A mock of the SwiftConnection returned by
-        get_conn
+      get_conn
+
     - mock_get_swift: A mock of the _get_swift_service method of
-        SwiftPath
+      SwiftPath
+
     - mock_swift: A mock of the SwiftService instance returned by
-        _get_swift_service in SwiftPath
+      _get_swift_service in SwiftPath
+
     - mock_swift_username: A mock for replacing the OS_USERNAME
-        environment variable used by Swift
+      environment variable used by Swift
+
     - mock_swift_password: A mock for replacing the OS_PASSWORD
-        environment variable used by Swift.
+      environment variable used by Swift.
+
     - mock_swift_auth_url: A mock for replacing the OS_AUTH_URL
-        environment variable used by Swift.
+      environment variable used by Swift.
 
     Note that one must call super(...).setUp() in their setUp methods that
     inherit this class.
