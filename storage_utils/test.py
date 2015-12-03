@@ -23,6 +23,8 @@ class SwiftTestCase(unittest.TestCase):
         environment variable used by Swift
     - mock_swift_password: A mock for replacing the OS_PASSWORD
         environment variable used by Swift.
+    - mock_swift_auth_url: A mock for replacing the OS_AUTH_URL
+        environment variable used by Swift.
 
     Note that one must call super(...).setUp() in their setUp methods that
     inherit this class.
@@ -74,3 +76,8 @@ class SwiftTestCase(unittest.TestCase):
                                              {'OS_PASSWORD': '__dummy__'})
         self.addCleanup(self._pass_patcher.stop)
         self.mock_swift_password = self._pass_patcher.start()
+
+        self._auth_patcher = mock.patch.dict(os.environ,
+                                             {'OS_AUTH_URL': '__dummy__'})
+        self.addCleanup(self._auth_patcher.stop)
+        self.mock_swift_auth_url = self._auth_patcher.start()
