@@ -42,26 +42,6 @@ def walk_files_and_dirs(files_and_dirs):
 
 
 @contextmanager
-def chdir(dirname):
-    """A context manager for changing into a directory.
-
-    Args:
-        dirname (str): The directory name to change into.
-
-    Examples:
-        >>> from storage_utils.utils import chdir
-        >>> with chdir('my/other_dir') as d:
-        >>>    # Do operations using d as the current directory
-    """
-    curdir = os.getcwd()
-    try:
-        os.chdir(dirname)
-        yield
-    finally:
-        os.chdir(curdir)
-
-
-@contextmanager
 def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
                             change_dir=False):
     """Context manager for creating and deleting temporary directory.
@@ -90,7 +70,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
     """
     tempdir = Path(tempfile.mkdtemp(suffix, prefix, dir))
     if change_dir:
-        with chdir(str(tempdir)):
+        with Path(str(tempdir)):
             yield tempdir
     else:
         yield tempdir

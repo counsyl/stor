@@ -289,7 +289,11 @@ class SwiftPath(str):
 
         Note that this method uploads based on paths relative to the current
         directory. In order to load files relative to a target directory,
-        use the ``chdir`` function in utils to change your current directory.
+        use path as a context manager to change the directory.
+
+        For example:
+            with path('/path/to/upload/dir'):
+                path('swift://tenant/container').upload(['.'])
 
         Args:
             upload_names (list): A list of file and directory names to upload.

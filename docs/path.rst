@@ -2,18 +2,12 @@
 
 Path
 ====
-Counsyl Storage Utils comes with the ability to create paths in a similar manner to `path.py <https://pypi.python.org/pypi/path.py>`_. The path utilities are as follows:
-
-* A ``path`` factory function that is used to construct the appropriate object based on the path. This is the primary interface that should be used for obtaining access to resources.
-* A ``SwiftPath`` object that is returned if the path starts with "swift://". This class provides the ability to access Swift object storage using a restricted version of path.py. Along with inheriting from ``Path`` (in the package from above), it provides several other methods specific to Swift object storage that are documented in more detail.
-
-
-Path Factory
-------------
-The ``path`` factory is the primary interface for constructing paths. Its usage is described below.
+Counsyl Storage Utils comes with the ability to create paths in a similar manner to `path.py <https://pypi.python.org/pypi/path.py>`_. The path interface has the following functions:
 
 .. automodule:: storage_utils
 .. autofunction:: storage_utils.path
+.. autofunction:: storage_utils.is_posix_path
+.. autofunction:: storage_utils.is_swift_path
 
 
 Common Path Methods
