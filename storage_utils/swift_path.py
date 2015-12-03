@@ -19,7 +19,7 @@ class SwiftPath(Path):
     with a similar interface to the path library.
     """
     swift_drive = 'swift://'
-    default_auth_url = 'https://oak1-prd-osn02.counsyl.com/auth/v2.0'
+    default_auth_url = 'https://oak1-prd-oslb01.counsyl.com/auth/v2.0'
 
     def __init__(self, swift_path):
         """Validates swift path is in the proper format.
