@@ -1,17 +1,9 @@
-from storage_utils import path
 from storage_utils.swift_path import SwiftConfigurationError
 from storage_utils.swift_path import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
 import os
 from swiftclient.service import SwiftError
-
-
-class TestFactory(SwiftTestCase):
-    def test_swift_path_returned(self):
-        # Verify the factory behaves as expected with swift paths
-        p = path('swift://my/swift/path')
-        self.assertTrue(isinstance(p, SwiftPath))
 
 
 class TestNew(SwiftTestCase):
