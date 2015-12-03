@@ -102,8 +102,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', '{{ repo_name }}.tex', u'{{ repo_name }} Documentation',
-     u'{{ author_name }}', 'manual'),
+    ('index', 'counsyl-storage-utils.tex', u'counsyl-storage-utils Documentation',
+     u'Counsyl Inc.', 'manual'),
 ]
 
 # -- Options for manual page output ---------------------------------------
@@ -111,8 +111,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', '{{ repo_name }}', u'{{ repo_name }} Documentation',
-     [u'{{ author_name }}'], 1)
+    ('index', 'counsyl-storage-utils', u'counsyl-storage-utils Documentation',
+     [u'Counsyl Inc.'], 1)
 ]
 
 # -- Options for Texinfo output -------------------------------------------
@@ -121,7 +121,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', '{{ repo_name }}', u'{{ repo_name }} Documentation',
-     u'{{ author_name }}', '{{ repo_name }}', 'A short description',
+    ('index', 'counsyl-storage-utils', u'counsyl-storage-utils Documentation',
+     u'Counsyl Inc.', 'counsyl-storage-utils', 'A short description',
      'Miscellaneous'),
 ]
