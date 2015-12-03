@@ -276,6 +276,10 @@ class SwiftPath(Path):
                object_name=None):
         """Uploads a list of files and directories to swift.
 
+        Note that this method uploads based on paths relative to the current
+        directory. In order to load files relative to a target directory,
+        use the ``chdir`` function in utils to change your current directory.
+
         Args:
             upload_names (list): A list of file and directory names to upload.
             segment_size (int|str): Upload files in segments no larger than
