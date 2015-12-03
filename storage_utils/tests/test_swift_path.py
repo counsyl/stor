@@ -19,8 +19,7 @@ class TestNew(SwiftTestCase):
 class TestRepr(SwiftTestCase):
     def test_repr(self):
         swift_path = SwiftPath('swift://t/c/p')
-        self.assertEquals(repr(swift_path), 'SwiftPath("swift://t/c/p")')
-        self.assertEquals(swift_path, 'swift://t/c/p')
+        self.assertEquals(eval(repr(swift_path)), swift_path)
 
 
 class TestTenant(SwiftTestCase):
