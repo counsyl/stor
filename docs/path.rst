@@ -2,14 +2,12 @@
 
 Path
 ====
-Counsyl Storage Utils comes with the ability to create paths in a similar manner to `path.py <https://pypi.python.org/pypi/path.py>`_. The path interface has the following functions:
+Counsyl Storage Utils comes with the ability to create paths in a similar manner to `path.py <https://pypi.python.org/pypi/path.py>`_. It is expected that the three functions below are the only ones directly used. (i.e. ``Path`` or ``SwiftPath`` objects should never be explicitly instantiated).
 
 .. automodule:: storage_utils
 .. autofunction:: storage_utils.path
 .. autofunction:: storage_utils.is_posix_path
 .. autofunction:: storage_utils.is_swift_path
-
-These three functions are the only ones that should be used when constructing or checking paths. In other words, ``Path`` or ``SwiftPath`` objects should never be explicitly instantiated or used.
 
 .. NOTE::
     It's okay to repeatedly call ``path`` on any ``Path`` object since it will return itself.
