@@ -1,4 +1,3 @@
-import os
 from storage_utils import path
 from storage_utils import utils
 import unittest
