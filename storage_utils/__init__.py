@@ -1,3 +1,6 @@
+from storage_utils.utils import NamedTemporaryDirectory  # flake8: noqa
+
+
 def is_swift_path(p):
     """Determines if the path is a Swift path.
 

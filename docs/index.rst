@@ -32,4 +32,4 @@ For more detailed documentation about the various interfaces offered by Counsyl 
 
 - :ref:`path`: In depth documentation about the primary path interface.
 - :ref:`utils`: Utilities for common file system procedures.
-- :ref:`test`: Testing components for testing with swift storage.
+- :ref:`testing`: Testing components for testing with swift storage.

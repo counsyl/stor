@@ -8,6 +8,6 @@ Table of Contents
    installation
    path
    utils
-   test
+   testing
    contributing
    release_notes
