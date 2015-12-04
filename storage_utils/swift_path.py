@@ -21,7 +21,7 @@ class SwiftPath(str):
     swift_drive = 'swift://'
     default_auth_url = 'https://oak1-prd-oslb01.counsyl.com/auth/v2.0'
 
-    def __init__(self, swift_path):
+    def __init__(self, swift_path, ):
         """Validates swift path is in the proper format.
 
         Args:
@@ -82,10 +82,14 @@ class SwiftPath(str):
 
         return Path(joined_resource) if joined_resource else None
 
-    def _get_swift_connection_options(self):
+    def _get_swift_connection_options(self, **options):
         """Returns options for constructing SwiftServices and Connections.
 
-        raises:
+        Args:
+            options: Additional options that are directly passed
+                into connection options.
+
+        Raises:
             SwiftConfigurationError: The needed swift environment variables
                 aren't set.
         """
@@ -96,18 +100,18 @@ class SwiftPath(str):
                                           'environment vars must be set for '
                                           'Swift authentication')
 
-        options = dict(
-            service._default_global_options,
-            **dict(service._default_local_options, **{
-                'os_tenant_name': self.tenant,
-                'os_auth_url': os.environ.get('OS_AUTH_URL',
-                                              self.default_auth_url)
-            })
-        )
+        # Set additional options on top of what was passed in
+        options['os_tenant_name'] = self.tenant
+        options['os_auth_url'] = os.environ.get('OS_AUTH_URL',
+                                                self.default_auth_url)
+
+        # Merge options with global and local ones
+        options = dict(service._default_global_options,
+                       **dict(service._default_local_options, **options))
         service.process_options(options)
         return options
 
-    def _get_swift_service(self):
+    def _get_swift_service(self, **options):
         """Initialize a swift service based on the path.
 
         Uses the tenant name of the path and an auth url to instantiate
@@ -115,24 +119,37 @@ class SwiftPath(str):
         as the authentication url if set, otherwise the default auth
         url setting is used.
 
+        Args:
+            options: Additional options that are directly passed
+                into swift service creation.
+
         Returns:
             swiftclient.service.SwiftService: The service instance.
         """
         from swiftclient import service
 
-        return service.SwiftService(self._get_swift_connection_options())
+        conn_opts = self._get_swift_connection_options(**options)
+        return service.SwiftService(conn_opts)
 
-    def _get_swift_connection(self):
+    def _get_swift_connection(self, **options):
         """Initialize a swift client connection based on the path.
 
         The python-swiftclient package offers a couple ways to access data,
         with a raw Connection object being a lower-level interface to swift.
         For cases like reading individual objects, a raw Connection object
         is easier to utilize.
+
+        Args:
+            options: Additional options that are directly passed
+                into swift connection creation.
+
+        Returns:
+            swiftclient.client.Connection: The connection instance.
         """
         from swiftclient import service
 
-        return service.get_conn(self._get_swift_connection_options())
+        conn_opts = self._get_swift_connection_options(**options)
+        return service.get_conn(conn_opts)
 
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
@@ -262,7 +279,11 @@ class SwiftPath(str):
             if 'error' in r:
                 raise r['error']
 
-    def download(self, output_dir=None, remove_prefix=False):
+    def download(self,
+                 output_dir=None,
+                 remove_prefix=False,
+                 object_threads=10,
+                 container_threads=10):
         """Downloads a path.
 
         Args:
@@ -273,11 +294,16 @@ class SwiftPath(str):
                 swift://tenant/container/my_prefix, all results under my_prefix
                 will be downloaded without my_prefix attached to them if
                 remove_prefix is true.
+            object_threads (int): The amount of threads to use for downloading
+                objects.
+            container_threads (int): The amount of threads to use for
+                downloading containers.
 
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
         """
-        service = self._get_swift_service()
+        service = self._get_swift_service(object_dd_threads=object_threads,
+                                          container_threads=container_threads)
         results = service.download(self.container, options={
             'prefix': self.resource,
             'out_directory': output_dir,
@@ -292,7 +318,9 @@ class SwiftPath(str):
                segment_container=None,
                leave_segments=False,
                changed=False,
-               object_name=None):
+               object_name=None,
+               object_threads=10,
+               segment_threads=10):
         """Uploads a list of files and directories to swift.
 
         Note that this method uploads based on paths relative to the current
@@ -325,11 +353,16 @@ class SwiftPath(str):
             object_name (str): Upload file and name object to <object_name>.
                 If uploading dir, use <object_name> as object prefix instead
                 of the folder name.
+            object_threads (int): The number of threads to use when uploding
+                full objects.
+            segment_threads (int): The number of threads to use when uploading
+                object segments.
 
             Raises:
                 swiftclient.service.SwiftError: A swift upload failed.
         """
-        service = self._get_swift_service()
+        service = self._get_swift_service(object_uu_threads=object_threads,
+                                          segment_threads=segment_threads)
         upload_names = utils.walk_files_and_dirs(upload_names)
         results = service.upload(
             self.container, upload_names, options={

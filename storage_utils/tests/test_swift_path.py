@@ -342,7 +342,7 @@ class TestExists(SwiftTestCase):
 
 
 class TestDownload(SwiftTestCase):
-    def test_false(self):
+    def test_download(self):
         self.mock_swift.download.return_value = []
 
         swift_path = SwiftPath('swift://tenant/container')
@@ -355,10 +355,22 @@ class TestDownload(SwiftTestCase):
                 'remove_prefix': False
             })
 
+    def test_download_correct_thread_options(self):
+        self.disable_get_swift_service_mock()
+
+        swift_path = SwiftPath('swift://tenant/container/path')
+        swift_path.download(output_dir='output_dir',
+                            object_threads=20,
+                            container_threads=30)
+
+        options_passed = self.mock_swift_service.call_args[0][0]
+        self.assertEquals(options_passed['object_dd_threads'], 20)
+        self.assertEquals(options_passed['container_threads'], 30)
+
 
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
-    def test_false(self, mock_walk_files_and_dirs):
+    def test_upload(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.return_value = []
 
@@ -381,6 +393,24 @@ class TestUpload(SwiftTestCase):
                 'changed': True,
                 'object_name': 'obj_name'
             })
+
+    def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
+        self.disable_get_swift_service_mock()
+
+        swift_path = SwiftPath('swift://tenant/container/path')
+        swift_path.upload([],
+                          segment_size=1000,
+                          use_slo=True,
+                          segment_container=True,
+                          leave_segments=True,
+                          changed=True,
+                          object_name='obj_name',
+                          object_threads=20,
+                          segment_threads=30)
+
+        options_passed = self.mock_swift_service.call_args[0][0]
+        self.assertEquals(options_passed['object_uu_threads'], 20)
+        self.assertEquals(options_passed['segment_threads'], 30)
 
 
 class TestRemove(SwiftTestCase):
