@@ -49,7 +49,7 @@ def path(p):
         >>> from storage_utils import path
         >>> p = path('swift://tenant/container/object')
         >>> print type(p)
-        <class 'storage_utils.swift_path.Path'>
+        <class 'storage_utils.swift_path.SwiftPath'>
         >>> print p.exists()
         False
     """
