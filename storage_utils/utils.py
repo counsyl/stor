@@ -70,7 +70,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
     """
     tempdir = Path(tempfile.mkdtemp(suffix, prefix, dir))
     if change_dir:
-        with Path(str(tempdir)):
+        with tempdir:
             yield tempdir
     else:
         yield tempdir
