@@ -237,6 +237,26 @@ class TestList(SwiftTestCase):
                                                          'prefix': 'r/prefix'
                                                      })
 
+    def test_list_starts_with_no_resource(self):
+        self.mock_swift.list.return_value = [{
+            'container': 'container',
+            'listing': [{
+                'name': 'r1'
+            }, {
+                'name': 'r2'
+            }]
+        }]
+        swift_path = SwiftPath('swift://tenant/container')
+        results = list(swift_path.list(starts_with='prefix'))
+        self.assertEquals(results, [
+            'swift://tenant/container/r1',
+            'swift://tenant/container/r2'
+        ])
+        self.mock_swift.list.assert_called_once_with(container='container',
+                                                     options={
+                                                         'prefix': 'prefix'
+                                                     })
+
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestGlob(SwiftTestCase):

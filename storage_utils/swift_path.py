@@ -171,7 +171,15 @@ class SwiftPath(str):
         """
         service = self._get_swift_service()
         tenant = self.tenant
-        prefix = self.resource / starts_with if starts_with else self.resource
+        prefix = self.resource
+
+        # For additional starts_with parameters, treat the resource as a
+        # directory with the starts_with parameter after it. This allows
+        # the user to specify a path like tenant/container/mydir
+        # and do an additional glob on a directory-like structure
+        if starts_with:
+            prefix = prefix / starts_with if prefix else starts_with
+
         batched_results = service.list(container=self.container, options={
             'prefix': prefix
         })
