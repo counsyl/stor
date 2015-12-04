@@ -64,7 +64,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
         Name is CamelCase to match tempfile.NamedTemporaryFile.
 
     Examples:
-        >>> from storage_utils.utils import NamedTemporaryDirectory
+        >>> from storage_utils import NamedTemporaryDirectory
         >>> with NamedTemporaryDirectory() as d:
         >>>     # Do operations within "d", which will be deleted afterwards
     """
