@@ -173,8 +173,8 @@ class SwiftPath(str):
         tenant = self.tenant
         prefix = self.resource
 
-        # For additional starts_with parameters, treat the resource as a
-        # directory with the starts_with parameter after it. This allows
+        # When starts_with is provided, treat the resource as a
+        # directory that has the starts_with parameter after it. This allows
         # the user to specify a path like tenant/container/mydir
         # and do an additional glob on a directory-like structure
         if starts_with:
