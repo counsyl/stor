@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.2
+----
+
+* Added functionality to pass number of threads to upload / download
+
 v0.1
 ----
 
