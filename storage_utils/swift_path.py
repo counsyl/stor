@@ -272,7 +272,8 @@ class SwiftPath(str):
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
         """
-        return next(self.list(), None)
+        results = self.list()
+        return results[0] if results else None
 
     def exists(self):
         """Checks existence of the path.

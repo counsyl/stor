@@ -341,19 +341,19 @@ class TestGlob(SwiftTestCase):
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestFirst(SwiftTestCase):
     def test_none(self, mock_list):
-        mock_list.return_value = iter([])
+        mock_list.return_value = []
 
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.first()
         self.assertIsNone(result)
 
     def test_w_results(self, mock_list):
-        mock_list.return_value = iter([
+        mock_list.return_value = [
             SwiftPath('swift://tenant/container/path1'),
             SwiftPath('swift://tenant/container/path2'),
             SwiftPath('swift://tenant/container/path3'),
             SwiftPath('swift://tenant/container/path4'),
-        ])
+        ]
 
         swift_path = SwiftPath('swift://tenant/container/path')
         result = swift_path.first()
@@ -363,7 +363,7 @@ class TestFirst(SwiftTestCase):
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestExists(SwiftTestCase):
     def test_false(self, mock_list):
-        mock_list.return_value = iter([])
+        mock_list.return_value = []
 
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.exists()
@@ -386,12 +386,12 @@ class TestExists(SwiftTestCase):
             swift_path.exists()
 
     def test_true(self, mock_list):
-        mock_list.return_value = iter([
+        mock_list.return_value = [
             SwiftPath('swift://tenant/container/path1'),
             SwiftPath('swift://tenant/container/path2'),
             SwiftPath('swift://tenant/container/path3'),
             SwiftPath('swift://tenant/container/path4'),
-        ])
+        ]
 
         swift_path = SwiftPath('swift://tenant/container/path')
         result = swift_path.exists()
