@@ -1,9 +1,11 @@
+from storage_utils.swift_path import SwiftConditionError
 from storage_utils.swift_path import SwiftConfigurationError
 from storage_utils.swift_path import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
 import os
 from path import Path
+from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 
 
@@ -147,6 +149,17 @@ class TestOpen(SwiftTestCase):
         swift_path = SwiftPath('swift://tenant/container')
         self.assertEquals(swift_path.open().read(), 'data')
 
+    @mock.patch('time.sleep', autospec=True)
+    def test_open_success_on_second_try(self, mock_sleep):
+        self.mock_swift_conn.get_object.side_effect = [
+            ClientException('dummy', 'dummy'),
+            ('header', 'data')
+        ]
+        swift_path = SwiftPath('swift://tenant/container')
+        obj = swift_path.open()
+        self.assertEquals(obj.read(), 'data')
+        self.assertEquals(len(mock_sleep.call_args_list), 1)
+
     def test_open_invalid_mode(self):
         swift_path = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
@@ -166,6 +179,50 @@ class TestList(SwiftTestCase):
                                                      options={
                                                          'prefix': None
                                                      })
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_condition_not_met(self, mock_sleep):
+        self.mock_swift.list.return_value = [{
+            'container': 'container',
+            'listing': [{
+                'name': 'path/to/resource1'
+            }, {
+                'name': 'path/to/resource2'
+            }]
+        }]
+
+        swift_path = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(SwiftConditionError):
+            swift_path.list(num_objs_eq=3)
+
+        # Verify that list was retried at least once
+        self.assertTrue(len(self.mock_swift.list.call_args_list) > 1)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_condition_met_on_second_try(self, mock_sleep):
+        self.mock_swift.list.side_effect = [{
+            'container': 'container',
+            'listing': [{
+                'name': 'path/to/resource1'
+            }]
+        }, {
+            'container': 'container',
+            'listing': [{
+                'name': 'path/to/resource1'
+            }, {
+                'name': 'path/to/resource2'
+            }]
+        }]
+
+        swift_path = SwiftPath('swift://tenant/container/path')
+        results = list(swift_path.list(num_objs_eq=2))
+        self.assertEquals(results, [
+            'swift://tenant/container/path/to/resource1',
+            'swift://tenant/container/path/to/resource2'
+        ])
+
+        # Verify that list was retried once
+        self.assertEquals(len(self.mock_swift.list.call_args_list), 2)
 
     def test_list_resources_multiple_batches(self):
         self.mock_swift.list.return_value = [{
