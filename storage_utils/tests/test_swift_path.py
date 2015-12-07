@@ -413,6 +413,35 @@ class TestDownload(SwiftTestCase):
                 'skip_identical': True
             })
 
+    def test_download_w_identical(self):
+        # Raise a 304 to simulate the download being identical
+        self.mock_swift.download.return_value = [{
+            'error': ClientException('', http_status=304)
+        }]
+
+        swift_path = SwiftPath('swift://tenant/container')
+        swift_path.download(output_dir='output_dir')
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            options={
+                'prefix': None,
+                'out_directory': 'output_dir',
+                'remove_prefix': False,
+                'skip_identical': True
+            })
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_download_w_condition(self, mock_sleep):
+        # Simulate the condition not being met the first call
+        self.mock_swift.download.side_effect = [
+            [{}, {}],
+            [{}, {}, {}]
+        ]
+
+        swift_path = SwiftPath('swift://tenant/container')
+        swift_path.download(output_dir='output_dir', num_objs_eq=3)
+        self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
+
     def test_download_correct_thread_options(self):
         self.disable_get_swift_service_mock()
 
