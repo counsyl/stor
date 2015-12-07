@@ -1,7 +1,9 @@
+from backoff import with_backoff
 from storage_utils import utils
 import os
 from path import Path
 import cStringIO
+import swiftclient
 
 
 class SwiftConfigurationError(Exception):
@@ -9,6 +11,17 @@ class SwiftConfigurationError(Exception):
 
     Swift needs the OS_USERNAME and OS_PASSWORD env
     variables configured in order to operate.
+    """
+    pass
+
+
+class SwiftConditionError(Exception):
+    """Thrown when a swift command does not meet a condition.
+
+    Some swift commands (such as list) can have a condition
+    attached to them that will cause the command to fail if
+    the condition criteria is not met. This exception is
+    thrown in those cases.
     """
     pass
 
@@ -151,6 +164,7 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return service.get_conn(conn_opts)
 
+    @with_backoff(exceptions=swiftclient.exceptions.ClientException)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
