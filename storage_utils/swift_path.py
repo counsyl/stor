@@ -1,8 +1,8 @@
-from backoff import with_backoff
-from storage_utils import utils
+from backoff.backoff import with_backoff
+import cStringIO
 import os
 from path import Path
-import cStringIO
+from storage_utils import utils
 import swiftclient
 
 
@@ -186,13 +186,17 @@ class SwiftPath(str):
         headers, content = connection.get_object(self.container, self.resource)
         return cStringIO.StringIO(content)
 
-    def list(self, starts_with=None):
+    @with_backoff(exceptions=SwiftConditionError)
+    def list(self, starts_with=None, num_objs_eq=None):
         """List contents using the resource of the path as a prefix.
 
         Args:
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the swift path. Note that the
-                current resource path is treated as a directory.
+                current resource path is treated as a directory
+            num_objs_eq (int): If specified, this call
+                returns results only when num_objs_eq matches the number
+                of returned objects
 
         Returns:
             Generator[SwiftPath]: Every path in the listing.
@@ -215,21 +219,24 @@ class SwiftPath(str):
             'prefix': prefix
         })
 
+        batched_results = self._eval_swift_results_or_error(batched_results)
+        results = []
         for batched_result in batched_results:
-            if 'error' in batched_result:
-                raise batched_result['error']
+            # If there is no container present in the results, the object name
+            # is the container name
+            c = batched_result['container'] or ''
+            results.extend([
+                SwiftPath('swift://{}'.format(tenant)) / c / obj['name']
+                for obj in batched_result['listing']
+            ])
 
-            container = batched_result['container']
-            for obj in batched_result['listing']:
-                if container:
-                    yield SwiftPath('swift://{}/{}/{}'.format(tenant,
-                                                              container,
-                                                              obj['name']))
-                else:
-                    yield SwiftPath('swift://{}/{}'.format(tenant,
-                                                           obj['name']))
+        if num_objs_eq is not None and len(results) != num_objs_eq:
+            raise SwiftConditionError('num objects returned from list '
+                                      '!= {}'.format(num_objs_eq))
 
-    def glob(self, pattern):
+        return results
+
+    def glob(self, pattern, num_objs_eq=None):
         """Globs all objects in the path with the pattern.
 
         This glob is only compatible with patterns that end in * because of
@@ -239,6 +246,13 @@ class SwiftPath(str):
         and treats it as such. For example, if the user has a swift path of
         swift://tenant/container/my_dir (without the trailing slash), this
         method will perform a swift query with a prefix of mydir/pattern
+
+        Args:
+            pattern (str): The pattern to match. The pattern can only have
+                up to one '*' at the end.
+            num_objs_eq (int): If specified, this call
+                returns results only when num_objs_eq matches the number
+                of returned objects
 
         Returns:
             Generator[SwiftPath]: Every matching path.
@@ -253,6 +267,8 @@ class SwiftPath(str):
     def first(self):
         """Returns the first result from the list results of the path.
 
+        Note that this method does not perform any retry logic.
+
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
         """
@@ -260,7 +276,9 @@ class SwiftPath(str):
 
     def exists(self):
         """Checks existence of the path.
-        Returns True if the path exists, False otherwise.
+
+        Returns True if the path exists, False otherwise. This method
+        performs no retry logic.
 
         Returns:
             bool: True if the path exists, False otherwise.
@@ -287,17 +305,24 @@ class SwiftPath(str):
 
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
+
+        Returns:
+            list: The swift results as a list. If the swift results were
+                a single dictionary, a single-element list is returned
         """
-        results = [results] if isinstance(results, dict) else results
+        results = [results] if isinstance(results, dict) else list(results)
         for r in results:
             if 'error' in r:
                 raise r['error']
+
+        return results
 
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
                  object_threads=10,
-                 container_threads=10):
+                 container_threads=10,
+                 num_objs_eq=None):
         """Downloads a path.
 
         Args:
@@ -312,6 +337,9 @@ class SwiftPath(str):
                 objects.
             container_threads (int): The amount of threads to use for
                 downloading containers.
+            num_objs_eq (int): If specified, this call
+                returns results only when num_objs_eq matches the number
+                of downloaded objects
 
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
@@ -322,8 +350,13 @@ class SwiftPath(str):
             'prefix': self.resource,
             'out_directory': output_dir,
             'remove_prefix': remove_prefix,
+            'skip_identical': True,
         })
-        self._eval_swift_results_or_error(results)
+        results = self._eval_swift_results_or_error(results)
+
+        if num_objs_eq is not None and len(results) != num_objs_eq:
+            raise SwiftConditionError('num objects downloaded '
+                                      '!= {}'.format(num_objs_eq))
 
     def upload(self,
                upload_names,

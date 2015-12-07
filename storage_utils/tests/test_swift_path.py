@@ -352,7 +352,8 @@ class TestDownload(SwiftTestCase):
             options={
                 'prefix': None,
                 'out_directory': 'output_dir',
-                'remove_prefix': False
+                'remove_prefix': False,
+                'skip_identical': True
             })
 
     def test_download_correct_thread_options(self):
