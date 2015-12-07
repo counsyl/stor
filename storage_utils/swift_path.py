@@ -296,12 +296,14 @@ class SwiftPath(str):
                 return False
             raise
 
-    def _eval_swift_results_or_error(self, results):
+    def _eval_swift_results_or_error(self, results, ignore_codes=None):
         """Evaluate iterable results from swift or error.
 
         Args:
             results (list|dict): Results returned from a swift command
                 (such as "download" or "upload").
+            ignore_codes (list): A list of integers of http status codes
+                to ignore if they are found.
 
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
@@ -310,13 +312,15 @@ class SwiftPath(str):
             list: The swift results as a list. If the swift results were
                 a single dictionary, a single-element list is returned
         """
+        ignore_codes = ignore_codes or {}
         results = [results] if isinstance(results, dict) else list(results)
         for r in results:
-            if 'error' in r:
+            if 'error' in r and r['error'].http_status not in ignore_codes:
                 raise r['error']
 
         return results
 
+    @with_backoff(exceptions=SwiftConditionError)
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
@@ -352,7 +356,8 @@ class SwiftPath(str):
             'remove_prefix': remove_prefix,
             'skip_identical': True,
         })
-        results = self._eval_swift_results_or_error(results)
+        results = self._eval_swift_results_or_error(results,
+                                                    ignore_codes=[304])
 
         if num_objs_eq is not None and len(results) != num_objs_eq:
             raise SwiftConditionError('num objects downloaded '
