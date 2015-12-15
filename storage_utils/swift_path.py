@@ -7,7 +7,6 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 
 
-
 class SwiftConfigurationError(Exception):
     """Thrown when swift is not configured properly.
 
@@ -270,11 +269,7 @@ class SwiftPath(str):
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
         """
-        from time import time
-        st = time()
         results = self.list(limit=1)
-        et = time()
-        print 'time', et - st
         return results[0] if results else None
 
     def exists(self):
