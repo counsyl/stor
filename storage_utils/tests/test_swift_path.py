@@ -168,51 +168,44 @@ class TestOpen(SwiftTestCase):
 
 class TestList(SwiftTestCase):
     def test_error(self):
-        self.mock_swift.list.return_value = [{
-            'error': ValueError
-        }]
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = ValueError
 
         swift_path = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
             list(swift_path.list())
-        self.mock_swift.list.assert_called_once_with(container='container',
-                                                     options={
-                                                         'prefix': None
-                                                     })
+        mock_list.assert_called_once_with('container', prefix=None,
+                                          limit=None, full_listing=True)
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_condition_not_met(self, mock_sleep):
-        self.mock_swift.list.return_value = [{
-            'container': 'container',
-            'listing': [{
-                'name': 'path/to/resource1'
-            }, {
-                'name': 'path/to/resource2'
-            }]
-        }]
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }])
 
         swift_path = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(SwiftConditionError):
             swift_path.list(num_objs_eq=3)
 
         # Verify that list was retried at least once
-        self.assertTrue(len(self.mock_swift.list.call_args_list) > 1)
+        self.assertTrue(len(mock_list.call_args_list) > 1)
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_condition_met_on_second_try(self, mock_sleep):
-        self.mock_swift.list.side_effect = [{
-            'container': 'container',
-            'listing': [{
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = [
+            ({}, [{
                 'name': 'path/to/resource1'
-            }]
-        }, {
-            'container': 'container',
-            'listing': [{
+            }]),
+            ({}, [{
                 'name': 'path/to/resource1'
             }, {
                 'name': 'path/to/resource2'
-            }]
-        }]
+            }])
+        ]
 
         swift_path = SwiftPath('swift://tenant/container/path')
         results = list(swift_path.list(num_objs_eq=2))
@@ -222,24 +215,19 @@ class TestList(SwiftTestCase):
         ])
 
         # Verify that list was retried once
-        self.assertEquals(len(self.mock_swift.list.call_args_list), 2)
+        self.assertEquals(len(mock_list.call_args_list), 2)
 
-    def test_list_resources_multiple_batches(self):
-        self.mock_swift.list.return_value = [{
-            'container': 'container',
-            'listing': [{
-                'name': 'path/to/resource1'
-            }, {
-                'name': 'path/to/resource2'
-            }]
+    def test_list_multiple_return(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
         }, {
-            'container': 'container',
-            'listing': [{
-                'name': 'path/to/resource3'
-            }, {
-                'name': 'path/to/resource4'
-            }]
-        }]
+            'name': 'path/to/resource2'
+        }, {
+            'name': 'path/to/resource3'
+        }, {
+            'name': 'path/to/resource4'
+        }])
 
         swift_path = SwiftPath('swift://tenant/container/path')
         results = list(swift_path.list())
@@ -249,70 +237,79 @@ class TestList(SwiftTestCase):
             'swift://tenant/container/path/to/resource3',
             'swift://tenant/container/path/to/resource4'
         ])
-        self.mock_swift.list.assert_called_once_with(container='container',
-                                                     options={
-                                                         'prefix': 'path'
-                                                     })
+        mock_list.assert_called_once_with('container',
+                                          limit=None,
+                                          prefix='path',
+                                          full_listing=True)
+
+    def test_list_limit(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }])
+
+        swift_path = SwiftPath('swift://tenant/container/path')
+        results = list(swift_path.list(limit=1))
+        self.assertEquals(results, [
+            'swift://tenant/container/path/to/resource1'
+        ])
+        mock_list.assert_called_once_with('container',
+                                          limit=1,
+                                          prefix='path',
+                                          full_listing=False)
 
     def test_list_containers(self):
-        self.mock_swift.list.return_value = [{
-            'container': None,
-            'listing': [{
-                'name': 'container1'
-            }, {
-                'name': 'container2'
-            }]
-        }]
+        mock_list = self.mock_swift_conn.get_account
+        mock_list.return_value = ({}, [{
+            'name': 'container1'
+        }, {
+            'name': 'container2'
+        }])
         swift_path = SwiftPath('swift://tenant')
         results = list(swift_path.list())
         self.assertEquals(results, [
             'swift://tenant/container1',
             'swift://tenant/container2'
         ])
-        self.mock_swift.list.assert_called_once_with(container=None,
-                                                     options={
-                                                         'prefix': None
-                                                     })
+        mock_list.assert_called_once_with(prefix=None,
+                                          full_listing=True,
+                                          limit=None)
 
     def test_list_starts_with(self):
-        self.mock_swift.list.return_value = [{
-            'container': 'container',
-            'listing': [{
-                'name': 'r1'
-            }, {
-                'name': 'r2'
-            }]
-        }]
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'r1'
+        }, {
+            'name': 'r2'
+        }])
         swift_path = SwiftPath('swift://tenant/container/r')
         results = list(swift_path.list(starts_with='prefix'))
         self.assertEquals(results, [
             'swift://tenant/container/r1',
             'swift://tenant/container/r2'
         ])
-        self.mock_swift.list.assert_called_once_with(container='container',
-                                                     options={
-                                                         'prefix': 'r/prefix'
-                                                     })
+        mock_list.assert_called_once_with('container',
+                                          prefix='r/prefix',
+                                          limit=None,
+                                          full_listing=True)
 
     def test_list_starts_with_no_resource(self):
-        self.mock_swift.list.return_value = [{
-            'container': 'container',
-            'listing': [{
-                'name': 'r1'
-            }, {
-                'name': 'r2'
-            }]
-        }]
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'r1'
+        }, {
+            'name': 'r2'
+        }])
         swift_path = SwiftPath('swift://tenant/container')
         results = list(swift_path.list(starts_with='prefix'))
         self.assertEquals(results, [
             'swift://tenant/container/r1',
             'swift://tenant/container/r2'
         ])
-        self.mock_swift.list.assert_called_once_with(container='container',
-                                                     options={
-                                                         'prefix': 'prefix'
-                                                     })
+        mock_list.assert_called_once_with('container',
+                                          prefix='prefix',
+                                          limit=None,
+                                          full_listing=True)
 
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
@@ -368,22 +365,23 @@ class TestExists(SwiftTestCase):
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.exists()
         self.assertFalse(result)
+        mock_list.assert_called_once_with(mock.ANY, limit=1)
 
     def test_false_404(self, mock_list):
-        mock_list.side_effect = SwiftError('error',
-                                           exc=mock.Mock(http_status=404))
+        mock_list.side_effect = ClientException('fail', http_status=404)
 
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.exists()
         self.assertFalse(result)
+        mock_list.assert_called_once_with(mock.ANY, limit=1)
 
     def test_raises_on_non_404_error(self, mock_list):
-        mock_list.side_effect = SwiftError('error',
-                                           exc=mock.Mock(http_status=504))
+        mock_list.side_effect = ClientException('fail', http_status=504)
 
         swift_path = SwiftPath('swift://tenant/container')
-        with self.assertRaises(SwiftError):
+        with self.assertRaises(ClientException):
             swift_path.exists()
+        mock_list.assert_called_once_with(mock.ANY, limit=1)
 
     def test_true(self, mock_list):
         mock_list.return_value = [
@@ -396,6 +394,7 @@ class TestExists(SwiftTestCase):
         swift_path = SwiftPath('swift://tenant/container/path')
         result = swift_path.exists()
         self.assertTrue(result)
+        mock_list.assert_called_once_with(mock.ANY, limit=1)
 
 
 class TestDownload(SwiftTestCase):

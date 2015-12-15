@@ -3,7 +3,9 @@ import cStringIO
 import os
 from path import Path
 from storage_utils import utils
-import swiftclient
+from swiftclient import exceptions as swift_exceptions
+from swiftclient import service as swift_service
+
 
 
 class SwiftConfigurationError(Exception):
@@ -106,8 +108,6 @@ class SwiftPath(str):
             SwiftConfigurationError: The needed swift environment variables
                 aren't set.
         """
-        from swiftclient import service
-
         if 'OS_PASSWORD' not in os.environ or 'OS_USERNAME' not in os.environ:
             raise SwiftConfigurationError('OS_USERNAME and OS_PASSWORD '
                                           'environment vars must be set for '
@@ -119,9 +119,10 @@ class SwiftPath(str):
                                                 self.default_auth_url)
 
         # Merge options with global and local ones
-        options = dict(service._default_global_options,
-                       **dict(service._default_local_options, **options))
-        service.process_options(options)
+        options = dict(swift_service._default_global_options,
+                       **dict(swift_service._default_local_options,
+                              **options))
+        swift_service.process_options(options)
         return options
 
     def _get_swift_service(self, **options):
@@ -139,10 +140,8 @@ class SwiftPath(str):
         Returns:
             swiftclient.service.SwiftService: The service instance.
         """
-        from swiftclient import service
-
         conn_opts = self._get_swift_connection_options(**options)
-        return service.SwiftService(conn_opts)
+        return swift_service.SwiftService(conn_opts)
 
     def _get_swift_connection(self, **options):
         """Initialize a swift client connection based on the path.
@@ -159,12 +158,10 @@ class SwiftPath(str):
         Returns:
             swiftclient.client.Connection: The connection instance.
         """
-        from swiftclient import service
-
         conn_opts = self._get_swift_connection_options(**options)
-        return service.get_conn(conn_opts)
+        return swift_service.get_conn(conn_opts)
 
-    @with_backoff(exceptions=swiftclient.exceptions.ClientException)
+    @with_backoff(exceptions=swift_exceptions.ClientException)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
@@ -187,7 +184,7 @@ class SwiftPath(str):
         return cStringIO.StringIO(content)
 
     @with_backoff(exceptions=SwiftConditionError)
-    def list(self, starts_with=None, num_objs_eq=None):
+    def list(self, starts_with=None, limit=None, num_objs_eq=None):
         """List contents using the resource of the path as a prefix.
 
         Args:
@@ -204,9 +201,10 @@ class SwiftPath(str):
         Raises:
             Exception: An error was found in the returned results.
         """
-        service = self._get_swift_service()
+        connection = self._get_swift_connection()
         tenant = self.tenant
         prefix = self.resource
+        full_listing = limit is None
 
         # When starts_with is provided, treat the resource as a
         # directory that has the starts_with parameter after it. This allows
@@ -215,26 +213,26 @@ class SwiftPath(str):
         if starts_with:
             prefix = prefix / starts_with if prefix else starts_with
 
-        batched_results = service.list(container=self.container, options={
-            'prefix': prefix
-        })
+        if self.container:
+            results = connection.get_container(self.container,
+                                               full_listing=full_listing,
+                                               prefix=prefix,
+                                               limit=limit)
+        else:
+            results = connection.get_account(full_listing=full_listing,
+                                             prefix=prefix,
+                                             limit=limit)
 
-        batched_results = self._eval_swift_results_or_error(batched_results)
-        results = []
-        for batched_result in batched_results:
-            # If there is no container present in the results, the object name
-            # is the container name
-            c = batched_result['container'] or ''
-            results.extend([
-                SwiftPath('swift://{}'.format(tenant)) / c / obj['name']
-                for obj in batched_result['listing']
-            ])
+        path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
+        paths = [
+            path_pre / r['name'] for r in results[1]
+        ]
 
-        if num_objs_eq is not None and len(results) != num_objs_eq:
+        if num_objs_eq is not None and len(paths) != num_objs_eq:
             raise SwiftConditionError('num objects returned from list '
                                       '!= {}'.format(num_objs_eq))
 
-        return results
+        return paths
 
     def glob(self, pattern, num_objs_eq=None):
         """Globs all objects in the path with the pattern.
@@ -272,7 +270,11 @@ class SwiftPath(str):
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
         """
-        results = self.list()
+        from time import time
+        st = time()
+        results = self.list(limit=1)
+        et = time()
+        print 'time', et - st
         return results[0] if results else None
 
     def exists(self):
@@ -285,15 +287,14 @@ class SwiftPath(str):
             bool: True if the path exists, False otherwise.
 
         Raises:
-            swiftclient.service.SwiftError: A non-404 swift error happened.
+            swiftclient.exceptions.ClientException: A non-404 swift error
+                happened.
         """
-        from swiftclient.service import SwiftError
-
         try:
             return bool(self.first())
-        except SwiftError as e:
+        except swift_exceptions.ClientException as e:
             # Return false if the container doesnt exist
-            if e.exception.http_status == 404:
+            if e.http_status == 404:
                 return False
             raise
 
