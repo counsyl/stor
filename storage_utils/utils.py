@@ -36,7 +36,7 @@ def walk_files_and_dirs(files_and_dirs):
                         os.path.join(_dir, _f) for _f in _fs
                     ])
         else:
-            raise ValueError('file "{}" not found'.format(name))
+            raise ValueError('file "%s" not found' % name)
 
     return walked_upload_names
 

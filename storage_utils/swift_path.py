@@ -1,5 +1,6 @@
 from backoff.backoff import with_backoff
 import cStringIO
+import operator
 import os
 from path import Path
 from storage_utils import utils
@@ -27,6 +28,55 @@ class SwiftConditionError(Exception):
     pass
 
 
+class SwiftCondition(object):
+    """A condition on a swift call
+
+    SwiftCondition objects are passed to swift calls that take conditions
+    (e.g. list). A swift condition is constructed with an operator and
+    right operand of the condition, for example:
+
+        >>> cond = SwiftCondition('>=', 3)
+
+    The above makes a "greater than or equal to three" condition. The
+    ``is_met_by`` method is used to test the condition:
+
+        >>> print cond.is_met_by(3)
+        True
+        >>> print cond.is_met_by(4)
+        True
+        >>> print cond.is_met_by(2)
+        False
+
+    The operators that are supported are ``==``, ``!=``, ``<``, ``>``, ``<=``,
+    and ``>=``.
+    """
+    operators = {
+        '==': operator.eq,
+        '!=': operator.ne,
+        '<': operator.lt,
+        '>': operator.gt,
+        '<=': operator.le,
+        '>=': operator.ge
+    }
+
+    def __init__(self, operator, right_operand):
+        if operator not in self.operators:
+            raise ValueError('invalid operator: "%s"' % operator)
+        self.operator = operator
+        self.right_operand = right_operand
+
+    def is_met_by(self, left_operand):
+        """Returns True if the left operand meets the condition
+        """
+        return self.operators[self.operator](left_operand, self.right_operand)
+
+    def __str__(self):
+        return '%s %s' % (self.operator, self.right_operand)
+
+    def __repr__(self):
+        return 'SwiftCondition("%s", %s)' % (self.operator, self.right_operand)
+
+
 class SwiftPath(str):
     """
     Provides the ability to manipulate and access resources on swift
@@ -44,11 +94,11 @@ class SwiftPath(str):
                 The "swift://" prefix is required in the path.
         """
         if not swift_path.startswith(self.swift_drive):
-            raise ValueError('path must have {}'.format(self.swift_drive))
+            raise ValueError('path must have %s' % self.swift_drive)
         return super(SwiftPath, self).__init__(swift_path)
 
     def __repr__(self):
-        return 'SwiftPath("{}")'.format(self)
+        return 'SwiftPath("%s")' % self
 
     def __add__(self, more):
         return SwiftPath(super(SwiftPath, self).__add__(more))
@@ -183,22 +233,25 @@ class SwiftPath(str):
         return cStringIO.StringIO(content)
 
     @with_backoff(exceptions=SwiftConditionError)
-    def list(self, starts_with=None, limit=None, num_objs_eq=None):
+    def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
         Args:
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the swift path. Note that the
                 current resource path is treated as a directory
-            num_objs_eq (int): If specified, this call
-                returns results only when num_objs_eq matches the number
-                of returned objects
+            limit (int): Limit the amount of results returned
+            num_objs_cond (SwiftCondition): The method will only return
+                results when the number of objects returned meets this
+                condition.
 
         Returns:
-            Generator[SwiftPath]: Every path in the listing.
+            List[SwiftPath]: Every path in the listing.
 
         Raises:
             Exception: An error was found in the returned results.
+            SwiftConditionError: Results were returned, but they did not
+                meet the num_objs_cond condition.
         """
         connection = self._get_swift_connection()
         tenant = self.tenant
@@ -227,13 +280,13 @@ class SwiftPath(str):
             path_pre / r['name'] for r in results[1]
         ]
 
-        if num_objs_eq is not None and len(paths) != num_objs_eq:
-            raise SwiftConditionError('num objects returned from list '
-                                      '!= {}'.format(num_objs_eq))
+        if num_objs_cond and not num_objs_cond.is_met_by(len(paths)):
+            raise SwiftConditionError('swift condition not met: '
+                                      'num listed objects %s' % num_objs_cond)
 
         return paths
 
-    def glob(self, pattern, num_objs_eq=None):
+    def glob(self, pattern, num_objs_cond=None):
         """Globs all objects in the path with the pattern.
 
         This glob is only compatible with patterns that end in * because of
@@ -247,19 +300,25 @@ class SwiftPath(str):
         Args:
             pattern (str): The pattern to match. The pattern can only have
                 up to one '*' at the end.
-            num_objs_eq (int): If specified, this call
-                returns results only when num_objs_eq matches the number
-                of returned objects
+            num_objs_cond (SwiftCondition): The method will only return
+                results when the number of objects returned meets this
+                condition.
 
         Returns:
-            Generator[SwiftPath]: Every matching path.
+            List[SwiftPath]: Every matching path.
+
+        Raises:
+            Exception: An error was found in the returned results.
+            SwiftConditionError: Results were returned, but they did not
+                meet the num_objs_cond condition.
         """
         if pattern.count('*') > 1:
             raise ValueError('multiple pattern globs not supported')
         if '*' in pattern and not pattern.endswith('*'):
             raise ValueError('only prefix queries are supported')
 
-        return self.list(starts_with=pattern.replace('*', ''))
+        return self.list(starts_with=pattern.replace('*', ''),
+                         num_objs_cond=num_objs_cond)
 
     def first(self):
         """Returns the first result from the list results of the path.
@@ -325,7 +384,7 @@ class SwiftPath(str):
                  remove_prefix=False,
                  object_threads=10,
                  container_threads=10,
-                 num_objs_eq=None):
+                 num_objs_cond=None):
         """Downloads a path.
 
         Args:
@@ -340,12 +399,14 @@ class SwiftPath(str):
                 objects.
             container_threads (int): The amount of threads to use for
                 downloading containers.
-            num_objs_eq (int): If specified, this call
-                returns results only when num_objs_eq matches the number
-                of downloaded objects
+            num_objs_cond (SwiftCondition): The method will only return
+                results when the number of objects downloaded meets this
+                condition. Partially downloaded results will not be deleted.
 
         Raises:
             swiftclient.service.SwiftError: A swift error happened.
+            SwiftConditionError: Results were returned, but they did not
+                meet the num_objs_cond condition.
         """
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
@@ -358,9 +419,9 @@ class SwiftPath(str):
         results = self._eval_swift_results_or_error(results,
                                                     ignore_http_codes=[304])
 
-        if num_objs_eq is not None and len(results) != num_objs_eq:
-            raise SwiftConditionError('num objects downloaded '
-                                      '!= {}'.format(num_objs_eq))
+        if num_objs_cond and not num_objs_cond.is_met_by(len(results)):
+            raise SwiftConditionError('swift condition not met: num '
+                                      'downloaded objects %s' % num_objs_cond)
 
     def upload(self,
                upload_names,
@@ -378,7 +439,8 @@ class SwiftPath(str):
         directory. In order to load files relative to a target directory,
         use path as a context manager to change the directory.
 
-        For example:
+        For example::
+
             with path('/path/to/upload/dir'):
                 path('swift://tenant/container').upload(['.'])
 

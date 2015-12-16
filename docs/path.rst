@@ -29,8 +29,9 @@ By using the ``path`` factory function, users can write code that is portable ac
 
 SwiftPath
 ---------
-``SwiftPath`` objects returned from the ``path`` factory partially support the common path methods listed above along with supporting the basic path manipulation methods (e.g. 'my' / 'path' == 'my/path').
+``SwiftPath`` objects returned from the ``path`` factory partially support the common path methods listed above along with supporting the basic path manipulation methods (e.g. 'my' / 'path' == 'my/path'). Below is the full documentation for the ``SwiftPath`` class and the ``SwiftCondition`` object that can be passed to some methods.
 
 .. automodule:: storage_utils.swift_path 
 .. autoclass:: storage_utils.swift_path.SwiftPath
     :members:
+.. autoclass:: storage_utils.swift_path.SwiftCondition

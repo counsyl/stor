@@ -1,3 +1,4 @@
+from storage_utils.swift_path import SwiftCondition
 from storage_utils.swift_path import SwiftConditionError
 from storage_utils.swift_path import SwiftConfigurationError
 from storage_utils.swift_path import SwiftPath
@@ -7,6 +8,51 @@ import os
 from path import Path
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
+import unittest
+
+
+class TestSwiftCondition(unittest.TestCase):
+    def test_invalid_condition(self):
+        with self.assertRaises(ValueError):
+            SwiftCondition('bad_cond', 3)
+
+    def test_eq_cond(self):
+        eq3 = SwiftCondition('==', 3)
+        self.assertTrue(eq3.is_met_by(3))
+        self.assertFalse(eq3.is_met_by(4))
+
+    def test_ne_cond(self):
+        ne3 = SwiftCondition('!=', 3)
+        self.assertFalse(ne3.is_met_by(3))
+        self.assertTrue(ne3.is_met_by(4))
+
+    def test_gt_cond(self):
+        gt3 = SwiftCondition('>', 3)
+        self.assertTrue(gt3.is_met_by(4))
+        self.assertFalse(gt3.is_met_by(3))
+
+    def test_ge_cond(self):
+        ge3 = SwiftCondition('>=', 3)
+        self.assertTrue(ge3.is_met_by(4))
+        self.assertTrue(ge3.is_met_by(3))
+        self.assertFalse(ge3.is_met_by(2))
+
+    def test_lt_cond(self):
+        lt3 = SwiftCondition('<', 3)
+        self.assertTrue(lt3.is_met_by(2))
+        self.assertFalse(lt3.is_met_by(3))
+
+    def test_le_cond(self):
+        le3 = SwiftCondition('<=', 3)
+        self.assertTrue(le3.is_met_by(2))
+        self.assertTrue(le3.is_met_by(3))
+        self.assertFalse(le3.is_met_by(4))
+
+    def test_repr(self):
+        cond = SwiftCondition('<=', 3)
+        evaled_repr = eval(repr(cond))
+        self.assertEquals(cond.operator, evaled_repr.operator)
+        self.assertEquals(cond.right_operand, evaled_repr.right_operand)
 
 
 class TestNew(SwiftTestCase):
@@ -188,7 +234,7 @@ class TestList(SwiftTestCase):
 
         swift_path = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(SwiftConditionError):
-            swift_path.list(num_objs_eq=3)
+            swift_path.list(num_objs_cond=SwiftCondition('==', 3))
 
         # Verify that list was retried at least once
         self.assertTrue(len(mock_list.call_args_list) > 1)
@@ -208,7 +254,7 @@ class TestList(SwiftTestCase):
         ]
 
         swift_path = SwiftPath('swift://tenant/container/path')
-        results = list(swift_path.list(num_objs_eq=2))
+        results = list(swift_path.list(num_objs_cond=SwiftCondition('>', 1)))
         self.assertEquals(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2'
@@ -317,22 +363,24 @@ class TestGlob(SwiftTestCase):
     def test_valid_pattern(self, mock_list):
         swift_path = SwiftPath('swift://tenant/container')
         swift_path.glob('pattern*')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
+                                          num_objs_cond=None)
 
     def test_valid_pattern_wo_wildcard(self, mock_list):
         swift_path = SwiftPath('swift://tenant/container')
         swift_path.glob('pattern')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
+                                          num_objs_cond=None)
 
     def test_multi_glob_pattern(self, mock_list):
         swift_path = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift_path.glob('*invalid_pattern*')
+            swift_path.glob('*invalid_pattern*', num_objs_cond=None)
 
     def test_invalid_glob_pattern(self, mock_list):
         swift_path = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift_path.glob('invalid_*pattern')
+            swift_path.glob('invalid_*pattern', num_objs_cond=None)
 
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
@@ -438,7 +486,8 @@ class TestDownload(SwiftTestCase):
         ]
 
         swift_path = SwiftPath('swift://tenant/container')
-        swift_path.download(output_dir='output_dir', num_objs_eq=3)
+        swift_path.download(output_dir='output_dir',
+                            num_objs_cond=SwiftCondition('==', 3))
         self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
 
     def test_download_correct_thread_options(self):
