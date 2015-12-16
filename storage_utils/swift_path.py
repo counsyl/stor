@@ -47,6 +47,20 @@ class SwiftPath(str):
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
 
+    @property
+    def name(self):
+        return Path(self).name
+
+    @property
+    def parent(self):
+        return self.__class__(Path(self).parent)
+
+    def dirname(self):
+        return self.__class__(Path(self).dirname())
+
+    def basename(self):
+        return Path(self).basename()
+
     def get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings.
         """

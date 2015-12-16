@@ -454,3 +454,23 @@ class TestPost(SwiftTestCase):
 
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)
+
+
+class TestMigratedPathCalls(SwiftTestCase):
+    """Tests calls migrated directly from the path.py library
+    """
+    def test_name(self):
+        p = SwiftPath('swift://t/c/resource/name')
+        self.assertEquals(p.name, 'name')
+
+    def test_parent(self):
+        p = SwiftPath('swift://t/c/resource/name')
+        self.assertEquals(p.parent, SwiftPath('swift://t/c/resource'))
+
+    def test_dirname(self):
+        p = SwiftPath('swift://t/c/resource/name')
+        self.assertEquals(p.dirname(), SwiftPath('swift://t/c/resource'))
+
+    def test_basename(self):
+        p = SwiftPath('swift://t/c/resource/name')
+        self.assertEquals(p.basename(), 'name')
