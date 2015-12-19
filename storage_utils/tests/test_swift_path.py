@@ -240,6 +240,33 @@ class TestList(SwiftTestCase):
         self.assertTrue(len(mock_list.call_args_list) > 1)
 
     @mock.patch('time.sleep', autospec=True)
+    def test_list_condition_not_met_custom_retry_logic(self, mock_sleep):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }])
+
+        swift_path = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(SwiftConditionError):
+            swift_path.list(
+                num_objs_cond=SwiftCondition('==', 3),
+                num_retries=5,
+                initial_retry_sleep=100,
+                retry_sleep_function=lambda t, attempt: t + 1)
+
+        # Verify the dynamic retry
+        self.assertTrue(len(mock_list.call_args_list), 5)
+        self.assertEquals(mock_sleep.call_args_list, [
+            mock.call(100),
+            mock.call(101),
+            mock.call(102),
+            mock.call(103),
+            mock.call(104)
+        ])
+
+    @mock.patch('time.sleep', autospec=True)
     def test_list_condition_met_on_second_try(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = [

@@ -1,11 +1,33 @@
 from backoff.backoff import with_backoff
 import cStringIO
+from functools import wraps
 import operator
 import os
 from path import Path
+import storage_utils
 from storage_utils import utils
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
+
+
+def with_swift_retry(exceptions=None):
+    def decorated(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            retries = kwargs.pop('num_retries',
+                                 storage_utils.num_retries)
+            initial_sleep = kwargs.pop('initial_retry_sleep',
+                                       storage_utils.initial_retry_sleep)
+            sleep_function = kwargs.pop('retry_sleep_function',
+                                        storage_utils.retry_sleep_function)
+
+            return with_backoff(func,
+                                exceptions=exceptions,
+                                sleep_function=sleep_function,
+                                retries=retries,
+                                initial_sleep=initial_sleep)(*args, **kwargs)
+        return wrapper
+    return decorated
 
 
 class SwiftConfigurationError(Exception):
@@ -210,7 +232,7 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return swift_service.get_conn(conn_opts)
 
-    @with_backoff(exceptions=swift_exceptions.ClientException)
+    @with_swift_retry(exceptions=swift_exceptions.ClientException)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
@@ -232,7 +254,7 @@ class SwiftPath(str):
         headers, content = connection.get_object(self.container, self.resource)
         return cStringIO.StringIO(content)
 
-    @with_backoff(exceptions=SwiftConditionError)
+    @with_swift_retry(exceptions=SwiftConditionError)
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
@@ -378,7 +400,7 @@ class SwiftPath(str):
 
         return results
 
-    @with_backoff(exceptions=SwiftConditionError)
+    @with_swift_retry(exceptions=SwiftConditionError)
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
