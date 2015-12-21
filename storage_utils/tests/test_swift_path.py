@@ -1,6 +1,8 @@
+from storage_utils.swift_path import SwiftClientError
 from storage_utils.swift_path import SwiftCondition
 from storage_utils.swift_path import SwiftConditionError
 from storage_utils.swift_path import SwiftConfigurationError
+from storage_utils.swift_path import SwiftNotFoundError
 from storage_utils.swift_path import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
@@ -202,7 +204,10 @@ class TestOpen(SwiftTestCase):
             ('header', 'data')
         ]
         swift_path = SwiftPath('swift://tenant/container')
+        print 'opening'
+        # print 'results', swift_path.open()
         obj = swift_path.open()
+        print 'opened obj', obj
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
@@ -443,7 +448,7 @@ class TestExists(SwiftTestCase):
         mock_list.assert_called_once_with(mock.ANY, limit=1)
 
     def test_false_404(self, mock_list):
-        mock_list.side_effect = ClientException('fail', http_status=404)
+        mock_list.side_effect = SwiftNotFoundError('not found')
 
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.exists()
@@ -587,7 +592,7 @@ class TestRemove(SwiftTestCase):
             'error': SwiftError('error')
         }
         swift_path = SwiftPath('swift://tenant/container/r')
-        with self.assertRaises(SwiftError):
+        with self.assertRaises(SwiftClientError):
             swift_path.remove()
 
         self.mock_swift.delete.assert_called_once_with('container', ['r'])

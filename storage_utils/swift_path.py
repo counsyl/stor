@@ -10,7 +10,7 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 
 
-def with_swift_retry(exceptions=None):
+def swift_retry(exceptions=None):
     def decorated(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -30,7 +30,59 @@ def with_swift_retry(exceptions=None):
     return decorated
 
 
-class SwiftConfigurationError(Exception):
+def swift_propagate_exceptions(func):
+    """Bubbles all swift exceptions as SwiftClientErrors
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except (swift_service.SwiftError,
+                swift_exceptions.ClientException) as e:
+            client_exception = getattr(e, 'exception', e)
+
+            # If a client exception was thrown, check status
+            # codes and raise specific errors. Otherwise,
+            # raise the generic SwiftClientException error
+            http_status = getattr(client_exception, 'http_status', None)
+            if http_status == 404:
+                raise SwiftNotFoundError(str(e), e)
+            elif http_status == 409:
+                raise SwiftConflictError(str(e), e)
+            else:
+                raise SwiftClientError(str(e), e)
+
+    return wrapper
+
+
+class SwiftClientError(Exception):
+    """The top-level exception thrown for any swift errors
+    """
+    def __init__(self, message, caught_exception=None):
+        super(SwiftClientError, self).__init__(message)
+        self.caught_exception = caught_exception
+
+
+class SwiftNotFoundError(SwiftClientError):
+    """Thrown when a 404 response is returned from swift
+    """
+    pass
+
+
+class SwiftConflictError(SwiftClientError):
+    """Thrown when a conflict happens in swift due to
+    consistency checks.
+
+    For example, when deleting a container, some swift
+    storage nodes may report that files are still stored
+    in a container before the next consistency cycle
+    occurs. For the majority of conflict errors, it is
+    recommended to wait and try again.
+    """
+    pass
+
+
+class SwiftConfigurationError(SwiftClientError):
     """Thrown when swift is not configured properly.
 
     Swift needs the OS_USERNAME and OS_PASSWORD env
@@ -39,7 +91,7 @@ class SwiftConfigurationError(Exception):
     pass
 
 
-class SwiftConditionError(Exception):
+class SwiftConditionError(SwiftClientError):
     """Thrown when a swift command does not meet a condition.
 
     Some swift commands (such as list) can have a condition
@@ -105,7 +157,7 @@ class SwiftPath(str):
     with a similar interface to the path library.
     """
     swift_drive = 'swift://'
-    default_auth_url = 'https://oak1-prd-oslb01.counsyl.com/auth/v2.0'
+    default_auth_url = 'http://sfo1-prd-osn01.counsyl.com/auth/v2.0'
 
     def __init__(self, swift_path):
         """Validates swift path is in the proper format.
@@ -232,7 +284,28 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return swift_service.get_conn(conn_opts)
 
-    @with_swift_retry(exceptions=swift_exceptions.ClientException)
+    @swift_propagate_exceptions
+    def _swift_connection_call(self, method, *args, **kwargs):
+        """Runs a method call on a Connection object.
+        """
+        return method(*args, **kwargs)
+
+    @swift_propagate_exceptions
+    def _swift_service_call(self, method, *args, **kwargs):
+        """Runs a method call on a SwiftService object.
+        """
+        results = method(*args, **kwargs)
+
+        results = [results] if isinstance(results, dict) else list(results)
+        for r in results:
+            if 'error' in r:
+                http_status = getattr(r['error'], 'http_status', None)
+                if not http_status or http_status >= 400:
+                    raise r['error']
+
+        return results
+
+    @swift_retry(exceptions=SwiftClientError)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
@@ -251,10 +324,12 @@ class SwiftPath(str):
             raise ValueError('only read-only mode ("r" and "rb") is supported')
 
         connection = self._get_swift_connection()
-        headers, content = connection.get_object(self.container, self.resource)
+        headers, content = self._swift_connection_call(connection.get_object,
+                                                       self.container,
+                                                       self.resource)
         return cStringIO.StringIO(content)
 
-    @with_swift_retry(exceptions=SwiftConditionError)
+    @swift_retry(exceptions=SwiftConditionError)
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
@@ -288,14 +363,16 @@ class SwiftPath(str):
             prefix = prefix / starts_with if prefix else starts_with
 
         if self.container:
-            results = connection.get_container(self.container,
-                                               full_listing=full_listing,
-                                               prefix=prefix,
-                                               limit=limit)
+            results = self._swift_connection_call(connection.get_container,
+                                                  self.container,
+                                                  full_listing=full_listing,
+                                                  prefix=prefix,
+                                                  limit=limit)
         else:
-            results = connection.get_account(full_listing=full_listing,
-                                             prefix=prefix,
-                                             limit=limit)
+            results = self._swift_connection_call(connection.get_account,
+                                                  full_listing=full_listing,
+                                                  prefix=prefix,
+                                                  limit=limit)
 
         path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
         paths = [
@@ -368,39 +445,10 @@ class SwiftPath(str):
         """
         try:
             return bool(self.first())
-        except swift_exceptions.ClientException as e:
-            # Return false if the container doesnt exist
-            if e.http_status == 404:
-                return False
-            raise
+        except SwiftNotFoundError:
+            return False
 
-    def _eval_swift_results_or_error(self, results, ignore_http_codes=None):
-        """Evaluate iterable results from swift or error.
-
-        Args:
-            results (list|dict): Results returned from a swift command
-                (such as "download" or "upload").
-            ignore_http_codes (list): A list of integers of http status codes
-                to ignore if they are found.
-
-        Raises:
-            swiftclient.service.SwiftError: A swift error happened.
-
-        Returns:
-            list: The swift results as a list. If the swift results were
-                a single dictionary, a single-element list is returned
-        """
-        ignore_http_codes = ignore_http_codes or {}
-        results = [results] if isinstance(results, dict) else list(results)
-        for r in results:
-            if 'error' in r:
-                http_status = getattr(r['error'], 'http_status', None)
-                if http_status not in ignore_http_codes:
-                    raise r['error']
-
-        return results
-
-    @with_swift_retry(exceptions=SwiftConditionError)
+    @swift_retry(exceptions=SwiftConditionError)
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
@@ -432,14 +480,15 @@ class SwiftPath(str):
         """
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
-        results = service.download(self.container, options={
+        download_options = {
             'prefix': self.resource,
             'out_directory': output_dir,
             'remove_prefix': remove_prefix,
             'skip_identical': True,
-        })
-        results = self._eval_swift_results_or_error(results,
-                                                    ignore_http_codes=[304])
+        }
+        results = self._swift_service_call(service.download,
+                                           self.container,
+                                           options=download_options)
 
         if num_objs_cond and not num_objs_cond.is_met_by(len(results)):
             raise SwiftConditionError('swift condition not met: num '
@@ -483,12 +532,12 @@ class SwiftPath(str):
                 <container> listings.
             leave_segments (bool): Indicates that you want the older segments
                 of manifest objects left alone (in the case of overwrites).
-            changed (bool): Only upload files that have changed since the last
+            changed (bool): Upload only files that have changed since last
                 upload.
             object_name (str): Upload file and name object to <object_name>.
                 If uploading dir, use <object_name> as object prefix instead
                 of the folder name.
-            object_threads (int): The number of threads to use when uploding
+            object_threads (int): The number of threads to use when uploading
                 full objects.
             segment_threads (int): The number of threads to use when uploading
                 object segments.
@@ -499,16 +548,18 @@ class SwiftPath(str):
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
         upload_names = utils.walk_files_and_dirs(upload_names)
-        results = service.upload(
-            self.container, upload_names, options={
-                'segment_size': segment_size,
-                'use_slo': use_slo,
-                'segment_container': segment_container,
-                'leave_segments': leave_segments,
-                'changed': changed,
-                'object_name': object_name
-            })
-        self._eval_swift_results_or_error(results)
+        upload_options = {
+            'segment_size': segment_size,
+            'use_slo': use_slo,
+            'segment_container': segment_container,
+            'leave_segments': leave_segments,
+            'changed': True,
+            'object_name': object_name
+        }
+        return self._swift_service_call(service.upload,
+                                        self.container,
+                                        upload_names,
+                                        options=upload_options)
 
     def remove(self):
         """Removes a single object.
@@ -522,8 +573,9 @@ class SwiftPath(str):
                              'remove')
 
         service = self._get_swift_service()
-        results = service.delete(self.container, [self.resource])
-        self._eval_swift_results_or_error(results)
+        return self._swift_service_call(service.delete,
+                                        self.container,
+                                        [self.resource])
 
     def rmtree(self):
         """Removes a resource and all of its contents.
@@ -533,11 +585,13 @@ class SwiftPath(str):
         """
         service = self._get_swift_service()
         if not self.resource:
-            results = service.delete(self.container)
+            return self._swift_service_call(service.delete,
+                                            self.container)
         else:
             to_delete = [p.resource for p in self.list()]
-            results = service.delete(self.container, to_delete)
-        self._eval_swift_results_or_error(results)
+            return self._swift_service_call(service.delete,
+                                            self.container,
+                                            to_delete)
 
     def post(self, options=None):
         """Post operations on the path.
@@ -565,5 +619,6 @@ class SwiftPath(str):
             raise ValueError('post only works on container paths')
 
         service = self._get_swift_service()
-        results = service.post(container=self.container, options=options)
-        self._eval_swift_results_or_error(results)
+        return self._swift_service_call(service.post,
+                                        container=self.container,
+                                        options=options)
