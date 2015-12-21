@@ -2,7 +2,6 @@ from storage_utils.swift_path import SwiftClientError
 from storage_utils.swift_path import SwiftCondition
 from storage_utils.swift_path import SwiftConditionError
 from storage_utils.swift_path import SwiftConfigurationError
-from storage_utils.swift_path import SwiftNotFoundError
 from storage_utils.swift_path import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
@@ -437,44 +436,54 @@ class TestFirst(SwiftTestCase):
         self.assertEquals(result, 'swift://tenant/container/path1')
 
 
-@mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestExists(SwiftTestCase):
-    def test_false(self, mock_list):
-        mock_list.return_value = []
+    def test_false(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [])
 
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.exists()
         self.assertFalse(result)
-        mock_list.assert_called_once_with(mock.ANY, limit=1)
+        mock_list.assert_called_once_with('container', full_listing=False,
+                                          limit=1, prefix=None)
 
-    def test_false_404(self, mock_list):
-        mock_list.side_effect = SwiftNotFoundError('not found')
+    def test_false_404(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = ClientException('not found', http_status=404)
 
         swift_path = SwiftPath('swift://tenant/container')
         result = swift_path.exists()
         self.assertFalse(result)
-        mock_list.assert_called_once_with(mock.ANY, limit=1)
+        mock_list.assert_called_once_with('container', full_listing=False,
+                                          limit=1, prefix=None)
 
-    def test_raises_on_non_404_error(self, mock_list):
+    def test_raises_on_non_404_error(self):
+        mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('fail', http_status=504)
 
         swift_path = SwiftPath('swift://tenant/container')
-        with self.assertRaises(ClientException):
+        with self.assertRaises(SwiftClientError):
             swift_path.exists()
-        mock_list.assert_called_once_with(mock.ANY, limit=1)
+        mock_list.assert_called_once_with('container', full_listing=False,
+                                          limit=1, prefix=None)
 
-    def test_true(self, mock_list):
-        mock_list.return_value = [
-            SwiftPath('swift://tenant/container/path1'),
-            SwiftPath('swift://tenant/container/path2'),
-            SwiftPath('swift://tenant/container/path3'),
-            SwiftPath('swift://tenant/container/path4'),
-        ]
+    def test_true(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path1'
+        }, {
+            'name': 'path2'
+        }, {
+            'name': 'path3'
+        }, {
+            'name': 'path4'
+        }])
 
         swift_path = SwiftPath('swift://tenant/container/path')
         result = swift_path.exists()
         self.assertTrue(result)
-        mock_list.assert_called_once_with(mock.ANY, limit=1)
+        mock_list.assert_called_once_with('container', full_listing=False,
+                                          limit=1, prefix='path')
 
 
 class TestDownload(SwiftTestCase):

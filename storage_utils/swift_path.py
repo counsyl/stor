@@ -47,8 +47,6 @@ def swift_propagate_exceptions(func):
             http_status = getattr(client_exception, 'http_status', None)
             if http_status == 404:
                 raise SwiftNotFoundError(str(e), e)
-            elif http_status == 409:
-                raise SwiftConflictError(str(e), e)
             else:
                 raise SwiftClientError(str(e), e)
 
@@ -65,19 +63,6 @@ class SwiftClientError(Exception):
 
 class SwiftNotFoundError(SwiftClientError):
     """Thrown when a 404 response is returned from swift
-    """
-    pass
-
-
-class SwiftConflictError(SwiftClientError):
-    """Thrown when a conflict happens in swift due to
-    consistency checks.
-
-    For example, when deleting a container, some swift
-    storage nodes may report that files are still stored
-    in a container before the next consistency cycle
-    occurs. For the majority of conflict errors, it is
-    recommended to wait and try again.
     """
     pass
 
