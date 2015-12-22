@@ -35,7 +35,7 @@ develop: venv
 	$(WITH_VENV) python setup.py develop
 
 .PHONY: docs
-docs: venv
+docs: venv clean-docs
 	$(WITH_VENV) cd docs && make html
 	
 

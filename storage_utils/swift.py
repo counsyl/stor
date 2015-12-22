@@ -1,3 +1,44 @@
+"""
+Provides utilities for accessing swift object storage.
+
+Swift can be configured with module-wide settings in the following
+manner
+
+    >>> from storage_utils import swift
+    >>> swift.setting_name = 'setting'
+
+The different module settings options are the following:
+
+    - initial_retry_sleep (int): The amount of time (in seconds)
+      for sleeping when retrying a swift call.
+      num_retries (int): The amount of times to retry a failed
+      swift call.
+
+    - retry_sleep_function (function): The function that determines
+      how long to sleep when retrying a swift call. The function
+      takes the time passed so far and the attempt number as
+      arguments.
+
+    - auth_url (str): The swift auth url to use for authentication. If not
+      set, the ``OS_AUTH_URL`` environment variable will be used. If
+      that is not set, the ``DEFAULT_AUTH_URL`` global constant will
+      be used.
+
+    - username (str): The swift username to use for authentication. If not
+      set, the ``OS_USERNAME`` environment variable will be used.
+
+    - password (str): The swift password to use for authentication. If not
+      set, the ``OS_PASSWORD`` environment variable will be used.
+
+Examples:
+
+    Basic usage of swift is shown in the following with an example of how
+    to download a swift path to the current working directory.
+
+    >>> from storage_utils import swift
+    >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
+    >>> swift_path.download()
+"""
 from backoff.backoff import with_backoff
 import cStringIO
 from functools import wraps
@@ -326,9 +367,22 @@ class SwiftPath(str):
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
+        This method is configured by default to retry if the object
+        does not exist based on the module-level swift retry settings.
+        These settings can be overridden on the module or passed in
+        as the num_retries, initial_sleep, and sleep_function arguments.
+
         Args:
             mode (str): The mode of file IO. Reading is the only supported
                 mode.
+            num_retries (int): The number of times to retry if a 404
+                is encountered when opening the resource.
+            initial_sleep (int): The initial amount of time to sleep if
+                a retry is needed to open the resource.
+            sleep_function (function): The sleep function to use when
+                calculating time between retries. The first argument
+                is the amount of time passed and the second argument is
+                the retry number.
 
         Returns:
             cStringIO: The contents of the object.
@@ -349,6 +403,11 @@ class SwiftPath(str):
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
+        This method is configured by default to retry if num_objs_cond
+        is not met based on the module-level swift retry settings.
+        These settings can be overridden on the module or passed in
+        as the num_retries, initial_sleep, and sleep_function arguments.
+
         Args:
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the swift path. Note that the
@@ -357,6 +416,14 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects returned meets this
                 condition.
+            num_retries (int): The number of times to retry if the
+                num_objs_cond is not met.
+            initial_sleep (int): The initial amount of time to sleep if
+                the num_objs_cond is not met.
+            sleep_function (function): The sleep function to use when
+                calculating time between retries. The first argument
+                is the amount of time passed and the second argument is
+                the retry number.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -410,7 +477,12 @@ class SwiftPath(str):
         Note that this method assumes the current resource is a directory path
         and treats it as such. For example, if the user has a swift path of
         swift://tenant/container/my_dir (without the trailing slash), this
-        method will perform a swift query with a prefix of mydir/pattern
+        method will perform a swift query with a prefix of mydir/pattern.
+
+        This method is configured by default to retry if num_objs_cond
+        is not met based on the module-level swift retry settings.
+        These settings can be overridden on the module or passed in
+        as the num_retries, initial_sleep, and sleep_function arguments.
 
         Args:
             pattern (str): The pattern to match. The pattern can only have
@@ -418,6 +490,14 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects returned meets this
                 condition.
+            num_retries (int): The number of times to retry if the
+                num_objs_cond is not met.
+            initial_sleep (int): The initial amount of time to sleep if
+                the num_objs_cond is not met.
+            sleep_function (function): The sleep function to use when
+                calculating time between retries. The first argument
+                is the amount of time passed and the second argument is
+                the retry number.
 
         Returns:
             List[SwiftPath]: Every matching path.
@@ -472,6 +552,11 @@ class SwiftPath(str):
                  num_objs_cond=None):
         """Downloads a path.
 
+        This method is configured by default to retry if num_objs_cond
+        is not met based on the module-level swift retry settings.
+        These settings can be overridden on the module or passed in
+        as the num_retries, initial_sleep, and sleep_function arguments.
+
         Args:
             output_dir (str): The output directory to download results to.
                 If None, results are downloaded to the working directory.
@@ -487,6 +572,14 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects downloaded meets this
                 condition. Partially downloaded results will not be deleted.
+            num_retries (int): The number of times to retry if the
+                num_objs_cond is not met.
+            initial_sleep (int): The initial amount of time to sleep if
+                the num_objs_cond is not met.
+            sleep_function (function): The sleep function to use when
+                calculating time between retries. The first argument
+                is the amount of time passed and the second argument is
+                the retry number.
 
         Raises:
             SwiftClientError: A swift client error occurred.
