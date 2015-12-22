@@ -1,7 +1,5 @@
-from storage_utils.swift import SwiftClientError
+from storage_utils import swift
 from storage_utils.swift import SwiftCondition
-from storage_utils.swift import SwiftConditionError
-from storage_utils.swift import SwiftConfigurationError
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
@@ -62,78 +60,78 @@ class TestNew(SwiftTestCase):
             SwiftPath('/bad/swift/path')
 
     def test_successful_new(self):
-        swift = SwiftPath('swift://tenant/container/path')
-        self.assertEquals(swift, 'swift://tenant/container/path')
+        swift_p = SwiftPath('swift://tenant/container/path')
+        self.assertEquals(swift_p, 'swift://tenant/container/path')
 
 
 class TestRepr(SwiftTestCase):
     def test_repr(self):
-        swift = SwiftPath('swift://t/c/p')
-        self.assertEquals(eval(repr(swift)), swift)
+        swift_p = SwiftPath('swift://t/c/p')
+        self.assertEquals(eval(repr(swift_p)), swift_p)
 
 
 class TestPathManipulations(SwiftTestCase):
     def test_add(self):
-        swift = SwiftPath('swift://a')
-        swift = swift + 'b' + Path('c')
-        self.assertTrue(isinstance(swift, SwiftPath))
-        self.assertEquals(swift, 'swift://abc')
+        swift_p = SwiftPath('swift://a')
+        swift_p = swift_p + 'b' + Path('c')
+        self.assertTrue(isinstance(swift_p, SwiftPath))
+        self.assertEquals(swift_p, 'swift://abc')
 
     def test_div(self):
-        swift = SwiftPath('swift://t')
-        swift = swift / 'c' / Path('p')
-        self.assertTrue(isinstance(swift, SwiftPath))
-        self.assertEquals(swift, 'swift://t/c/p')
+        swift_p = SwiftPath('swift://t')
+        swift_p = swift_p / 'c' / Path('p')
+        self.assertTrue(isinstance(swift_p, SwiftPath))
+        self.assertEquals(swift_p, 'swift://t/c/p')
 
 
 class TestTenant(SwiftTestCase):
     def test_tenant_none(self):
-        swift = SwiftPath('swift://')
-        self.assertIsNone(swift.tenant)
+        swift_p = SwiftPath('swift://')
+        self.assertIsNone(swift_p.tenant)
 
     def test_tenant_wo_container(self):
-        swift = SwiftPath('swift://tenant')
-        self.assertEquals(swift.tenant, 'tenant')
+        swift_p = SwiftPath('swift://tenant')
+        self.assertEquals(swift_p.tenant, 'tenant')
 
     def test_tenant_w_container(self):
-        swift = SwiftPath('swift://tenant/container')
-        self.assertEquals(swift.tenant, 'tenant')
+        swift_p = SwiftPath('swift://tenant/container')
+        self.assertEquals(swift_p.tenant, 'tenant')
 
 
 class TestContainer(SwiftTestCase):
     def test_container_none(self):
-        swift = SwiftPath('swift://tenant/')
-        self.assertIsNone(swift.container)
+        swift_p = SwiftPath('swift://tenant/')
+        self.assertIsNone(swift_p.container)
 
     def test_container_wo_resource(self):
-        swift = SwiftPath('swift://tenant/container')
-        self.assertEquals(swift.container, 'container')
+        swift_p = SwiftPath('swift://tenant/container')
+        self.assertEquals(swift_p.container, 'container')
 
     def test_container_w_resource(self):
-        swift = SwiftPath('swift://tenant/container/resource/path')
-        self.assertEquals(swift.container, 'container')
+        swift_p = SwiftPath('swift://tenant/container/resource/path')
+        self.assertEquals(swift_p.container, 'container')
 
 
 class TestResource(SwiftTestCase):
     def test_no_container(self):
-        swift = SwiftPath('swift://tenant/')
-        self.assertIsNone(swift.resource)
+        swift_p = SwiftPath('swift://tenant/')
+        self.assertIsNone(swift_p.resource)
 
     def test_w_container_no_resource(self):
-        swift = SwiftPath('swift://tenant/container/')
-        self.assertIsNone(swift.resource)
+        swift_p = SwiftPath('swift://tenant/container/')
+        self.assertIsNone(swift_p.resource)
 
     def test_resource_single_object(self):
-        swift = SwiftPath('swift://tenant/container/obj')
-        self.assertEquals(swift.resource, 'obj')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        self.assertEquals(swift_p.resource, 'obj')
 
     def test_resource_single_dir_w_slash(self):
-        swift = SwiftPath('swift://tenant/container/dir/')
-        self.assertEquals(swift.resource, 'dir/')
+        swift_p = SwiftPath('swift://tenant/container/dir/')
+        self.assertEquals(swift_p.resource, 'dir/')
 
     def test_resource_nested_dir_wo_slash(self):
-        swift = SwiftPath('swift://tenant/container/nested/dir')
-        self.assertEquals(swift.resource, 'nested/dir')
+        swift_p = SwiftPath('swift://tenant/container/nested/dir')
+        self.assertEquals(swift_p.resource, 'nested/dir')
 
 
 class TestGetSwiftConnectionOptions(SwiftTestCase):
@@ -141,29 +139,29 @@ class TestGetSwiftConnectionOptions(SwiftTestCase):
     # env. Mock env setup is performed in SwiftTestCase
     def test_wo_username(self):
         os.environ.pop('OS_USERNAME')
-        swift = SwiftPath('swift://tenant/')
-        with self.assertRaises(SwiftConfigurationError):
-            swift._get_swift_connection_options()
+        swift_p = SwiftPath('swift://tenant/')
+        with self.assertRaises(swift.SwiftConfigurationError):
+            swift_p._get_swift_connection_options()
 
     def test_wo_password(self):
         os.environ.pop('OS_PASSWORD')
-        swift = SwiftPath('swift://tenant/')
-        with self.assertRaises(SwiftConfigurationError):
-            swift._get_swift_connection_options()
+        swift_p = SwiftPath('swift://tenant/')
+        with self.assertRaises(swift.SwiftConfigurationError):
+            swift_p._get_swift_connection_options()
 
     def test_w_os_auth_url_env_var(self):
         os.environ['OS_AUTH_URL'] = 'env_auth_url'
-        swift = SwiftPath('swift://tenant/')
-        options = swift._get_swift_connection_options()
+        swift_p = SwiftPath('swift://tenant/')
+        options = swift_p._get_swift_connection_options()
         self.assertEquals(options['os_auth_url'], 'env_auth_url')
         self.assertEquals(options['os_tenant_name'], 'tenant')
 
     def test_w_default_setting(self):
         os.environ.pop('OS_AUTH_URL')
-        swift = SwiftPath('swift://tenant/')
-        options = swift._get_swift_connection_options()
+        swift_p = SwiftPath('swift://tenant/')
+        options = swift_p._get_swift_connection_options()
         self.assertEquals(options['os_auth_url'],
-                          SwiftPath.default_auth_url)
+                          swift.DEFAULT_AUTH_URL)
         self.assertEquals(options['os_tenant_name'], 'tenant')
 
 
@@ -174,8 +172,8 @@ class TestGetSwiftService(SwiftTestCase):
         self.disable_get_swift_service_mock()
 
         mock_get_swift_connection_options.return_value = {'option': 'value'}
-        swift = SwiftPath('swift://tenant/')
-        swift._get_swift_service()
+        swift_p = SwiftPath('swift://tenant/')
+        swift_p._get_swift_service()
         self.mock_swift_service.assert_called_once_with({'option': 'value'})
 
 
@@ -184,8 +182,8 @@ class TestGetSwiftService(SwiftTestCase):
 class TestGetSwiftConnection(SwiftTestCase):
     def test_get_swift_connection(self, mock_get_swift_connection_options):
         mock_get_swift_connection_options.return_value = {'option': 'value'}
-        swift = SwiftPath('swift://tenant/')
-        swift._get_swift_connection()
+        swift_p = SwiftPath('swift://tenant/')
+        swift_p._get_swift_connection()
         self.mock_swift_get_conn.assert_called_once_with({'option': 'value'})
 
 
@@ -193,24 +191,24 @@ class TestOpen(SwiftTestCase):
     def test_open_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
 
-        swift = SwiftPath('swift://tenant/container')
-        self.assertEquals(swift.open().read(), 'data')
+        swift_p = SwiftPath('swift://tenant/container')
+        self.assertEquals(swift_p.open().read(), 'data')
 
     @mock.patch('time.sleep', autospec=True)
     def test_open_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
-            ClientException('dummy', 'dummy'),
+            ClientException('dummy', 'dummy', http_status=404),
             ('header', 'data')
         ]
-        swift = SwiftPath('swift://tenant/container')
-        obj = swift.open()
+        swift_p = SwiftPath('swift://tenant/container')
+        obj = swift_p.open()
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
     def test_open_invalid_mode(self):
-        swift = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift.open('w')
+            swift_p.open('w')
 
 
 class TestList(SwiftTestCase):
@@ -218,9 +216,9 @@ class TestList(SwiftTestCase):
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ValueError
 
-        swift = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            list(swift.list())
+            list(swift_p.list())
         mock_list.assert_called_once_with('container', prefix=None,
                                           limit=None, full_listing=True)
 
@@ -233,9 +231,9 @@ class TestList(SwiftTestCase):
             'name': 'path/to/resource2'
         }])
 
-        swift = SwiftPath('swift://tenant/container/path')
-        with self.assertRaises(SwiftConditionError):
-            swift.list(num_objs_cond=SwiftCondition('==', 3))
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.SwiftConditionError):
+            swift_p.list(num_objs_cond=SwiftCondition('==', 3))
 
         # Verify that list was retried at least once
         self.assertTrue(len(mock_list.call_args_list) > 1)
@@ -249,9 +247,9 @@ class TestList(SwiftTestCase):
             'name': 'path/to/resource2'
         }])
 
-        swift = SwiftPath('swift://tenant/container/path')
-        with self.assertRaises(SwiftConditionError):
-            swift.list(
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.SwiftConditionError):
+            swift_p.list(
                 num_objs_cond=SwiftCondition('==', 3),
                 num_retries=5,
                 initial_retry_sleep=100,
@@ -281,8 +279,8 @@ class TestList(SwiftTestCase):
             }])
         ]
 
-        swift = SwiftPath('swift://tenant/container/path')
-        results = list(swift.list(num_objs_cond=SwiftCondition('>', 1)))
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = swift_p.list(num_objs_cond=SwiftCondition('>', 1))
         self.assertEquals(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2'
@@ -303,8 +301,8 @@ class TestList(SwiftTestCase):
             'name': 'path/to/resource4'
         }])
 
-        swift = SwiftPath('swift://tenant/container/path')
-        results = list(swift.list())
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = list(swift_p.list())
         self.assertEquals(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2',
@@ -322,8 +320,8 @@ class TestList(SwiftTestCase):
             'name': 'path/to/resource1'
         }])
 
-        swift = SwiftPath('swift://tenant/container/path')
-        results = list(swift.list(limit=1))
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = list(swift_p.list(limit=1))
         self.assertEquals(results, [
             'swift://tenant/container/path/to/resource1'
         ])
@@ -339,8 +337,8 @@ class TestList(SwiftTestCase):
         }, {
             'name': 'container2'
         }])
-        swift = SwiftPath('swift://tenant')
-        results = list(swift.list())
+        swift_p = SwiftPath('swift://tenant')
+        results = list(swift_p.list())
         self.assertEquals(results, [
             'swift://tenant/container1',
             'swift://tenant/container2'
@@ -356,8 +354,8 @@ class TestList(SwiftTestCase):
         }, {
             'name': 'r2'
         }])
-        swift = SwiftPath('swift://tenant/container/r')
-        results = list(swift.list(starts_with='prefix'))
+        swift_p = SwiftPath('swift://tenant/container/r')
+        results = list(swift_p.list(starts_with='prefix'))
         self.assertEquals(results, [
             'swift://tenant/container/r1',
             'swift://tenant/container/r2'
@@ -374,8 +372,8 @@ class TestList(SwiftTestCase):
         }, {
             'name': 'r2'
         }])
-        swift = SwiftPath('swift://tenant/container')
-        results = list(swift.list(starts_with='prefix'))
+        swift_p = SwiftPath('swift://tenant/container')
+        results = list(swift_p.list(starts_with='prefix'))
         self.assertEquals(results, [
             'swift://tenant/container/r1',
             'swift://tenant/container/r2'
@@ -389,26 +387,26 @@ class TestList(SwiftTestCase):
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestGlob(SwiftTestCase):
     def test_valid_pattern(self, mock_list):
-        swift = SwiftPath('swift://tenant/container')
-        swift.glob('pattern*')
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.glob('pattern*')
         mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
                                           num_objs_cond=None)
 
     def test_valid_pattern_wo_wildcard(self, mock_list):
-        swift = SwiftPath('swift://tenant/container')
-        swift.glob('pattern')
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.glob('pattern')
         mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
                                           num_objs_cond=None)
 
     def test_multi_glob_pattern(self, mock_list):
-        swift = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift.glob('*invalid_pattern*', num_objs_cond=None)
+            swift_p.glob('*invalid_pattern*', num_objs_cond=None)
 
     def test_invalid_glob_pattern(self, mock_list):
-        swift = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift.glob('invalid_*pattern', num_objs_cond=None)
+            swift_p.glob('invalid_*pattern', num_objs_cond=None)
 
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
@@ -416,8 +414,8 @@ class TestFirst(SwiftTestCase):
     def test_none(self, mock_list):
         mock_list.return_value = []
 
-        swift = SwiftPath('swift://tenant/container')
-        result = swift.first()
+        swift_p = SwiftPath('swift://tenant/container')
+        result = swift_p.first()
         self.assertIsNone(result)
 
     def test_w_results(self, mock_list):
@@ -428,8 +426,8 @@ class TestFirst(SwiftTestCase):
             SwiftPath('swift://tenant/container/path4'),
         ]
 
-        swift = SwiftPath('swift://tenant/container/path')
-        result = swift.first()
+        swift_p = SwiftPath('swift://tenant/container/path')
+        result = swift_p.first()
         self.assertEquals(result, 'swift://tenant/container/path1')
 
 
@@ -438,8 +436,8 @@ class TestExists(SwiftTestCase):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [])
 
-        swift = SwiftPath('swift://tenant/container')
-        result = swift.exists()
+        swift_p = SwiftPath('swift://tenant/container')
+        result = swift_p.exists()
         self.assertFalse(result)
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix=None)
@@ -448,8 +446,8 @@ class TestExists(SwiftTestCase):
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('not found', http_status=404)
 
-        swift = SwiftPath('swift://tenant/container')
-        result = swift.exists()
+        swift_p = SwiftPath('swift://tenant/container')
+        result = swift_p.exists()
         self.assertFalse(result)
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix=None)
@@ -458,9 +456,9 @@ class TestExists(SwiftTestCase):
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('fail', http_status=504)
 
-        swift = SwiftPath('swift://tenant/container')
-        with self.assertRaises(SwiftClientError):
-            swift.exists()
+        swift_p = SwiftPath('swift://tenant/container')
+        with self.assertRaises(swift.SwiftClientError):
+            swift_p.exists()
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix=None)
 
@@ -476,8 +474,8 @@ class TestExists(SwiftTestCase):
             'name': 'path4'
         }])
 
-        swift = SwiftPath('swift://tenant/container/path')
-        result = swift.exists()
+        swift_p = SwiftPath('swift://tenant/container/path')
+        result = swift_p.exists()
         self.assertTrue(result)
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix='path')
@@ -487,8 +485,8 @@ class TestDownload(SwiftTestCase):
     def test_download(self):
         self.mock_swift.download.return_value = []
 
-        swift = SwiftPath('swift://tenant/container')
-        swift.download(output_dir='output_dir')
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.download(output_dir='output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
             options={
@@ -504,8 +502,8 @@ class TestDownload(SwiftTestCase):
             'error': ClientException('', http_status=304)
         }]
 
-        swift = SwiftPath('swift://tenant/container')
-        swift.download(output_dir='output_dir')
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.download(output_dir='output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
             options={
@@ -523,18 +521,18 @@ class TestDownload(SwiftTestCase):
             [{}, {}, {}]
         ]
 
-        swift = SwiftPath('swift://tenant/container')
-        swift.download(output_dir='output_dir',
-                            num_objs_cond=SwiftCondition('==', 3))
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.download(output_dir='output_dir',
+                         num_objs_cond=SwiftCondition('==', 3))
         self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
 
     def test_download_correct_thread_options(self):
         self.disable_get_swift_service_mock()
 
-        swift = SwiftPath('swift://tenant/container/path')
-        swift.download(output_dir='output_dir',
-                            object_threads=20,
-                            container_threads=30)
+        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p.download(output_dir='output_dir',
+                         object_threads=20,
+                         container_threads=30)
 
         options_passed = self.mock_swift_service.call_args[0][0]
         self.assertEquals(options_passed['object_dd_threads'], 20)
@@ -547,14 +545,14 @@ class TestUpload(SwiftTestCase):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.return_value = []
 
-        swift = SwiftPath('swift://tenant/container/path')
-        swift.upload(['upload'],
-                          segment_size=1000,
-                          use_slo=True,
-                          segment_container=True,
-                          leave_segments=True,
-                          changed=True,
-                          object_name='obj_name')
+        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p.upload(['upload'],
+                       segment_size=1000,
+                       use_slo=True,
+                       segment_container=True,
+                       leave_segments=True,
+                       changed=True,
+                       object_name='obj_name')
         self.mock_swift.upload.assert_called_once_with(
             'container',
             ['file1', 'file2'],
@@ -570,16 +568,16 @@ class TestUpload(SwiftTestCase):
     def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
         self.disable_get_swift_service_mock()
 
-        swift = SwiftPath('swift://tenant/container/path')
-        swift.upload([],
-                          segment_size=1000,
-                          use_slo=True,
-                          segment_container=True,
-                          leave_segments=True,
-                          changed=True,
-                          object_name='obj_name',
-                          object_threads=20,
-                          segment_threads=30)
+        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p.upload([],
+                       segment_size=1000,
+                       use_slo=True,
+                       segment_container=True,
+                       leave_segments=True,
+                       changed=True,
+                       object_name='obj_name',
+                       object_threads=20,
+                       segment_threads=30)
 
         options_passed = self.mock_swift_service.call_args[0][0]
         self.assertEquals(options_passed['object_uu_threads'], 20)
@@ -589,24 +587,24 @@ class TestUpload(SwiftTestCase):
 class TestRemove(SwiftTestCase):
     def test_invalid_remove(self):
         # Remove()s must happen on a resource of a container
-        swift = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift.remove()
+            swift_p.remove()
 
     def test_w_swift_error(self):
         self.mock_swift.delete.return_value = {
             'error': SwiftError('error')
         }
-        swift = SwiftPath('swift://tenant/container/r')
-        with self.assertRaises(SwiftClientError):
-            swift.remove()
+        swift_p = SwiftPath('swift://tenant/container/r')
+        with self.assertRaises(swift.SwiftClientError):
+            swift_p.remove()
 
         self.mock_swift.delete.assert_called_once_with('container', ['r'])
 
     def test_success(self):
         self.mock_swift.delete.return_value = {}
-        swift = SwiftPath('swift://tenant/container/r')
-        swift.remove()
+        swift_p = SwiftPath('swift://tenant/container/r')
+        swift_p.remove()
 
         self.mock_swift.delete.assert_called_once_with('container', ['r'])
 
@@ -615,8 +613,8 @@ class TestRemove(SwiftTestCase):
 class TestRmtree(SwiftTestCase):
     def test_w_only_container(self, mock_list):
         self.mock_swift.delete.return_value = {}
-        swift = SwiftPath('swift://tenant/container')
-        swift.rmtree()
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.rmtree()
 
         self.mock_swift.delete.assert_called_once_with('container')
         self.assertFalse(mock_list.called)
@@ -628,8 +626,8 @@ class TestRmtree(SwiftTestCase):
             SwiftPath('swift://tenant/container/r2')
         ]
 
-        swift = SwiftPath('swift://tenant/container/r')
-        swift.rmtree()
+        swift_p = SwiftPath('swift://tenant/container/r')
+        swift_p.rmtree()
 
         self.mock_swift.delete.assert_called_once_with('container',
                                                        ['r1', 'r2'])
@@ -639,21 +637,21 @@ class TestRmtree(SwiftTestCase):
 class TestPost(SwiftTestCase):
     def test_path_error_only_tenant(self):
         # Post() only works on a container path
-        swift = SwiftPath('swift://tenant')
+        swift_p = SwiftPath('swift://tenant')
         with self.assertRaises(ValueError):
-            swift.post()
+            swift_p.post()
 
     def test_path_error_w_resource(self):
         # Post() does not work with resource paths
-        swift = SwiftPath('swift://tenant/container/r1')
+        swift_p = SwiftPath('swift://tenant/container/r1')
         with self.assertRaises(ValueError):
-            swift.post()
+            swift_p.post()
 
     def test_success(self):
         self.mock_swift.post.return_value = {}
 
-        swift = SwiftPath('swift://tenant/container')
-        swift.post()
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.post()
 
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)

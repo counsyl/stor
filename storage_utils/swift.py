@@ -14,6 +14,17 @@ initial_retry_sleep = 1
 num_retries = 5
 retry_sleep_function = lambda t, attempt: t * 2
 
+# Settings for swift authentication. If None, the
+# OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD env vars
+# will be used
+auth_url = None
+username = None
+password = None
+
+# The default auth url used if the module setting or env variable
+# isn't set
+DEFAULT_AUTH_URL = 'http://sfo1-prd-osn01.counsyl.com/auth/v2.0'
+
 
 def _swift_retry(exceptions=None):
     """Allows SwiftPath methods to take optional retry configuration parameters
@@ -156,7 +167,6 @@ class SwiftPath(str):
     with a similar interface to the path library.
     """
     swift_drive = 'swift://'
-    default_auth_url = 'http://sfo1-prd-osn01.counsyl.com/auth/v2.0'
 
     def __init__(self, swift):
         """Validates swift path is in the proper format.
@@ -230,15 +240,23 @@ class SwiftPath(str):
             SwiftConfigurationError: The needed swift environment variables
                 aren't set.
         """
-        if 'OS_PASSWORD' not in os.environ or 'OS_USERNAME' not in os.environ:
-            raise SwiftConfigurationError('OS_USERNAME and OS_PASSWORD '
-                                          'environment vars must be set for '
-                                          'Swift authentication')
+        os_auth_url = (
+            auth_url or os.environ.get('OS_AUTH_URL') or DEFAULT_AUTH_URL)
+        os_username = username or os.environ.get('OS_USERNAME')
+        os_password = password or os.environ.get('OS_PASSWORD')
+
+        if not os_username or not os_password:
+            raise SwiftConfigurationError((
+                'OS_USERNAME and OS_PASSWORD environment vars must be set for '
+                'Swift authentication. storage_utils.swift.username and '
+                'storage_utils.swift.password may also be set.'
+            ))
 
         # Set additional options on top of what was passed in
         options['os_tenant_name'] = self.tenant
-        options['os_auth_url'] = os.environ.get('OS_AUTH_URL',
-                                                self.default_auth_url)
+        options['os_auth_url'] = os_auth_url
+        options['os_username'] = os_username
+        options['os_password'] = os_password
 
         # Merge options with global and local ones
         options = dict(swift_service._default_global_options,
@@ -304,7 +322,7 @@ class SwiftPath(str):
 
         return results
 
-    @_swift_retry(exceptions=SwiftClientError)
+    @_swift_retry(exceptions=SwiftNotFoundError)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
