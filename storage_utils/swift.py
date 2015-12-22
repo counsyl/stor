@@ -4,10 +4,15 @@ from functools import wraps
 import operator
 import os
 from path import Path
-import storage_utils
 from storage_utils import utils
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
+
+
+# Settings for swift retry logic
+initial_retry_sleep = 1
+num_retries = 5
+retry_sleep_function = lambda t, attempt: t * 2
 
 
 def _swift_retry(exceptions=None):
@@ -17,12 +22,11 @@ def _swift_retry(exceptions=None):
     def decorated(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            retries = kwargs.pop('num_retries',
-                                 storage_utils.num_retries)
+            retries = kwargs.pop('num_retries', num_retries)
             initial_sleep = kwargs.pop('initial_retry_sleep',
-                                       storage_utils.initial_retry_sleep)
+                                       initial_retry_sleep)
             sleep_function = kwargs.pop('retry_sleep_function',
-                                        storage_utils.retry_sleep_function)
+                                        retry_sleep_function)
 
             return with_backoff(func,
                                 exceptions=exceptions,

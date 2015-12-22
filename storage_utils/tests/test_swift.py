@@ -203,10 +203,7 @@ class TestOpen(SwiftTestCase):
             ('header', 'data')
         ]
         swift = SwiftPath('swift://tenant/container')
-        print 'opening'
-        # print 'results', swift.open()
         obj = swift.open()
-        print 'opened obj', obj
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 

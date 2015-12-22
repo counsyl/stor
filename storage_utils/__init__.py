@@ -1,12 +1,6 @@
 from storage_utils.utils import NamedTemporaryDirectory  # flake8: noqa
 
 
-# Settings for swift retry logic
-initial_retry_sleep = 1
-num_retries = 5
-retry_sleep_function = lambda t, attempt: t * 2
-
-
 def is_swift_path(p):
     """Determines if the path is a Swift path.
 
