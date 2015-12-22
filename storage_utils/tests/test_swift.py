@@ -164,6 +164,17 @@ class TestGetSwiftConnectionOptions(SwiftTestCase):
                           swift.DEFAULT_AUTH_URL)
         self.assertEquals(options['os_tenant_name'], 'tenant')
 
+    @mock.patch('storage_utils.swift.auth_url', 'module_auth_url')
+    @mock.patch('storage_utils.swift.password', 'module_password')
+    @mock.patch('storage_utils.swift.username', 'module_username')
+    def test_w_module_settings(self):
+        swift_p = SwiftPath('swift://tenant/')
+        options = swift_p._get_swift_connection_options()
+        self.assertEquals(options['os_auth_url'], 'module_auth_url')
+        self.assertEquals(options['os_username'], 'module_username')
+        self.assertEquals(options['os_password'], 'module_password')
+        self.assertEquals(options['os_tenant_name'], 'tenant')
+
 
 @mock.patch.object(SwiftPath, '_get_swift_connection_options',
                    autospec=True)
