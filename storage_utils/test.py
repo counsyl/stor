@@ -1,6 +1,6 @@
 import mock
 import os
-from storage_utils.swift_path import SwiftPath
+from storage_utils.swift import SwiftPath
 import unittest
 
 

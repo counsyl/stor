@@ -10,7 +10,10 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 
 
-def swift_retry(exceptions=None):
+def _swift_retry(exceptions=None):
+    """Allows SwiftPath methods to take optional retry configuration parameters
+    for doing retry logic
+    """
     def decorated(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -30,7 +33,7 @@ def swift_retry(exceptions=None):
     return decorated
 
 
-def swift_propagate_exceptions(func):
+def _swift_propagate_exceptions(func):
     """Bubbles all swift exceptions as SwiftClientErrors
     """
     @wraps(func)
@@ -39,11 +42,12 @@ def swift_propagate_exceptions(func):
             return func(*args, **kwargs)
         except (swift_service.SwiftError,
                 swift_exceptions.ClientException) as e:
+            # SwiftErrors catch Client exceptions and store them in the
+            # 'exception' attribute. Try to get the client exception
+            # here if there is one so that its http status can be
+            # examined to throw specific exceptions.
             client_exception = getattr(e, 'exception', e)
 
-            # If a client exception was thrown, check status
-            # codes and raise specific errors. Otherwise,
-            # raise the generic SwiftClientException error
             http_status = getattr(client_exception, 'http_status', None)
             if http_status == 404:
                 raise SwiftNotFoundError(str(e), e)
@@ -55,6 +59,12 @@ def swift_propagate_exceptions(func):
 
 class SwiftClientError(Exception):
     """The top-level exception thrown for any swift errors
+
+    The 'caught_exception' attribute of the exception must
+    be examined in order to inspect the swift exception that
+    happened. A swift exception can either be a
+    SwiftError (thrown by swiftclient.service) or a
+    ClientError (thrown by swiftclient.client)
     """
     def __init__(self, message, caught_exception=None):
         super(SwiftClientError, self).__init__(message)
@@ -144,17 +154,17 @@ class SwiftPath(str):
     swift_drive = 'swift://'
     default_auth_url = 'http://sfo1-prd-osn01.counsyl.com/auth/v2.0'
 
-    def __init__(self, swift_path):
+    def __init__(self, swift):
         """Validates swift path is in the proper format.
 
         Args:
-            swift_path (str): A path that matches the format of
+            swift (str): A path that matches the format of
                 "swift://{tenant_name}/{container_name}/{rest_of_path}".
                 The "swift://" prefix is required in the path.
         """
-        if not swift_path.startswith(self.swift_drive):
+        if not swift.startswith(self.swift_drive):
             raise ValueError('path must have %s' % self.swift_drive)
-        return super(SwiftPath, self).__init__(swift_path)
+        return super(SwiftPath, self).__init__(swift)
 
     def __repr__(self):
         return 'SwiftPath("%s")' % self
@@ -269,13 +279,13 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return swift_service.get_conn(conn_opts)
 
-    @swift_propagate_exceptions
+    @_swift_propagate_exceptions
     def _swift_connection_call(self, method, *args, **kwargs):
         """Runs a method call on a Connection object.
         """
         return method(*args, **kwargs)
 
-    @swift_propagate_exceptions
+    @_swift_propagate_exceptions
     def _swift_service_call(self, method, *args, **kwargs):
         """Runs a method call on a SwiftService object.
         """
@@ -290,7 +300,7 @@ class SwiftPath(str):
 
         return results
 
-    @swift_retry(exceptions=SwiftClientError)
+    @_swift_retry(exceptions=SwiftClientError)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
@@ -302,8 +312,7 @@ class SwiftPath(str):
             cStringIO: The contents of the object.
 
         Raises:
-            swiftclient.exceptions.ClientException: The swift request is
-                invalid.
+            SwiftClientError: A swift client error occurred.
         """
         if mode not in ('r', 'rb'):
             raise ValueError('only read-only mode ("r" and "rb") is supported')
@@ -314,7 +323,7 @@ class SwiftPath(str):
                                                        self.resource)
         return cStringIO.StringIO(content)
 
-    @swift_retry(exceptions=SwiftConditionError)
+    @_swift_retry(exceptions=SwiftConditionError)
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
@@ -331,7 +340,7 @@ class SwiftPath(str):
             List[SwiftPath]: Every path in the listing.
 
         Raises:
-            Exception: An error was found in the returned results.
+            SwiftClientError: A swift client error occurred.
             SwiftConditionError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
@@ -392,7 +401,7 @@ class SwiftPath(str):
             List[SwiftPath]: Every matching path.
 
         Raises:
-            Exception: An error was found in the returned results.
+            SwiftClientError: A swift client error occurred.
             SwiftConditionError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
@@ -410,7 +419,7 @@ class SwiftPath(str):
         Note that this method does not perform any retry logic.
 
         Raises:
-            swiftclient.service.SwiftError: A swift error happened.
+            SwiftClientError: A swift client error occurred.
         """
         results = self.list(limit=1)
         return results[0] if results else None
@@ -425,15 +434,14 @@ class SwiftPath(str):
             bool: True if the path exists, False otherwise.
 
         Raises:
-            swiftclient.exceptions.ClientException: A non-404 swift error
-                happened.
+            SwiftClientError: A non-404 swift client error occurred.
         """
         try:
             return bool(self.first())
         except SwiftNotFoundError:
             return False
 
-    @swift_retry(exceptions=SwiftConditionError)
+    @_swift_retry(exceptions=SwiftConditionError)
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
@@ -459,7 +467,7 @@ class SwiftPath(str):
                 condition. Partially downloaded results will not be deleted.
 
         Raises:
-            swiftclient.service.SwiftError: A swift error happened.
+            SwiftClientError: A swift client error occurred.
             SwiftConditionError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
@@ -528,7 +536,7 @@ class SwiftPath(str):
                 object segments.
 
             Raises:
-                swiftclient.service.SwiftError: A swift upload failed.
+                SwiftClientError: A swift client error occurred.
         """
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
@@ -551,7 +559,7 @@ class SwiftPath(str):
 
         Raises:
             ValueError: The path is invalid.
-            swiftclient.service.SwiftError: A swift deletion failed.
+            SwiftClientError: A swift client error occurred.
         """
         if not self.container or not self.resource:
             raise ValueError('path must contain a container and resource to '
@@ -566,7 +574,7 @@ class SwiftPath(str):
         """Removes a resource and all of its contents.
 
         Raises:
-            swiftclient.service.SwiftError: The deletion fails.
+            SwiftClientError: A swift client error occurred.
         """
         service = self._get_swift_service()
         if not self.resource:
@@ -598,7 +606,7 @@ class SwiftPath(str):
                     }
 
         Raises:
-            swiftclient.service.SwiftError: The post fails.
+            SwiftClientError: A swift client error occurred.
         """
         if not self.container or self.resource:
             raise ValueError('post only works on container paths')

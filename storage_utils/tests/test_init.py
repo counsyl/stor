@@ -1,11 +1,11 @@
 from path import Path
 import storage_utils
-from storage_utils.swift_path import SwiftPath
+from storage_utils.swift import SwiftPath
 import unittest
 
 
 class TestPath(unittest.TestCase):
-    def test_swift_path_returned(self):
+    def test_swift_returned(self):
         p = storage_utils.path('swift://my/swift/path')
         self.assertTrue(isinstance(p, SwiftPath))
 

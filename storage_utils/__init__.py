@@ -18,7 +18,7 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from storage_utils.swift_path import SwiftPath
+    from storage_utils.swift import SwiftPath
     return p.startswith(SwiftPath.swift_drive)
 
 
@@ -55,12 +55,12 @@ def path(p):
         >>> from storage_utils import path
         >>> p = path('swift://tenant/container/object')
         >>> print type(p)
-        <class 'storage_utils.swift_path.Path'>
+        <class 'storage_utils.swift.Path'>
         >>> print p.exists()
         False
     """
     if is_swift_path(p):
-        from storage_utils.swift_path import SwiftPath
+        from storage_utils.swift import SwiftPath
         return SwiftPath(p)
     else:
         from path import Path
