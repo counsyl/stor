@@ -31,6 +31,6 @@ In Depth Documentation
 For more detailed documentation about the various interfaces offered by Counsyl Storage Utils, check out the following:
 
 - :ref:`main_interface`: In depth documentation about the main interface.
-- :ref:`swift`: In depth documentation about the swift access.
+- :ref:`swift`: In depth documentation about swift access.
 - :ref:`utils`: Utilities for common file system procedures.
 - :ref:`testing`: Testing components for testing with swift storage.

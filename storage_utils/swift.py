@@ -64,7 +64,7 @@ password = None
 
 # The default auth url used if the module setting or env variable
 # isn't set
-DEFAULT_AUTH_URL = 'http://sfo1-prd-osn01.counsyl.com/auth/v2.0'
+DEFAULT_AUTH_URL = 'http://swift.counsyl.com/auth/v2.0'
 
 
 def _swift_retry(exceptions=None):
