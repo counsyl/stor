@@ -1,5 +1,5 @@
 from storage_utils import swift
-from storage_utils.swift import SwiftCondition
+from storage_utils.swift import make_condition
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
@@ -10,45 +10,53 @@ from swiftclient.service import SwiftError
 import unittest
 
 
-class TestSwiftCondition(unittest.TestCase):
+class TestCondition(unittest.TestCase):
     def test_invalid_condition(self):
         with self.assertRaises(ValueError):
-            SwiftCondition('bad_cond', 3)
+            make_condition('bad_cond', 3)
 
     def test_eq_cond(self):
-        eq3 = SwiftCondition('==', 3)
-        self.assertTrue(eq3.is_met_by(3))
-        self.assertFalse(eq3.is_met_by(4))
+        eq3 = make_condition('==', 3)
+        self.assertIsNone(eq3.assert_is_met_by(3, 'var'))
+        with self.assertRaises(swift.ConditionNotMetError):
+            eq3.assert_is_met_by(4, 'var')
 
     def test_ne_cond(self):
-        ne3 = SwiftCondition('!=', 3)
-        self.assertFalse(ne3.is_met_by(3))
-        self.assertTrue(ne3.is_met_by(4))
+        ne3 = make_condition('!=', 3)
+        self.assertIsNone(ne3.assert_is_met_by(4, 'var'))
+        with self.assertRaises(swift.ConditionNotMetError):
+            ne3.assert_is_met_by(3, 'var')
 
     def test_gt_cond(self):
-        gt3 = SwiftCondition('>', 3)
-        self.assertTrue(gt3.is_met_by(4))
-        self.assertFalse(gt3.is_met_by(3))
+        gt3 = make_condition('>', 3)
+        self.assertIsNone(gt3.assert_is_met_by(4, 'var'))
+        with self.assertRaises(swift.ConditionNotMetError):
+            gt3.assert_is_met_by(3, 'var')
 
     def test_ge_cond(self):
-        ge3 = SwiftCondition('>=', 3)
-        self.assertTrue(ge3.is_met_by(4))
-        self.assertTrue(ge3.is_met_by(3))
-        self.assertFalse(ge3.is_met_by(2))
+        ge3 = make_condition('>=', 3)
+        self.assertIsNone(ge3.assert_is_met_by(4, 'var'))
+        self.assertIsNone(ge3.assert_is_met_by(3, 'var'))
+        with self.assertRaises(swift.ConditionNotMetError):
+            ge3.assert_is_met_by(2, 'var')
 
     def test_lt_cond(self):
-        lt3 = SwiftCondition('<', 3)
-        self.assertTrue(lt3.is_met_by(2))
-        self.assertFalse(lt3.is_met_by(3))
+        lt3 = make_condition('<', 3)
+        self.assertIsNone(lt3.assert_is_met_by(2, 'var'))
+        with self.assertRaises(swift.ConditionNotMetError):
+            lt3.assert_is_met_by(3, 'var')
 
     def test_le_cond(self):
-        le3 = SwiftCondition('<=', 3)
-        self.assertTrue(le3.is_met_by(2))
-        self.assertTrue(le3.is_met_by(3))
-        self.assertFalse(le3.is_met_by(4))
+        le3 = make_condition('<=', 3)
+        self.assertIsNone(le3.assert_is_met_by(2, 'var'))
+        self.assertIsNone(le3.assert_is_met_by(3, 'var'))
+        with self.assertRaises(swift.ConditionNotMetError):
+            le3.assert_is_met_by(4, 'var')
 
     def test_repr(self):
-        cond = SwiftCondition('<=', 3)
+        cond = make_condition('<=', 3)
+        # Import private _Condition class in order to eval it for test
+        from storage_utils.swift import _Condition  # flake8: noqa
         evaled_repr = eval(repr(cond))
         self.assertEquals(cond.operator, evaled_repr.operator)
         self.assertEquals(cond.right_operand, evaled_repr.right_operand)
@@ -140,13 +148,13 @@ class TestGetSwiftConnectionOptions(SwiftTestCase):
     def test_wo_username(self):
         os.environ.pop('OS_USERNAME')
         swift_p = SwiftPath('swift://tenant/')
-        with self.assertRaises(swift.SwiftConfigurationError):
+        with self.assertRaises(swift.ConfigurationError):
             swift_p._get_swift_connection_options()
 
     def test_wo_password(self):
         os.environ.pop('OS_PASSWORD')
         swift_p = SwiftPath('swift://tenant/')
-        with self.assertRaises(swift.SwiftConfigurationError):
+        with self.assertRaises(swift.ConfigurationError):
             swift_p._get_swift_connection_options()
 
     def test_w_os_auth_url_env_var(self):
@@ -198,6 +206,7 @@ class TestGetSwiftConnection(SwiftTestCase):
         self.mock_swift_get_conn.assert_called_once_with({'option': 'value'})
 
 
+@mock.patch('storage_utils.swift.num_retries', 5)
 class TestOpen(SwiftTestCase):
     def test_open_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
@@ -222,6 +231,7 @@ class TestOpen(SwiftTestCase):
             swift_p.open('w')
 
 
+@mock.patch('storage_utils.swift.num_retries', 5)
 class TestList(SwiftTestCase):
     def test_error(self):
         mock_list = self.mock_swift_conn.get_container
@@ -243,8 +253,8 @@ class TestList(SwiftTestCase):
         }])
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaises(swift.SwiftConditionError):
-            swift_p.list(num_objs_cond=SwiftCondition('==', 3))
+        with self.assertRaises(swift.ConditionNotMetError):
+            swift_p.list(num_objs_cond=make_condition('==', 3))
 
         # Verify that list was retried at least once
         self.assertTrue(len(mock_list.call_args_list) > 1)
@@ -259,9 +269,9 @@ class TestList(SwiftTestCase):
         }])
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaises(swift.SwiftConditionError):
+        with self.assertRaises(swift.ConditionNotMetError):
             swift_p.list(
-                num_objs_cond=SwiftCondition('==', 3),
+                num_objs_cond=make_condition('==', 3),
                 num_retries=5,
                 initial_retry_sleep=100,
                 retry_sleep_function=lambda t, attempt: t + 1)
@@ -291,7 +301,7 @@ class TestList(SwiftTestCase):
         ]
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        results = swift_p.list(num_objs_cond=SwiftCondition('>', 1))
+        results = swift_p.list(num_objs_cond=make_condition('>', 1))
         self.assertEquals(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2'
@@ -468,7 +478,7 @@ class TestExists(SwiftTestCase):
         mock_list.side_effect = ClientException('fail', http_status=504)
 
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(swift.SwiftClientError):
+        with self.assertRaises(swift.SwiftError):
             swift_p.exists()
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix=None)
@@ -492,6 +502,7 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix='path')
 
 
+@mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
     def test_download(self):
         self.mock_swift.download.return_value = []
@@ -534,7 +545,7 @@ class TestDownload(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.download(output_dir='output_dir',
-                         num_objs_cond=SwiftCondition('==', 3))
+                         num_objs_cond=make_condition('==', 3))
         self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
 
     def test_download_correct_thread_options(self):
@@ -607,7 +618,7 @@ class TestRemove(SwiftTestCase):
             'error': SwiftError('error')
         }
         swift_p = SwiftPath('swift://tenant/container/r')
-        with self.assertRaises(swift.SwiftClientError):
+        with self.assertRaises(swift.SwiftError):
             swift_p.remove()
 
         self.mock_swift.delete.assert_called_once_with('container', ['r'])

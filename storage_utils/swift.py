@@ -14,10 +14,12 @@ The different module settings options are the following:
       num_retries (int): The amount of times to retry a failed
       swift call.
 
-    - retry_sleep_function (function): The function that determines
-      how long to sleep when retrying a swift call. The function
-      takes the time passed so far and the attempt number as
-      arguments.
+    - retry_sleep_function (function(int, int) -> int): The function
+      that increases sleep time when retrying a swift call.
+      This function needs to take two integer
+      arguments (time slept last attempt, attempt number) and return the
+      amount of time to sleep. By default we simply multiply "t" by two every
+      time.
 
     - auth_url (str): The swift auth url to use for authentication. If not
       set, the ``OS_AUTH_URL`` environment variable will be used. If
@@ -50,14 +52,15 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 
 
-# Settings for swift retry logic
+# Default module-level settings for swift retry logic. These
+# settings are meant to be overridden by the user.
 initial_retry_sleep = 1
-num_retries = 5
+num_retries = 0
 retry_sleep_function = lambda t, attempt: t * 2
 
-# Settings for swift authentication. If None, the
-# OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD env vars
-# will be used
+# Default module-level settings for swift authentication.
+# If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
+# environment variables will be used
 auth_url = None
 username = None
 password = None
@@ -65,6 +68,106 @@ password = None
 # The default auth url used if the module setting or env variable
 # isn't set
 DEFAULT_AUTH_URL = 'http://swift.counsyl.com/auth/v2.0'
+
+
+class SwiftError(Exception):
+    """The top-level exception thrown for any swift errors
+
+    The 'caught_exception' attribute of the exception must
+    be examined in order to inspect the swift exception that
+    happened. A swift exception can either be a
+    SwiftError (thrown by swiftclient.service) or a
+    ClientError (thrown by swiftclient.client)
+    """
+    def __init__(self, message, caught_exception=None):
+        super(SwiftError, self).__init__(message)
+        self.caught_exception = caught_exception
+
+
+class ConditionNotMetError(SwiftError):
+    """Thrown when a condition is not met.
+    """
+    pass
+
+
+class _Condition(object):
+    """A conditional expression that can be applied to some swift methods
+
+    Condition objects take an operator and a right operand. Left operands
+    can be checked against the condition. If the condition is not met,
+    ConditionNotMetError exceptions are thrown.
+
+    The operators that are supported are ``==``, ``!=``, ``<``, ``>``, ``<=``,
+    and ``>=``.
+
+    """
+    operators = {
+        '==': operator.eq,
+        '!=': operator.ne,
+        '<': operator.lt,
+        '>': operator.gt,
+        '<=': operator.le,
+        '>=': operator.ge
+    }
+
+    def __init__(self, operator, right_operand):
+        if operator not in self.operators:
+            raise ValueError('invalid operator: "%s"' % operator)
+        self.operator = operator
+        self.right_operand = right_operand
+
+    def assert_is_met_by(self, left_operand, left_operand_name):
+        """Asserts that a condition is met by a left operand
+
+        Args:
+            left_operand: The left operand checked against the condition
+            left_operand_name: The name of the left operand. Used when
+                creating an error message
+
+        Raises:
+            ConditionNotMetError: When the condition is not met
+        """
+        if not self.operators[self.operator](left_operand, self.right_operand):
+            raise ConditionNotMetError(
+                'condition not met: %s is not %s' % (left_operand_name, self)
+            )
+
+    def __str__(self):
+        return '%s %s' % (self.operator, self.right_operand)
+
+    def __repr__(self):
+        return '%s("%s", %s)' % (type(self).__name__,
+                                 self.operator,
+                                 self.right_operand)
+
+
+def make_condition(operator, right_operand):
+    """Creates a condition that can be applied to various swift methods.
+
+    Args:
+        operator (str): The operator for the condition, can be
+            one of ``==``, ``!=``, ``<``, ``>``, ``<=``,
+            and ``>=``.
+        right_operand: The operand on the right side of the
+            condition.
+
+    Examples:
+        >>> from storage_utils.swift import make_condition
+        >>> from storage_utils.swift import SwiftPath
+        >>> p = SwiftPath('swift://tenant/container/resource')
+        >>> # Ensure that the amount of listed objects are greater than 6
+        >>> cond = make_condition('>', 6)
+        >>> objs = p.list(num_objs_cond=cond)
+
+        >>> cond = make_condition('>', 100)
+        >>> # ConditionNotMetError is thrown when the condition is not met
+        >>> objs = p.list(num_objs_cond=cond)
+        >>> Traceback (most recent call last):
+        >>> ...
+        >>> storage_utils.swift.ConditionNotMetError: condition not met: num
+        >>> listed objects is not > 100
+    """
+    return _Condition(operator, right_operand)
 
 
 def _swift_retry(exceptions=None):
@@ -89,7 +192,7 @@ def _swift_retry(exceptions=None):
     return decorated
 
 
-def _swift_propagate_exceptions(func):
+def _propagate_swift_exceptions(func):
     """Bubbles all swift exceptions as SwiftClientErrors
     """
     @wraps(func)
@@ -106,100 +209,26 @@ def _swift_propagate_exceptions(func):
 
             http_status = getattr(client_exception, 'http_status', None)
             if http_status == 404:
-                raise SwiftNotFoundError(str(e), e)
+                raise NotFoundError(str(e), e)
             else:
-                raise SwiftClientError(str(e), e)
+                raise SwiftError(str(e), e)
 
     return wrapper
 
 
-class SwiftClientError(Exception):
-    """The top-level exception thrown for any swift errors
-
-    The 'caught_exception' attribute of the exception must
-    be examined in order to inspect the swift exception that
-    happened. A swift exception can either be a
-    SwiftError (thrown by swiftclient.service) or a
-    ClientError (thrown by swiftclient.client)
-    """
-    def __init__(self, message, caught_exception=None):
-        super(SwiftClientError, self).__init__(message)
-        self.caught_exception = caught_exception
-
-
-class SwiftNotFoundError(SwiftClientError):
+class NotFoundError(SwiftError):
     """Thrown when a 404 response is returned from swift
     """
     pass
 
 
-class SwiftConfigurationError(SwiftClientError):
+class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
     Swift needs the OS_USERNAME and OS_PASSWORD env
     variables configured in order to operate.
     """
     pass
-
-
-class SwiftConditionError(SwiftClientError):
-    """Thrown when a swift command does not meet a condition.
-
-    Some swift commands (such as list) can have a condition
-    attached to them that will cause the command to fail if
-    the condition criteria is not met. This exception is
-    thrown in those cases.
-    """
-    pass
-
-
-class SwiftCondition(object):
-    """A condition on a swift call
-
-    SwiftCondition objects are passed to swift calls that take conditions
-    (e.g. list). A swift condition is constructed with an operator and
-    right operand of the condition, for example:
-
-        >>> cond = SwiftCondition('>=', 3)
-
-    The above makes a "greater than or equal to three" condition. The
-    ``is_met_by`` method is used to test the condition:
-
-        >>> print cond.is_met_by(3)
-        True
-        >>> print cond.is_met_by(4)
-        True
-        >>> print cond.is_met_by(2)
-        False
-
-    The operators that are supported are ``==``, ``!=``, ``<``, ``>``, ``<=``,
-    and ``>=``.
-    """
-    operators = {
-        '==': operator.eq,
-        '!=': operator.ne,
-        '<': operator.lt,
-        '>': operator.gt,
-        '<=': operator.le,
-        '>=': operator.ge
-    }
-
-    def __init__(self, operator, right_operand):
-        if operator not in self.operators:
-            raise ValueError('invalid operator: "%s"' % operator)
-        self.operator = operator
-        self.right_operand = right_operand
-
-    def is_met_by(self, left_operand):
-        """Returns True if the left operand meets the condition
-        """
-        return self.operators[self.operator](left_operand, self.right_operand)
-
-    def __str__(self):
-        return '%s %s' % (self.operator, self.right_operand)
-
-    def __repr__(self):
-        return 'SwiftCondition("%s", %s)' % (self.operator, self.right_operand)
 
 
 class SwiftPath(str):
@@ -235,7 +264,7 @@ class SwiftPath(str):
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
 
-    def get_parts(self):
+    def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings.
         """
         if len(self) > len(self.swift_drive):
@@ -247,25 +276,25 @@ class SwiftPath(str):
     def tenant(self):
         """Returns the tenant name from the path or return None
         """
-        parts = self.get_parts()
+        parts = self._get_parts()
         return parts[0] if len(parts) > 0 and parts[0] else None
 
     @property
     def container(self):
         """Returns the container name from the path or None.
         """
-        parts = self.get_parts()
+        parts = self._get_parts()
         return parts[1] if len(parts) > 1 and parts[1] else None
 
     @property
     def resource(self):
-        """Returns the resource or None.
+        """Returns the resource as a Path object or None.
 
         A resource can be a single object or a prefix to objects.
         Note that it's important to keep the trailing slash in a resource
         name for prefix queries.
         """
-        parts = self.get_parts()
+        parts = self._get_parts()
         joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
 
         return Path(joined_resource) if joined_resource else None
@@ -287,7 +316,7 @@ class SwiftPath(str):
         os_password = password or os.environ.get('OS_PASSWORD')
 
         if not os_username or not os_password:
-            raise SwiftConfigurationError((
+            raise ConfigurationError((
                 'OS_USERNAME and OS_PASSWORD environment vars must be set for '
                 'Swift authentication. storage_utils.swift.username and '
                 'storage_utils.swift.password may also be set.'
@@ -342,13 +371,13 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return swift_service.get_conn(conn_opts)
 
-    @_swift_propagate_exceptions
+    @_propagate_swift_exceptions
     def _swift_connection_call(self, method, *args, **kwargs):
         """Runs a method call on a Connection object.
         """
         return method(*args, **kwargs)
 
-    @_swift_propagate_exceptions
+    @_propagate_swift_exceptions
     def _swift_service_call(self, method, *args, **kwargs):
         """Runs a method call on a SwiftService object.
         """
@@ -363,14 +392,13 @@ class SwiftPath(str):
 
         return results
 
-    @_swift_retry(exceptions=SwiftNotFoundError)
+    @_swift_retry(exceptions=NotFoundError)
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
-        This method is configured by default to retry if the object
-        does not exist based on the module-level swift retry settings.
-        These settings can be overridden on the module or passed in
-        as the num_retries, initial_sleep, and sleep_function arguments.
+        This method is configured to retry by default when the object is
+        not found. Set num_retries to 0 to disable this behavior as a method
+        argument or module-level setting.
 
         Args:
             mode (str): The mode of file IO. Reading is the only supported
@@ -379,10 +407,11 @@ class SwiftPath(str):
                 is encountered when opening the resource.
             initial_sleep (int): The initial amount of time to sleep if
                 a retry is needed to open the resource.
-            sleep_function (function): The sleep function to use when
-                calculating time between retries. The first argument
-                is the amount of time passed and the second argument is
-                the retry number.
+            sleep_function (function(int, int) -> int): The function
+                that increases sleep time when retrying.
+                This function needs to take two integer
+                arguments (time slept last attempt, attempt number) and
+                return a time to sleep in seconds.
 
         Returns:
             cStringIO: The contents of the object.
@@ -399,14 +428,13 @@ class SwiftPath(str):
                                                        self.resource)
         return cStringIO.StringIO(content)
 
-    @_swift_retry(exceptions=SwiftConditionError)
+    @_swift_retry(exceptions=ConditionNotMetError)
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
-        This method is configured by default to retry if num_objs_cond
-        is not met based on the module-level swift retry settings.
-        These settings can be overridden on the module or passed in
-        as the num_retries, initial_sleep, and sleep_function arguments.
+        To deal with Swift's eventual consistency, pass a condition for number
+        of objects returned via ``num_objs_cond`` and this function will retry
+        until the expected number of objects becomes available.
 
         Args:
             starts_with (str): Allows for an additional search path to
@@ -420,10 +448,11 @@ class SwiftPath(str):
                 num_objs_cond is not met.
             initial_sleep (int): The initial amount of time to sleep if
                 the num_objs_cond is not met.
-            sleep_function (function): The sleep function to use when
-                calculating time between retries. The first argument
-                is the amount of time passed and the second argument is
-                the retry number.
+            sleep_function (function(int, int) -> int): The function
+                that increases sleep time when retrying.
+                This function needs to take two integer
+                arguments (time slept last attempt, attempt number) and
+                return a time to sleep in seconds.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -462,9 +491,8 @@ class SwiftPath(str):
             path_pre / r['name'] for r in results[1]
         ]
 
-        if num_objs_cond and not num_objs_cond.is_met_by(len(paths)):
-            raise SwiftConditionError('swift condition not met: '
-                                      'num listed objects %s' % num_objs_cond)
+        if num_objs_cond:
+            num_objs_cond.assert_is_met_by(len(paths), 'num listed objects')
 
         return paths
 
@@ -479,10 +507,9 @@ class SwiftPath(str):
         swift://tenant/container/my_dir (without the trailing slash), this
         method will perform a swift query with a prefix of mydir/pattern.
 
-        This method is configured by default to retry if num_objs_cond
-        is not met based on the module-level swift retry settings.
-        These settings can be overridden on the module or passed in
-        as the num_retries, initial_sleep, and sleep_function arguments.
+        To deal with Swift's eventual consistency, pass a condition for number
+        of objects returned via ``num_objs_cond`` and this function will retry
+        until the expected number of globbed objects becomes available.
 
         Args:
             pattern (str): The pattern to match. The pattern can only have
@@ -494,10 +521,11 @@ class SwiftPath(str):
                 num_objs_cond is not met.
             initial_sleep (int): The initial amount of time to sleep if
                 the num_objs_cond is not met.
-            sleep_function (function): The sleep function to use when
-                calculating time between retries. The first argument
-                is the amount of time passed and the second argument is
-                the retry number.
+            sleep_function (function(int, int) -> int): The function
+                that increases sleep time when retrying.
+                This function needs to take two integer
+                arguments (time slept last attempt, attempt number) and
+                return a time to sleep in seconds.
 
         Returns:
             List[SwiftPath]: Every matching path.
@@ -540,10 +568,10 @@ class SwiftPath(str):
         """
         try:
             return bool(self.first())
-        except SwiftNotFoundError:
+        except NotFoundError:
             return False
 
-    @_swift_retry(exceptions=SwiftConditionError)
+    @_swift_retry(exceptions=ConditionNotMetError)
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
@@ -552,10 +580,9 @@ class SwiftPath(str):
                  num_objs_cond=None):
         """Downloads a path.
 
-        This method is configured by default to retry if num_objs_cond
-        is not met based on the module-level swift retry settings.
-        These settings can be overridden on the module or passed in
-        as the num_retries, initial_sleep, and sleep_function arguments.
+        To deal with Swift's eventual consistency, pass a condition for number
+        of objects returned via ``num_objs_cond`` and this function will retry
+        until the expected number of objects becomes available.
 
         Args:
             output_dir (str): The output directory to download results to.
@@ -576,10 +603,11 @@ class SwiftPath(str):
                 num_objs_cond is not met.
             initial_sleep (int): The initial amount of time to sleep if
                 the num_objs_cond is not met.
-            sleep_function (function): The sleep function to use when
-                calculating time between retries. The first argument
-                is the amount of time passed and the second argument is
-                the retry number.
+            sleep_function (function(int, int) -> int): The function
+                that increases sleep time when retrying.
+                This function needs to take two integer
+                arguments (time slept last attempt, attempt number) and
+                return a time to sleep in seconds.
 
         Raises:
             SwiftClientError: A swift client error occurred.
@@ -598,12 +626,12 @@ class SwiftPath(str):
                                            self.container,
                                            options=download_options)
 
-        if num_objs_cond and not num_objs_cond.is_met_by(len(results)):
-            raise SwiftConditionError('swift condition not met: num '
-                                      'downloaded objects %s' % num_objs_cond)
+        if num_objs_cond:
+            num_objs_cond.assert_is_met_by(len(results),
+                                           'num downloaded objects')
 
     def upload(self,
-               upload_names,
+               to_upload,
                segment_size=None,
                use_slo=False,
                segment_container=None,
@@ -624,7 +652,7 @@ class SwiftPath(str):
                 path('swift://tenant/container').upload(['.'])
 
         Args:
-            upload_names (list): A list of file and directory names to upload.
+            to_upload (list): A list of file and directory names to upload.
             segment_size (int|str): Upload files in segments no larger than
                 <segment_size> (in bytes) and then create a "manifest" file
                 that will download all the segments as if it were the original
@@ -655,7 +683,7 @@ class SwiftPath(str):
         """
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
-        upload_names = utils.walk_files_and_dirs(upload_names)
+        all_files_to_upload = utils.walk_files_and_dirs(to_upload)
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
@@ -666,7 +694,7 @@ class SwiftPath(str):
         }
         return self._swift_service_call(service.upload,
                                         self.container,
-                                        upload_names,
+                                        all_files_to_upload,
                                         options=upload_options)
 
     def remove(self):
