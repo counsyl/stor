@@ -10,15 +10,16 @@ manner
 The different module settings options are the following:
 
     - initial_retry_sleep (int): The amount of time (in seconds)
-      for sleeping when retrying a swift call.
-      num_retries (int): The amount of times to retry a failed
-      swift call.
+      for sleeping when retrying a swift call. Default is 1
+
+    - num_retries (int): The amount of times to retry a failed
+      swift call. Default is 0
 
     - retry_sleep_function (function(int, int) -> int): The function
       that increases sleep time when retrying a swift call.
       This function needs to take two integer
       arguments (time slept last attempt, attempt number) and return the
-      amount of time to sleep. By default we simply multiply "t" by two every
+      amount of time to sleep. By default we simply multiply ``t`` by two every
       time.
 
     - auth_url (str): The swift auth url to use for authentication. If not
@@ -193,7 +194,7 @@ def _swift_retry(exceptions=None):
 
 
 def _propagate_swift_exceptions(func):
-    """Bubbles all swift exceptions as SwiftClientErrors
+    """Bubbles all swift exceptions as SwiftErrors
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -307,7 +308,7 @@ class SwiftPath(str):
                 into connection options.
 
         Raises:
-            SwiftConfigurationError: The needed swift environment variables
+            ConfigurationError: The needed swift environment variables
                 aren't set.
         """
         os_auth_url = (
@@ -417,7 +418,7 @@ class SwiftPath(str):
             cStringIO: The contents of the object.
 
         Raises:
-            SwiftClientError: A swift client error occurred.
+            SwiftError: A swift client error occurred.
         """
         if mode not in ('r', 'rb'):
             raise ValueError('only read-only mode ("r" and "rb") is supported')
@@ -458,8 +459,8 @@ class SwiftPath(str):
             List[SwiftPath]: Every path in the listing.
 
         Raises:
-            SwiftClientError: A swift client error occurred.
-            SwiftConditionError: Results were returned, but they did not
+            SwiftError: A swift client error occurred.
+            ConditionNotMetError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
         connection = self._get_swift_connection()
@@ -531,8 +532,8 @@ class SwiftPath(str):
             List[SwiftPath]: Every matching path.
 
         Raises:
-            SwiftClientError: A swift client error occurred.
-            SwiftConditionError: Results were returned, but they did not
+            SwiftError: A swift client error occurred.
+            ConditionNotMetError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
         if pattern.count('*') > 1:
@@ -549,7 +550,7 @@ class SwiftPath(str):
         Note that this method does not perform any retry logic.
 
         Raises:
-            SwiftClientError: A swift client error occurred.
+            SwiftError: A swift client error occurred.
         """
         results = self.list(limit=1)
         return results[0] if results else None
@@ -564,7 +565,7 @@ class SwiftPath(str):
             bool: True if the path exists, False otherwise.
 
         Raises:
-            SwiftClientError: A non-404 swift client error occurred.
+            SwiftError: A non-404 swift client error occurred.
         """
         try:
             return bool(self.first())
@@ -610,8 +611,8 @@ class SwiftPath(str):
                 return a time to sleep in seconds.
 
         Raises:
-            SwiftClientError: A swift client error occurred.
-            SwiftConditionError: Results were returned, but they did not
+            SwiftError: A swift client error occurred.
+            ConditionNotMetError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
         service = self._get_swift_service(object_dd_threads=object_threads,
@@ -679,7 +680,7 @@ class SwiftPath(str):
                 object segments.
 
             Raises:
-                SwiftClientError: A swift client error occurred.
+                SwiftError: A swift client error occurred.
         """
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
@@ -702,7 +703,7 @@ class SwiftPath(str):
 
         Raises:
             ValueError: The path is invalid.
-            SwiftClientError: A swift client error occurred.
+            SwiftError: A swift client error occurred.
         """
         if not self.container or not self.resource:
             raise ValueError('path must contain a container and resource to '
@@ -717,7 +718,7 @@ class SwiftPath(str):
         """Removes a resource and all of its contents.
 
         Raises:
-            SwiftClientError: A swift client error occurred.
+            SwiftError: A swift client error occurred.
         """
         service = self._get_swift_service()
         if not self.resource:
@@ -749,7 +750,7 @@ class SwiftPath(str):
                     }
 
         Raises:
-            SwiftClientError: A swift client error occurred.
+            SwiftError: A swift client error occurred.
         """
         if not self.container or self.resource:
             raise ValueError('post only works on container paths')
