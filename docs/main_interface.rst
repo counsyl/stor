@@ -1,16 +1,9 @@
-..  _path:
+..  _main_interface:
 
-Path
-====
-Counsyl Storage Utils comes with the ability to create paths in a similar manner to `path.py <https://pypi.python.org/pypi/path.py>`_. It is expected that the three functions below are the only ones directly used. (i.e. ``Path`` or ``SwiftPath`` objects should never be explicitly instantiated).
-
+Main Interface
+==============
 .. automodule:: storage_utils
-.. autofunction:: storage_utils.path
-.. autofunction:: storage_utils.is_posix_path
-.. autofunction:: storage_utils.is_swift_path
-
-.. NOTE::
-    It's okay to repeatedly call ``path`` on any ``Path`` object since it will return itself.
+  :members:
 
 
 Common Path Methods
@@ -29,8 +22,4 @@ By using the ``path`` factory function, users can write code that is portable ac
 
 SwiftPath
 ---------
-``SwiftPath`` objects returned from the ``path`` factory partially support the common path methods listed above along with supporting the basic path manipulation methods (e.g. 'my' / 'path' == 'my/path').
-
-.. automodule:: storage_utils.swift_path 
-.. autoclass:: storage_utils.swift_path.SwiftPath
-    :members:
+``SwiftPath`` objects returned from the ``path`` factory partially support the common path methods listed above along with supporting the basic path manipulation methods (e.g. 'my' / 'path' == 'my/path'). For more information on accessing swift, go to the :ref:`swift` section.

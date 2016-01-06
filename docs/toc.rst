@@ -6,7 +6,8 @@ Table of Contents
 
    index
    installation
-   path
+   main_interface
+   swift
    utils
    testing
    contributing

@@ -1,3 +1,11 @@
+"""
+Counsyl Storage Utils comes with the ability to create paths in a similar
+manner to `path.py <https://pypi.python.org/pypi/path.py>`_. It is expected
+that the main functions below are the only ones directly used.
+(i.e. ``Path`` or ``SwiftPath`` objects should never be explicitly
+instantiated).
+"""
+
 from storage_utils.utils import NamedTemporaryDirectory  # flake8: noqa
 
 
@@ -12,7 +20,7 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from storage_utils.swift_path import SwiftPath
+    from storage_utils.swift import SwiftPath
     return p.startswith(SwiftPath.swift_drive)
 
 
@@ -49,12 +57,15 @@ def path(p):
         >>> from storage_utils import path
         >>> p = path('swift://tenant/container/object')
         >>> print type(p)
-        <class 'storage_utils.swift_path.SwiftPath'>
+        <class 'storage_utils.swift.SwiftPath'>
         >>> print p.exists()
         False
+
+    Note that it's okay to repeatedly call ``path`` on any ``Path`` object
+    since it will return itself.
     """
     if is_swift_path(p):
-        from storage_utils.swift_path import SwiftPath
+        from storage_utils.swift import SwiftPath
         return SwiftPath(p)
     else:
         from path import Path

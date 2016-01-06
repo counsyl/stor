@@ -23,13 +23,14 @@ The core of this project is a ``path`` factory function for accessing Posix file
   files = p.glob('prefix*')
 
 
-With this interface, one can write code that is compatible with Swift and Posix file storage. For more details about the path module and how to access Swift storage directory, go to the :ref:`path` section.
+With this interface, one can write code that is compatible with Swift and Posix file storage. For more details about the path module and how to access Swift storage directory, go to the :ref:`main_interface` section.
 
 
 In Depth Documentation
 ----------------------
 For more detailed documentation about the various interfaces offered by Counsyl Storage Utils, check out the following:
 
-- :ref:`path`: In depth documentation about the primary path interface.
+- :ref:`main_interface`: In depth documentation about the main interface.
+- :ref:`swift`: In depth documentation about swift access.
 - :ref:`utils`: Utilities for common file system procedures.
 - :ref:`testing`: Testing components for testing with swift storage.
