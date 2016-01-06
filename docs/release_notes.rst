@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v0.2
+----
+
+* Added functionality to pass number of threads to upload / download
+* Added ability to place conditions on returned results
+* Added retry logic to some of the swift calls
+
 v0.1
 ----
 
