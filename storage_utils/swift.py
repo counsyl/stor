@@ -621,6 +621,7 @@ class SwiftPath(str):
             num_objs_cond.assert_is_met_by(len(results),
                                            'num downloaded objects')
 
+    @_swift_retry(exceptions=(UnavailableError))
     def upload(self,
                to_upload,
                segment_size=None,
@@ -632,6 +633,11 @@ class SwiftPath(str):
                object_threads=10,
                segment_threads=10):
         """Uploads a list of files and directories to swift.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Note that this method uploads based on paths relative to the current
         directory. In order to load files relative to a target directory,
@@ -688,8 +694,14 @@ class SwiftPath(str):
                                         all_files_to_upload,
                                         options=upload_options)
 
+    @_swift_retry(exceptions=(UnavailableError))
     def remove(self):
         """Removes a single object.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Raises:
             ValueError: The path is invalid.
@@ -704,8 +716,14 @@ class SwiftPath(str):
                                         self.container,
                                         [self.resource])
 
+    @_swift_retry(exceptions=(UnavailableError))
     def rmtree(self):
         """Removes a resource and all of its contents.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -720,8 +738,14 @@ class SwiftPath(str):
                                             self.container,
                                             to_delete)
 
+    @_swift_retry(exceptions=(UnavailableError))
     def post(self, options=None):
         """Post operations on the path.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Args:
             options (dict): A dictionary containing options to override the
