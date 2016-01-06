@@ -260,6 +260,28 @@ class TestList(SwiftTestCase):
         self.assertTrue(len(mock_list.call_args_list) > 1)
 
     @mock.patch('time.sleep', autospec=True)
+    def test_list_unavailable(self, mock_sleep):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = [
+            ClientException('unavaiable', http_status=503),
+            ({}, [{
+                'name': 'path/to/resource1'
+            }, {
+                'name': 'path/to/resource2'
+            }])
+        ]
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = swift_p.list()
+        self.assertEquals(results, [
+            'swift://tenant/container/path/to/resource1',
+            'swift://tenant/container/path/to/resource2'
+        ])
+
+        # Verify that list was retried one time
+        self.assertEquals(len(mock_list.call_args_list), 2)
+
+    @mock.patch('time.sleep', autospec=True)
     def test_list_condition_not_met_custom_retry_logic(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
@@ -411,13 +433,13 @@ class TestGlob(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.glob('pattern*')
         mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
-                                          num_objs_cond=None)
+                                          num_retries=0)
 
     def test_valid_pattern_wo_wildcard(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.glob('pattern')
         mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
-                                          num_objs_cond=None)
+                                          num_retries=0)
 
     def test_multi_glob_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
@@ -428,6 +450,22 @@ class TestGlob(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
             swift_p.glob('invalid_*pattern', num_objs_cond=None)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_cond_not_met(self, mock_list, mock_sleep):
+        mock_list.return_value = ({}, [{
+            'name': 'container1'
+        }, {
+            'name': 'container2'
+        }])
+        swift_p = SwiftPath('swift://tenant/container')
+        with self.assertRaises(swift.ConditionNotMetError):
+            swift_p.glob('pattern*',
+                         num_objs_cond=swift.make_condition('>', 2),
+                         num_retries=3)
+
+        # Verify that global was tried three times
+        self.assertEquals(len(mock_list.call_args_list), 3)
 
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)

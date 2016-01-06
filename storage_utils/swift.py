@@ -1,37 +1,16 @@
 """
 Provides utilities for accessing swift object storage.
 
-Swift can be configured with module-wide settings in the following
-manner
+Different configuration options are available at the module level, and
+these variables are documented under their module declarations.
 
-    >>> from storage_utils import swift
-    >>> swift.setting_name = 'setting'
+For swift authentication, the ``auth_url``, ``username``, and
+``password`` variables are used.
 
-The different module settings options are the following:
-
-    - initial_retry_sleep (int): The amount of time (in seconds)
-      for sleeping when retrying a swift call. Default is 1
-
-    - num_retries (int): The amount of times to retry a failed
-      swift call. Default is 0
-
-    - retry_sleep_function (function(int, int) -> int): The function
-      that increases sleep time when retrying a swift call.
-      This function needs to take two integer
-      arguments (time slept last attempt, attempt number) and return the
-      amount of time to sleep. By default we simply multiply ``t`` by two every
-      time.
-
-    - auth_url (str): The swift auth url to use for authentication. If not
-      set, the ``OS_AUTH_URL`` environment variable will be used. If
-      that is not set, the ``DEFAULT_AUTH_URL`` global constant will
-      be used.
-
-    - username (str): The swift username to use for authentication. If not
-      set, the ``OS_USERNAME`` environment variable will be used.
-
-    - password (str): The swift password to use for authentication. If not
-      set, the ``OS_PASSWORD`` environment variable will be used.
+For methods that take conditions, the ``initial_retry_sleep``,
+``num_retries``, and ``retry_sleep_function`` variables are used to
+configure the logic around retrying when the condition is not met.
+Note that these variables can also be passed to the methods themselves.
 
 Examples:
 
@@ -39,6 +18,10 @@ Examples:
     to download a swift path to the current working directory.
 
     >>> from storage_utils import swift
+    >>> swift.auth_url = 'swift_auth_url.com'
+    >>> swift.username = 'swift_user'
+    >>> swift.password = 'swift_pass'
+    >>>
     >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
     >>> swift_path.download()
 """
@@ -53,22 +36,49 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 
 
-# Default module-level settings for swift retry logic. These
-# settings are meant to be overridden by the user.
-initial_retry_sleep = 1
-num_retries = 0
-retry_sleep_function = lambda t, attempt: t * 2
-
 # Default module-level settings for swift authentication.
 # If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
 # environment variables will be used
 auth_url = None
+"""The swift authentication URL
+
+If not set, the ``OS_AUTH_URL`` environment variable will be used. If
+that is not set, the ``DEFAULT_AUTH_URL`` global constant will
+be used.
+"""
+
 username = None
+"""The swift username
+
+If not set, the ``OS_USERNAME`` environment variable will be used.
+"""
+
 password = None
+"""The swift password
+
+If not set, the ``OS_PASSWORD`` environment variable will be used.
+"""
 
 # The default auth url used if the module setting or env variable
 # isn't set
 DEFAULT_AUTH_URL = 'http://swift.counsyl.com/auth/v2.0'
+
+# When a swift method takes a condition, these variables are used to
+# configure retry logic. These variables can also be passed
+# to the methods themselves
+initial_retry_sleep = 1
+"""The time to sleep before the first retry"""
+
+num_retries = 0
+"""The number of times to retry"""
+
+retry_sleep_function = lambda t, attempt: t * 2
+"""The function that increases sleep time when retrying.
+
+This function needs to take two integer
+arguments (time slept last attempt, attempt number) and
+return a time to sleep in seconds.
+"""
 
 
 class SwiftError(Exception):
@@ -83,6 +93,27 @@ class SwiftError(Exception):
     def __init__(self, message, caught_exception=None):
         super(SwiftError, self).__init__(message)
         self.caught_exception = caught_exception
+
+
+class NotFoundError(SwiftError):
+    """Thrown when a 404 response is returned from swift
+    """
+    pass
+
+
+class UnavailableError(SwiftError):
+    """Thrown when a 503 response is returned from swift
+    """
+    pass
+
+
+class ConfigurationError(SwiftError):
+    """Thrown when swift is not configured properly.
+
+    Swift needs either module-level or environment authentication
+    variables set in order to be configured.
+    """
+    pass
 
 
 class ConditionNotMetError(SwiftError):
@@ -211,25 +242,12 @@ def _propagate_swift_exceptions(func):
             http_status = getattr(client_exception, 'http_status', None)
             if http_status == 404:
                 raise NotFoundError(str(e), e)
+            elif http_status == 503:
+                raise UnavailableError(str(e), e)
             else:
                 raise SwiftError(str(e), e)
 
     return wrapper
-
-
-class NotFoundError(SwiftError):
-    """Thrown when a 404 response is returned from swift
-    """
-    pass
-
-
-class ConfigurationError(SwiftError):
-    """Thrown when swift is not configured properly.
-
-    Swift needs the OS_USERNAME and OS_PASSWORD env
-    variables configured in order to operate.
-    """
-    pass
 
 
 class SwiftPath(str):
@@ -318,9 +336,9 @@ class SwiftPath(str):
 
         if not os_username or not os_password:
             raise ConfigurationError((
-                'OS_USERNAME and OS_PASSWORD environment vars must be set for '
-                'Swift authentication. storage_utils.swift.username and '
-                'storage_utils.swift.password may also be set.'
+                'OS_AUTH_URL, OS_USERNAME, and OS_PASSWORD environment vars '
+                'must be set for swift authentication. The username, password '
+                'and auth_url module-level variables may also be set.'
             ))
 
         # Set additional options on top of what was passed in
@@ -393,26 +411,17 @@ class SwiftPath(str):
 
         return results
 
-    @_swift_retry(exceptions=NotFoundError)
+    @_swift_retry(exceptions=(NotFoundError, UnavailableError))
     def open(self, mode='r'):
         """Opens a single resource using swift's get_object.
 
         This method is configured to retry by default when the object is
-        not found. Set num_retries to 0 to disable this behavior as a method
-        argument or module-level setting.
+        not found or swift is unavailable. View module-level documentation
+        about how to configure retry logic at the module or method level.
 
         Args:
             mode (str): The mode of file IO. Reading is the only supported
                 mode.
-            num_retries (int): The number of times to retry if a 404
-                is encountered when opening the resource.
-            initial_sleep (int): The initial amount of time to sleep if
-                a retry is needed to open the resource.
-            sleep_function (function(int, int) -> int): The function
-                that increases sleep time when retrying.
-                This function needs to take two integer
-                arguments (time slept last attempt, attempt number) and
-                return a time to sleep in seconds.
 
         Returns:
             cStringIO: The contents of the object.
@@ -429,13 +438,15 @@ class SwiftPath(str):
                                                        self.resource)
         return cStringIO.StringIO(content)
 
-    @_swift_retry(exceptions=ConditionNotMetError)
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
-        To deal with Swift's eventual consistency, pass a condition for number
-        of objects returned via ``num_objs_cond`` and this function will retry
-        until the expected number of objects becomes available.
+        This method retries ``num_retries`` times if swift is unavailable
+        or if the number of objects returned does not match the
+        num_objs_cond condition. View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Args:
             starts_with (str): Allows for an additional search path to
@@ -445,15 +456,6 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects returned meets this
                 condition.
-            num_retries (int): The number of times to retry if the
-                num_objs_cond is not met.
-            initial_sleep (int): The initial amount of time to sleep if
-                the num_objs_cond is not met.
-            sleep_function (function(int, int) -> int): The function
-                that increases sleep time when retrying.
-                This function needs to take two integer
-                arguments (time slept last attempt, attempt number) and
-                return a time to sleep in seconds.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -497,6 +499,7 @@ class SwiftPath(str):
 
         return paths
 
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def glob(self, pattern, num_objs_cond=None):
         """Globs all objects in the path with the pattern.
 
@@ -508,9 +511,11 @@ class SwiftPath(str):
         swift://tenant/container/my_dir (without the trailing slash), this
         method will perform a swift query with a prefix of mydir/pattern.
 
-        To deal with Swift's eventual consistency, pass a condition for number
-        of objects returned via ``num_objs_cond`` and this function will retry
-        until the expected number of globbed objects becomes available.
+        This method retries ``num_retries`` times if swift is unavailable or if
+        the number of globbed patterns does not match the num_objs_cond
+        condition. View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Args:
             pattern (str): The pattern to match. The pattern can only have
@@ -518,15 +523,6 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects returned meets this
                 condition.
-            num_retries (int): The number of times to retry if the
-                num_objs_cond is not met.
-            initial_sleep (int): The initial amount of time to sleep if
-                the num_objs_cond is not met.
-            sleep_function (function(int, int) -> int): The function
-                that increases sleep time when retrying.
-                This function needs to take two integer
-                arguments (time slept last attempt, attempt number) and
-                return a time to sleep in seconds.
 
         Returns:
             List[SwiftPath]: Every matching path.
@@ -541,25 +537,26 @@ class SwiftPath(str):
         if '*' in pattern and not pattern.endswith('*'):
             raise ValueError('only prefix queries are supported')
 
-        return self.list(starts_with=pattern.replace('*', ''),
-                         num_objs_cond=num_objs_cond)
+        paths = self.list(starts_with=pattern.replace('*', ''), num_retries=0)
 
+        if num_objs_cond:
+            num_objs_cond.assert_is_met_by(len(paths), 'num globbed objects')
+
+    @_swift_retry(exceptions=(UnavailableError))
     def first(self):
-        """Returns the first result from the list results of the path.
-
-        Note that this method does not perform any retry logic.
+        """Returns the first result from the list results of the path
 
         Raises:
             SwiftError: A swift client error occurred.
         """
-        results = self.list(limit=1)
+        results = self.list(limit=1, num_retries=0)
         return results[0] if results else None
 
+    @_swift_retry(exceptions=(UnavailableError))
     def exists(self):
         """Checks existence of the path.
 
-        Returns True if the path exists, False otherwise. This method
-        performs no retry logic.
+        Returns True if the path exists, False otherwise.
 
         Returns:
             bool: True if the path exists, False otherwise.
@@ -568,11 +565,11 @@ class SwiftPath(str):
             SwiftError: A non-404 swift client error occurred.
         """
         try:
-            return bool(self.first())
+            return bool(self.first(num_retries=0))
         except NotFoundError:
             return False
 
-    @_swift_retry(exceptions=ConditionNotMetError)
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def download(self,
                  output_dir=None,
                  remove_prefix=False,
@@ -581,9 +578,11 @@ class SwiftPath(str):
                  num_objs_cond=None):
         """Downloads a path.
 
-        To deal with Swift's eventual consistency, pass a condition for number
-        of objects returned via ``num_objs_cond`` and this function will retry
-        until the expected number of objects becomes available.
+        This method retries ``num_retries`` times if swift is unavailable or if
+        the number of downloaded objects does not match the num_objs_cond
+        condition. View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
 
         Args:
             output_dir (str): The output directory to download results to.
@@ -600,15 +599,6 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects downloaded meets this
                 condition. Partially downloaded results will not be deleted.
-            num_retries (int): The number of times to retry if the
-                num_objs_cond is not met.
-            initial_sleep (int): The initial amount of time to sleep if
-                the num_objs_cond is not met.
-            sleep_function (function(int, int) -> int): The function
-                that increases sleep time when retrying.
-                This function needs to take two integer
-                arguments (time slept last attempt, attempt number) and
-                return a time to sleep in seconds.
 
         Raises:
             SwiftError: A swift client error occurred.
