@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.2.1
+------
+
+* Fixed a bug in returning values from globbing
+
 v0.2
 ----
 

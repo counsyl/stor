@@ -453,11 +453,10 @@ class TestGlob(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_cond_not_met(self, mock_list, mock_sleep):
-        mock_list.return_value = ({}, [{
-            'name': 'container1'
-        }, {
-            'name': 'container2'
-        }])
+        mock_list.return_value = [
+            SwiftPath('swift://tenant/container1'),
+            SwiftPath('swift://tenant/container2')
+        ]
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(swift.ConditionNotMetError):
             swift_p.glob('pattern*',
@@ -466,6 +465,19 @@ class TestGlob(SwiftTestCase):
 
         # Verify that global was tried three times
         self.assertEquals(len(mock_list.call_args_list), 3)
+
+    def test_glob_condition_met(self, mock_list):
+        mock_list.return_value = [
+            SwiftPath('swift://tenant/container1'),
+            SwiftPath('swift://tenant/container2')
+        ]
+        swift_p = SwiftPath('swift://tenant/container')
+        paths = swift_p.glob('pattern*',
+                             num_objs_cond=swift.make_condition('==', 2))
+        self.assertEquals(paths, [
+            SwiftPath('swift://tenant/container1'),
+            SwiftPath('swift://tenant/container2')
+        ])
 
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)

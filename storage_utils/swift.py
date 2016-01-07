@@ -542,6 +542,8 @@ class SwiftPath(str):
         if num_objs_cond:
             num_objs_cond.assert_is_met_by(len(paths), 'num globbed objects')
 
+        return paths
+
     @_swift_retry(exceptions=UnavailableError)
     def first(self):
         """Returns the first result from the list results of the path
