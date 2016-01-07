@@ -10,6 +10,24 @@ from swiftclient.service import SwiftError
 import unittest
 
 
+class TestBasicPathMethods(unittest.TestCase):
+    def test_name(self):
+        p = SwiftPath('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.name, 'resource')
+
+    def test_parent(self):
+        p = SwiftPath('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.parent, 'swift://tenant/container/path/to')
+
+    def test_dirname(self):
+        p = SwiftPath('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.dirname(), 'swift://tenant/container/path/to')
+
+    def test_basename(self):
+        p = SwiftPath('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.basename(), 'resource')
+
+
 class TestCondition(unittest.TestCase):
     def test_invalid_condition(self):
         with self.assertRaises(ValueError):
