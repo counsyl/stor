@@ -283,6 +283,28 @@ class SwiftPath(str):
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
 
+    @property
+    def name(self):
+        """The name of the path, mimicking path.py's name property
+        """
+        return Path(self).name
+
+    @property
+    def parent(self):
+        """The parent of the path, mimicking path.py's parent property
+        """
+        return self.__class__(Path(self).parent)
+
+    def dirname(self):
+        """The directory name of the path, mimicking path.py's dirname method
+        """
+        return self.__class__(Path(self).dirname())
+
+    def basename(self):
+        """The base name name of the path, mimicking path.py's basename method
+        """
+        return Path(self).basename()
+
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings.
         """
@@ -641,7 +663,7 @@ class SwiftPath(str):
         information about configuring retry logic at the module or method
         level.
 
-        Note that this method uploads based on paths relative to the current
+        Note that this method upload on paths relative to the current
         directory. In order to load files relative to a target directory,
         use path as a context manager to change the directory.
 
