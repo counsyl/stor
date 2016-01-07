@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.3.0
+------
+
+* Added basic path.py methods to SwiftPath
+
 v0.2.1
 ------
 
