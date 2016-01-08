@@ -1,3 +1,4 @@
+from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import make_condition
 from storage_utils.swift import SwiftPath
@@ -8,6 +9,24 @@ from path import Path
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 import unittest
+
+
+class TestBasicPathMethods(unittest.TestCase):
+    def test_name(self):
+        p = path('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.name, 'resource')
+
+    def test_parent(self):
+        p = path('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.parent, 'swift://tenant/container/path/to')
+
+    def test_dirname(self):
+        p = path('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.dirname(), 'swift://tenant/container/path/to')
+
+    def test_basename(self):
+        p = path('swift://tenant/container/path/to/resource')
+        self.assertEquals(p.basename(), 'resource')
 
 
 class TestCondition(unittest.TestCase):
