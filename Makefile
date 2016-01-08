@@ -84,13 +84,13 @@ test: venv
 
 # Distribution
 
-VERSION=`$(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'`
+VERSION=$(shell $(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/')
 
 .PHONY: tag
 tag: ##[distribution] Tag the release.
 tag: venv
 	echo "Tagging version as ${VERSION}"
-	git tag -a ${VERSION} -m 'Version ${VERSION}'
+	git tag -a ${VERSION} -m "Version ${VERSION}"
 	# We won't push changes or tags here allowing the pipeline to do that, so we don't accidentally do that locally.
 
 .PHONY: dist
