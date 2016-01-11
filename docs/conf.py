@@ -11,7 +11,7 @@ def get_version():
     """
     proc = subprocess.Popen(['make', 'version'], cwd='..',
                             stdout=subprocess.PIPE)
-    return proc.communicate()[0]
+    return proc.communicate()[0].strip()
 
 
 # -- General configuration ------------------------------------------------
