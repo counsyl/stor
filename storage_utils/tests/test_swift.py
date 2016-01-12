@@ -303,7 +303,8 @@ class TestList(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
-        mock_list.side_effect = ClientException('unauthorized', http_status=403)
+        mock_list.side_effect = ClientException('unauthorized',
+                                                http_status=403)
 
         swift_p = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(swift.UnauthorizedError):
