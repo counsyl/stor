@@ -301,6 +301,15 @@ class TestList(SwiftTestCase):
         self.assertEquals(len(mock_list.call_args_list), 2)
 
     @mock.patch('time.sleep', autospec=True)
+    def test_list_unauthorized(self, mock_sleep):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = ClientException('unavaiable', http_status=403)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.UnauthorizedError):
+            swift_p.list()
+
+    @mock.patch('time.sleep', autospec=True)
     def test_list_condition_not_met_custom_retry_logic(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
