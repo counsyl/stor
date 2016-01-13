@@ -8,7 +8,6 @@ Table of Contents
    installation
    main_interface
    swift
-   utils
    testing
    contributing
    release_notes

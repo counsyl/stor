@@ -718,6 +718,22 @@ class SwiftPath(str):
                                         all_files_to_upload,
                                         options=upload_options)
 
+    def copy(self, destination, object_threads=20, **retry_args):
+        """Copies to a posix path destination.
+
+        Args:
+            destination (str|path): A posix destination path.
+            object_threads (int): The number of swift object threads to use
+                when copying.
+            retry_args (dict): Optional retry arguments passed through to
+                swift download. Check module-level documentation for
+                the valid retry arguments.
+        """
+        return utils.copy(self,
+                          destination,
+                          object_threads=object_threads,
+                          **retry_args)
+
     @_swift_retry(exceptions=UnavailableError)
     def remove(self):
         """Removes a single object.

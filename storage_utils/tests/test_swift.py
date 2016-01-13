@@ -675,6 +675,15 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(options_passed['segment_threads'], 30)
 
 
+class TestCopy(SwiftTestCase):
+    @mock.patch('storage_utils.utils.copy', autospec=True)
+    def test_copy(self, mock_copy):
+        p = SwiftPath('swift://tenant/container')
+        p.copy('path', num_retries=1, object_threads=100)
+        mock_copy.assert_called_once_with(p, 'path', object_threads=100,
+                                          num_retries=1)
+
+
 class TestRemove(SwiftTestCase):
     def test_invalid_remove(self):
         # Remove()s must happen on a resource of a container

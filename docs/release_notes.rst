@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v0.4.0
+------
+
+* Added copy methods to posix and swift paths
+
 v0.3.0
 ------
 
