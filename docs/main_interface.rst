@@ -24,3 +24,7 @@ By using the ``path`` factory function, users can write code that is portable ac
 SwiftPath
 ---------
 ``SwiftPath`` objects returned from the ``path`` factory partially support the common path methods listed above along with supporting the basic path manipulation methods (e.g. 'my' / 'path' == 'my/path'). For more information on accessing swift, go to the :ref:`swift` section.
+
+PosixPath
+---------
+``PosixPath`` objects return from the ``path`` factory fully support the common path methods listed above and also provide additional functionality. For more information, go to the :ref:`posix` section.

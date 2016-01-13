@@ -4,59 +4,7 @@ import mock
 import storage_utils
 from storage_utils.swift import SwiftPath
 from storage_utils import utils
-from storage_utils.test import SwiftTestCase
-import subprocess
 import unittest
-
-
-class TestCopy(SwiftTestCase):
-    def test_two_swift_paths(self):
-        with self.assertRaises(ValueError):
-            utils.copy(storage_utils.path('swift://tenant/container1'),
-                       storage_utils.path('swift://tenant/container2'))
-
-    def test_two_posix_paths(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
-            os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
-                tmp_file.write('1')
-
-            dest = tmp_d / 'my' / 'dest'
-            utils.copy(source, dest)
-            self.assertTrue((dest / '1').exists())
-
-    def test_two_posix_paths_failed_command(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
-            invalid_source = tmp_d / 'source'
-            dest = tmp_d / 'my' / 'dest'
-
-            with self.assertRaises(subprocess.CalledProcessError):
-                utils.copy(invalid_source, dest)
-
-    @mock.patch.object(SwiftPath, 'upload', autospec=True)
-    def test_posix_to_swift(self, mock_upload):
-        source = '.'
-        dest = storage_utils.path('swift://tenant/container')
-        utils.copy(source, dest, object_threads=30, segment_threads=40)
-        mock_upload.assert_called_once_with(
-            dest,
-            ['.'],
-            segment_size=1073741824,
-            use_slo=True,
-            object_threads=30,
-            segment_threads=40)
-
-    @mock.patch.object(SwiftPath, 'download', autospec=True)
-    def test_swift_to_posix(self, mock_download):
-        source = storage_utils.path('swift://tenant/container')
-        dest = '.'
-        utils.copy(source, dest, object_threads=30)
-        mock_download.assert_called_once_with(
-            source,
-            output_dir=dest,
-            remove_prefix=True,
-            object_threads=30)
 
 
 class TestPath(unittest.TestCase):
