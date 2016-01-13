@@ -32,4 +32,5 @@ For more detailed documentation about the various interfaces offered by Counsyl 
 
 - :ref:`main_interface`: In depth documentation about the main interface.
 - :ref:`swift`: In depth documentation about swift access.
+- :ref:`posix`: In depth documentation about posix access.
 - :ref:`testing`: Testing components for testing with swift storage.

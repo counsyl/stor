@@ -8,6 +8,7 @@ Table of Contents
    installation
    main_interface
    swift
+   posix
    testing
    contributing
    release_notes

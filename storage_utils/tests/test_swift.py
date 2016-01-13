@@ -5,7 +5,6 @@ from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 import mock
 import os
-from path import Path
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 import unittest
@@ -100,13 +99,13 @@ class TestRepr(SwiftTestCase):
 class TestPathManipulations(SwiftTestCase):
     def test_add(self):
         swift_p = SwiftPath('swift://a')
-        swift_p = swift_p + 'b' + Path('c')
+        swift_p = swift_p + 'b' + path('c')
         self.assertTrue(isinstance(swift_p, SwiftPath))
         self.assertEquals(swift_p, 'swift://abc')
 
     def test_div(self):
         swift_p = SwiftPath('swift://t')
-        swift_p = swift_p / 'c' / Path('p')
+        swift_p = swift_p / 'c' / path('p')
         self.assertTrue(isinstance(swift_p, SwiftPath))
         self.assertEquals(swift_p, 'swift://t/c/p')
 
@@ -686,12 +685,20 @@ class TestUpload(SwiftTestCase):
 
 
 class TestCopy(SwiftTestCase):
-    @mock.patch('storage_utils.utils.copy', autospec=True)
-    def test_copy(self, mock_copy):
+    @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
+    def test_copy_posix_destination(self, mock_download):
         p = SwiftPath('swift://tenant/container')
         p.copy('path', num_retries=1, object_threads=100)
-        mock_copy.assert_called_once_with(p, 'path', object_threads=100,
-                                          num_retries=1)
+        mock_download.assert_called_once_with(
+            p,
+            object_threads=100,
+            output_dir=path(u'path'),
+            remove_prefix=True)
+
+    def test_copy_swift_destination(self):
+        p = SwiftPath('swift://tenant/container')
+        with self.assertRaises(ValueError):
+            p.copy('swift://swift/path')
 
 
 class TestRemove(SwiftTestCase):
