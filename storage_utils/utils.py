@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import os
-from subprocess import call
+from subprocess import check_call
 import tempfile
 
 
@@ -91,6 +91,8 @@ def copy(source, dest, copy_cmd='cp -r', object_threads=20,
         raise ValueError('Cannot copy one swift path to another swift path')
 
     if not is_swift_path(dest):
+        # Ensure the parent directory exists on the destination for cp or mcp
+        # to run properly
         dest.expand().abspath().parent.makedirs_p()
 
     if is_swift_path(source):
@@ -105,8 +107,8 @@ def copy(source, dest, copy_cmd='cp -r', object_threads=20,
                         segment_threads=segment_threads)
     else:
         formatted_copy_cmd = copy_cmd.split()
-        formatted_copy_cmd.extend([source, dest])
-        call(formatted_copy_cmd)
+        formatted_copy_cmd.extend([str(source), str(dest)])
+        check_call(formatted_copy_cmd)
 
 
 def walk_files_and_dirs(files_and_dirs):

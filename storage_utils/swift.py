@@ -107,6 +107,12 @@ class UnavailableError(SwiftError):
     pass
 
 
+class UnauthorizedError(SwiftError):
+    """Thrown when a 403 response is returned from swift
+    """
+    pass
+
+
 class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
@@ -240,7 +246,9 @@ def _propagate_swift_exceptions(func):
             client_exception = getattr(e, 'exception', e)
 
             http_status = getattr(client_exception, 'http_status', None)
-            if http_status == 404:
+            if http_status == 403:
+                raise UnauthorizedError(str(e), e)
+            elif http_status == 404:
                 raise NotFoundError(str(e), e)
             elif http_status == 503:
                 raise UnavailableError(str(e), e)

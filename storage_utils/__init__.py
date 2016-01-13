@@ -6,10 +6,10 @@ that the main functions below are the only ones directly used.
 instantiated).
 """
 
-from storage_utils.utils import is_posix_path  # flake8: noqa
-from storage_utils.utils import is_swift_path  # flake8: noqa
-from storage_utils.utils import NamedTemporaryDirectory  # flake8: noqa
-from storage_utils.utils import path  # flake8: noqa
+from storage_utils.utils import is_posix_path
+from storage_utils.utils import is_swift_path
+from storage_utils.utils import NamedTemporaryDirectory
+from storage_utils.utils import path
 
 __all__ = [
     'is_posix_path',

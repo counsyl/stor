@@ -1,10 +1,15 @@
 Release Notes
 =============
 
-v0.4.0
+v0.5.0
 ------
 
 * Added copy methods to posix and swift paths
+
+v0.4.0
+------
+
+* Added UnauthorizedError as swift exception for when permission errors happen
 
 v0.3.0
 ------

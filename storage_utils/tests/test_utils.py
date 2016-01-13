@@ -5,6 +5,7 @@ import storage_utils
 from storage_utils.swift import SwiftPath
 from storage_utils import utils
 from storage_utils.test import SwiftTestCase
+import subprocess
 import unittest
 
 
@@ -23,8 +24,15 @@ class TestCopy(SwiftTestCase):
 
             dest = tmp_d / 'my' / 'dest'
             utils.copy(source, dest)
-
             self.assertTrue((dest / '1').exists())
+
+    def test_two_posix_paths_failed_command(self):
+        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+            invalid_source = tmp_d / 'source'
+            dest = tmp_d / 'my' / 'dest'
+
+            with self.assertRaises(subprocess.CalledProcessError):
+                utils.copy(invalid_source, dest)
 
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_posix_to_swift(self, mock_upload):
