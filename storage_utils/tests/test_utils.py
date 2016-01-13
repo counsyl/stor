@@ -1,6 +1,4 @@
-import os
 from path import Path
-import mock
 import storage_utils
 from storage_utils.swift import SwiftPath
 from storage_utils import utils
