@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v1.0.0
+------
+
+* 1.0 release. No changes
+
 v0.5.0
 ------
 
