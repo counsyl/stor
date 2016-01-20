@@ -30,7 +30,7 @@ import cStringIO
 from functools import wraps
 import operator
 import os
-from path import Path
+from storage_utils.third_party.path import Path
 from storage_utils import utils
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service

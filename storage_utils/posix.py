@@ -1,7 +1,7 @@
 """
 Provides functionality for accessing resources on Posix file systems.
 """
-from path import Path
+from storage_utils.third_party.path import Path
 from storage_utils import utils
 
 
