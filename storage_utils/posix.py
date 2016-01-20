@@ -6,9 +6,22 @@ from storage_utils import utils
 
 
 class PosixPath(Path):
-    """Provides additional functionality on the Path class from path.py
+    """
+    Represents a filesystem path.
 
-    Full documentation for path.py can be viewed at
-    http://pythonhosted.org/path.py/api.html.
+    For documentation on individual methods, consult their
+    counterparts in :mod:`os.path`.
+
+    Some methods are additionally included from :mod:`shutil`.
+    The functions are linked directly into the class namespace
+    such that they will be bound to the Path instance. For example,
+    ``Path(src).samepath(target)`` is equivalent to
+    ``os.path.samepath(src, target)``. Therefore, when referencing
+    the docs for these methods, assume `src` references `self`,
+    the Path instance.
+
+    Provides additional functionality on the Path class from path.py,
+    vendored into ``storage_utils.third_party.path``, specifically around the
+    ``copy`` command.
     """
     copy = utils.copy
