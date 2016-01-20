@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v2.0.0
+------
+
+* Vendored path.py into ``storage_utils.third_party.path`` to address version
+  conflicts in downstream packages and encourage users not to import the path
+  class directly.
+
 v1.0.0
 ------
 
