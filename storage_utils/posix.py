@@ -17,7 +17,7 @@ class PosixPath(Path):
     such that they will be bound to the Path instance. For example,
     ``Path(src).samepath(target)`` is equivalent to
     ``os.path.samepath(src, target)``. Therefore, when referencing
-    the docs for these methods, assume `src` references `self`,
+    the docs for these methods, assume ``src`` references ``self``,
     the Path instance.
 
     Provides additional functionality on the Path class from path.py,

@@ -4,11 +4,11 @@ Provides utilities for accessing swift object storage.
 Different configuration options are available at the module level, and
 these variables are documented under their module declarations.
 
-For swift authentication, the ``auth_url``, ``username``, and
-``password`` variables are used.
+For swift authentication, the `auth_url`, `username`, and
+`password` variables are used.
 
-For methods that take conditions, the ``initial_retry_sleep``,
-``num_retries``, and ``retry_sleep_function`` variables are used to
+For methods that take conditions, the `initial_retry_sleep`,
+`num_retries`, and `retry_sleep_function` variables are used to
 configure the logic around retrying when the condition is not met.
 Note that these variables can also be passed to the methods themselves.
 
@@ -24,6 +24,9 @@ Examples:
     >>>
     >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
     >>> swift_path.download()
+
+More examples and documentations for swift methods can be found under
+the `SwiftPath` class.
 """
 from backoff.backoff import with_backoff
 import cStringIO
@@ -90,8 +93,8 @@ class SwiftError(Exception):
     The 'caught_exception' attribute of the exception must
     be examined in order to inspect the swift exception that
     happened. A swift exception can either be a
-    SwiftError (thrown by swiftclient.service) or a
-    ClientError (thrown by swiftclient.client)
+    ``SwiftError`` (thrown by ``swiftclient.service``) or a
+    ``ClientError`` (thrown by ``swiftclient.client``)
     """
     def __init__(self, message, caught_exception=None):
         super(SwiftError, self).__init__(message)
@@ -99,20 +102,17 @@ class SwiftError(Exception):
 
 
 class NotFoundError(SwiftError):
-    """Thrown when a 404 response is returned from swift
-    """
+    """Thrown when a 404 response is returned from swift"""
     pass
 
 
 class UnavailableError(SwiftError):
-    """Thrown when a 503 response is returned from swift
-    """
+    """Thrown when a 503 response is returned from swift"""
     pass
 
 
 class UnauthorizedError(SwiftError):
-    """Thrown when a 403 response is returned from swift
-    """
+    """Thrown when a 403 response is returned from swift"""
     pass
 
 
@@ -126,8 +126,7 @@ class ConfigurationError(SwiftError):
 
 
 class ConditionNotMetError(SwiftError):
-    """Thrown when a condition is not met.
-    """
+    """Thrown when a condition is not met."""
     pass
 
 
@@ -212,8 +211,8 @@ def make_condition(operator, right_operand):
 
 
 def _swift_retry(exceptions=None):
-    """Allows SwiftPath methods to take optional retry configuration parameters
-    for doing retry logic
+    """Allows `SwiftPath` methods to take optional retry configuration
+    parameters for doing retry logic
     """
     def decorated(func):
         @wraps(func)
@@ -234,7 +233,7 @@ def _swift_retry(exceptions=None):
 
 
 def _propagate_swift_exceptions(func):
-    """Bubbles all swift exceptions as SwiftErrors
+    """Bubbles all swift exceptions as `SwiftError` classes
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -262,9 +261,28 @@ def _propagate_swift_exceptions(func):
 
 
 class SwiftObject(object):
-    """
-    Models an object in swift and allows access to it like it was a file
-    system resource.
+    """Provides methods for reading and writing swift objects returned by
+    `SwiftPath.open`.
+
+    Objects are retrieved from `SwiftPath.open`. For example::
+
+        obj = path('swift://tenant/container/object').open(mode='r')
+        contents = obj.read()
+
+    The above opens an object and reads its contents. To write to an
+    object::
+
+        obj = path('swift://tenant/container/object').open(mode='w')
+        obj.write('hello ')
+        obj.write('world')
+        obj.close()
+
+    Note that the writes will not be commited until the object has been
+    closed. It is recommended to use `SwiftPath.open` as a context manager
+    to avoid forgetting to close the resource::
+
+        with path('swift://tenant/container/object').open(mode='r') as obj:
+            obj.write('Hello world!')
     """
     def __init__(self, swift_path, mode='r', **swift_upload_args):
         """Initializes a swift object
@@ -339,8 +357,7 @@ class SwiftPath(str):
         return SwiftPath(super(SwiftPath, self).__add__(more))
 
     def __div__(self, rel):
-        """Join two path components, adding a separator character if needed.
-        """
+        """Join two path components, adding a separator character if needed."""
         return SwiftPath(os.path.join(self, rel))
 
     # Make the / operator work even when true division is enabled.
@@ -348,29 +365,24 @@ class SwiftPath(str):
 
     @property
     def name(self):
-        """The name of the path, mimicking path.py's name property
-        """
+        """The name of the path, mimicking path.py's name property"""
         return Path(self).name
 
     @property
     def parent(self):
-        """The parent of the path, mimicking path.py's parent property
-        """
+        """The parent of the path, mimicking path.py's parent property"""
         return self.__class__(Path(self).parent)
 
     def dirname(self):
-        """The directory name of the path, mimicking path.py's dirname method
-        """
+        """The directory name of the path, mimicking path.py's dirname()"""
         return self.__class__(Path(self).dirname())
 
     def basename(self):
-        """The base name name of the path, mimicking path.py's basename method
-        """
+        """The base name name of the path, mimicking path.py's basename()"""
         return Path(self).basename()
 
     def _get_parts(self):
-        """Returns the path parts (excluding swift://) as a list of strings.
-        """
+        """Returns the path parts (excluding swift://) as a list of strings."""
         if len(self) > len(self.swift_drive):
             return self[len(self.swift_drive):].split('/')
         else:
@@ -378,21 +390,19 @@ class SwiftPath(str):
 
     @property
     def tenant(self):
-        """Returns the tenant name from the path or return None
-        """
+        """Returns the tenant name from the path or return None"""
         parts = self._get_parts()
         return parts[0] if len(parts) > 0 and parts[0] else None
 
     @property
     def container(self):
-        """Returns the container name from the path or None.
-        """
+        """Returns the container name from the path or None."""
         parts = self._get_parts()
         return parts[1] if len(parts) > 1 and parts[1] else None
 
     @property
     def resource(self):
-        """Returns the resource as a Path object or None.
+        """Returns the resource as a ``path.Path`` object or None.
 
         A resource can be a single object or a prefix to objects.
         Note that it's important to keep the trailing slash in a resource
@@ -404,7 +414,8 @@ class SwiftPath(str):
         return Path(joined_resource) if joined_resource else None
 
     def _get_swift_connection_options(self, **options):
-        """Returns options for constructing SwiftServices and Connections.
+        """Returns options for constructing ``SwiftService`` and
+        ``Connection`` objects.
 
         Args:
             options: Additional options that are directly passed
@@ -443,7 +454,7 @@ class SwiftPath(str):
         """Initialize a swift service based on the path.
 
         Uses the tenant name of the path and an auth url to instantiate
-        the swift service. The OS_AUTH_URL environment variable is used
+        the swift service. The ``OS_AUTH_URL`` environment variable is used
         as the authentication url if set, otherwise the default auth
         url setting is used.
 
@@ -477,14 +488,12 @@ class SwiftPath(str):
 
     @_propagate_swift_exceptions
     def _swift_connection_call(self, method, *args, **kwargs):
-        """Runs a method call on a Connection object.
-        """
+        """Runs a method call on a ``Connection`` object."""
         return method(*args, **kwargs)
 
     @_propagate_swift_exceptions
     def _swift_service_call(self, method, *args, **kwargs):
-        """Runs a method call on a SwiftService object.
-        """
+        """Runs a method call on a ``SwiftService`` object."""
         results = method(*args, **kwargs)
 
         results = [results] if isinstance(results, dict) else list(results)
@@ -498,7 +507,14 @@ class SwiftPath(str):
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError))
     def read_object(self):
-        """Reads an individual object."""
+        """Reads an individual object.
+
+        This method retries `num_retries` times if swift is unavailable or if
+        the object is not found. View
+        `module-level documentation <storage_utils.swift>` for more
+        information about configuring retry logic at the module or method
+        level.
+        """
         connection = self._get_swift_connection()
         headers, content = self._swift_connection_call(connection.get_object,
                                                        self.container,
@@ -510,7 +526,10 @@ class SwiftPath(str):
 
         Note that this method writes the provided content to a temporary
         file before uploading. This allows us to reuse code from swift's
-        uploader (static large object support, etc.)
+        uploader (static large object support, etc.).
+
+        For information about the retry logic of this method, view
+        `SwiftPath.upload`.
 
         Args:
             content (str): The content of the object
@@ -522,22 +541,20 @@ class SwiftPath(str):
                 tmp_file.write(content)
             self.upload([self.resource], **swift_upload_args)
 
-    @_swift_retry(exceptions=(NotFoundError, UnavailableError))
     def open(self, mode='r', **swift_upload_args):
-        """Opens a single resource using swift's get_object.
+        """Opens a `SwiftObject` that can be read or written to.
 
-        This method is configured to retry by default when the object is
-        not found or swift is unavailable. View module-level documentation
-        about how to configure retry logic at the module or method level.
+        For examples of reading and writing opened objects, view
+        `SwiftObject`.
 
         Args:
-            mode (str): The mode of file IO. Reading is the only supported
-                mode.
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
             **swift_upload_args: Keyword args that will be passed into swift
                 upload if any writes occur on the opened resource.
 
         Returns:
-            cStringIO: The contents of the object.
+            SwiftObject: The swift object.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -548,9 +565,10 @@ class SwiftPath(str):
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
         """List contents using the resource of the path as a prefix.
 
-        This method retries ``num_retries`` times if swift is unavailable
+        This method retries `num_retries` times if swift is unavailable
         or if the number of objects returned does not match the
-        num_objs_cond condition. View module-level documentation for more
+        ``num_objs_cond`` condition. View
+        `module-level documentation <storage_utils.swift>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -617,11 +635,11 @@ class SwiftPath(str):
         swift://tenant/container/my_dir (without the trailing slash), this
         method will perform a swift query with a prefix of mydir/pattern.
 
-        This method retries ``num_retries`` times if swift is unavailable or if
-        the number of globbed patterns does not match the num_objs_cond
-        condition. View module-level documentation for more
-        information about configuring retry logic at the module or method
-        level.
+        This method retries `num_retries` times if swift is unavailable or if
+        the number of globbed patterns does not match the ``num_objs_cond``
+        condition. View `module-level documentation <storage_utils.swift>`
+        for more information about configuring retry logic at the module or
+        method level.
 
         Args:
             pattern (str): The pattern to match. The pattern can only have
@@ -686,11 +704,11 @@ class SwiftPath(str):
                  num_objs_cond=None):
         """Downloads a path.
 
-        This method retries ``num_retries`` times if swift is unavailable or if
-        the number of downloaded objects does not match the num_objs_cond
-        condition. View module-level documentation for more
-        information about configuring retry logic at the module or method
-        level.
+        This method retries `num_retries` times if swift is unavailable or if
+        the number of downloaded objects does not match the ``num_objs_cond``
+        condition. View `module-level documentation <storage_utils.swift>`
+        for more information about configuring retry logic at the module or
+        method level.
 
         Args:
             output_dir (str): The output directory to download results to.
@@ -711,7 +729,7 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the num_objs_cond condition.
+                meet the ``num_objs_cond`` condition.
         """
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
@@ -742,8 +760,8 @@ class SwiftPath(str):
                segment_threads=10):
         """Uploads a list of files and directories to swift.
 
-        This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more
+        This method retries `num_retries` times if swift is unavailable.
+        View `module-level documentation <storage_utils.swift>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -808,8 +826,8 @@ class SwiftPath(str):
     def remove(self):
         """Removes a single object.
 
-        This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more
+        This method retries `num_retries` times if swift is unavailable.
+        View `module-level documentation <storage_utils.swift>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -830,8 +848,8 @@ class SwiftPath(str):
     def rmtree(self):
         """Removes a resource and all of its contents.
 
-        This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more
+        This method retries `num_retries` times if swift is unavailable.
+        View `module-level documentation <storage_utils.swift>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -852,8 +870,8 @@ class SwiftPath(str):
     def post(self, options=None):
         """Post operations on the path.
 
-        This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more
+        This method retries `num_retries` times if swift is unavailable.
+        View `module-level documentation <storage_utils.swift>` for more
         information about configuring retry logic at the module or method
         level.
 
