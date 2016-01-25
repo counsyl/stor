@@ -260,6 +260,24 @@ def _propagate_swift_exceptions(func):
     return wrapper
 
 
+def _delegate_to_buffer(attr_name, valid_modes=None):
+    "Factory function that delegates file-like properties to underlying buffer"
+    def wrapper(self, *args, **kwargs):
+        if self.closed:
+            raise ValueError('I/O operation on closed file')
+        if valid_modes and self.mode not in valid_modes:
+            raise TypeError('SwiftFile must be in modes %s to %r' %
+                            (valid_modes, attr_name))
+        try:
+            func = getattr(self._buffer, attr_name)
+            return func(*args, **kwargs)
+        except AttributeError:
+            raise AttributeError("'%s' object has no attribute '%s'" %
+                                 attr_name)
+    wrapper.__name__ = attr_name
+    return wrapper
+
+
 class SwiftFile(object):
     """Provides methods for reading and writing swift objects returned by
     `SwiftPath.open`.
@@ -293,6 +311,11 @@ class SwiftFile(object):
     In the above, `SwiftPath.upload` will be passed ``use_slo=False`` when
     the upload happens
     """
+    closed = False
+    _READ_MODES = ('r', 'rb')
+    _WRITE_MODES = ('w', 'wb')
+    _VALID_MODES = _READ_MODES + _WRITE_MODES
+
     def __init__(self, swift_path, mode='r', **swift_upload_args):
         """Initializes a swift object
 
@@ -305,36 +328,54 @@ class SwiftFile(object):
             **swift_upload_args: The arguments that will be passed to
                 `SwiftPath.upload` if writes occur on the object
         """
+        if mode not in self._VALID_MODES:
+            raise ValueError('invalid mode for swift file: %r' % mode)
         self._swift_path = swift_path
-        self._mode = mode
-        self._write_buf = cStringIO.StringIO()
+        self.mode = mode
         self._swift_upload_args = swift_upload_args
 
     def __enter__(self):
+        if self.closed:
+            raise ValueError('I/O operation on closed file.')
         return self
 
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def read(self):
-        """Reads the object from swift"""
-        if self._mode not in ('r', 'rb'):
-            raise ValueError('must open in "r" or "rb" mode to read')
+    @property
+    def _buffer(self):
+        "Cached buffer of data read from or to be written to Object Storage"
+        # TODO: Replace with cached property
+        if not self._cached_buffer:
+            if self.mode in ('r', 'rb'):
+                self._cached_buffer = cStringIO.StringIO(self._swift_path.read_object())  # nopep8
+            elif self.mode in ('w', 'wb'):
+                self._cached_buffer = cStringIO.StringIO()
+        return self._cached_buffer
 
-        return self._swift_path.read_object()
+    seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
+    newlines = _delegate_to_buffer('newlines', valid_modes=_VALID_MODES)
 
-    def write(self, content):
-        """Writes to the write buffer. Note that this method does not persist
-        to swift
-        """
-        if self._mode not in ('w', 'wb'):
-            raise ValueError('must open in "w" or "wb" mode to write')
+    read = _delegate_to_buffer('read', valid_modes=_READ_MODES)
+    readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
+    readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
 
-        self._write_buf.write(content)
+    write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
+    writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)
+    truncate = _delegate_to_buffer('truncate', valid_modes=_WRITE_MODES)
+
+    @property
+    def name(self):
+        return self._swift_path
 
     def close(self):
         """Flushes the write buffer to swift (if it exists)"""
-        self._write_buf.seek(0, os.SEEK_END)
+        self.flush()
+        self._buffer.close()
+        self.closed = True
+        del self._cached_buffer
+
+    def flush(self):
         if self._write_buf.tell():
             self._swift_path.write_object(self._write_buf.getvalue(),
                                           **self._swift_upload_args)
