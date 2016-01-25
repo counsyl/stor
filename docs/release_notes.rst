@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v2.1.0
+------
+
+* Allowed the ability to write individual opens after they are opened with
+  `SwiftPath.open`.
+
+* Updated the default args to `SwiftPath.upload`. Static large objects are
+  used by default.
+
 v2.0.0
 ------
 
