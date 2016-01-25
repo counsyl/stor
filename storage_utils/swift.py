@@ -283,6 +283,15 @@ class SwiftObject(object):
 
         with path('swift://tenant/container/object').open(mode='r') as obj:
             obj.write('Hello world!')
+
+    One can modify which parameters are use for swift upload when writing
+    by passing them to ``open`` like so::
+
+        with path('..').open(mode='r', use_slo=True) as obj:
+            obj.write('Hello world!')
+
+    In the above, `SwiftPath.upload` will be passed ``use_slo=False`` when
+    the upload happens
     """
     def __init__(self, swift_path, mode='r', **swift_upload_args):
         """Initializes a swift object
