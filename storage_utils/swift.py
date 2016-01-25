@@ -851,10 +851,7 @@ class SwiftPath(str):
         service = self._get_swift_service()
         result = self._swift_service_call(service.stat,
                                           container=self.container,
-                                          objects=stat_objects)
-        print result
-
-        result = result[0]
+                                          objects=stat_objects)[0]
 
         stat_values = {
             k.replace(' ', '-'): v
