@@ -63,6 +63,9 @@ If not set, the ``OS_PASSWORD`` environment variable will be used.
 # isn't set
 DEFAULT_AUTH_URL = 'http://swift.counsyl.com/auth/v2.0'
 
+# Make the default segment size for static large objects be 1GB
+DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
+
 # When a swift method takes a condition, these variables are used to
 # configure retry logic. These variables can also be passed
 # to the methods themselves
@@ -258,6 +261,52 @@ def _propagate_swift_exceptions(func):
     return wrapper
 
 
+class SwiftObject(object):
+    """
+    Models an object in swift and allows access to it like it was a file
+    system resource.
+    """
+    def __init__(self, swift_path, mode='r', **swift_upload_args):
+        """Initializes a swift object
+
+        Args:
+            swift_path (SwiftPath): The path that represents an individual
+                object
+            mode (str): The mode of the resource. Can be "r" and "rb" for
+                reading the resource and "w" and "wb" for writing the
+                resource.
+            **swift_upload_args: The arguments that will be passed to
+                `SwiftPath.upload` if writes occur on the object
+        """
+        self._swift_path = swift_path
+        self._mode = mode
+        self._write_buf = cStringIO.StringIO()
+        self._swift_upload_args = swift_upload_args
+
+    def read(self):
+        """Reads the object from swift"""
+        if self._mode not in ('r', 'rb'):
+            raise ValueError('must open in "r" or "rb" mode to read')
+
+        return self._swift_path.read_object()
+
+    def write(self, content):
+        """Writes to the write buffer. Note that this method does not persist
+        to swift
+        """
+        if self._mode not in ('w', 'wb'):
+            raise ValueError('must open in "w" or "wb" mode to write')
+
+        self._write_buf.write(content)
+
+    def close(self):
+        """Flushes the write buffer to swift (if it exists)"""
+        self._write_buf.seek(0, os.SEEK_END)
+        if self._write_buf.tell():
+            self._swift_path.write_object(self._write_buf.getvalue(),
+                                          **self._swift_upload_args)
+
+
 class SwiftPath(str):
     """
     Provides the ability to manipulate and access resources on swift
@@ -442,7 +491,33 @@ class SwiftPath(str):
         return results
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError))
-    def open(self, mode='r'):
+    def read_object(self):
+        """Reads an individual object."""
+        connection = self._get_swift_connection()
+        headers, content = self._swift_connection_call(connection.get_object,
+                                                       self.container,
+                                                       self.resource)
+        return content
+
+    def write_object(self, content, **swift_upload_args):
+        """Writes an individual object.
+
+        Note that this method writes the provided content to a temporary
+        file before uploading. This allows us to reuse code from swift's
+        uploader (static large object support, etc.)
+
+        Args:
+            content (str): The content of the object
+            **swift_upload_args: Keyword arguments to pass to
+                `SwiftPath.upload`
+        """
+        with utils.NamedTemporaryDirectory(change_dir=True):
+            with open(self.resource, mode='wb') as tmp_file:
+                tmp_file.write(content)
+            self.upload([self.resource], **swift_upload_args)
+
+    @_swift_retry(exceptions=(NotFoundError, UnavailableError))
+    def open(self, mode='r', **swift_upload_args):
         """Opens a single resource using swift's get_object.
 
         This method is configured to retry by default when the object is
@@ -452,6 +527,8 @@ class SwiftPath(str):
         Args:
             mode (str): The mode of file IO. Reading is the only supported
                 mode.
+            **swift_upload_args: Keyword args that will be passed into swift
+                upload if any writes occur on the opened resource.
 
         Returns:
             cStringIO: The contents of the object.
@@ -459,14 +536,7 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        if mode not in ('r', 'rb'):
-            raise ValueError('only read-only mode ("r" and "rb") is supported')
-
-        connection = self._get_swift_connection()
-        headers, content = self._swift_connection_call(connection.get_object,
-                                                       self.container,
-                                                       self.resource)
-        return cStringIO.StringIO(content)
+        return SwiftObject(self, mode=mode, **swift_upload_args)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
@@ -656,8 +726,8 @@ class SwiftPath(str):
     @_swift_retry(exceptions=UnavailableError)
     def upload(self,
                to_upload,
-               segment_size=None,
-               use_slo=False,
+               segment_size=DEFAULT_SEGMENT_SIZE,
+               use_slo=True,
                segment_container=None,
                leave_segments=False,
                changed=False,

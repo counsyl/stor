@@ -225,28 +225,55 @@ class TestGetSwiftConnection(SwiftTestCase):
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
-class TestOpen(SwiftTestCase):
-    def test_open_success(self):
+class TestSwiftObject(SwiftTestCase):
+    def test_read_invalid_mode(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with self.assertRaises(ValueError):
+            swift_p.open(mode='wb').read()
+
+    def test_read_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
 
-        swift_p = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), 'data')
 
     @mock.patch('time.sleep', autospec=True)
-    def test_open_success_on_second_try(self, mock_sleep):
+    def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
             ClientException('dummy', 'dummy', http_status=404),
             ('header', 'data')
         ]
-        swift_p = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
-    def test_open_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container')
+    def test_write_invalid_args(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='r', use_slo=False)
         with self.assertRaises(ValueError):
-            swift_p.open('w')
+            obj.write('hello')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_and_close(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='wb', use_slo=False)
+        obj.write('hello')
+        obj.write(' world')
+        obj.close()
+
+        mock_upload.assert_called_once_with(swift_p, [path('obj')],
+                                            use_slo=False)
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_close_no_writes(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='wb', use_slo=False)
+        obj.close()
+
+        self.assertFalse(mock_upload.called)
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
