@@ -701,6 +701,187 @@ class TestCopy(SwiftTestCase):
             p.copy('swift://swift/path')
 
 
+class TestStat(SwiftTestCase):
+    def test_tenant(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '0',
+                'x-account-storage-policy-3xreplica-container-count': '31',
+                'x-account-object-count': '20081986',
+                'connection': 'close',
+                'x-timestamp': '1445629170.46005',
+                'x-account-access-control': '{"read-only":["seq_upload_rnd","swft_labprod"],"read-write":["svc_svc_seq"]}',  # nopep8
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
+                'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
+                'x-account-bytes-used': '24993077101523',
+                'x-account-container-count': '31',
+                'content-type': 'text/plain; charset=utf-8',
+                'accept-ranges': 'bytes',
+                'x-account-storage-policy-3xreplica-object-count': '20081986'
+            },
+            'container': None,
+            'success': True,
+            'action': 'stat_account',
+            'items': [
+                ('Account', 'AUTH_seq_upload_prod'),
+                ('Containers', 31),
+                ('Objects', '20081986'),
+                ('Bytes', '24993077101523'),
+                ('Containers in policy "3xreplica"', '31'),
+                ('Objects in policy "3xreplica"', '20081986'),
+                ('Bytes in policy "3xreplica"', '24993077101523')
+            ],
+            'object': None
+        }]
+        swift_p = SwiftPath('swift://tenant/')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Containers': 31,
+            'Objects': '20081986',
+            'Bytes': '24993077101523',
+            'Containers-in-policy-"3xreplica"': '31',
+            'Objects-in-policy-"3xreplica"': '20081986',
+            'Bytes-in-policy-"3xreplica"': '24993077101523',
+            'Access-Control': {
+                'read-only': ['seq_upload_rnd', 'swft_labprod'],
+                'read-write': ['svc_svc_seq']
+            }
+        })
+
+    def test_tenant_no_access_control(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '0',
+                'x-account-storage-policy-3xreplica-container-count': '31',
+                'x-account-object-count': '20081986',
+                'connection': 'close',
+                'x-timestamp': '1445629170.46005',
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
+                'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
+                'x-account-bytes-used': '24993077101523',
+                'x-account-container-count': '31',
+                'content-type': 'text/plain; charset=utf-8',
+                'accept-ranges': 'bytes',
+                'x-account-storage-policy-3xreplica-object-count': '20081986'
+            },
+            'container': None,
+            'success': True,
+            'action': 'stat_account',
+            'items': [
+                ('Account', 'AUTH_seq_upload_prod'),
+                ('Containers', 31),
+                ('Objects', '20081986'),
+                ('Bytes', '24993077101523'),
+                ('Containers in policy "3xreplica"', '31'),
+                ('Objects in policy "3xreplica"', '20081986'),
+                ('Bytes in policy "3xreplica"', '24993077101523')
+            ],
+            'object': None
+        }]
+        swift_p = SwiftPath('swift://tenant/')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Containers': 31,
+            'Objects': '20081986',
+            'Bytes': '24993077101523',
+            'Containers-in-policy-"3xreplica"': '31',
+            'Objects-in-policy-"3xreplica"': '20081986',
+            'Bytes-in-policy-"3xreplica"': '24993077101523',
+            'Access-Control': {}
+        })
+
+    def test_container(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '0',
+                'x-container-object-count': '43868',
+                'accept-ranges': 'bytes',
+                'x-storage-policy': '3xReplica',
+                'date': 'Mon, 25 Jan 2016 23:10:45 GMT',
+                'connection': 'close',
+                'x-timestamp': '1452627422.60776',
+                'x-trans-id': 'tx441a691b0e514782b51be-0056a6ab75',
+                'x-container-bytes-used': '55841489571',
+                'content-type': 'text/plain; charset=utf-8'
+            },
+            'container': '2016-01',
+            'success': True,
+            'action': 'stat_container',
+            'items': [
+                ('Account', 'AUTH_seq_upload_prod'),
+                ('Container', '2016-01'),
+                ('Objects', '43868'),
+                ('Bytes', '55841489571'),
+                ('Read ACL', ''),
+                ('Write ACL', ''),
+                ('Sync To', ''),
+                ('Sync Key', '')
+            ]
+        }]
+        swift_p = SwiftPath('swift://tenant/container')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Container': '2016-01',
+            'Objects': '43868',
+            'Bytes': '55841489571',
+            'Read-ACL': '',
+            'Write-ACL': '',
+            'Sync-To': '',
+            'Sync-Key': ''
+        })
+
+    def test_object(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '112',
+                'x-object-meta-x-agi-ctime': '2016-01-15T05:22:00.0Z',
+                'x-object-meta-x-agi-mode': '436',
+                'accept-ranges': 'bytes',
+                'last-modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
+                'connection': 'close',
+                'x-object-meta-x-agi-gid': '0',
+                'x-timestamp': '1452835365.34322',
+                'etag': '87f0b7f04557315e6d1e6db21742d31c',
+                'x-trans-id': 'tx805b2e7ce56343a6b2ea3-0056a6ac39',
+                'date': 'Mon, 25 Jan 2016 23:14:01 GMT',
+                'content-type': 'application/octet-stream',
+                'x-object-meta-x-agi-uid': '0',
+                'x-object-meta-x-agi-mtime': 'Fri, 15 Jan 2016 05:22:01 PST'
+            },
+            'container': '2016-01',
+            'success': True, 'action':
+            'stat_object',
+            'items': [
+                ('Account', u'AUTH_seq_upload_prod'),
+                ('Container', '2016-01'),
+                ('Object', 'object.txt'),
+                ('Content Type', u'application/octet-stream'),
+                ('Content Length', u'112'),
+                ('Last Modified', u'Fri, 15 Jan 2016 05:22:46 GMT'),
+                ('ETag', u'87f0b7f04557315e6d1e6db21742d31c'),
+                ('Manifest', None)
+            ],
+            'object': 'object.txt'
+        }]
+        swift_p = SwiftPath('swift://tenant/container')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Container': '2016-01',
+            'Object': 'object.txt',
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': '112',
+            'Last-Modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
+            'ETag': '87f0b7f04557315e6d1e6db21742d31c',
+            'Manifest': None
+        })
+
+
 class TestRemove(SwiftTestCase):
     def test_invalid_remove(self):
         # Remove()s must happen on a resource of a container

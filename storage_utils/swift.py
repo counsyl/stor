@@ -28,6 +28,7 @@ Examples:
 from backoff.backoff import with_backoff
 import cStringIO
 from functools import wraps
+import json
 import operator
 import os
 from storage_utils.third_party.path import Path
@@ -771,6 +772,101 @@ class SwiftPath(str):
             return self._swift_service_call(service.delete,
                                             self.container,
                                             to_delete)
+
+    @_swift_retry(exceptions=UnavailableError)
+    def stat(self):
+        """Performs a stat on the path.
+
+        Note that the path can be a tenant, container, or
+        object. Using ``stat`` on a directory of objects will
+        produce a `NotFoundError`.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more
+        information about configuring retry logic at the module or method
+        level.
+
+        The return value is dependent on if the path points to a tenant,
+        container, or object.
+
+        For tenants, an example return dictionary is the following::
+
+            {
+                'Account': 'AUTH_seq_upload_prod',
+                # The number of containers in the tenant
+                'Containers': 31,
+                # The number of objects in the tenant
+                'Objects': '19955615',
+                # The total bytes used in the tenant
+                'Bytes': '24890576770484',
+                'Containers-in-policy-"3xreplica"': '31',
+                'Objects-in-policy-"3xreplica"': '19955615',
+                'Bytes-in-policy-"3xreplica"': '24890576770484',
+                # The tenant ACLs. An empty dict is returned if the user
+                # does not have admin privileges on the tenant
+                'Account-Access': {
+                    'admin': ['swft_labprod_admin'],
+                    'read-only': ['seq_upload_rnd','swft_labprod'],
+                    'read-write': ['svc_svc_seq']
+                }
+            }
+
+        For containers, an example return dictionary is the following::
+
+            {
+                'Account': 'AUTH_seq_upload_prod',
+                'Container': '2016-01',
+                # The number of objects in the container
+                'Objects': '43868',
+                # The size of all objects in the container
+                'Bytes': '55841489571',
+                # Read and write ACLs for the container
+                'Read-ACL': '',
+                'Write-ACL': '',
+                'Sync-To': '',
+                'Sync-Key': ''
+            }
+
+        For objects, an example return dictionary is the following::
+
+            {
+                'Account': 'AUTH_seq_upload_prod',
+                'Container': '2016-01',
+                'Object': Path('object.txt'),
+                'Content-Type': 'application/octet-stream',
+                # The size of the object
+                'Content-Length': '112',
+                # The last time the object was modified
+                'Last-Modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
+                # The MD5 checksum of the object
+                'ETag': '87f0b7f04557315e6d1e6db21742d31c',
+                'Manifest': None
+            }
+
+        Raises:
+            NotFoundError: When the tenant, container, or
+                object can't be found.
+        """
+        stat_objects = [self.resource] if self.resource else None
+        service = self._get_swift_service()
+        result = self._swift_service_call(service.stat,
+                                          container=self.container,
+                                          objects=stat_objects)
+        print result
+
+        result = result[0]
+
+        stat_values = {
+            k.replace(' ', '-'): v
+            for k, v in result['items']
+        }
+
+        if result['action'] == 'stat_account':
+            # Load account ACLs
+            stat_values['Access-Control'] = json.loads(
+                result['headers'].get('x-account-access-control', '{}'))
+
+        return stat_values
 
     @_swift_retry(exceptions=UnavailableError)
     def post(self, options=None):
