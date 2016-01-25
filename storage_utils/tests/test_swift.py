@@ -268,6 +268,17 @@ class TestSwiftObject(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_w_context_manager(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with swift_p.open(mode='wb', use_slo=False) as obj:
+            obj.write('hello')
+            obj.write(' world')
+
+        mock_upload.assert_called_once_with(swift_p, [path('obj')],
+                                            use_slo=False)
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_close_no_writes(self, mock_upload, mock_sleep):
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open(mode='wb', use_slo=False)

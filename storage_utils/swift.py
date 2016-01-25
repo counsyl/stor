@@ -283,6 +283,12 @@ class SwiftObject(object):
         self._write_buf = cStringIO.StringIO()
         self._swift_upload_args = swift_upload_args
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def read(self):
         """Reads the object from swift"""
         if self._mode not in ('r', 'rb'):
