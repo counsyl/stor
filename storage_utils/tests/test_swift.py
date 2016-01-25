@@ -225,7 +225,7 @@ class TestGetSwiftConnection(SwiftTestCase):
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
-class TestSwiftObject(SwiftTestCase):
+class TestSwiftFile(SwiftTestCase):
     def test_read_invalid_mode(self):
         swift_p = SwiftPath('swift://tenant/container/obj')
         with self.assertRaises(ValueError):

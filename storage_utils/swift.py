@@ -260,7 +260,7 @@ def _propagate_swift_exceptions(func):
     return wrapper
 
 
-class SwiftObject(object):
+class SwiftFile(object):
     """Provides methods for reading and writing swift objects returned by
     `SwiftPath.open`.
 
@@ -551,10 +551,10 @@ class SwiftPath(str):
             self.upload([self.resource], **swift_upload_args)
 
     def open(self, mode='r', **swift_upload_args):
-        """Opens a `SwiftObject` that can be read or written to.
+        """Opens a `SwiftFile` that can be read or written to.
 
         For examples of reading and writing opened objects, view
-        `SwiftObject`.
+        `SwiftFile`.
 
         Args:
             mode (str): The mode of object IO. Currently supports reading
@@ -563,12 +563,12 @@ class SwiftPath(str):
                 upload if any writes occur on the opened resource.
 
         Returns:
-            SwiftObject: The swift object.
+            SwiftFile: The swift object.
 
         Raises:
             SwiftError: A swift client error occurred.
         """
-        return SwiftObject(self, mode=mode, **swift_upload_args)
+        return SwiftFile(self, mode=mode, **swift_upload_args)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
