@@ -1,13 +1,16 @@
+import os
+from tempfile import NamedTemporaryFile
+import unittest
+
+import mock
+from swiftclient.exceptions import ClientException
+from swiftclient.service import SwiftError
+
 from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import make_condition
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
-import mock
-import os
-from swiftclient.exceptions import ClientException
-from swiftclient.service import SwiftError
-import unittest
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -273,9 +276,35 @@ class TestSwiftFile(SwiftTestCase):
         with swift_p.open(mode='wb', use_slo=False) as obj:
             obj.write('hello')
             obj.write(' world')
+        upload_call, = mock_upload.call_args_list
 
-        mock_upload.assert_called_once_with(swift_p, [path('obj')],
-                                            use_slo=False)
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_flush_multiple_upload(self, mock_upload,
+                                                  mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with NamedTemporaryFile(delete=False) as ntf1,\
+             NamedTemporaryFile(delete=False) as ntf2,\
+             NamedTemporaryFile(delete=False) as ntf3:
+            with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
+                ntf.side_effect = [ntf1, ntf2, ntf3]
+                with swift_p.open(mode='wb', use_slo=False) as obj:
+                    obj.write('hello')
+                    obj.flush()
+                    obj.write(' world')
+                    obj.flush()
+                u1, u2, u3 = mock_upload.call_args_list
+                u1[0][1][0].source == ntf1.name
+                u2[0][1][0].source == ntf2.name
+                u3[0][1][0].source == ntf3.name
+                u1[0][1][0].object_name == swift_p.resource
+                u2[0][1][0].object_name == swift_p.resource
+                u3[0][1][0].object_name == swift_p.resource
+                self.assertEqual(open(ntf1.name).read(), 'hello')
+                self.assertEqual(open(ntf2.name).read(), 'hello world')
+                # third call happens because we don't care about checking for
+                # additional file change
+                self.assertEqual(open(ntf3.name).read(), 'hello world')
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
