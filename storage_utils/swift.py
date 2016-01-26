@@ -393,7 +393,7 @@ class SwiftPath(str):
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
     """
-    swift_drive = 'swift://'
+    swift_drive = drive = 'swift://'
 
     def __init__(self, swift):
         """Validates swift path is in the proper format.
@@ -403,6 +403,8 @@ class SwiftPath(str):
                 "swift://{tenant_name}/{container_name}/{rest_of_path}".
                 The "swift://" prefix is required in the path.
         """
+        if not isinstance(swift, basestring):
+            raise TypeError('path must be string-like')
         if not swift.startswith(self.swift_drive):
             raise ValueError('path must have %s' % self.swift_drive)
         return super(SwiftPath, self).__init__(swift)
@@ -424,6 +426,11 @@ class SwiftPath(str):
     def name(self):
         """The name of the path, mimicking path.py's name property"""
         return Path(self).name
+
+    @property
+    def ext(self):
+        "The extension of the path, mimicking path.py's ext property"
+        return Path(self).ext
 
     @property
     def parent(self):
