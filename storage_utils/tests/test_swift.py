@@ -1,3 +1,4 @@
+import cStringIO
 import os
 from tempfile import NamedTemporaryFile
 import unittest
@@ -229,6 +230,57 @@ class TestGetSwiftConnection(SwiftTestCase):
 
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestSwiftFile(SwiftTestCase):
+    def test_invalid_buffer_mode(self):
+        swift_f = SwiftPath('swift://tenant/container/obj').open()
+        swift_f.mode = 'invalid'
+        with self.assertRaisesRegexp(ValueError, 'buffer'):
+            swift_f._buffer
+
+    def test_invalid_flush_mode(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        with self.assertRaisesRegexp(TypeError, 'flush'):
+            obj.flush()
+
+    def test_name(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        self.assertEquals(obj.name, swift_p)
+
+    def test_context_manager_on_closed_file(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            with obj:
+                pass  # pragma: no cover
+
+    def test_invalid_mode(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with self.assertRaisesRegexp(ValueError, 'invalid mode'):
+            swift_p.open(mode='invalid')
+
+    def test_invalid_io_op(self):
+        class MyFile(object):
+            closed = False
+            _buffer = cStringIO.StringIO()
+            invalid = swift._delegate_to_buffer('invalid')
+
+        with self.assertRaisesRegexp(AttributeError, 'no attribute'):
+            MyFile().invalid()
+
+    def test_read_on_closed_file(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            obj.read()
+
     def test_read_invalid_mode(self):
         swift_p = SwiftPath('swift://tenant/container/obj')
         with self.assertRaisesRegexp(TypeError, 'mode.*read'):

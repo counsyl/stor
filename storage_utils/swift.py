@@ -29,6 +29,7 @@ More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
 from backoff.backoff import with_backoff
+from cached_property import cached_property
 import cStringIO
 from functools import wraps
 import operator
@@ -265,6 +266,7 @@ def _propagate_swift_exceptions(func):
 def _delegate_to_buffer(attr_name, valid_modes=None):
     "Factory function that delegates file-like properties to underlying buffer"
     def wrapper(self, *args, **kwargs):
+        print 'in wrapper'
         if self.closed:
             raise ValueError('I/O operation on closed file')
         if valid_modes and self.mode not in valid_modes:
@@ -275,7 +277,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
             return func(*args, **kwargs)
         except AttributeError:
             raise AttributeError("'%s' object has no attribute '%s'" %
-                                 attr_name)
+                                 (self, attr_name))
     wrapper.__name__ = attr_name
     return wrapper
 
@@ -314,7 +316,6 @@ class SwiftFile(object):
     the upload happens
     """
     closed = False
-    _cached_buffer = None
     _READ_MODES = ('r', 'rb')
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
@@ -345,16 +346,15 @@ class SwiftFile(object):
     def __exit__(self, type, value, traceback):
         self.close()
 
-    @property
+    @cached_property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
-        # TODO: Replace with cached property
-        if not self._cached_buffer:
-            if self.mode in ('r', 'rb'):
-                self._cached_buffer = cStringIO.StringIO(self._swift_path.read_object())  # nopep8
-            elif self.mode in ('w', 'wb'):
-                self._cached_buffer = cStringIO.StringIO()
-        return self._cached_buffer
+        if self.mode in ('r', 'rb'):
+            return cStringIO.StringIO(self._swift_path.read_object())
+        elif self.mode in ('w', 'wb'):
+            return cStringIO.StringIO()
+        else:
+            raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
     newlines = _delegate_to_buffer('newlines', valid_modes=_VALID_MODES)
@@ -376,7 +376,7 @@ class SwiftFile(object):
             self.flush()
         self._buffer.close()
         self.closed = True
-        del self._cached_buffer
+        del self.__dict__['_buffer']
 
     def flush(self):
         """Flushes the write buffer to swift (if it exists)"""
