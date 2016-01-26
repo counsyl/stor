@@ -260,7 +260,7 @@ class TestSwiftFile(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_write_multiple_and_close(self, mock_upload, mock_sleep):
-        with NamedTemporaryFile() as fp:
+        with NamedTemporaryFile(delete=False) as fp:
             with mock.patch('tempfile.NamedTemporaryFile',
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
