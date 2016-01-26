@@ -260,14 +260,19 @@ class TestSwiftFile(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_write_multiple_and_close(self, mock_upload, mock_sleep):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        obj = swift_p.open(mode='wb', use_slo=False)
-        obj.write('hello')
-        obj.write(' world')
-        obj.close()
-
-        mock_upload.assert_called_once_with(swift_p, [path('obj')],
-                                            use_slo=False)
+        with NamedTemporaryFile() as fp:
+            with mock.patch('tempfile.NamedTemporaryFile',
+                            autospec=True) as ntf_mock:
+                ntf_mock.side_effect = [fp]
+                swift_p = SwiftPath('swift://tenant/container/obj')
+                obj = swift_p.open(mode='wb', use_slo=False)
+                obj.write('hello')
+                obj.write(' world')
+                obj.close()
+            upload, = mock_upload.call_args_list
+            upload[0][1][0].source == fp.name
+            upload[0][1][0].object_name == swift_p.resource
+            self.assertEqual(open(fp.name).read(), 'hello world')
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
