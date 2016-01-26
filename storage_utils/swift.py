@@ -33,6 +33,8 @@ import cStringIO
 from functools import wraps
 import operator
 import os
+import tempfile
+
 from storage_utils.third_party.path import Path
 from storage_utils import utils
 from swiftclient import exceptions as swift_exceptions
@@ -591,10 +593,12 @@ class SwiftPath(str):
             **swift_upload_args: Keyword arguments to pass to
                 `SwiftPath.upload`
         """
-        with utils.NamedTemporaryDirectory(change_dir=True):
-            with open(self.resource, mode='wb') as tmp_file:
-                tmp_file.write(content)
-            self.upload([self.resource], **swift_upload_args)
+        with tempfile.NamedTemporaryFile() as fp:
+            fp.write(content)
+            fp.flush()
+            suo = swift_service.SwiftUploadObject(fp.name,
+                                                  object_name=self.resource)
+            self.upload([suo], **swift_upload_args)
 
     def open(self, mode='r', **swift_upload_args):
         """Opens a `SwiftFile` that can be read or written to.
@@ -861,7 +865,11 @@ class SwiftPath(str):
         """
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
-        all_files_to_upload = utils.walk_files_and_dirs(to_upload)
+        swift_upload_objects = [name for name in to_upload if
+                                isinstance(name, swift_service.SwiftUploadObject)]  # nopep8
+        all_files_to_upload = utils.walk_files_and_dirs(
+            [name for name in to_upload
+             if not isinstance(name, swift_service.SwiftUploadObject)])
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
@@ -872,7 +880,7 @@ class SwiftPath(str):
         }
         return self._swift_service_call(service.upload,
                                         self.container,
-                                        all_files_to_upload,
+                                        all_files_to_upload + swift_upload_objects,  # nopep8
                                         options=upload_options)
 
     copy = utils.copy
