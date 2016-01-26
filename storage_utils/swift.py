@@ -964,3 +964,26 @@ class SwiftPath(str):
         return self._swift_service_call(service.post,
                                         container=self.container,
                                         options=options)
+
+    def _noop(attr_name):
+        def wrapper(self):
+            return type(self)(self)
+        wrapper.__name__ = attr_name
+        wrapper.__doc__ = 'No-op for %r' % attr_name
+        return wrapper
+
+    abspath = _noop('abspath')
+    expanduser = _noop('expanduser')
+
+    def expandvars(self):
+        "Expand system environment variables in path"
+        return type(self)(os.path.expandvars(self))
+
+    def expand(self):
+        "Expand variables and normalize path"
+        return self.expandvars().normpath()
+
+    def normpath(self):
+        "Normalize path following linux conventions"
+        normed = os.path.normpath('/' + str(self)[len(self.swift_drive):])[1:]
+        return type(self)(self.swift_drive + normed)
