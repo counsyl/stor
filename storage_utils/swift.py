@@ -312,6 +312,7 @@ class SwiftFile(object):
     the upload happens
     """
     closed = False
+    _cached_buffer = None
     _READ_MODES = ('r', 'rb')
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
@@ -369,15 +370,19 @@ class SwiftFile(object):
         return self._swift_path
 
     def close(self):
-        """Flushes the write buffer to swift (if it exists)"""
-        self.flush()
+        if self.mode in self._WRITE_MODES:
+            self.flush()
         self._buffer.close()
         self.closed = True
         del self._cached_buffer
 
     def flush(self):
-        if self._write_buf.tell():
-            self._swift_path.write_object(self._write_buf.getvalue(),
+        """Flushes the write buffer to swift (if it exists)"""
+        if self.mode not in self._READ_MODES:
+            raise TypeError("SwiftFile must be in modes %s to 'flush'" %
+                            self._READ_MODES)
+        if self._buffer.tell():
+            self._swift_path.write_object(self._buffer.getvalue(),
                                           **self._swift_upload_args)
 
 
