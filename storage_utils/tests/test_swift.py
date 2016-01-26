@@ -228,7 +228,7 @@ class TestGetSwiftConnection(SwiftTestCase):
 class TestSwiftFile(SwiftTestCase):
     def test_read_invalid_mode(self):
         swift_p = SwiftPath('swift://tenant/container/obj')
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegexp(TypeError, 'mode.*read'):
             swift_p.open(mode='wb').read()
 
     def test_read_success(self):
@@ -251,7 +251,7 @@ class TestSwiftFile(SwiftTestCase):
     def test_write_invalid_args(self):
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open(mode='r', use_slo=False)
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegexp(TypeError, 'mode.*write'):
             obj.write('hello')
 
     @mock.patch('time.sleep', autospec=True)
