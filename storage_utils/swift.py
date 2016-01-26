@@ -378,9 +378,9 @@ class SwiftFile(object):
 
     def flush(self):
         """Flushes the write buffer to swift (if it exists)"""
-        if self.mode not in self._READ_MODES:
+        if self.mode not in self._WRITE_MODES:
             raise TypeError("SwiftFile must be in modes %s to 'flush'" %
-                            self._READ_MODES)
+                            (self._WRITE_MODES,))
         if self._buffer.tell():
             self._swift_path.write_object(self._buffer.getvalue(),
                                           **self._swift_upload_args)
