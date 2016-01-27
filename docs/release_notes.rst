@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+v2.1.0
+------
+
+* Allowed the ability to write individual opens after they are opened with
+  `SwiftPath.open`.
+
+* Updated the default args to `SwiftPath.upload`. Static large objects are
+  used by default.
+
+* add `SwiftPath.expand`, `SwiftPath.expandvars` and `SwiftPath.normpath`
+  following ``os.path`` versions of functions.
+
 v2.0.0
 ------
 
