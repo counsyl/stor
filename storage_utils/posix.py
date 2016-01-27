@@ -32,5 +32,5 @@ class PosixPath(Path):
         `SwiftPath` by popping the unused ``swift_upload_args`` keyword
         argument.
         """
-        kwargs.pop('swift_upload_args', None)
+        kwargs.pop('swift_upload_kwargs', None)
         return super(PosixPath, self).open(*args, **kwargs)

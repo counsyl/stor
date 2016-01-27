@@ -45,7 +45,7 @@ class TestCopy(unittest.TestCase):
 class TestOpen(unittest.TestCase):
     def test_open_works_w_swift_params(self):
         with tempfile.NamedTemporaryFile() as f:
-            p = storage_utils.path(f.name).open(swift_upload_args={
+            p = storage_utils.path(f.name).open(swift_upload_kwargs={
                 'use_slo': True
             })
             p.close()

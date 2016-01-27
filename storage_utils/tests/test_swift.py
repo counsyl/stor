@@ -317,7 +317,7 @@ class TestSwiftFile(SwiftTestCase):
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
                 swift_p = SwiftPath('swift://tenant/container/obj')
-                obj = swift_p.open(mode='wb', swift_upload_args={
+                obj = swift_p.open(mode='wb', swift_upload_kwargs={
                     'use_slo': 'test_value'
                 })
                 obj.write('hello')

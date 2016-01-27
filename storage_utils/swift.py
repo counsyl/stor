@@ -320,7 +320,7 @@ class SwiftFile(object):
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
 
-    def __init__(self, swift_path, mode='r', **swift_upload_args):
+    def __init__(self, swift_path, mode='r', **swift_upload_kwargs):
         """Initializes a swift object
 
         Args:
@@ -329,14 +329,14 @@ class SwiftFile(object):
             mode (str): The mode of the resource. Can be "r" and "rb" for
                 reading the resource and "w" and "wb" for writing the
                 resource.
-            **swift_upload_args: The arguments that will be passed to
+            **swift_upload_kwargs: The arguments that will be passed to
                 `SwiftPath.upload` if writes occur on the object
         """
         if mode not in self._VALID_MODES:
             raise ValueError('invalid mode for swift file: %r' % mode)
         self._swift_path = swift_path
         self.mode = mode
-        self._swift_upload_args = swift_upload_args
+        self._swift_upload_kwargs = swift_upload_kwargs
 
     def __enter__(self):
         if self.closed:
@@ -385,7 +385,7 @@ class SwiftFile(object):
                             (self._WRITE_MODES,))
         if self._buffer.tell():
             self._swift_path.write_object(self._buffer.getvalue(),
-                                          **self._swift_upload_args)
+                                          **self._swift_upload_kwargs)
 
 
 class SwiftPath(str):
@@ -605,7 +605,7 @@ class SwiftPath(str):
                                                   object_name=self.resource)
             self.upload([suo], **swift_upload_args)
 
-    def open(self, mode='r', swift_upload_args=None):
+    def open(self, mode='r', swift_upload_kwargs=None):
         """Opens a `SwiftFile` that can be read or written to.
 
         For examples of reading and writing opened objects, view
@@ -614,7 +614,7 @@ class SwiftPath(str):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
-            swift_upload_args (dict): A dictionary of arguments that will be
+            swift_upload_kwargs (dict): A dictionary of arguments that will be
                 passed as keyword args to `SwiftPath.upload` if any writes
                 occur on the opened resource.
 
@@ -624,8 +624,8 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        swift_upload_args = swift_upload_args or {}
-        return SwiftFile(self, mode=mode, **swift_upload_args)
+        swift_upload_kwargs = swift_upload_kwargs or {}
+        return SwiftFile(self, mode=mode, **swift_upload_kwargs)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self, starts_with=None, limit=None, num_objs_cond=None):
