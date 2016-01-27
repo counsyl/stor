@@ -607,7 +607,8 @@ class SwiftPath(str):
                  remove_prefix=False,
                  object_threads=10,
                  container_threads=10,
-                 num_objs_cond=None):
+                 num_objs_cond=None,
+                 subset=None):
         """Downloads a path.
 
         This method retries ``num_retries`` times if swift is unavailable or if
@@ -631,11 +632,18 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects downloaded meets this
                 condition. Partially downloaded results will not be deleted.
+            subset (List[SwiftPath]): Subsets the downloaded results by a list
+                of paths. Note that the paths can be individual objects or
+                prefixes.
 
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
                 meet the num_objs_cond condition.
+
+        Returns:
+            dict: A mapping of the downloaded `SwiftPath`s to their locally
+                downloaded `PosixPath`.
         """
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
@@ -652,6 +660,10 @@ class SwiftPath(str):
         if num_objs_cond:
             num_objs_cond.assert_is_met_by(len(results),
                                            'num downloaded objects')
+
+        # Return results as a mapping of swift paths to their local storage
+        download_dir = Path(output_dir or '.').expand().abspath()
+        print 'results', results
 
     @_swift_retry(exceptions=UnavailableError)
     def upload(self,
