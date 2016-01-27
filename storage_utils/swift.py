@@ -601,6 +601,26 @@ class SwiftPath(str):
         except NotFoundError:
             return False
 
+    @_swift_retry(exceptions=(UnavailableError))
+    def download_file(self, dest):
+        """Downloads an individual object to a destination
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more information about configuring
+        retry logic at the module or method level.
+
+        Note - The directory of the destination (if included) must exist
+        beforehand
+
+        Args:
+            dest (str): The destination file path to download to
+        """
+        service = self._get_swift_service()
+        self._swift_service_call(service.download,
+                                 container=self.container,
+                                 objects=[self.resource],
+                                 options={'out_file': dest})
+
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def download(self,
                  output_dir=None,
@@ -650,8 +670,7 @@ class SwiftPath(str):
         download_options = {
             'prefix': self.resource,
             'out_directory': output_dir,
-            'remove_prefix': remove_prefix,
-            'skip_identical': True,
+            'remove_prefix': remove_prefix
         }
         results = self._swift_service_call(service.download,
                                            self.container,
