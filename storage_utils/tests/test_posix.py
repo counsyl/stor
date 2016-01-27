@@ -4,6 +4,7 @@ import storage_utils
 from storage_utils import swift
 from storage_utils import utils
 import subprocess
+import tempfile
 import unittest
 
 
@@ -39,3 +40,12 @@ class TestCopy(unittest.TestCase):
             use_slo=True,
             object_threads=30,
             segment_threads=40)
+
+
+class TestOpen(unittest.TestCase):
+    def test_open_works_w_swift_params(self):
+        with tempfile.NamedTemporaryFile() as f:
+            p = storage_utils.path(f.name).open(swift_upload_args={
+                'use_slo': True
+            })
+            p.close()

@@ -11,7 +11,7 @@ class TestBasics(unittest.TestCase):
             SwiftPath('swift://tenant').relpath()
 
     def test_construction_from_none(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             SwiftPath(None)
 
     def test_string_compatibility(self):

@@ -403,10 +403,8 @@ class SwiftPath(str):
                 "swift://{tenant_name}/{container_name}/{rest_of_path}".
                 The "swift://" prefix is required in the path.
         """
-        if not isinstance(swift, basestring):
-            raise TypeError('path must be string-like')
-        if not swift.startswith(self.swift_drive):
-            raise ValueError('path must have %s' % self.swift_drive)
+        if not hasattr(swift, 'startswith') or not swift.startswith(self.swift_drive):
+            raise ValueError('path must have %s (got %r)' % (self.swift_drive, swift))
         return super(SwiftPath, self).__init__(swift)
 
     def __repr__(self):
@@ -607,7 +605,7 @@ class SwiftPath(str):
                                                   object_name=self.resource)
             self.upload([suo], **swift_upload_args)
 
-    def open(self, mode='r', **swift_upload_args):
+    def open(self, mode='r', swift_upload_args=None):
         """Opens a `SwiftFile` that can be read or written to.
 
         For examples of reading and writing opened objects, view
@@ -616,8 +614,9 @@ class SwiftPath(str):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
-            **swift_upload_args: Keyword args that will be passed into swift
-                upload if any writes occur on the opened resource.
+            swift_upload_args (dict): A dictionary of arguments that will be
+                passed as keyword args to `SwiftPath.upload` if any writes
+                occur on the opened resource.
 
         Returns:
             SwiftFile: The swift object.
@@ -625,6 +624,7 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
         """
+        swift_upload_args = swift_upload_args or {}
         return SwiftFile(self, mode=mode, **swift_upload_args)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))

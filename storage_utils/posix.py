@@ -25,3 +25,12 @@ class PosixPath(Path):
     ``copy`` command.
     """
     copy = utils.copy
+
+    def open(self, *args, **kwargs):
+        """
+        Opens a posix path and retains interface compatibility with
+        `SwiftPath` by popping the unused ``swift_upload_args`` keyword
+        argument.
+        """
+        kwargs.pop('swift_upload_args')
+        return super(PosixPath, self).open(*args, **kwargs)
