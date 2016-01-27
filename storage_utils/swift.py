@@ -490,8 +490,6 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects returned meets this
                 condition.
-            list_as_dir (bool): Treats the path as a directory and lists
-                its top-level contents.
 
         Returns:
             List[SwiftPath]: Every path in the listing.

@@ -361,7 +361,7 @@ class TestList(SwiftTestCase):
         # Verify that list was retried once
         self.assertEquals(len(mock_list.call_args_list), 2)
 
-    def test_list_as_dir(self):
+    def test_listdir(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'subdir': 'path/to/resource1'
@@ -374,7 +374,7 @@ class TestList(SwiftTestCase):
         }])
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        results = list(swift_p.list(list_as_dir=True))
+        results = list(swift_p.listdir())
         self.assertEquals(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2',
