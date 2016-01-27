@@ -32,6 +32,9 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'toc'
 
+# default role for "`" (makes it attempt to match against references within project)
+default_role = 'any'
+
 # General information about the project.
 project = u'counsyl-storage-utils'
 copyright = u'2015, Counsyl Inc'

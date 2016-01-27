@@ -1,13 +1,17 @@
+import cStringIO
+import os
+from tempfile import NamedTemporaryFile
+import unittest
+
+import mock
+from swiftclient.exceptions import ClientException
+from swiftclient.service import SwiftError
+
 from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import make_condition
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
-import mock
-import os
-from swiftclient.exceptions import ClientException
-from swiftclient.service import SwiftError
-import unittest
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -225,28 +229,151 @@ class TestGetSwiftConnection(SwiftTestCase):
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
-class TestOpen(SwiftTestCase):
-    def test_open_success(self):
+class TestSwiftFile(SwiftTestCase):
+    def test_invalid_buffer_mode(self):
+        swift_f = SwiftPath('swift://tenant/container/obj').open()
+        swift_f.mode = 'invalid'
+        with self.assertRaisesRegexp(ValueError, 'buffer'):
+            swift_f._buffer
+
+    def test_invalid_flush_mode(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        with self.assertRaisesRegexp(TypeError, 'flush'):
+            obj.flush()
+
+    def test_name(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        self.assertEquals(obj.name, swift_p)
+
+    def test_context_manager_on_closed_file(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            with obj:
+                pass  # pragma: no cover
+
+    def test_invalid_mode(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with self.assertRaisesRegexp(ValueError, 'invalid mode'):
+            swift_p.open(mode='invalid')
+
+    def test_invalid_io_op(self):
+        class MyFile(object):
+            closed = False
+            _buffer = cStringIO.StringIO()
+            invalid = swift._delegate_to_buffer('invalid')
+
+        with self.assertRaisesRegexp(AttributeError, 'no attribute'):
+            MyFile().invalid()
+
+    def test_read_on_closed_file(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            obj.read()
+
+    def test_read_invalid_mode(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with self.assertRaisesRegexp(TypeError, 'mode.*read'):
+            swift_p.open(mode='wb').read()
+
+    def test_read_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
 
-        swift_p = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), 'data')
 
     @mock.patch('time.sleep', autospec=True)
-    def test_open_success_on_second_try(self, mock_sleep):
+    def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
             ClientException('dummy', 'dummy', http_status=404),
             ('header', 'data')
         ]
-        swift_p = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
-    def test_open_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(ValueError):
-            swift_p.open('w')
+    def test_write_invalid_args(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='r')
+        with self.assertRaisesRegexp(TypeError, 'mode.*write'):
+            obj.write('hello')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_use_slo_multiple_and_close(self, mock_upload, mock_sleep):
+        with NamedTemporaryFile(delete=False) as fp:
+            with mock.patch('tempfile.NamedTemporaryFile',
+                            autospec=True) as ntf_mock:
+                ntf_mock.side_effect = [fp]
+                swift_p = SwiftPath('swift://tenant/container/obj')
+                obj = swift_p.open(mode='wb', swift_upload_kwargs={
+                    'use_slo': 'test_value'
+                })
+                obj.write('hello')
+                obj.write(' world')
+                obj.close()
+            upload, = mock_upload.call_args_list
+            self.assertEquals(upload[0][1][0].source, fp.name)
+            self.assertEquals(upload[0][1][0].object_name, swift_p.resource)
+            self.assertEquals(upload[1]['use_slo'], 'test_value')
+            self.assertEqual(open(fp.name).read(), 'hello world')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_w_context_manager(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with swift_p.open(mode='wb') as obj:
+            obj.write('hello')
+            obj.write(' world')
+        upload_call, = mock_upload.call_args_list
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_flush_multiple_upload(self, mock_upload,
+                                                  mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with NamedTemporaryFile(delete=False) as ntf1,\
+             NamedTemporaryFile(delete=False) as ntf2,\
+             NamedTemporaryFile(delete=False) as ntf3:
+            with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
+                ntf.side_effect = [ntf1, ntf2, ntf3]
+                with swift_p.open(mode='wb') as obj:
+                    obj.write('hello')
+                    obj.flush()
+                    obj.write(' world')
+                    obj.flush()
+                u1, u2, u3 = mock_upload.call_args_list
+                u1[0][1][0].source == ntf1.name
+                u2[0][1][0].source == ntf2.name
+                u3[0][1][0].source == ntf3.name
+                u1[0][1][0].object_name == swift_p.resource
+                u2[0][1][0].object_name == swift_p.resource
+                u3[0][1][0].object_name == swift_p.resource
+                self.assertEqual(open(ntf1.name).read(), 'hello')
+                self.assertEqual(open(ntf2.name).read(), 'hello world')
+                # third call happens because we don't care about checking for
+                # additional file change
+                self.assertEqual(open(ntf3.name).read(), 'hello world')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_close_no_writes(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='wb')
+        obj.close()
+
+        self.assertFalse(mock_upload.called)
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
@@ -803,3 +930,38 @@ class TestPost(SwiftTestCase):
 
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)
+
+class TestCompatHelpers(SwiftTestCase):
+    def test_noops(self):
+        self.assertEqual(SwiftPath('swift://tenant').expanduser(),
+                         SwiftPath('swift://tenant'))
+        self.assertEqual(SwiftPath('swift://tenant').abspath(),
+                         SwiftPath('swift://tenant'))
+
+    @mock.patch.dict(os.environ, {'somevar': 'blah'}, clear=True)
+    def test_expand(self):
+        original = SwiftPath('swift://tenant/container/$somevar//another/../a/')
+        self.assertEqual(original.expand(),
+                         SwiftPath('swift://tenant/container/blah/a'))
+        self.assertEqual(SwiftPath('swift://tenant/container//a/b').expand(),
+                         SwiftPath('swift://tenant/container/a/b'))
+
+
+    def test_expandvars(self):
+        original = SwiftPath('swift://tenant/container/$somevar/another')
+        other = SwiftPath('swift://tenant/container/somevar/another')
+        with mock.patch.dict(os.environ, {'somevar': 'blah'}, clear=True):
+            expanded = original.expandvars()
+            expanded2 = other.expandvars()
+        self.assertEqual(expanded,
+                         SwiftPath('swift://tenant/container/blah/another'))
+        self.assertEqual(expanded2, other)
+
+    def test_normpath(self):
+        original = SwiftPath('swift://tenant/container/another/../b')
+        self.assertEqual(original.normpath(),
+                         SwiftPath('swift://tenant/container/b'))
+        self.assertEqual(SwiftPath("swift://tenant/..").normpath(),
+                         SwiftPath("swift://"))
+        self.assertEqual(SwiftPath("swift://tenant/container/..").normpath(),
+                         SwiftPath("swift://tenant"))
