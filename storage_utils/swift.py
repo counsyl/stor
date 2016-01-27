@@ -537,6 +537,14 @@ class SwiftPath(str):
 
         return paths
 
+    def listdir(self):
+        """Lists the path as a dir, returning top-level directories and files
+
+        For information about retry logic on this method, see
+        `SwiftPath.list`
+        """
+        return self.list(list_as_dir=True)
+
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def glob(self, pattern, num_objs_cond=None):
         """Globs all objects in the path with the pattern.
