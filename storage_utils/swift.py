@@ -469,7 +469,11 @@ class SwiftPath(str):
         return cStringIO.StringIO(content)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
-    def list(self, starts_with=None, limit=None, num_objs_cond=None):
+    def list(self,
+             starts_with=None,
+             limit=None,
+             num_objs_cond=None,
+             list_as_dir=False):
         """List contents using the resource of the path as a prefix.
 
         This method retries ``num_retries`` times if swift is unavailable
@@ -507,27 +511,37 @@ class SwiftPath(str):
         if starts_with:
             prefix = prefix / starts_with if prefix else starts_with
 
+        list_kwargs = {
+            'path': prefix if list_as_dir else None,
+            'full_listing': full_listing,
+            'limit': limit,
+            'prefix': prefix
+        }
         if self.container:
             results = self._swift_connection_call(connection.get_container,
                                                   self.container,
-                                                  full_listing=full_listing,
-                                                  prefix=prefix,
-                                                  limit=limit)
+                                                  **list_kwargs)
         else:
             results = self._swift_connection_call(connection.get_account,
-                                                  full_listing=full_listing,
-                                                  prefix=prefix,
-                                                  limit=limit)
+                                                  **list_kwargs)
 
         path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
         paths = [
-            path_pre / r['name'] for r in results[1]
+            path_pre / r['name'] for r in results[1] if 'name' in r
         ]
 
         if num_objs_cond:
             num_objs_cond.assert_is_met_by(len(paths), 'num listed objects')
 
         return paths
+
+    def listdir(self):
+        """Lists the path as a dir, returning top-level directories and files
+
+        For information about retry logic on this method, see
+        `SwiftPath.list`
+        """
+        return self.list(list_as_dir=True)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def glob(self, pattern, num_objs_cond=None):
