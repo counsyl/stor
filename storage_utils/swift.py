@@ -81,7 +81,11 @@ initial_retry_sleep = 1
 num_retries = 0
 """The number of times to retry"""
 
-retry_sleep_function = lambda t, attempt: t * 2
+
+def _default_retry_sleep_function(t, attempt):
+    return t * 2
+
+retry_sleep_function = _default_retry_sleep_function
 """The function that increases sleep time when retrying.
 
 This function needs to take two integer
