@@ -512,7 +512,8 @@ class SwiftPath(str):
             prefix = prefix / starts_with if prefix else starts_with
 
         list_kwargs = {
-            'path': prefix if list_as_dir else None,
+            # 'path': prefix if list_as_dir else None,
+            'delimiter': '/',
             'full_listing': full_listing,
             'limit': limit,
             'prefix': prefix
@@ -524,6 +525,8 @@ class SwiftPath(str):
         else:
             results = self._swift_connection_call(connection.get_account,
                                                   **list_kwargs)
+
+        print 'results', results
 
         path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
         paths = [
