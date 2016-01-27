@@ -49,3 +49,8 @@ class TestOpen(unittest.TestCase):
                 'use_slo': True
             })
             p.close()
+
+    def test_open_works_wo_swift_params(self):
+        with tempfile.NamedTemporaryFile() as f:
+            p = storage_utils.path(f.name).open()
+            p.close()
