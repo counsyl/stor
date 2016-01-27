@@ -393,7 +393,7 @@ class SwiftPath(str):
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
     """
-    swift_drive = 'swift://'
+    swift_drive = drive = 'swift://'
 
     def __init__(self, swift):
         """Validates swift path is in the proper format.
@@ -403,6 +403,8 @@ class SwiftPath(str):
                 "swift://{tenant_name}/{container_name}/{rest_of_path}".
                 The "swift://" prefix is required in the path.
         """
+        if not isinstance(swift, basestring):
+            raise TypeError('path must be string-like')
         if not swift.startswith(self.swift_drive):
             raise ValueError('path must have %s' % self.swift_drive)
         return super(SwiftPath, self).__init__(swift)
@@ -424,6 +426,11 @@ class SwiftPath(str):
     def name(self):
         """The name of the path, mimicking path.py's name property"""
         return Path(self).name
+
+    @property
+    def ext(self):
+        "The extension of the path, mimicking path.py's ext property"
+        return Path(self).ext
 
     @property
     def parent(self):
@@ -964,3 +971,26 @@ class SwiftPath(str):
         return self._swift_service_call(service.post,
                                         container=self.container,
                                         options=options)
+
+    def _noop(attr_name):
+        def wrapper(self):
+            return type(self)(self)
+        wrapper.__name__ = attr_name
+        wrapper.__doc__ = 'No-op for %r' % attr_name
+        return wrapper
+
+    abspath = _noop('abspath')
+    expanduser = _noop('expanduser')
+
+    def expandvars(self):
+        "Expand system environment variables in path"
+        return type(self)(os.path.expandvars(self))
+
+    def expand(self):
+        "Expand variables and normalize path"
+        return self.expandvars().normpath()
+
+    def normpath(self):
+        "Normalize path following linux conventions"
+        normed = os.path.normpath('/' + str(self)[len(self.swift_drive):])[1:]
+        return type(self)(self.swift_drive + normed)

@@ -896,3 +896,38 @@ class TestPost(SwiftTestCase):
 
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)
+
+class TestCompatHelpers(SwiftTestCase):
+    def test_noops(self):
+        self.assertEqual(SwiftPath('swift://tenant').expanduser(),
+                         SwiftPath('swift://tenant'))
+        self.assertEqual(SwiftPath('swift://tenant').abspath(),
+                         SwiftPath('swift://tenant'))
+
+    @mock.patch.dict(os.environ, {'somevar': 'blah'}, clear=True)
+    def test_expand(self):
+        original = SwiftPath('swift://tenant/container/$somevar//another/../a/')
+        self.assertEqual(original.expand(),
+                         SwiftPath('swift://tenant/container/blah/a'))
+        self.assertEqual(SwiftPath('swift://tenant/container//a/b').expand(),
+                         SwiftPath('swift://tenant/container/a/b'))
+
+
+    def test_expandvars(self):
+        original = SwiftPath('swift://tenant/container/$somevar/another')
+        other = SwiftPath('swift://tenant/container/somevar/another')
+        with mock.patch.dict(os.environ, {'somevar': 'blah'}, clear=True):
+            expanded = original.expandvars()
+            expanded2 = other.expandvars()
+        self.assertEqual(expanded,
+                         SwiftPath('swift://tenant/container/blah/another'))
+        self.assertEqual(expanded2, other)
+
+    def test_normpath(self):
+        original = SwiftPath('swift://tenant/container/another/../b')
+        self.assertEqual(original.normpath(),
+                         SwiftPath('swift://tenant/container/b'))
+        self.assertEqual(SwiftPath("swift://tenant/..").normpath(),
+                         SwiftPath("swift://"))
+        self.assertEqual(SwiftPath("swift://tenant/container/..").normpath(),
+                         SwiftPath("swift://tenant"))
