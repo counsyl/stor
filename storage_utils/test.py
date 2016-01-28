@@ -92,3 +92,11 @@ class SwiftTestCase(unittest.TestCase):
                                              {'OS_AUTH_URL': '__dummy__'})
         self.addCleanup(self._auth_patcher.stop)
         self.mock_swift_auth_url = self._auth_patcher.start()
+
+    def assertSwiftListResultsEqual(self, r1, r2):
+        """
+        Swift list resolves duplicates, so the ordering of the results are not
+        always the same as what the swift client returns. Compare results as
+        sorted lists
+        """
+        self.assertEquals(sorted(r1), sorted(r2))

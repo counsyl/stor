@@ -4,6 +4,7 @@ import storage_utils
 from storage_utils import swift
 from storage_utils import utils
 import subprocess
+import tempfile
 import unittest
 
 
@@ -35,7 +36,19 @@ class TestCopy(unittest.TestCase):
         mock_upload.assert_called_once_with(
             dest,
             ['.'],
-            segment_size=1073741824,
-            use_slo=True,
             object_threads=30,
             segment_threads=40)
+
+
+class TestOpen(unittest.TestCase):
+    def test_open_works_w_swift_params(self):
+        with tempfile.NamedTemporaryFile() as f:
+            p = storage_utils.path(f.name).open(swift_upload_kwargs={
+                'use_slo': True
+            })
+            p.close()
+
+    def test_open_works_wo_swift_params(self):
+        with tempfile.NamedTemporaryFile() as f:
+            p = storage_utils.path(f.name).open()
+            p.close()

@@ -17,7 +17,7 @@ class PosixPath(Path):
     such that they will be bound to the Path instance. For example,
     ``Path(src).samepath(target)`` is equivalent to
     ``os.path.samepath(src, target)``. Therefore, when referencing
-    the docs for these methods, assume `src` references `self`,
+    the docs for these methods, assume ``src`` references ``self``,
     the Path instance.
 
     Provides additional functionality on the Path class from path.py,
@@ -25,3 +25,12 @@ class PosixPath(Path):
     ``copy`` command.
     """
     copy = utils.copy
+
+    def open(self, *args, **kwargs):
+        """
+        Opens a posix path and retains interface compatibility with
+        `SwiftPath` by popping the unused ``swift_upload_args`` keyword
+        argument.
+        """
+        kwargs.pop('swift_upload_kwargs', None)
+        return super(PosixPath, self).open(*args, **kwargs)
