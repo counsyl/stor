@@ -288,7 +288,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
-def _append_dir_suffix(path):
+def _with_slash(path):
     "Appends a trailing slash to a path if it doesn't have one"
     return path if not path or path.endswith('/') else path + '/'
 
@@ -694,7 +694,7 @@ class SwiftPath(str):
             list_kwargs['delimiter'] = '/'
 
             # Ensure that the prefix has a '/' at the end of it for listdir
-            list_kwargs['prefix'] = _append_dir_suffix(list_kwargs['prefix'])
+            list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
 
         if self.container:
             results = self._swift_connection_call(connection.get_container,
@@ -795,24 +795,46 @@ class SwiftPath(str):
             return False
 
     @_swift_retry(exceptions=(UnavailableError))
-    def download_file(self, dest):
-        """Downloads an individual object to a destination
+    def download_objects(self, dest, objs):
+        """Downloads a list of objects to a destination folder
 
         This method retries ``num_retries`` times if swift is unavailable.
         View module-level documentation for more information about configuring
         retry logic at the module or method level.
 
-        Note - The directory of the destination (if included) must exist
-        beforehand
-
         Args:
-            dest (str): The destination file path to download to
+            dest (str): The destination folder to download to
+            objs (List[str|PosixPath|SwiftPath]): The list of objects to
+                download. The objects can paths relative to the download path
+                or absolute swift paths. Any absolute swift path must also be
+                under the download path
         """
+        # Convert requested download objects to full object paths
+        obj_base = self.resource or path('')
+        objs_to_download = {
+            obj: path(obj).resource if is_swift_path(obj) else obj_base / obj
+            for obj in objs
+        }
+
+        for obj in objs_to_download:
+            if is_swift_path(obj) and not obj.startswith(_with_slash(self)):
+                raise ValueError(
+                    '"%s" must be child of download path "%s"' % (obj, self))
+
         service = self._get_swift_service()
-        self._swift_service_call(service.download,
-                                 container=self.container,
-                                 objects=[self.resource],
-                                 options={'out_file': dest})
+        download_options = {
+            'prefix': _with_slash(self.resource),
+            'out_directory': dest,
+            'remove_prefix': True
+        }
+        results = self._swift_service_call(service.download,
+                                           container=self.container,
+                                           objects=objs_to_download.values(),
+                                           options=download_options)
+        results = {r['object']: r['path'] for r in results}
+
+        # Return results mapped back to their input name
+        return {obj: results[objs_to_download[obj]] for obj in objs}
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def download_dir(self,
@@ -864,7 +886,7 @@ class SwiftPath(str):
                                           container_threads=container_threads)
         # Ensure there is a trailing slash on the prefix we query since we are
         # treating it as a dir
-        prefix = _append_dir_suffix(self.resource)
+        prefix = _with_slash(self.resource)
 
         objects_to_download = None
         if subset is not None:
@@ -874,7 +896,7 @@ class SwiftPath(str):
                 if is_swift_path(f_path):
                     # When specifying absolute swift paths as a subset, ensure
                     # they are under the directory being downloaded.
-                    if not f_path.startswith(_append_dir_suffix(self)):
+                    if not f_path.startswith(_with_slash(self)):
                         raise ValueError((
                             'subset object "%s" must be under the downloaded '
                             'dir "%s"' % (f_path, self)
@@ -886,7 +908,7 @@ class SwiftPath(str):
                     objects_to_download.append(resource_base / f_path)
 
         download_options = {
-            'prefix': _append_dir_suffix(self.resource),
+            'prefix': _with_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }

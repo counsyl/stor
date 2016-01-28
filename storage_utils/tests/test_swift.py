@@ -780,15 +780,44 @@ class TestExists(SwiftTestCase):
 
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
-    def test_download(self):
+    def test_download_(self):
         self.mock_swift.download.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.download_dir('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
+            objects=None,
             options={
                 'prefix': None,
+                'out_directory': 'output_dir',
+                'remove_prefix': True
+            })
+
+    def test_download_no_resource(self):
+        self.mock_swift.download.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.download_dir('output_dir')
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            objects=None,
+            options={
+                'prefix': None,
+                'out_directory': 'output_dir',
+                'remove_prefix': True
+            })
+
+    def test_download_resource_wo_slash(self):
+        self.mock_swift.download.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/r')
+        swift_p.download_dir('output_dir')
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            objects=None,
+            options={
+                'prefix': 'r/',
                 'out_directory': 'output_dir',
                 'remove_prefix': True
             })
@@ -798,7 +827,16 @@ class TestDownload(SwiftTestCase):
         # Simulate the condition not being met the first call
         self.mock_swift.download.side_effect = [
             [{}, {}],
-            [{}, {}, {}]
+            [{
+                'object': 'a/file.txt',
+                'path': 'local_path/file.txt'
+            }, {
+                'object': 'a/file2.txt',
+                'path': 'local_path/file2.txt'
+            }, {
+                'object': 'a/file3.txt',
+                'path': 'local_path/file3.txt'
+            }]
         ]
 
         swift_p = SwiftPath('swift://tenant/container')
