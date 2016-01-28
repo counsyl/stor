@@ -512,12 +512,20 @@ class SwiftPath(str):
             prefix = prefix / starts_with if prefix else starts_with
 
         list_kwargs = {
-            # 'path': prefix if list_as_dir else None,
-            'delimiter': '/',
             'full_listing': full_listing,
             'limit': limit,
             'prefix': prefix
         }
+        if self.container and list_as_dir:
+            # Swift doesn't allow a delimeter for tenant-level listing,
+            # however, this isn't a problem for list_as_dir since a tenant
+            # will only have containers
+            list_kwargs['delimiter'] = '/'
+
+            # Ensure that the prefix has a '/' at the end of it for listdir
+            if list_kwargs['prefix'] and list_kwargs['prefix'].endswith('/'):
+                list_kwargs['prefix'] += '/'
+
         if self.container:
             results = self._swift_connection_call(connection.get_container,
                                                   self.container,
@@ -529,9 +537,9 @@ class SwiftPath(str):
         print 'results', results
 
         path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
-        paths = [
-            path_pre / r['name'] for r in results[1] if 'name' in r
-        ]
+        paths = list({
+            path_pre / (r.get('name') or r['subdir'].rstrip('/')) for r in results[1]
+        })
 
         if num_objs_cond:
             num_objs_cond.assert_is_met_by(len(paths), 'num listed objects')

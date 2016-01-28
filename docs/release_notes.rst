@@ -1,6 +1,29 @@
 Release Notes
 =============
 
+v2.3.0
+------
+
+* Included more backwards compatibility methods on `SwiftPath` to be compatible
+  with `PosixPath`, such as `SwiftPath.normpath`, `SwiftPath.expand`, and
+  `SwiftPath.expandvars`.
+
+* Added `SwiftPath.stat` to get metadata about tenants, containers, and objects.
+
+* Added `SwiftPath.listdir` to list directories
+
+v2.1.0
+------
+
+* Allowed the ability to write individual opens after they are opened with
+  `SwiftPath.open`.
+
+* Updated the default args to `SwiftPath.upload`. Static large objects are
+  used by default.
+
+* add `SwiftPath.expand`, `SwiftPath.expandvars` and `SwiftPath.normpath`
+  following ``os.path`` versions of functions.
+
 v2.0.0
 ------
 
