@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 
-class TestCopy(unittest.TestCase):
+class TestCopytree(unittest.TestCase):
     def test_posix_destination(self):
         with storage_utils.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
@@ -17,7 +17,7 @@ class TestCopy(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
-            utils.copy(source, dest)
+            utils.copytree(source, dest)
             self.assertTrue((dest / '1').exists())
 
     def test_posix_destination_w_error(self):
@@ -26,13 +26,13 @@ class TestCopy(unittest.TestCase):
             dest = tmp_d / 'my' / 'dest'
 
             with self.assertRaises(subprocess.CalledProcessError):
-                utils.copy(invalid_source, dest)
+                utils.copytree(invalid_source, dest)
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
     def test_swift_destination(self, mock_upload):
         source = '.'
         dest = storage_utils.path('swift://tenant/container')
-        utils.copy(source, dest, object_threads=30, segment_threads=40)
+        utils.copytree(source, dest, object_threads=30, segment_threads=40)
         mock_upload.assert_called_once_with(
             dest,
             ['.'],

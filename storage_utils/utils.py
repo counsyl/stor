@@ -67,14 +67,14 @@ def path(p):
         return PosixPath(p)
 
 
-def copy(source, dest, copy_cmd='cp -r', object_threads=20,
-         segment_threads=20, **retry_args):
-    """Copies a source path to a destination path. Assumes that paths are
-    capable of being copied to/from.
+def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
+             segment_threads=20, **retry_args):
+    """Copies a source directory to a destination directory. Assumes that
+    paths are capable of being copied to/from.
 
     Args:
-        src (path|str): The source path to copy from
-        dest (path|str): The destination to copy to
+        src (path|str): The source directory to copy from
+        dest (path|str): The directory to copy to
         copy_cmd (str): If copying to / from posix, this command is
             used.
         object_threads (int): The amount of object threads to use

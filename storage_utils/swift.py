@@ -1024,7 +1024,7 @@ class SwiftPath(str):
                                         all_files_to_upload + swift_upload_objects,  # nopep8
                                         options=upload_options)
 
-    copy = utils.copy
+    copytree = utils.copytree
 
     @_swift_retry(exceptions=UnavailableError)
     def remove(self):
