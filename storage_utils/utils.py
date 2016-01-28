@@ -96,7 +96,7 @@ def copy(source, dest, copy_cmd='cp -r', object_threads=20,
         dest.expand().abspath().parent.makedirs_p()
 
     if is_swift_path(source):
-        source.download_dir(dest, object_threads=object_threads)
+        source.download(dest, object_threads=object_threads)
     elif is_swift_path(dest):
         with source:
             dest.upload(['.'],

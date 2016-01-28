@@ -780,30 +780,33 @@ class TestExists(SwiftTestCase):
 
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
-    def test_download_(self):
+    def test_download_tenant(self):
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'tenant'):
+            swift_p.download('output_dir')
+
+    def test_download_container(self):
         self.mock_swift.download.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download_dir('output_dir')
+        swift_p.download('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
-            objects=None,
             options={
                 'prefix': None,
                 'out_directory': 'output_dir',
                 'remove_prefix': True
             })
 
-    def test_download_no_resource(self):
+    def test_download_resource(self):
         self.mock_swift.download.return_value = []
 
-        swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download_dir('output_dir')
+        swift_p = SwiftPath('swift://tenant/container/r/')
+        swift_p.download('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
-            objects=None,
             options={
-                'prefix': None,
+                'prefix': 'r/',
                 'out_directory': 'output_dir',
                 'remove_prefix': True
             })
@@ -812,12 +815,27 @@ class TestDownload(SwiftTestCase):
         self.mock_swift.download.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/r')
-        swift_p.download_dir('output_dir')
+        swift_p.download('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
-            objects=None,
             options={
                 'prefix': 'r/',
+                'out_directory': 'output_dir',
+                'remove_prefix': True
+            })
+
+    def test_download_w_identical(self):
+        # Raise a 304 to simulate the download being identical
+        self.mock_swift.download.return_value = [{
+            'error': ClientException('', http_status=304)
+        }]
+
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.download('output_dir')
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            options={
+                'prefix': None,
                 'out_directory': 'output_dir',
                 'remove_prefix': True
             })
@@ -840,17 +858,17 @@ class TestDownload(SwiftTestCase):
         ]
 
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download_dir('output_dir',
-                             num_objs_cond=make_condition('==', 3))
+        swift_p.download('output_dir',
+                         num_objs_cond=make_condition('==', 3))
         self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
 
     def test_download_correct_thread_options(self):
         self.disable_get_swift_service_mock()
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        swift_p.download_dir('output_dir',
-                             object_threads=20,
-                             container_threads=30)
+        swift_p.download('output_dir',
+                         object_threads=20,
+                         container_threads=30)
 
         options_passed = self.mock_swift_service.call_args[0][0]
         self.assertEquals(options_passed['object_dd_threads'], 20)
@@ -903,11 +921,11 @@ class TestUpload(SwiftTestCase):
 
 
 class TestCopy(SwiftTestCase):
-    @mock.patch.object(swift.SwiftPath, 'download_dir', autospec=True)
-    def test_copy_posix_destination(self, mock_download_dir):
+    @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
+    def test_copy_posix_destination(self, mock_download):
         p = SwiftPath('swift://tenant/container')
         p.copy('path', num_retries=1, object_threads=100)
-        mock_download_dir.assert_called_once_with(
+        mock_download.assert_called_once_with(
             p,
             path(u'path'),
             object_threads=100)

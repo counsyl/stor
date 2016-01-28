@@ -809,6 +809,9 @@ class SwiftPath(str):
                 or absolute swift paths. Any absolute swift path must also be
                 under the download path
         """
+        if not self.container:
+            raise ValueError('cannot call download_objects on tenant with no container')
+
         # Convert requested download objects to full object paths
         obj_base = self.resource or path('')
         objs_to_download = {
@@ -837,12 +840,11 @@ class SwiftPath(str):
         return {obj: results[objs_to_download[obj]] for obj in objs}
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
-    def download_dir(self,
-                     dest,
-                     object_threads=10,
-                     container_threads=10,
-                     num_objs_cond=None,
-                     subset=None):
+    def download(self,
+                 dest,
+                 object_threads=10,
+                 container_threads=10,
+                 num_objs_cond=None):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -864,11 +866,6 @@ class SwiftPath(str):
             num_objs_cond (SwiftCondition): The method will only return
                 results when the number of objects downloaded meets this
                 condition. Partially downloaded results will not be deleted.
-            subset (List[str|Path|SwiftPath]): Subsets the downloaded results
-                by a list of paths. If the subset consists of non-swift path
-                objects, they are considered relative paths to the directory
-                being downloaded. Full swift paths are considered absolute
-                paths and must exist in the same directory being downloaded.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -880,32 +877,11 @@ class SwiftPath(str):
                 downloaded `PosixPath`.
         """
         if not self.container:
-            raise ValueError('download_dir cannot be called on a tenant')
+            raise ValueError('cannot call download on tenant with no container')
 
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
-        # Ensure there is a trailing slash on the prefix we query since we are
-        # treating it as a dir
         prefix = _with_slash(self.resource)
-
-        objects_to_download = None
-        if subset is not None:
-            resource_base = self.resource or path('')
-            objects_to_download = []
-            for f_path in [path(f) for f in subset]:
-                if is_swift_path(f_path):
-                    # When specifying absolute swift paths as a subset, ensure
-                    # they are under the directory being downloaded.
-                    if not f_path.startswith(_with_slash(self)):
-                        raise ValueError((
-                            'subset object "%s" must be under the downloaded '
-                            'dir "%s"' % (f_path, self)
-                        ))
-                    objects_to_download.append(f_path.resource)
-                else:
-                    # Treat non swift paths as relative objects to the download
-                    # dir
-                    objects_to_download.append(resource_base / f_path)
 
         download_options = {
             'prefix': _with_slash(self.resource),
@@ -914,19 +890,13 @@ class SwiftPath(str):
         }
         results = self._swift_service_call(service.download,
                                            self.container,
-                                           objects=objects_to_download,
                                            options=download_options)
 
         if num_objs_cond:
             num_objs_cond.assert_is_met_by(len(results),
                                            'num downloaded objects')
 
-        swift_base = path('%s%s/%s' % (self.swift_drive,
-                                       self.tenant,
-                                       self.container))
-        return {
-            swift_base / r['object']: r['path'] for r in results
-        }
+        return {self: dest}
 
     @_swift_retry(exceptions=UnavailableError)
     def upload(self,
