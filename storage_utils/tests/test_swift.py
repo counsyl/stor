@@ -372,7 +372,7 @@ class TestList(SwiftTestCase):
             'name': 'path/to/resource3'
         }])
 
-        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p = SwiftPath('swift://tenant/container/path/to')
         results = list(swift_p.listdir())
         self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/path/to/resource1',
@@ -381,9 +381,55 @@ class TestList(SwiftTestCase):
         ])
         mock_list.assert_called_once_with('container',
                                           limit=None,
-                                          prefix='path/',
+                                          prefix='path/to/',
                                           full_listing=True,
                                           delimiter='/')
+
+    def test_listdir_on_container(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'subdir': 'resource1/'
+        }, {
+            'name': 'resource1'
+        }, {
+            'name': 'resource2'
+        }, {
+            'name': 'resource3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container/')
+        results = list(swift_p.listdir())
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container/resource1',
+            'swift://tenant/container/resource2',
+            'swift://tenant/container/resource3'
+        ])
+        mock_list.assert_called_once_with('container',
+                                          limit=None,
+                                          prefix=None,
+                                          full_listing=True,
+                                          delimiter='/')
+
+    def test_listdir_on_account(self):
+        mock_list = self.mock_swift_conn.get_account
+        mock_list.return_value = ({}, [{
+            'name': 'container1'
+        }, {
+            'name': 'container2'
+        }, {
+            'name': 'container3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/')
+        results = list(swift_p.listdir())
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container1',
+            'swift://tenant/container2',
+            'swift://tenant/container3'
+        ])
+        mock_list.assert_called_once_with(limit=None,
+                                          prefix=None,
+                                          full_listing=True)
 
     def test_list_multiple_return(self):
         mock_list = self.mock_swift_conn.get_container
