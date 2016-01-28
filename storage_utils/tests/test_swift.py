@@ -410,7 +410,7 @@ class TestList(SwiftTestCase):
                                           full_listing=True,
                                           delimiter='/')
 
-    def test_listdir_on_account(self):
+    def test_listdir_on_tenant(self):
         mock_list = self.mock_swift_conn.get_account
         mock_list.return_value = ({}, [{
             'name': 'container1'
