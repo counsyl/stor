@@ -1,13 +1,17 @@
+import cStringIO
+import os
+from tempfile import NamedTemporaryFile
+import unittest
+
+import mock
+from swiftclient.exceptions import ClientException
+from swiftclient.service import SwiftError
+
 from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import make_condition
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
-import mock
-import os
-from swiftclient.exceptions import ClientException
-from swiftclient.service import SwiftError
-import unittest
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -225,28 +229,151 @@ class TestGetSwiftConnection(SwiftTestCase):
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
-class TestOpen(SwiftTestCase):
-    def test_open_success(self):
+class TestSwiftFile(SwiftTestCase):
+    def test_invalid_buffer_mode(self):
+        swift_f = SwiftPath('swift://tenant/container/obj').open()
+        swift_f.mode = 'invalid'
+        with self.assertRaisesRegexp(ValueError, 'buffer'):
+            swift_f._buffer
+
+    def test_invalid_flush_mode(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        with self.assertRaisesRegexp(TypeError, 'flush'):
+            obj.flush()
+
+    def test_name(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        self.assertEquals(obj.name, swift_p)
+
+    def test_context_manager_on_closed_file(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            with obj:
+                pass  # pragma: no cover
+
+    def test_invalid_mode(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with self.assertRaisesRegexp(ValueError, 'invalid mode'):
+            swift_p.open(mode='invalid')
+
+    def test_invalid_io_op(self):
+        class MyFile(object):
+            closed = False
+            _buffer = cStringIO.StringIO()
+            invalid = swift._delegate_to_buffer('invalid')
+
+        with self.assertRaisesRegexp(AttributeError, 'no attribute'):
+            MyFile().invalid()
+
+    def test_read_on_closed_file(self):
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            obj.read()
+
+    def test_read_invalid_mode(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with self.assertRaisesRegexp(TypeError, 'mode.*read'):
+            swift_p.open(mode='wb').read()
+
+    def test_read_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
 
-        swift_p = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), 'data')
 
     @mock.patch('time.sleep', autospec=True)
-    def test_open_success_on_second_try(self, mock_sleep):
+    def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
             ClientException('dummy', 'dummy', http_status=404),
             ('header', 'data')
         ]
-        swift_p = SwiftPath('swift://tenant/container')
+        swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
-    def test_open_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(ValueError):
-            swift_p.open('w')
+    def test_write_invalid_args(self):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='r')
+        with self.assertRaisesRegexp(TypeError, 'mode.*write'):
+            obj.write('hello')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_use_slo_multiple_and_close(self, mock_upload, mock_sleep):
+        with NamedTemporaryFile(delete=False) as fp:
+            with mock.patch('tempfile.NamedTemporaryFile',
+                            autospec=True) as ntf_mock:
+                ntf_mock.side_effect = [fp]
+                swift_p = SwiftPath('swift://tenant/container/obj')
+                obj = swift_p.open(mode='wb', swift_upload_kwargs={
+                    'use_slo': 'test_value'
+                })
+                obj.write('hello')
+                obj.write(' world')
+                obj.close()
+            upload, = mock_upload.call_args_list
+            self.assertEquals(upload[0][1][0].source, fp.name)
+            self.assertEquals(upload[0][1][0].object_name, swift_p.resource)
+            self.assertEquals(upload[1]['use_slo'], 'test_value')
+            self.assertEqual(open(fp.name).read(), 'hello world')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_w_context_manager(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with swift_p.open(mode='wb') as obj:
+            obj.write('hello')
+            obj.write(' world')
+        upload_call, = mock_upload.call_args_list
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_write_multiple_flush_multiple_upload(self, mock_upload,
+                                                  mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        with NamedTemporaryFile(delete=False) as ntf1,\
+             NamedTemporaryFile(delete=False) as ntf2,\
+             NamedTemporaryFile(delete=False) as ntf3:
+            with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
+                ntf.side_effect = [ntf1, ntf2, ntf3]
+                with swift_p.open(mode='wb') as obj:
+                    obj.write('hello')
+                    obj.flush()
+                    obj.write(' world')
+                    obj.flush()
+                u1, u2, u3 = mock_upload.call_args_list
+                u1[0][1][0].source == ntf1.name
+                u2[0][1][0].source == ntf2.name
+                u3[0][1][0].source == ntf3.name
+                u1[0][1][0].object_name == swift_p.resource
+                u2[0][1][0].object_name == swift_p.resource
+                u3[0][1][0].object_name == swift_p.resource
+                self.assertEqual(open(ntf1.name).read(), 'hello')
+                self.assertEqual(open(ntf2.name).read(), 'hello world')
+                # third call happens because we don't care about checking for
+                # additional file change
+                self.assertEqual(open(ntf3.name).read(), 'hello world')
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(SwiftPath, 'upload', autospec=True)
+    def test_close_no_writes(self, mock_upload, mock_sleep):
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        obj = swift_p.open(mode='wb')
+        obj.close()
+
+        self.assertFalse(mock_upload.called)
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)
@@ -772,6 +899,187 @@ class TestCopy(SwiftTestCase):
             p.copy('swift://swift/path')
 
 
+class TestStat(SwiftTestCase):
+    def test_tenant(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '0',
+                'x-account-storage-policy-3xreplica-container-count': '31',
+                'x-account-object-count': '20081986',
+                'connection': 'close',
+                'x-timestamp': '1445629170.46005',
+                'x-account-access-control': '{"read-only":["seq_upload_rnd","swft_labprod"],"read-write":["svc_svc_seq"]}',  # nopep8
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
+                'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
+                'x-account-bytes-used': '24993077101523',
+                'x-account-container-count': '31',
+                'content-type': 'text/plain; charset=utf-8',
+                'accept-ranges': 'bytes',
+                'x-account-storage-policy-3xreplica-object-count': '20081986'
+            },
+            'container': None,
+            'success': True,
+            'action': 'stat_account',
+            'items': [
+                ('Account', 'AUTH_seq_upload_prod'),
+                ('Containers', 31),
+                ('Objects', '20081986'),
+                ('Bytes', '24993077101523'),
+                ('Containers in policy "3xreplica"', '31'),
+                ('Objects in policy "3xreplica"', '20081986'),
+                ('Bytes in policy "3xreplica"', '24993077101523')
+            ],
+            'object': None
+        }]
+        swift_p = SwiftPath('swift://tenant/')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Containers': 31,
+            'Objects': '20081986',
+            'Bytes': '24993077101523',
+            'Containers-in-policy-"3xreplica"': '31',
+            'Objects-in-policy-"3xreplica"': '20081986',
+            'Bytes-in-policy-"3xreplica"': '24993077101523',
+            'Access-Control': {
+                'read-only': ['seq_upload_rnd', 'swft_labprod'],
+                'read-write': ['svc_svc_seq']
+            }
+        })
+
+    def test_tenant_no_access_control(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '0',
+                'x-account-storage-policy-3xreplica-container-count': '31',
+                'x-account-object-count': '20081986',
+                'connection': 'close',
+                'x-timestamp': '1445629170.46005',
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
+                'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
+                'x-account-bytes-used': '24993077101523',
+                'x-account-container-count': '31',
+                'content-type': 'text/plain; charset=utf-8',
+                'accept-ranges': 'bytes',
+                'x-account-storage-policy-3xreplica-object-count': '20081986'
+            },
+            'container': None,
+            'success': True,
+            'action': 'stat_account',
+            'items': [
+                ('Account', 'AUTH_seq_upload_prod'),
+                ('Containers', 31),
+                ('Objects', '20081986'),
+                ('Bytes', '24993077101523'),
+                ('Containers in policy "3xreplica"', '31'),
+                ('Objects in policy "3xreplica"', '20081986'),
+                ('Bytes in policy "3xreplica"', '24993077101523')
+            ],
+            'object': None
+        }]
+        swift_p = SwiftPath('swift://tenant/')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Containers': 31,
+            'Objects': '20081986',
+            'Bytes': '24993077101523',
+            'Containers-in-policy-"3xreplica"': '31',
+            'Objects-in-policy-"3xreplica"': '20081986',
+            'Bytes-in-policy-"3xreplica"': '24993077101523',
+            'Access-Control': {}
+        })
+
+    def test_container(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '0',
+                'x-container-object-count': '43868',
+                'accept-ranges': 'bytes',
+                'x-storage-policy': '3xReplica',
+                'date': 'Mon, 25 Jan 2016 23:10:45 GMT',
+                'connection': 'close',
+                'x-timestamp': '1452627422.60776',
+                'x-trans-id': 'tx441a691b0e514782b51be-0056a6ab75',
+                'x-container-bytes-used': '55841489571',
+                'content-type': 'text/plain; charset=utf-8'
+            },
+            'container': '2016-01',
+            'success': True,
+            'action': 'stat_container',
+            'items': [
+                ('Account', 'AUTH_seq_upload_prod'),
+                ('Container', '2016-01'),
+                ('Objects', '43868'),
+                ('Bytes', '55841489571'),
+                ('Read ACL', ''),
+                ('Write ACL', ''),
+                ('Sync To', ''),
+                ('Sync Key', '')
+            ]
+        }]
+        swift_p = SwiftPath('swift://tenant/container')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Container': '2016-01',
+            'Objects': '43868',
+            'Bytes': '55841489571',
+            'Read-ACL': '',
+            'Write-ACL': '',
+            'Sync-To': '',
+            'Sync-Key': ''
+        })
+
+    def test_object(self):
+        self.mock_swift.stat.return_value = [{
+            'headers': {
+                'content-length': '112',
+                'x-object-meta-x-agi-ctime': '2016-01-15T05:22:00.0Z',
+                'x-object-meta-x-agi-mode': '436',
+                'accept-ranges': 'bytes',
+                'last-modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
+                'connection': 'close',
+                'x-object-meta-x-agi-gid': '0',
+                'x-timestamp': '1452835365.34322',
+                'etag': '87f0b7f04557315e6d1e6db21742d31c',
+                'x-trans-id': 'tx805b2e7ce56343a6b2ea3-0056a6ac39',
+                'date': 'Mon, 25 Jan 2016 23:14:01 GMT',
+                'content-type': 'application/octet-stream',
+                'x-object-meta-x-agi-uid': '0',
+                'x-object-meta-x-agi-mtime': 'Fri, 15 Jan 2016 05:22:01 PST'
+            },
+            'container': '2016-01',
+            'success': True, 'action':
+            'stat_object',
+            'items': [
+                ('Account', u'AUTH_seq_upload_prod'),
+                ('Container', '2016-01'),
+                ('Object', 'object.txt'),
+                ('Content Type', u'application/octet-stream'),
+                ('Content Length', u'112'),
+                ('Last Modified', u'Fri, 15 Jan 2016 05:22:46 GMT'),
+                ('ETag', u'87f0b7f04557315e6d1e6db21742d31c'),
+                ('Manifest', None)
+            ],
+            'object': 'object.txt'
+        }]
+        swift_p = SwiftPath('swift://tenant/container')
+        res = swift_p.stat()
+        self.assertEquals(res, {
+            'Account': 'AUTH_seq_upload_prod',
+            'Container': '2016-01',
+            'Object': 'object.txt',
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': '112',
+            'Last-Modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
+            'ETag': '87f0b7f04557315e6d1e6db21742d31c',
+            'Manifest': None
+        })
+
+
 class TestRemove(SwiftTestCase):
     def test_invalid_remove(self):
         # Remove()s must happen on a resource of a container
@@ -843,3 +1151,38 @@ class TestPost(SwiftTestCase):
 
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)
+
+class TestCompatHelpers(SwiftTestCase):
+    def test_noops(self):
+        self.assertEqual(SwiftPath('swift://tenant').expanduser(),
+                         SwiftPath('swift://tenant'))
+        self.assertEqual(SwiftPath('swift://tenant').abspath(),
+                         SwiftPath('swift://tenant'))
+
+    @mock.patch.dict(os.environ, {'somevar': 'blah'}, clear=True)
+    def test_expand(self):
+        original = SwiftPath('swift://tenant/container/$somevar//another/../a/')
+        self.assertEqual(original.expand(),
+                         SwiftPath('swift://tenant/container/blah/a'))
+        self.assertEqual(SwiftPath('swift://tenant/container//a/b').expand(),
+                         SwiftPath('swift://tenant/container/a/b'))
+
+
+    def test_expandvars(self):
+        original = SwiftPath('swift://tenant/container/$somevar/another')
+        other = SwiftPath('swift://tenant/container/somevar/another')
+        with mock.patch.dict(os.environ, {'somevar': 'blah'}, clear=True):
+            expanded = original.expandvars()
+            expanded2 = other.expandvars()
+        self.assertEqual(expanded,
+                         SwiftPath('swift://tenant/container/blah/another'))
+        self.assertEqual(expanded2, other)
+
+    def test_normpath(self):
+        original = SwiftPath('swift://tenant/container/another/../b')
+        self.assertEqual(original.normpath(),
+                         SwiftPath('swift://tenant/container/b'))
+        self.assertEqual(SwiftPath("swift://tenant/..").normpath(),
+                         SwiftPath("swift://"))
+        self.assertEqual(SwiftPath("swift://tenant/container/..").normpath(),
+                         SwiftPath("swift://tenant"))
