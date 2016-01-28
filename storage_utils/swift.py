@@ -843,6 +843,20 @@ class SwiftPath(str):
                     'subdir/f1.txt': 'dest/folder/subdir/f1.txt',
                     'subdir/f2.txt': 'dest/folder/subdir/f2.txt'
                 }
+
+            To download full swift paths relative to a download path::
+
+                from storage_utils import path
+                p = path('swift://tenant/container/dir/')
+                results = p.download_objects('dest/folder', [
+                    'swift://tenant/container/dir/subdir/f1.txt',
+                    'swift://tenant/container/dir/subdir/f2.txt'
+                ])
+                print results
+                {
+                    'swift://tenant/container/dir/subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'swift://tenant/container/dir/subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
         """
         if not self.container:
             raise ValueError('cannot call download_objects on tenant with no container')
@@ -916,8 +930,6 @@ class SwiftPath(str):
 
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
-        prefix = _with_slash(self.resource)
-
         download_options = {
             'prefix': _with_slash(self.resource),
             'out_directory': dest,
