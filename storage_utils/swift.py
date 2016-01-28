@@ -14,16 +14,16 @@ Note that these variables can also be passed to the methods themselves.
 
 Examples:
 
-    Basic usage of swift is shown in the following with an example of how
-    to download a swift path to the current working directory.
+    A basic example of configuring the swift authentication parameters
+    and downloading a directory::
 
-    >>> from storage_utils import swift
-    >>> swift.auth_url = 'swift_auth_url.com'
-    >>> swift.username = 'swift_user'
-    >>> swift.password = 'swift_pass'
-    >>>
-    >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
-    >>> swift_path.download()
+        from storage_utils import swift
+        swift.auth_url = 'swift_auth_url.com'
+        swift.username = 'swift_user'
+        swift.password = 'swift_pass'
+
+        swift_path = swift.SwiftPath('swift://tenant/container/prefix')
+        swift_path.download('dest_dir')
 
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
@@ -202,20 +202,24 @@ def make_condition(operator, right_operand):
             condition.
 
     Examples:
-        >>> from storage_utils.swift import make_condition
-        >>> from storage_utils.swift import SwiftPath
-        >>> p = SwiftPath('swift://tenant/container/resource')
-        >>> # Ensure that the amount of listed objects are greater than 6
-        >>> cond = make_condition('>', 6)
-        >>> objs = p.list(num_objs_cond=cond)
+        To make a condition and use it in `SwiftPath.list`::
 
-        >>> cond = make_condition('>', 100)
-        >>> # ConditionNotMetError is thrown when the condition is not met
-        >>> objs = p.list(num_objs_cond=cond)
-        >>> Traceback (most recent call last):
-        >>> ...
-        >>> storage_utils.swift.ConditionNotMetError: condition not met: num
-        >>> listed objects is not > 100
+            from storage_utils.swift import make_condition
+            from storage_utils.swift import SwiftPath
+            p = SwiftPath('swift://tenant/container/resource')
+            # Ensure that the amount of listed objects are greater than 6
+            cond = make_condition('>', 6)
+            objs = p.list(num_objs_cond=cond)
+
+        An illustration of what it looks like when a condition doesn't pass::
+
+            cond = make_condition('>', 100)
+            # ConditionNotMetError is thrown when the condition is not met
+            objs = p.list(num_objs_cond=cond)
+            Traceback (most recent call last):
+            ...
+            storage_utils.swift.ConditionNotMetError: condition not met: num
+            listed objects is not > 100
     """
     return _Condition(operator, right_operand)
 
@@ -795,7 +799,11 @@ class SwiftPath(str):
             return False
 
     @_swift_retry(exceptions=(UnavailableError))
-    def download_objects(self, dest, objs):
+    def download_objects(self,
+                         dest,
+                         objects,
+                         object_threads=10,
+                         container_threads=10,):
         """Downloads a list of objects to a destination folder
 
         This method retries ``num_retries`` times if swift is unavailable.
@@ -803,11 +811,38 @@ class SwiftPath(str):
         retry logic at the module or method level.
 
         Args:
-            dest (str): The destination folder to download to
+            dest (str): The destination folder to download to. The directory
+                will be created if it doesnt exist.
+            object_threads (int): The amount of threads to use for downloading
+                objects.
+            container_threads (int): The amount of threads to use for
+                downloading containers.
             objs (List[str|PosixPath|SwiftPath]): The list of objects to
                 download. The objects can paths relative to the download path
-                or absolute swift paths. Any absolute swift path must also be
-                under the download path
+                or absolute swift paths. Any absolute swift path must be
+                children of the download path
+
+        Returns:
+            dict: A mapping of all requested ``objs`` to their location on
+                disk
+
+        Raises:
+            ValueError: This method was called on a path that has no
+                container
+
+        Examples:
+
+            To download a objects to a ``dest/folder`` destination::
+
+                from storage_utils import path
+                p = path('swift://tenant/container/dir/')
+                results = p.download_objects('dest/folder', ['subdir/f1.txt',
+                                                             'subdir/f2.txt'])
+                print results
+                {
+                    'subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
         """
         if not self.container:
             raise ValueError('cannot call download_objects on tenant with no container')
@@ -816,7 +851,7 @@ class SwiftPath(str):
         obj_base = self.resource or path('')
         objs_to_download = {
             obj: path(obj).resource if is_swift_path(obj) else obj_base / obj
-            for obj in objs
+            for obj in objects
         }
 
         for obj in objs_to_download:
@@ -824,7 +859,8 @@ class SwiftPath(str):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
-        service = self._get_swift_service()
+        service = self._get_swift_service(object_dd_threads=object_threads,
+                                          container_threads=container_threads)
         download_options = {
             'prefix': _with_slash(self.resource),
             'out_directory': dest,
@@ -837,7 +873,7 @@ class SwiftPath(str):
         results = {r['object']: r['path'] for r in results}
 
         # Return results mapped back to their input name
-        return {obj: results[objs_to_download[obj]] for obj in objs}
+        return {obj: results[objs_to_download[obj]] for obj in objects}
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def download(self,
@@ -873,8 +909,7 @@ class SwiftPath(str):
                 meet the ``num_objs_cond`` condition.
 
         Returns:
-            dict: A mapping of the downloaded `SwiftPath`s to their locally
-                downloaded `PosixPath`.
+            dict: A mapping of the destination to the download path
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')

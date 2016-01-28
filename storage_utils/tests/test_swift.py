@@ -778,6 +778,76 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix='path')
 
 
+class TestDownloadObjects(SwiftTestCase):
+    def test_tenant(self):
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'tenant'):
+            swift_p.download_objects('output_dir', [])
+
+    def test_local_paths(self):
+        self.mock_swift.download.return_value = [{
+            'object': 'd/e/f.txt',
+            'path': 'output_dir/e/f.txt'
+        }, {
+            'object': 'd/e/f/g.txt',
+            'path': 'output_dir/e/f/g.txt'
+        }]
+        swift_p = SwiftPath('swift://tenant/container/d')
+        r = swift_p.download_objects('output_dir', ['e/f.txt', 'e/f/g.txt'])
+        self.assertEquals(r, {
+            'e/f.txt': 'output_dir/e/f.txt',
+            'e/f/g.txt': 'output_dir/e/f/g.txt'
+        })
+
+        download_kwargs = self.mock_swift.download.call_args_list[0][1]
+        self.assertEquals(len(download_kwargs), 3)
+        self.assertEquals(download_kwargs['container'], 'container')
+        self.assertEquals(sorted(download_kwargs['objects']),
+                          sorted(['d/e/f.txt', 'd/e/f/g.txt']))
+        self.assertEquals(download_kwargs['options'], {
+            'prefix': 'd/',
+            'out_directory': 'output_dir',
+            'remove_prefix': True
+        })
+
+    def test_absolute_paths(self):
+        self.mock_swift.download.return_value = [{
+            'object': 'd/e/f.txt',
+            'path': 'output_dir/e/f.txt'
+        }, {
+            'object': 'd/e/f/g.txt',
+            'path': 'output_dir/e/f/g.txt'
+        }]
+        swift_p = SwiftPath('swift://tenant/container/d')
+        r = swift_p.download_objects('output_dir', [
+            'swift://tenant/container/d/e/f.txt',
+            'swift://tenant/container/d/e/f/g.txt'
+        ])
+        self.assertEquals(r, {
+            'swift://tenant/container/d/e/f.txt': 'output_dir/e/f.txt',
+            'swift://tenant/container/d/e/f/g.txt': 'output_dir/e/f/g.txt'
+        })
+
+        download_kwargs = self.mock_swift.download.call_args_list[0][1]
+        self.assertEquals(len(download_kwargs), 3)
+        self.assertEquals(download_kwargs['container'], 'container')
+        self.assertEquals(sorted(download_kwargs['objects']),
+                          sorted(['d/e/f.txt', 'd/e/f/g.txt']))
+        self.assertEquals(download_kwargs['options'], {
+            'prefix': 'd/',
+            'out_directory': 'output_dir',
+            'remove_prefix': True
+        })
+
+    def test_absolute_paths_not_child_of_download_path(self):
+        swift_p = SwiftPath('swift://tenant/container/d')
+        with self.assertRaisesRegexp(ValueError, 'child'):
+            swift_p.download_objects('output_dir', [
+                'swift://tenant/container/bad/e/f.txt',
+                'swift://tenant/container/bad/e/f/g.txt'
+            ])
+
+
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
     def test_download_tenant(self):
@@ -845,16 +915,7 @@ class TestDownload(SwiftTestCase):
         # Simulate the condition not being met the first call
         self.mock_swift.download.side_effect = [
             [{}, {}],
-            [{
-                'object': 'a/file.txt',
-                'path': 'local_path/file.txt'
-            }, {
-                'object': 'a/file2.txt',
-                'path': 'local_path/file2.txt'
-            }, {
-                'object': 'a/file3.txt',
-                'path': 'local_path/file3.txt'
-            }]
+            [{}, {}, {}]
         ]
 
         swift_p = SwiftPath('swift://tenant/container')
