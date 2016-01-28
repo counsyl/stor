@@ -523,7 +523,7 @@ class SwiftPath(str):
             list_kwargs['delimiter'] = '/'
 
             # Ensure that the prefix has a '/' at the end of it for listdir
-            if list_kwargs['prefix'] and list_kwargs['prefix'].endswith('/'):
+            if list_kwargs['prefix'] and not list_kwargs['prefix'].endswith('/'):
                 list_kwargs['prefix'] += '/'
 
         if self.container:
@@ -533,8 +533,6 @@ class SwiftPath(str):
         else:
             results = self._swift_connection_call(connection.get_account,
                                                   **list_kwargs)
-
-        print 'results', results
 
         path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
         paths = list({
