@@ -1032,9 +1032,24 @@ class SwiftPath(str):
             name for name in to_upload
             if isinstance(name, swift_service.SwiftUploadObject)
         ]
-        all_files_to_upload = utils.walk_files_and_dirs(
-            [name for name in to_upload
-             if not isinstance(name, swift_service.SwiftUploadObject)])
+        all_files_to_upload = utils.walk_files_and_dirs([
+            name for name in to_upload
+            if not isinstance(name, swift_service.SwiftUploadObject)
+        ])
+
+        # Verify no absolute paths are being uploaded
+        for f in all_files_to_upload:
+            if f.startswith('/'):
+                raise ValueError('cannot upload absolute path %s' % f)
+
+        # Convert everything to swift upload objects and prepend the relative
+        # resource directory to uploaded results
+        resource_base = _with_slash(self.resource) or path('')
+        swift_upload_objects.extend([
+            swift_service.SwiftUploadObject(f, object_name=resource_base / f)
+            for f in all_files_to_upload
+        ])
+
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
@@ -1045,7 +1060,7 @@ class SwiftPath(str):
         }
         return self._swift_service_call(service.upload,
                                         self.container,
-                                        all_files_to_upload + swift_upload_objects,  # nopep8
+                                        swift_upload_objects,
                                         options=upload_options)
 
     copy = utils.copy
