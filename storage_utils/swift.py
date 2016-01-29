@@ -1015,9 +1015,6 @@ class SwiftPath(str):
                 of manifest objects left alone (in the case of overwrites).
             changed (bool): Upload only files that have changed since last
                 upload.
-            object_name (str): Upload file and name object to <object_name>.
-                If uploading dir, use <object_name> as object prefix instead
-                of the folder name.
             object_threads (int): The number of threads to use when uploading
                 full objects.
             segment_threads (int): The number of threads to use when uploading
@@ -1055,8 +1052,7 @@ class SwiftPath(str):
             'use_slo': use_slo,
             'segment_container': segment_container,
             'leave_segments': leave_segments,
-            'changed': True,
-            'object_name': object_name
+            'changed': True
         }
         return self._swift_service_call(service.upload,
                                         self.container,
