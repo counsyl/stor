@@ -386,8 +386,7 @@ class TestList(SwiftTestCase):
         with self.assertRaises(ValueError):
             list(swift_p.list())
         mock_list.assert_called_once_with('container', prefix=None,
-                                          limit=None, full_listing=True,
-                                          path=None)
+                                          limit=None, full_listing=True)
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_condition_not_met(self, mock_sleep):
@@ -419,7 +418,7 @@ class TestList(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container/path')
         results = swift_p.list()
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2'
         ])
@@ -480,7 +479,7 @@ class TestList(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container/path')
         results = swift_p.list(num_objs_cond=make_condition('>', 1))
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2'
         ])
@@ -491,7 +490,7 @@ class TestList(SwiftTestCase):
     def test_listdir(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
-            'subdir': 'path/to/resource1'
+            'subdir': 'path/to/resource1/'
         }, {
             'name': 'path/to/resource1'
         }, {
@@ -500,18 +499,64 @@ class TestList(SwiftTestCase):
             'name': 'path/to/resource3'
         }])
 
-        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p = SwiftPath('swift://tenant/container/path/to')
         results = list(swift_p.listdir())
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2',
             'swift://tenant/container/path/to/resource3'
         ])
         mock_list.assert_called_once_with('container',
                                           limit=None,
-                                          prefix='path',
+                                          prefix='path/to/',
                                           full_listing=True,
-                                          path='path')
+                                          delimiter='/')
+
+    def test_listdir_on_container(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'subdir': 'resource1/'
+        }, {
+            'name': 'resource1'
+        }, {
+            'name': 'resource2'
+        }, {
+            'name': 'resource3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container/')
+        results = list(swift_p.listdir())
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container/resource1',
+            'swift://tenant/container/resource2',
+            'swift://tenant/container/resource3'
+        ])
+        mock_list.assert_called_once_with('container',
+                                          limit=None,
+                                          prefix=None,
+                                          full_listing=True,
+                                          delimiter='/')
+
+    def test_listdir_on_tenant(self):
+        mock_list = self.mock_swift_conn.get_account
+        mock_list.return_value = ({}, [{
+            'name': 'container1'
+        }, {
+            'name': 'container2'
+        }, {
+            'name': 'container3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/')
+        results = list(swift_p.listdir())
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container1',
+            'swift://tenant/container2',
+            'swift://tenant/container3'
+        ])
+        mock_list.assert_called_once_with(limit=None,
+                                          prefix=None,
+                                          full_listing=True)
 
     def test_list_multiple_return(self):
         mock_list = self.mock_swift_conn.get_container
@@ -527,7 +572,7 @@ class TestList(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container/path')
         results = list(swift_p.list())
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2',
             'swift://tenant/container/path/to/resource3',
@@ -536,8 +581,7 @@ class TestList(SwiftTestCase):
         mock_list.assert_called_once_with('container',
                                           limit=None,
                                           prefix='path',
-                                          full_listing=True,
-                                          path=None)
+                                          full_listing=True)
 
     def test_list_limit(self):
         mock_list = self.mock_swift_conn.get_container
@@ -553,8 +597,7 @@ class TestList(SwiftTestCase):
         mock_list.assert_called_once_with('container',
                                           limit=1,
                                           prefix='path',
-                                          full_listing=False,
-                                          path=None)
+                                          full_listing=False)
 
     def test_list_containers(self):
         mock_list = self.mock_swift_conn.get_account
@@ -565,14 +608,13 @@ class TestList(SwiftTestCase):
         }])
         swift_p = SwiftPath('swift://tenant')
         results = list(swift_p.list())
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container1',
             'swift://tenant/container2'
         ])
         mock_list.assert_called_once_with(prefix=None,
                                           full_listing=True,
-                                          limit=None,
-                                          path=None)
+                                          limit=None)
 
     def test_list_starts_with(self):
         mock_list = self.mock_swift_conn.get_container
@@ -583,15 +625,14 @@ class TestList(SwiftTestCase):
         }])
         swift_p = SwiftPath('swift://tenant/container/r')
         results = list(swift_p.list(starts_with='prefix'))
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/r1',
             'swift://tenant/container/r2'
         ])
         mock_list.assert_called_once_with('container',
                                           prefix='r/prefix',
                                           limit=None,
-                                          full_listing=True,
-                                          path=None)
+                                          full_listing=True)
 
     def test_list_starts_with_no_resource(self):
         mock_list = self.mock_swift_conn.get_container
@@ -602,15 +643,14 @@ class TestList(SwiftTestCase):
         }])
         swift_p = SwiftPath('swift://tenant/container')
         results = list(swift_p.list(starts_with='prefix'))
-        self.assertEquals(results, [
+        self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/r1',
             'swift://tenant/container/r2'
         ])
         mock_list.assert_called_once_with('container',
                                           prefix='prefix',
                                           limit=None,
-                                          full_listing=True,
-                                          path=None)
+                                          full_listing=True)
 
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
@@ -660,7 +700,7 @@ class TestGlob(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container')
         paths = swift_p.glob('pattern*',
                              num_objs_cond=swift.make_condition('==', 2))
-        self.assertEquals(paths, [
+        self.assertSwiftListResultsEqual(paths, [
             SwiftPath('swift://tenant/container1'),
             SwiftPath('swift://tenant/container2')
         ])
@@ -697,7 +737,7 @@ class TestExists(SwiftTestCase):
         result = swift_p.exists()
         self.assertFalse(result)
         mock_list.assert_called_once_with('container', full_listing=False,
-                                          limit=1, prefix=None, path=None)
+                                          limit=1, prefix=None)
 
     def test_false_404(self):
         mock_list = self.mock_swift_conn.get_container
@@ -707,7 +747,7 @@ class TestExists(SwiftTestCase):
         result = swift_p.exists()
         self.assertFalse(result)
         mock_list.assert_called_once_with('container', full_listing=False,
-                                          limit=1, prefix=None, path=None)
+                                          limit=1, prefix=None)
 
     def test_raises_on_non_404_error(self):
         mock_list = self.mock_swift_conn.get_container
@@ -717,7 +757,7 @@ class TestExists(SwiftTestCase):
         with self.assertRaises(swift.SwiftError):
             swift_p.exists()
         mock_list.assert_called_once_with('container', full_listing=False,
-                                          limit=1, prefix=None, path=None)
+                                          limit=1, prefix=None)
 
     def test_true(self):
         mock_list = self.mock_swift_conn.get_container
@@ -735,7 +775,7 @@ class TestExists(SwiftTestCase):
         result = swift_p.exists()
         self.assertTrue(result)
         mock_list.assert_called_once_with('container', full_listing=False,
-                                          limit=1, prefix='path', path=None)
+                                          limit=1, prefix='path')
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)

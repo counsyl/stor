@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+v2.3.0
+------
+
+* Included more backwards compatibility methods on `SwiftPath` to be compatible
+  with `PosixPath`, such as `SwiftPath.normpath`, `SwiftPath.expand`, and
+  `SwiftPath.expandvars`.
+
+* Include additional abilty to write objects returned by `SwiftPath.open`.
+
+* Added `SwiftPath.stat` to get metadata about tenants, containers, and objects.
+
+* Added `SwiftPath.listdir` to list directories
+
 v2.1.0
 ------
 
