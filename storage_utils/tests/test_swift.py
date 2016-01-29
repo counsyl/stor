@@ -779,6 +779,24 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix='path')
 
 
+class TestDownloadObject(SwiftTestCase):
+    def test_container(self):
+        swift_p = SwiftPath('swift://tenant/container')
+        with self.assertRaisesRegexp(ValueError, 'path'):
+            swift_p.download_object('file')
+
+    def test_success(self):
+        self.mock_swift.download.return_value = [{}]
+        swift_p = SwiftPath('swift://tenant/container/d')
+        swift_p.download_object('file.txt')
+
+        download_kwargs = self.mock_swift.download.call_args_list[0][1]
+        self.assertEquals(len(download_kwargs), 3)
+        self.assertEquals(download_kwargs['container'], 'container')
+        self.assertEquals(download_kwargs['objects'], ['d'])
+        self.assertEquals(download_kwargs['options'], {'out_file': 'file.txt'})
+
+
 class TestDownloadObjects(SwiftTestCase):
     def test_tenant(self):
         swift_p = SwiftPath('swift://tenant')
