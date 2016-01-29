@@ -1052,7 +1052,7 @@ class SwiftPath(str):
             'use_slo': use_slo,
             'segment_container': segment_container,
             'leave_segments': leave_segments,
-            'changed': True
+            'changed': changed
         }
         return self._swift_service_call(service.upload,
                                         self.container,

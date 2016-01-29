@@ -6,6 +6,7 @@ import unittest
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
+from swiftclient.service import SwiftUploadObject
 
 from storage_utils import path
 from storage_utils import swift
@@ -938,7 +939,15 @@ class TestDownload(SwiftTestCase):
 
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
-    def test_upload(self, mock_walk_files_and_dirs):
+    def test_abs_path(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['/abs_path/file1']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaisesRegexp(ValueError, 'absolute'):
+            swift_p.upload(['/abs_path/file1'])
+
+    def test_upload_to_dir(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.return_value = []
 
@@ -948,19 +957,55 @@ class TestUpload(SwiftTestCase):
                        use_slo=True,
                        segment_container=True,
                        leave_segments=True,
-                       changed=True,
-                       object_name='obj_name')
-        self.mock_swift.upload.assert_called_once_with(
-            'container',
-            ['file1', 'file2'],
-            options={
-                'segment_container': True,
-                'use_slo': True,
-                'leave_segments': True,
-                'segment_size': 1000,
-                'changed': True,
-                'object_name': 'obj_name'
-            })
+                       changed=True)
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
+
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['file1', 'file2'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/file1', 'path/file2'])
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'segment_container': True,
+            'use_slo': True,
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True
+        })
+
+    def test_upload_to_container(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.upload(['upload'],
+                       segment_size=1000,
+                       use_slo=True,
+                       segment_container=True,
+                       leave_segments=True,
+                       changed=True)
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
+
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['file1', 'file2'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['file1', 'file2'])
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'segment_container': True,
+            'use_slo': True,
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True
+        })
 
     def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
         self.disable_get_swift_service_mock()
