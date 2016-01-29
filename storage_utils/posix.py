@@ -24,6 +24,7 @@ class PosixPath(Path):
     vendored into ``storage_utils.third_party.path``, specifically around the
     ``copy`` and ``copytree`` methods.
     """
+    copy = utils.copy
     copytree = utils.copytree
 
     def open(self, *args, **kwargs):

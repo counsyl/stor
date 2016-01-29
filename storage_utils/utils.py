@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import os
 from subprocess import check_call
+from swiftclient.service import SwiftUploadObject
 import tempfile
 
 
@@ -67,6 +68,59 @@ def path(p):
         return PosixPath(p)
 
 
+def copy(source, dest, **retry_args):
+    """Copies a source file to a destination file.
+
+    Note that this utility can be called from either swift or posix
+    paths created with `storage_utils.path`.
+
+    Args:
+        src (path|str): The source directory to copy from
+        dest (path|str): The destination file. In contrast to
+            ``shutil.copy``, the parent directory is created if it doesn't
+            already exist.
+        retry_args (dict): Optional retry arguments to use for swift upload
+            or download. View the swift module-level documentation for more
+            information on retry arguments
+
+    Examples:
+        Copying a swift file to a local path behaves as follows::
+
+            from storage_utils import path
+            swift_p = path('swift://tenant/container/dir/file.txt')
+            # file.txt will be copied to other_dir/other_file.txt
+            swift_p.copy('other_dir/other_file.txt')
+
+        Copying from a local path to swift behaves as follows::
+
+            from storage_utils import path
+            local_p = path('my/local/file.txt')
+            # File will be uploaded to swift://tenant/container/dir/my_file.txt
+            local_p.copy('swift://tenant/container/dir/my_file.txt')
+    """
+    source = path(source)
+    dest = path(dest)
+    if is_swift_path(source) and is_swift_path(dest):
+        raise ValueError('cannot copy one swift path to another swift path')
+    if not source.name:
+        raise ValueError('source must be a file')
+
+    dest_file = dest if dest.name else dest / source.name
+    if is_posix_path(dest):
+        dest_file.expand().abspath().parent.makedirs_p()
+        if is_swift_path(source):
+            source.parent.download_object(dest_file)
+        else:
+            check_call(['cp', str(source), str(dest)])
+    else:
+        if not dest_file.parent.container:
+            raise ValueError('cannot copy to tenant %s and file %s' % (dest_file.parent,
+                                                                       dest_file.name))
+        dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
+        dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)])
+        return dest_file.parent, source
+
+
 def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
              segment_threads=20, **retry_args):
     """Copies a source directory to a destination directory. Assumes that
@@ -88,24 +142,23 @@ def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
     source = path(source)
     dest = path(dest)
     if is_swift_path(source) and is_swift_path(dest):
-        raise ValueError('Cannot copy one swift path to another swift path')
+        raise ValueError('cannot copy one swift path to another swift path')
 
-    if not is_swift_path(dest):
+    if is_posix_path(dest):
         # Ensure the parent directory exists on the destination for cp or mcp
         # to run properly
         dest.expand().abspath().parent.makedirs_p()
-
-    if is_swift_path(source):
-        source.download(dest, object_threads=object_threads)
-    elif is_swift_path(dest):
+        if is_swift_path(source):
+            source.download(dest, object_threads=object_threads)
+        else:
+            formatted_copy_cmd = copy_cmd.split()
+            formatted_copy_cmd.extend([str(source), str(dest)])
+            check_call(formatted_copy_cmd)
+    else:
         with source:
             dest.upload(['.'],
                         object_threads=object_threads,
                         segment_threads=segment_threads)
-    else:
-        formatted_copy_cmd = copy_cmd.split()
-        formatted_copy_cmd.extend([str(source), str(dest)])
-        check_call(formatted_copy_cmd)
 
 
 def walk_files_and_dirs(files_and_dirs):

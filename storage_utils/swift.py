@@ -799,6 +799,30 @@ class SwiftPath(str):
             return False
 
     @_swift_retry(exceptions=(UnavailableError))
+    def download_object(self, out_file):
+        """Downloads a single object to an output file.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more information about configuring
+        retry logic at the module or method level.
+
+        Args:
+            out_file (str): The output file
+
+        Raises:
+            ValueError: This method was called on a path that has no
+                container or object
+        """
+        if not self.resource:
+            raise ValueError('can only call download_object on object path')
+
+        service = self._get_swift_service()
+        results = self._swift_service_call(service.download,
+                                           container=self.container,
+                                           objects=[self.resource],
+                                           options={'out_file': out_file})
+
+    @_swift_retry(exceptions=(UnavailableError))
     def download_objects(self,
                          dest,
                          objects,
@@ -1024,6 +1048,7 @@ class SwiftPath(str):
                                         all_files_to_upload + swift_upload_objects,  # nopep8
                                         options=upload_options)
 
+    copy = utils.copy
     copytree = utils.copytree
 
     @_swift_retry(exceptions=UnavailableError)
