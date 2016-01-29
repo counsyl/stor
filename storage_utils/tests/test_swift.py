@@ -1044,9 +1044,22 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(options_passed['segment_threads'], 30)
 
 
+class TestCopy(SwiftTestCase):
+    @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
+    def test_copy_posix_destination(self, mock_download_object):
+        p = SwiftPath('swift://tenant/container/file_source')
+        p.copy('file_dest')
+        mock_download_object.assert_called_once_with(p, path(u'file_dest'))
+
+    def test_copy_swift_destination(self):
+        p = SwiftPath('swift://tenant/container/file_source')
+        with self.assertRaises(ValueError):
+            p.copy('swift://tenant/container/file_dest')
+
+
 class TestCopytree(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
-    def test_copy_posix_destination(self, mock_download):
+    def test_copytree_posix_destination(self, mock_download):
         p = SwiftPath('swift://tenant/container')
         p.copytree('path', num_retries=1, object_threads=100)
         mock_download.assert_called_once_with(

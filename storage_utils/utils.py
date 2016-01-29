@@ -109,7 +109,7 @@ def copy(source, dest, **retry_args):
     if is_posix_path(dest):
         dest_file.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
-            source.parent.download_object(dest_file)
+            source.download_object(dest_file)
         else:
             check_call(['cp', str(source), str(dest)])
     else:
