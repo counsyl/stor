@@ -75,7 +75,7 @@ def copy(source, dest, **retry_args):
     paths created with `storage_utils.path`.
 
     Args:
-        src (path|str): The source directory to copy from
+        source (path|str): The source directory to copy from
         dest (path|str): The destination file. In contrast to
             ``shutil.copy``, the parent directory is created if it doesn't
             already exist.
@@ -131,7 +131,7 @@ def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
     paths are capable of being copied to/from.
 
     Args:
-        src (path|str): The source directory to copy from
+        source (path|str): The source directory to copy from
         dest (path|str): The directory to copy to
         copy_cmd (str): If copying to / from posix, this command is
             used.
