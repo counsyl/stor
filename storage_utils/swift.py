@@ -845,10 +845,10 @@ class SwiftPath(str):
             raise ValueError('can only call download_object on object path')
 
         service = self._get_swift_service()
-        results = self._swift_service_call(service.download,
-                                           container=self.container,
-                                           objects=[self.resource],
-                                           options={'out_file': out_file})
+        self._swift_service_call(service.download,
+                                 container=self.container,
+                                 objects=[self.resource],
+                                 options={'out_file': out_file})
 
     @_swift_retry(exceptions=(UnavailableError))
     def download_objects(self,
