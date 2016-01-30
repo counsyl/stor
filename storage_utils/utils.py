@@ -102,20 +102,27 @@ def copy(source, dest, **retry_args):
     dest = path(dest)
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
-    if not source.name:
-        raise ValueError('source must be a file')
+    if not source.isfile():
+        raise ValueError('source must be a file that ends with an extension')
+    if is_swift_path(dest) and not (dest.isfile() or dest.isdir()):
+        raise ValueError('swift destination must be file with extension or directory with slash')
 
     dest_file = dest if dest.name else dest / source.name
     if is_posix_path(dest):
-        dest_file.expand().abspath().parent.makedirs_p()
+        dest_file.makedirs_p()
         if is_swift_path(source):
             source.download_object(dest_file)
         else:
             check_call(['cp', str(source), str(dest)])
     else:
         if not dest_file.parent.container:
-            raise ValueError('cannot copy to tenant %s and file %s' % (dest_file.parent,
-                                                                       dest_file.name))
+            raise ValueError((
+                'cannot copy to tenant "%s" and file '
+                '"%s"' % (dest_file.parent, dest_file.name)
+            ))
+        else:
+            print dest_file.parent, dest_file
+            print 'hi'
         dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
         dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)])
         return dest_file.parent, source
@@ -145,8 +152,6 @@ def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
         raise ValueError('cannot copy one swift path to another swift path')
 
     if is_posix_path(dest):
-        # Ensure the parent directory exists on the destination for cp or mcp
-        # to run properly
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
             source.download(dest, object_threads=object_threads)
