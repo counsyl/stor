@@ -120,9 +120,6 @@ def copy(source, dest, **retry_args):
                 'cannot copy to tenant "%s" and file '
                 '"%s"' % (dest_file.parent, dest_file.name)
             ))
-        else:
-            print dest_file.parent, dest_file
-            print 'hi'
         dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
         dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)])
         return dest_file.parent, source
