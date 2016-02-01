@@ -435,33 +435,12 @@ class SwiftPath(str):
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
 
-    def _is_ambiguous(self):
+    def is_ambiguous(self):
         """Returns true if it cannot be determined if the path is a
         file or directory
         """
         f = self.resource
         return f and not f.endswith('/') and not f.ext
-
-    def isfile(self):
-        """True if the path points to a file, False otherwise
-
-        Raises:
-            ValueError: If the path is ambiguous, i.e. if it does not have
-                a trailing slash or if it doesnt have an extension.
-        """
-        return True if not self._is_ambiguous() and not self.isdir() else False
-
-    def isdir(self):
-        """True if the path is a directory, False otherwise
-
-        For swift, a tenant and container is considered a directory
-
-        Raises:
-            ValueError: If the path is ambiguous, i.e. if it does not have
-                a trailing slash or if it doesnt have an extension.
-        """
-        f = self.resource or '/'
-        return True if not self._is_ambiguous() and f.endswith('/') else False
 
     @property
     def name(self):

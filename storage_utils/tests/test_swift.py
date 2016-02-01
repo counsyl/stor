@@ -1047,12 +1047,6 @@ class TestUpload(SwiftTestCase):
 
 class TestCopy(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
-    def test_copy_posix_destination_ambiguous_src(self, mock_download_object):
-        p = SwiftPath('swift://tenant/container/file_source')
-        with self.assertRaisesRegexp(ValueError, 'extension'):
-            p.copy('file.txt')
-
-    @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
     def test_copy_posix_destination(self, mock_download_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
         p.copy('file_dest')
@@ -1062,11 +1056,6 @@ class TestCopy(SwiftTestCase):
         p = SwiftPath('swift://tenant/container/file_source')
         with self.assertRaisesRegexp(ValueError, 'swift path'):
             p.copy('swift://tenant/container/file_dest')
-
-    def test_copy_dir(self):
-        p = SwiftPath('swift://tenant/container/dir/')
-        with self.assertRaisesRegexp(ValueError, 'must be a file'):
-            p.copy('file_dest')
 
 
 class TestCopytree(SwiftTestCase):

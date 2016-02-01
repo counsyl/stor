@@ -102,9 +102,7 @@ def copy(source, dest, **retry_args):
     dest = path(dest)
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
-    if not source.isfile():
-        raise ValueError('source must be a file that ends with an extension')
-    if is_swift_path(dest) and not (dest.isfile() or dest.isdir()):
+    if is_swift_path(dest) and dest.is_ambiguous():
         raise ValueError('swift destination must be file with extension or directory with slash')
 
     dest_file = dest if dest.name else dest / source.name
