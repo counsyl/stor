@@ -608,7 +608,7 @@ class SwiftPath(str):
             fp.flush()
             suo = swift_service.SwiftUploadObject(fp.name,
                                                   object_name=self.resource)
-            self.upload([suo], **swift_upload_args)
+            return self.upload([suo], **swift_upload_args)
 
     def open(self, mode='r', swift_upload_kwargs=None):
         """Opens a `SwiftFile` that can be read or written to.
