@@ -67,8 +67,8 @@ SwiftFile
 .. autoclass:: SwiftFile
   :members:
 
-Errors
-------
+Exceptions
+----------
 
 .. autoexception:: SwiftError
 
