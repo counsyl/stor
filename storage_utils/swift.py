@@ -595,7 +595,7 @@ class SwiftPath(str):
 
         This method retries `num_retries` times if swift is unavailable or if
         the object is not found. View
-        `module-level documentation <storage_utils.swift>` for more
+        `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
         """
@@ -654,13 +654,14 @@ class SwiftPath(str):
              starts_with=None,
              limit=None,
              num_objs_cond=None,
+             # intentionally not documented
              list_as_dir=False):
         """List contents using the resource of the path as a prefix.
 
         This method retries `num_retries` times if swift is unavailable
         or if the number of objects returned does not match the
         ``num_objs_cond`` condition. View
-        `module-level documentation <storage_utils.swift>` for more
+        `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -747,7 +748,7 @@ class SwiftPath(str):
 
         This method retries `num_retries` times if swift is unavailable or if
         the number of globbed patterns does not match the ``num_objs_cond``
-        condition. View `module-level documentation <storage_utils.swift>`
+        condition. View `module-level documentation <swiftretry>`
         for more information about configuring retry logic at the module or
         method level.
 
@@ -782,6 +783,8 @@ class SwiftPath(str):
     def first(self):
         """Returns the first result from the list results of the path
 
+        See `module-level retry <swiftretry>` documentation for more.
+
         Raises:
             SwiftError: A swift client error occurred.
         """
@@ -793,6 +796,8 @@ class SwiftPath(str):
         """Checks existence of the path.
 
         Returns True if the path exists, False otherwise.
+
+        See `module-level retry <swiftretry>` documentation for more.
 
         Returns:
             bool: True if the path exists, False otherwise.
@@ -838,8 +843,8 @@ class SwiftPath(str):
         """Downloads a list of objects to a destination folder
 
         This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more information about configuring
-        retry logic at the module or method level.
+        View `module-level documentation <swiftretry>` for more information
+        about configuring retry logic at the module or method level.
 
         Args:
             dest (str): The destination folder to download to. The directory
@@ -935,7 +940,7 @@ class SwiftPath(str):
         method level.
 
         Note that the destintation directory will be created automatically if
-        it doesnt exist.
+        it doesn't exist.
 
         Args:
             dest (str): The destination directory to download results to.
@@ -1074,7 +1079,7 @@ class SwiftPath(str):
         """Removes a single object.
 
         This method retries `num_retries` times if swift is unavailable.
-        View `module-level documentation <storage_utils.swift>` for more
+        View `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -1122,9 +1127,8 @@ class SwiftPath(str):
         produce a `NotFoundError`.
 
         This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more
-        information about configuring retry logic at the module or method
-        level.
+        View `module-level documentation <swiftretry>` for more information
+        about configuring retry logic at the module or method level.
 
         The return value is dependent on if the path points to a tenant,
         container, or object.
@@ -1212,7 +1216,7 @@ class SwiftPath(str):
         """Post operations on the path.
 
         This method retries `num_retries` times if swift is unavailable.
-        View `module-level documentation <storage_utils.swift>` for more
+        View `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
 
