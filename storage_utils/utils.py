@@ -103,10 +103,10 @@ def copy(source, dest, swift_retry_options=None):
             >>> local_p = path('my/local/file.txt')
             >>> # File will be uploaded to swift://tenant/container/dir/my_file.txt
             >>> local_p.copy('swift://tenant/container/dir/')
-        
+
         Because of the ambiguity in whether a remote target is a file or directory, copy()
         will error on ambiguous paths.
-        
+
             >>> local_p.copy('swift://tenant/container/dir')
             Traceback (most recent call last):
             ...
