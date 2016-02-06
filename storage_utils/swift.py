@@ -18,10 +18,9 @@ Examples:
     to download a swift path to the current working directory.
 
     >>> from storage_utils import swift
-    >>> swift.auth_url = 'swift_auth_url.com'
-    >>> swift.username = 'swift_user'
-    >>> swift.password = 'swift_pass'
-    >>>
+    >>> swift.update_settings(auth_url='swift_auth_url.com',
+    ...                       username='swift_user',
+    ...                       password='swift_pass')
     >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
     >>> swift_path.download()
 
@@ -46,7 +45,7 @@ from swiftclient import service as swift_service
 # Default module-level settings for swift authentication.
 # If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
 # environment variables will be used
-auth_url = None
+auth_url = os.environ.get('OS_AUTH_URL', 'http://swift.counsyl.com/auth/v2.0')
 """The swift authentication URL
 
 If not set, the ``OS_AUTH_URL`` environment variable will be used. If
@@ -54,21 +53,17 @@ that is not set, the ``DEFAULT_AUTH_URL`` global constant will
 be used.
 """
 
-username = None
+username = os.environ.get('OS_USERNAME')
 """The swift username
 
 If not set, the ``OS_USERNAME`` environment variable will be used.
 """
 
-password = None
+password = os.environ.get('OS_USERNAME')
 """The swift password
 
 If not set, the ``OS_PASSWORD`` environment variable will be used.
 """
-
-# The default auth url used if the module setting or env variable
-# isn't set
-DEFAULT_AUTH_URL = 'http://swift.counsyl.com/auth/v2.0'
 
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
@@ -79,8 +74,11 @@ DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 initial_retry_sleep = 1
 """The time to sleep before the first retry"""
 
-num_retries = 0
-"""The number of times to retry"""
+num_retries = os.environ.get('OS_NUM_RETRIES', 0)
+"""The number of times to retry
+
+Uses the ``OS_NUM_RETRIES`` environemnt variable or defaults to 0
+"""
 
 
 def _default_retry_sleep_function(t, attempt):
@@ -93,6 +91,21 @@ This function needs to take two integer
 arguments (time slept last attempt, attempt number) and
 return a time to sleep in seconds.
 """
+
+
+def update_settings(**settings):
+    """Updates swift settings.
+
+    Args:
+        **settings: keyword arguments for settings. Can
+            include settings for auth_url, username,
+            password, initial_retry_sleep, num_retries,
+            and retry_sleep_function.
+    """
+    for setting, value in settings.items():
+        if setting not in globals():
+            raise ValueError('invalid setting "%s"' % setting)
+        globals()[setting] = value
 
 
 class SwiftError(Exception):
@@ -211,9 +224,8 @@ def make_condition(operator, right_operand):
         >>> # ConditionNotMetError is thrown when the condition is not met
         >>> objs = p.list(num_objs_cond=cond)
         >>> Traceback (most recent call last):
-        >>> ...
-        >>> storage_utils.swift.ConditionNotMetError: condition not met: num
-        >>> listed objects is not > 100
+        ... storage_utils.swift.ConditionNotMetError: condition not met: num
+        ... listed objects is not > 100
     """
     return _Condition(operator, right_operand)
 
@@ -492,23 +504,20 @@ class SwiftPath(str):
             ConfigurationError: The needed swift environment variables
                 aren't set.
         """
-        os_auth_url = (
-            auth_url or os.environ.get('OS_AUTH_URL') or DEFAULT_AUTH_URL)
-        os_username = username or os.environ.get('OS_USERNAME')
-        os_password = password or os.environ.get('OS_PASSWORD')
+        global username, password, auth_url
 
-        if not os_username or not os_password:
+        if not username or not password or not auth_url:
             raise ConfigurationError((
                 'OS_AUTH_URL, OS_USERNAME, and OS_PASSWORD environment vars '
                 'must be set for swift authentication. The username, password '
-                'and auth_url module-level variables may also be set.'
+                'and auth_url settings variables may also be set with update_settings.'
             ))
 
         # Set additional options on top of what was passed in
         options['os_tenant_name'] = self.tenant
-        options['os_auth_url'] = os_auth_url
-        options['os_username'] = os_username
-        options['os_password'] = os_password
+        options['os_auth_url'] = auth_url
+        options['os_username'] = username
+        options['os_password'] = password
 
         # Merge options with global and local ones
         options = dict(swift_service._default_global_options,
