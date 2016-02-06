@@ -43,6 +43,7 @@ from storage_utils import utils
 from storage_utils.third_party.path import Path
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
+from swiftclient.service import SwiftUploadObject
 
 
 # Default module-level settings for swift authentication.
@@ -623,8 +624,7 @@ class SwiftPath(str):
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(content)
             fp.flush()
-            suo = swift_service.SwiftUploadObject(fp.name,
-                                                  object_name=self.resource)
+            suo = SwiftUploadObject(fp.name, object_name=self.resource)
             self.upload([suo], **swift_upload_args)
 
     def open(self, mode='r', swift_upload_options=None):
@@ -1014,7 +1014,8 @@ class SwiftPath(str):
                 path('swift://tenant/container').upload(['.'])
 
         Args:
-            to_upload (list): A list of file and directory names to upload.
+            to_upload (list): A list of file names, directory names, or
+                `SwiftUploadObject` objects to upload.
             segment_size (int|str): Upload files in segments no larger than
                 <segment_size> (in bytes) and then create a "manifest" file
                 that will download all the segments as if it were the original
@@ -1044,11 +1045,11 @@ class SwiftPath(str):
                                           segment_threads=segment_threads)
         swift_upload_objects = [
             name for name in to_upload
-            if isinstance(name, swift_service.SwiftUploadObject)
+            if isinstance(name, SwiftUploadObject)
         ]
         all_files_to_upload = utils.walk_files_and_dirs([
             name for name in to_upload
-            if not isinstance(name, swift_service.SwiftUploadObject)
+            if not isinstance(name, SwiftUploadObject)
         ])
 
         # Verify no absolute paths are being uploaded
@@ -1060,7 +1061,7 @@ class SwiftPath(str):
         # resource directory to uploaded results
         resource_base = _with_slash(self.resource) or path('')
         swift_upload_objects.extend([
-            swift_service.SwiftUploadObject(f, object_name=resource_base / f)
+            SwiftUploadObject(f, object_name=resource_base / f)
             for f in all_files_to_upload
         ])
 

@@ -1,8 +1,13 @@
 from contextlib import contextmanager
+import logging
 import os
+import shlex
 from subprocess import check_call
 from swiftclient.service import SwiftUploadObject
 import tempfile
+
+
+logger = logging.getLogger(__name__)
 
 
 def is_swift_path(p):
@@ -113,7 +118,11 @@ def copy(source, dest, swift_retry_options=None):
         if is_swift_path(source):
             source._download_object(dest_file, **swift_retry_options)
         else:
-            check_call(['cp', str(source), str(dest)])
+            copy_cmd = ['cp',
+                        str(source.abspath().expand()),
+                        str(dest.abspath().expand())]
+            logger.info('performing copy with command - %s', copy_cmd)
+            check_call(copy_cmd)
     else:
         if not dest_file.parent.container:
             raise ValueError((
@@ -153,9 +162,11 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
         if is_swift_path(source):
             source.download(dest, **swift_download_options)
         else:
-            formatted_copy_cmd = copy_cmd.split()
-            formatted_copy_cmd.extend([str(source), str(dest)])
-            check_call(formatted_copy_cmd)
+            copy_cmd = shlex.split(copy_cmd)
+            copy_cmd.extend([str(source.abspath().expand()),
+                             str(dest.abspath().expand())])
+            logger.info('performing copy with command - %s', copy_cmd)
+            check_call(copy_cmd)
     else:
         with source:
             dest.upload(['.'], **swift_upload_options)

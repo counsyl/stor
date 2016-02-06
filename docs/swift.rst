@@ -67,6 +67,14 @@ SwiftFile
 .. autoclass:: SwiftFile
   :members:
 
+
+SwiftUploadObject
+-----------------
+
+.. autoclass:: SwiftUploadObject
+  :members:
+
+
 Exceptions
 ----------
 
