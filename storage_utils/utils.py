@@ -92,17 +92,25 @@ def copy(source, dest, swift_retry_options=None):
     Examples:
         Copying a swift file to a local path behaves as follows::
 
-            from storage_utils import path
-            swift_p = path('swift://tenant/container/dir/file.txt')
-            # file.txt will be copied to other_dir/other_file.txt
-            swift_p.copy('other_dir/other_file.txt')
+            >>> from storage_utils import path
+            >>> swift_p = path('swift://tenant/container/dir/file.txt')
+            >>> # file.txt will be copied to other_dir/other_file.txt
+            >>> swift_p.copy('other_dir/other_file.txt')
 
         Copying from a local path to swift behaves as follows::
 
-            from storage_utils import path
-            local_p = path('my/local/file.txt')
-            # File will be uploaded to swift://tenant/container/dir/my_file.txt
-            local_p.copy('swift://tenant/container/dir/my_file.txt')
+            >>> from storage_utils import path
+            >>> local_p = path('my/local/file.txt')
+            >>> # File will be uploaded to swift://tenant/container/dir/my_file.txt
+            >>> local_p.copy('swift://tenant/container/dir/')
+        
+        Because of the ambiguity in whether a remote target is a file or directory, copy()
+        will error on ambiguous paths.
+        
+            >>> local_p.copy('swift://tenant/container/dir')
+            Traceback (most recent call last):
+            ...
+            ValueError: swift destination must be file with extension or directory with slash
     """
     source = path(source)
     dest = path(dest)
