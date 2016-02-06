@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-v2.4.0
+v3.0.0
 ------
 
 * Added `swift.update_settings` function for updating swift module settings.

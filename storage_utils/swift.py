@@ -506,7 +506,9 @@ class SwiftPath(str):
             ConfigurationError: The needed swift environment variables
                 aren't set.
         """
-        if not globals()['username'] or not globals()['password']:
+        global username, password, auth_url
+
+        if not username or not password or not auth_url:
             raise ConfigurationError((
                 'OS_AUTH_URL, OS_USERNAME, and OS_PASSWORD environment vars '
                 'must be set for swift authentication. The username, password '
@@ -515,9 +517,9 @@ class SwiftPath(str):
 
         # Set additional options on top of what was passed in
         options['os_tenant_name'] = self.tenant
-        options['os_auth_url'] = globals()['auth_url']
-        options['os_username'] = globals()['username']
-        options['os_password'] = globals()['password']
+        options['os_auth_url'] = auth_url
+        options['os_username'] = username
+        options['os_password'] = password
 
         # Merge options with global and local ones
         options = dict(swift_service._default_global_options,
