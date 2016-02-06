@@ -19,9 +19,8 @@ Examples:
 
     >>> from storage_utils import swift
     >>> swift.update_settings(auth_url='swift_auth_url.com',
-    >>>                       username='swift_user',
-    >>>                       password='swift_pass')
-    >>>
+    ...                       username='swift_user',
+    ...                       password='swift_pass')
     >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
     >>> swift_path.download()
 
@@ -225,9 +224,8 @@ def make_condition(operator, right_operand):
         >>> # ConditionNotMetError is thrown when the condition is not met
         >>> objs = p.list(num_objs_cond=cond)
         >>> Traceback (most recent call last):
-        >>> ...
-        >>> storage_utils.swift.ConditionNotMetError: condition not met: num
-        >>> listed objects is not > 100
+        ... storage_utils.swift.ConditionNotMetError: condition not met: num
+        ... listed objects is not > 100
     """
     return _Condition(operator, right_operand)
 
