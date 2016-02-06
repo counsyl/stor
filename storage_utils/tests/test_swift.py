@@ -784,12 +784,12 @@ class TestDownloadObject(SwiftTestCase):
     def test_container(self):
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaisesRegexp(ValueError, 'path'):
-            swift_p.download_object('file')
+            swift_p._download_object('file')
 
     def test_success(self):
         self.mock_swift.download.return_value = [{}]
         swift_p = SwiftPath('swift://tenant/container/d')
-        swift_p.download_object('file.txt')
+        swift_p._download_object('file.txt')
 
         download_kwargs = self.mock_swift.download.call_args_list[0][1]
         self.assertEquals(len(download_kwargs), 3)
@@ -1046,7 +1046,7 @@ class TestUpload(SwiftTestCase):
 
 
 class TestCopy(SwiftTestCase):
-    @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
+    @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
     def test_copy_posix_destination(self, mock_download_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
         p.copy('file_dest')

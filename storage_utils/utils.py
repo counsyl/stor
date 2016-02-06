@@ -109,7 +109,7 @@ def copy(source, dest, **retry_args):
     if is_posix_path(dest):
         dest_file.makedirs_p()
         if is_swift_path(source):
-            source.download_object(dest_file)
+            source._download_object(dest_file)
         else:
             check_call(['cp', str(source), str(dest)])
     else:
@@ -123,8 +123,8 @@ def copy(source, dest, **retry_args):
         return dest_file.parent, source
 
 
-def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
-             segment_threads=20, **retry_args):
+def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
+             swift_download_options=None):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
@@ -133,32 +133,29 @@ def copytree(source, dest, copy_cmd='cp -r', object_threads=20,
         dest (path|str): The directory to copy to
         copy_cmd (str): If copying to / from posix, this command is
             used.
-        object_threads (int): The amount of object threads to use
-            for swift uploads / downloads.
-        segment_threads (int): The amount of segment threads to use
-            for swift uploads.
-        retry_args (dict): Optional retry arguments to use for swift upload
-            or download. View the swift module-level documentation for more
-            information on retry arguments
+        swift_upload_options (dict): When the destination is a swift path,
+            pass these options as keyword arguments to `SwiftPath.upload`.
+        swift_download_options (dict): When the source is a swift path,
+            pass these options as keyword arguments to `SwiftPath.download`.
     """
     source = path(source)
     dest = path(dest)
+    swift_upload_options = swift_upload_options or {}
+    swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
 
     if is_posix_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
-            source.download(dest, object_threads=object_threads)
+            source._download(dest, **swift_download_options)
         else:
             formatted_copy_cmd = copy_cmd.split()
             formatted_copy_cmd.extend([str(source), str(dest)])
             check_call(formatted_copy_cmd)
     else:
         with source:
-            dest.upload(['.'],
-                        object_threads=object_threads,
-                        segment_threads=segment_threads)
+            dest.upload(['.'], **swift_upload_options)
 
 
 def walk_files_and_dirs(files_and_dirs):

@@ -806,7 +806,7 @@ class SwiftPath(str):
             return False
 
     @_swift_retry(exceptions=(UnavailableError))
-    def download_object(self, out_file):
+    def _download_object(self, out_file):
         """Downloads a single object to an output file.
 
         This method retries ``num_retries`` times if swift is unavailable.
@@ -835,7 +835,12 @@ class SwiftPath(str):
                          objects,
                          object_threads=10,
                          container_threads=10,):
-        """Downloads a list of objects to a destination folder
+        """Downloads a list of objects to a destination folder.
+
+        Note that this method takes a list of complete relative or absolute
+        paths to objects (in contrast to taking a prefix). If any object
+        does not exist, the call will fail with partially downloaded objects
+        residing in the destination path.
 
         This method retries ``num_retries`` times if swift is unavailable.
         View module-level documentation for more information about configuring
