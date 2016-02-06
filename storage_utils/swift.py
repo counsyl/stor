@@ -324,7 +324,7 @@ class SwiftFile(object):
     One can modify which parameters are use for swift upload when writing
     by passing them to ``open`` like so::
 
-        with path('..').open(mode='r', use_slo=True) as obj:
+        with path('..').open(mode='r', swift_upload_options={'use_slo': True}) as obj:
             obj.write('Hello world!')
 
     In the above, `SwiftPath.upload` will be passed ``use_slo=False`` when
@@ -365,7 +365,7 @@ class SwiftFile(object):
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
         if self.mode in ('r', 'rb'):
-            return cStringIO.StringIO(self._swift_path.read_object())
+            return cStringIO.StringIO(self._swift_path._read_object())
         elif self.mode in ('w', 'wb'):
             return cStringIO.StringIO()
         else:
@@ -590,7 +590,7 @@ class SwiftPath(str):
         return results
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError))
-    def read_object(self):
+    def _read_object(self):
         """Reads an individual object.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -627,7 +627,7 @@ class SwiftPath(str):
                                                   object_name=self.resource)
             self.upload([suo], **swift_upload_args)
 
-    def open(self, mode='r', swift_upload_kwargs=None):
+    def open(self, mode='r', swift_upload_options=None):
         """Opens a `SwiftFile` that can be read or written to.
 
         For examples of reading and writing opened objects, view
@@ -636,7 +636,7 @@ class SwiftPath(str):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
-            swift_upload_kwargs (dict): A dictionary of arguments that will be
+            swift_upload_options (dict): A dictionary of arguments that will be
                 passed as keyword args to `SwiftPath.upload` if any writes
                 occur on the opened resource.
 
@@ -646,8 +646,8 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        swift_upload_kwargs = swift_upload_kwargs or {}
-        return SwiftFile(self, mode=mode, **swift_upload_kwargs)
+        swift_upload_options = swift_upload_options or {}
+        return SwiftFile(self, mode=mode, **swift_upload_options)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self,

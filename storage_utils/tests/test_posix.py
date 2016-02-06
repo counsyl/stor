@@ -78,7 +78,10 @@ class TestCopytree(unittest.TestCase):
     def test_swift_destination(self, mock_upload):
         source = '.'
         dest = storage_utils.path('swift://tenant/container')
-        utils.copytree(source, dest, object_threads=30, segment_threads=40)
+        utils.copytree(source, dest, swift_upload_options={
+            'object_threads': 30,
+            'segment_threads': 40
+        })
         mock_upload.assert_called_once_with(
             dest,
             ['.'],

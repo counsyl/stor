@@ -32,33 +32,33 @@ SwiftPath
 .. autoclass:: SwiftPath
   :members:
 
-  .. automethod:: copy(dest, \**retry_args)
+  .. automethod:: open(mode='r', swift_upload_options=None)
 
-  .. automethod:: download(dest, object_threads=10, container_threads=10, num_objs_cond=None, \**retry_args)
-
-  .. automethod:: download_object(out_file, \**retry_args)
-
-  .. automethod:: download_objects(dest, objects, object_threads=10, container_threads=10, \**retry_args)
+  .. automethod:: glob(pattern, num_objs_cond=None, \**retry_args)
 
   .. automethod:: exists(\**retry_args)
 
-  .. automethod:: first(\**retry_args)
+  .. automethod:: remove(\**retry_args)
 
-  .. automethod:: glob(pattern, num_objs_cond=None, \**retry_args)
+  .. automethod:: rmtree(\**retry_args)
+
+  .. automethod:: copy(dest, swift_retry_args=None)
+
+  .. automethod:: copytree(dest, copy_cmd='cp -r', swift_upload_options=None, swift_download_options=None)
+
+  .. automethod:: upload(to_upload, segment_size=DEFAULT_SEGMENT_SIZE, use_slo=True, segment_container=None, leave_segments=False, changed=False, object_name=None, object_threads=10, segment_threads=10)
+
+  .. automethod:: download(dest, object_threads=10, container_threads=10, num_objs_cond=None, \**retry_args)
+
+  .. automethod:: download_objects(dest, objects, object_threads=10, container_threads=10, \**retry_args)
+
+  .. automethod:: first(\**retry_args)
 
   .. automethod:: list(starts_with=None, limit=None, num_objs_cond=None, \**retry_args)
 
   .. automethod:: post(options=None, \**retry_args)
 
-  .. automethod:: remove(\**retry_args)
-
-  .. automethod:: read_object(\**retry_args)
-
-  .. automethod:: rmtree(\**retry_args)
-
   .. automethod:: stat(\**retry_args)
-
-  .. automethod:: upload(to_upload, segment_size=DEFAULT_SEGMENT_SIZE, use_slo=True, segment_container=None, leave_segments=False, changed=False, object_name=None, object_threads=10, segment_threads=10)
 
 
 SwiftFile

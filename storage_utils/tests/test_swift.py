@@ -319,7 +319,7 @@ class TestSwiftFile(SwiftTestCase):
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
                 swift_p = SwiftPath('swift://tenant/container/obj')
-                obj = swift_p.open(mode='wb', swift_upload_kwargs={
+                obj = swift_p.open(mode='wb', swift_upload_options={
                     'use_slo': 'test_value'
                 })
                 obj.write('hello')
@@ -1062,11 +1062,15 @@ class TestCopytree(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
     def test_copytree_posix_destination(self, mock_download):
         p = SwiftPath('swift://tenant/container')
-        p.copytree('path', num_retries=1, object_threads=100)
+        p.copytree('path', swift_download_options={
+            'num_retries': 1,
+            'object_threads': 100
+        })
         mock_download.assert_called_once_with(
             p,
             path(u'path'),
-            object_threads=100)
+            object_threads=100,
+            num_retries=1)
 
     def test_copytree_swift_destination(self):
         p = SwiftPath('swift://tenant/container')

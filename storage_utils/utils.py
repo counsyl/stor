@@ -68,7 +68,7 @@ def path(p):
         return PosixPath(p)
 
 
-def copy(source, dest, **retry_args):
+def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either swift or posix
@@ -79,8 +79,9 @@ def copy(source, dest, **retry_args):
         dest (path|str): The destination file. In contrast to
             ``shutil.copy``, the parent directory is created if it doesn't
             already exist.
-        retry_args (dict): Optional retry arguments to use for swift upload
-            or download. View the swift module-level documentation for more
+        swift_retry_options (dict): Optional retry arguments to use for swift
+            upload or download. View the
+            `swift module-level documentation <swiftretry>` for more
             information on retry arguments
 
     Examples:
@@ -100,6 +101,7 @@ def copy(source, dest, **retry_args):
     """
     source = path(source)
     dest = path(dest)
+    swift_retry_options = swift_retry_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
     if is_swift_path(dest) and dest.is_ambiguous():
@@ -109,7 +111,7 @@ def copy(source, dest, **retry_args):
     if is_posix_path(dest):
         dest_file.makedirs_p()
         if is_swift_path(source):
-            source._download_object(dest_file)
+            source._download_object(dest_file, **swift_retry_options)
         else:
             check_call(['cp', str(source), str(dest)])
     else:
@@ -119,7 +121,7 @@ def copy(source, dest, **retry_args):
                 '"%s"' % (dest_file.parent, dest_file.name)
             ))
         dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
-        dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)])
+        dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)], **swift_retry_options)
         return dest_file.parent, source
 
 
@@ -148,7 +150,7 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
     if is_posix_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
-            source._download(dest, **swift_download_options)
+            source.download(dest, **swift_download_options)
         else:
             formatted_copy_cmd = copy_cmd.split()
             formatted_copy_cmd.extend([str(source), str(dest)])
