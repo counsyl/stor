@@ -1,5 +1,4 @@
 import mock
-import os
 from storage_utils.swift import SwiftPath
 import unittest
 
@@ -77,19 +76,16 @@ class SwiftTestCase(unittest.TestCase):
         self.mock_get_swift_service = self._get_swift_patcher.start()
         self.mock_get_swift_service.return_value = self.mock_swift
 
-        # Set dummy env variables for swift
-        self._user_patcher = mock.patch.dict(os.environ,
-                                             {'OS_USERNAME': '__dummy__'})
+        # Set settings for swift
+        self._user_patcher = mock.patch('storage_utils.swift.username', '__dummy__')
         self.addCleanup(self._user_patcher.stop)
         self.mock_swift_username = self._user_patcher.start()
 
-        self._pass_patcher = mock.patch.dict(os.environ,
-                                             {'OS_PASSWORD': '__dummy__'})
+        self._pass_patcher = mock.patch('storage_utils.swift.password', '__dummy__')
         self.addCleanup(self._pass_patcher.stop)
         self.mock_swift_password = self._pass_patcher.start()
 
-        self._auth_patcher = mock.patch.dict(os.environ,
-                                             {'OS_AUTH_URL': '__dummy__'})
+        self._auth_patcher = mock.patch('storage_utils.swift.auth_url', '__dummy__')
         self.addCleanup(self._auth_patcher.stop)
         self.mock_swift_auth_url = self._auth_patcher.start()
 

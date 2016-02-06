@@ -166,45 +166,44 @@ class TestResource(SwiftTestCase):
         self.assertEquals(swift_p.resource, 'nested/dir')
 
 
+class TestUpdateSettings(SwiftTestCase):
+    def test_bad_setting(self):
+        with self.assertRaisesRegexp(ValueError, 'invalid setting'):
+            swift.update_settings(bad_setting='bad')
+
+    def test_update_all_settings(self):
+        swift.update_settings(auth_url='testing_auth_url',
+                              password='testing_password',
+                              username='testing_username',
+                              num_retries=100)
+        self.assertEquals(swift.auth_url, 'testing_auth_url')
+        self.assertEquals(swift.password, 'testing_password')
+        self.assertEquals(swift.username, 'testing_username')
+        self.assertEquals(swift.num_retries, 100)
+
+
 class TestGetSwiftConnectionOptions(SwiftTestCase):
-    # Note that all of these tests manipulate a mocked env, not the actual
-    # env. Mock env setup is performed in SwiftTestCase
+    @mock.patch('storage_utils.swift.username', None)
     def test_wo_username(self):
-        os.environ.pop('OS_USERNAME')
         swift_p = SwiftPath('swift://tenant/')
         with self.assertRaises(swift.ConfigurationError):
             swift_p._get_swift_connection_options()
 
+    @mock.patch('storage_utils.swift.password', None)
     def test_wo_password(self):
-        os.environ.pop('OS_PASSWORD')
         swift_p = SwiftPath('swift://tenant/')
         with self.assertRaises(swift.ConfigurationError):
             swift_p._get_swift_connection_options()
 
-    def test_w_os_auth_url_env_var(self):
-        os.environ['OS_AUTH_URL'] = 'env_auth_url'
+    def test_w_update_settings(self):
+        swift.update_settings(auth_url='new_auth_url',
+                              password='new_password',
+                              username='new_username')
         swift_p = SwiftPath('swift://tenant/')
         options = swift_p._get_swift_connection_options()
-        self.assertEquals(options['os_auth_url'], 'env_auth_url')
-        self.assertEquals(options['os_tenant_name'], 'tenant')
-
-    def test_w_default_setting(self):
-        os.environ.pop('OS_AUTH_URL')
-        swift_p = SwiftPath('swift://tenant/')
-        options = swift_p._get_swift_connection_options()
-        self.assertEquals(options['os_auth_url'],
-                          swift.DEFAULT_AUTH_URL)
-        self.assertEquals(options['os_tenant_name'], 'tenant')
-
-    @mock.patch('storage_utils.swift.auth_url', 'module_auth_url')
-    @mock.patch('storage_utils.swift.password', 'module_password')
-    @mock.patch('storage_utils.swift.username', 'module_username')
-    def test_w_module_settings(self):
-        swift_p = SwiftPath('swift://tenant/')
-        options = swift_p._get_swift_connection_options()
-        self.assertEquals(options['os_auth_url'], 'module_auth_url')
-        self.assertEquals(options['os_username'], 'module_username')
-        self.assertEquals(options['os_password'], 'module_password')
+        self.assertEquals(options['os_auth_url'], 'new_auth_url')
+        self.assertEquals(options['os_username'], 'new_username')
+        self.assertEquals(options['os_password'], 'new_password')
         self.assertEquals(options['os_tenant_name'], 'tenant')
 
 
