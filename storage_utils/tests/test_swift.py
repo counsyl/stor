@@ -6,6 +6,8 @@ import unittest
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
+from swiftclient.service import SwiftUploadObject
+import tempfile
 
 from storage_utils import path
 from storage_utils import swift
@@ -316,7 +318,7 @@ class TestSwiftFile(SwiftTestCase):
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
                 swift_p = SwiftPath('swift://tenant/container/obj')
-                obj = swift_p.open(mode='wb', swift_upload_kwargs={
+                obj = swift_p.open(mode='wb', swift_upload_options={
                     'use_slo': 'test_value'
                 })
                 obj.write('hello')
@@ -777,20 +779,138 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix='path')
 
 
+class TestDownloadObject(SwiftTestCase):
+    def test_container(self):
+        swift_p = SwiftPath('swift://tenant/container')
+        with self.assertRaisesRegexp(ValueError, 'path'):
+            swift_p._download_object('file')
+
+    def test_success(self):
+        self.mock_swift.download.return_value = [{}]
+        swift_p = SwiftPath('swift://tenant/container/d')
+        swift_p._download_object('file.txt')
+
+        download_kwargs = self.mock_swift.download.call_args_list[0][1]
+        self.assertEquals(len(download_kwargs), 3)
+        self.assertEquals(download_kwargs['container'], 'container')
+        self.assertEquals(download_kwargs['objects'], ['d'])
+        self.assertEquals(download_kwargs['options'], {'out_file': 'file.txt'})
+
+
+class TestDownloadObjects(SwiftTestCase):
+    def test_tenant(self):
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'tenant'):
+            swift_p.download_objects('output_dir', [])
+
+    def test_local_paths(self):
+        self.mock_swift.download.return_value = [{
+            'object': 'd/e/f.txt',
+            'path': 'output_dir/e/f.txt'
+        }, {
+            'object': 'd/e/f/g.txt',
+            'path': 'output_dir/e/f/g.txt'
+        }]
+        swift_p = SwiftPath('swift://tenant/container/d')
+        r = swift_p.download_objects('output_dir', ['e/f.txt', 'e/f/g.txt'])
+        self.assertEquals(r, {
+            'e/f.txt': 'output_dir/e/f.txt',
+            'e/f/g.txt': 'output_dir/e/f/g.txt'
+        })
+
+        download_kwargs = self.mock_swift.download.call_args_list[0][1]
+        self.assertEquals(len(download_kwargs), 3)
+        self.assertEquals(download_kwargs['container'], 'container')
+        self.assertEquals(sorted(download_kwargs['objects']),
+                          sorted(['d/e/f.txt', 'd/e/f/g.txt']))
+        self.assertEquals(download_kwargs['options'], {
+            'prefix': 'd/',
+            'out_directory': 'output_dir',
+            'remove_prefix': True
+        })
+
+    def test_absolute_paths(self):
+        self.mock_swift.download.return_value = [{
+            'object': 'd/e/f.txt',
+            'path': 'output_dir/e/f.txt'
+        }, {
+            'object': 'd/e/f/g.txt',
+            'path': 'output_dir/e/f/g.txt'
+        }]
+        swift_p = SwiftPath('swift://tenant/container/d')
+        r = swift_p.download_objects('output_dir', [
+            'swift://tenant/container/d/e/f.txt',
+            'swift://tenant/container/d/e/f/g.txt'
+        ])
+        self.assertEquals(r, {
+            'swift://tenant/container/d/e/f.txt': 'output_dir/e/f.txt',
+            'swift://tenant/container/d/e/f/g.txt': 'output_dir/e/f/g.txt'
+        })
+
+        download_kwargs = self.mock_swift.download.call_args_list[0][1]
+        self.assertEquals(len(download_kwargs), 3)
+        self.assertEquals(download_kwargs['container'], 'container')
+        self.assertEquals(sorted(download_kwargs['objects']),
+                          sorted(['d/e/f.txt', 'd/e/f/g.txt']))
+        self.assertEquals(download_kwargs['options'], {
+            'prefix': 'd/',
+            'out_directory': 'output_dir',
+            'remove_prefix': True
+        })
+
+    def test_absolute_paths_not_child_of_download_path(self):
+        swift_p = SwiftPath('swift://tenant/container/d')
+        with self.assertRaisesRegexp(ValueError, 'child'):
+            swift_p.download_objects('output_dir', [
+                'swift://tenant/container/bad/e/f.txt',
+                'swift://tenant/container/bad/e/f/g.txt'
+            ])
+
+
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
-    def test_download(self):
+    def test_download_tenant(self):
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'tenant'):
+            swift_p.download('output_dir')
+
+    def test_download_container(self):
         self.mock_swift.download.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download(output_dir='output_dir')
+        swift_p.download('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
             options={
                 'prefix': None,
                 'out_directory': 'output_dir',
-                'remove_prefix': False,
-                'skip_identical': True
+                'remove_prefix': True
+            })
+
+    def test_download_resource(self):
+        self.mock_swift.download.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/r/')
+        swift_p.download('output_dir')
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            options={
+                'prefix': 'r/',
+                'out_directory': 'output_dir',
+                'remove_prefix': True
+            })
+
+    def test_download_resource_wo_slash(self):
+        self.mock_swift.download.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/r')
+        swift_p.download('output_dir')
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            options={
+                'prefix': 'r/',
+                'out_directory': 'output_dir',
+                'remove_prefix': True
             })
 
     def test_download_w_identical(self):
@@ -800,14 +920,13 @@ class TestDownload(SwiftTestCase):
         }]
 
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download(output_dir='output_dir')
+        swift_p.download('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
             options={
                 'prefix': None,
                 'out_directory': 'output_dir',
-                'remove_prefix': False,
-                'skip_identical': True
+                'remove_prefix': True
             })
 
     @mock.patch('time.sleep', autospec=True)
@@ -819,7 +938,7 @@ class TestDownload(SwiftTestCase):
         ]
 
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download(output_dir='output_dir',
+        swift_p.download('output_dir',
                          num_objs_cond=make_condition('==', 3))
         self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
 
@@ -827,7 +946,7 @@ class TestDownload(SwiftTestCase):
         self.disable_get_swift_service_mock()
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        swift_p.download(output_dir='output_dir',
+        swift_p.download('output_dir',
                          object_threads=20,
                          container_threads=30)
 
@@ -838,7 +957,15 @@ class TestDownload(SwiftTestCase):
 
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
-    def test_upload(self, mock_walk_files_and_dirs):
+    def test_abs_path(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['/abs_path/file1']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaisesRegexp(ValueError, 'absolute'):
+            swift_p.upload(['/abs_path/file1'])
+
+    def test_upload_to_dir(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.return_value = []
 
@@ -848,19 +975,55 @@ class TestUpload(SwiftTestCase):
                        use_slo=True,
                        segment_container=True,
                        leave_segments=True,
-                       changed=True,
-                       object_name='obj_name')
-        self.mock_swift.upload.assert_called_once_with(
-            'container',
-            ['file1', 'file2'],
-            options={
-                'segment_container': True,
-                'use_slo': True,
-                'leave_segments': True,
-                'segment_size': 1000,
-                'changed': True,
-                'object_name': 'obj_name'
-            })
+                       changed=True)
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
+
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['file1', 'file2'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/file1', 'path/file2'])
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'segment_container': True,
+            'use_slo': True,
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True
+        })
+
+    def test_upload_to_container(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.upload(['upload'],
+                       segment_size=1000,
+                       use_slo=True,
+                       segment_container=True,
+                       leave_segments=True,
+                       changed=True)
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
+
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['file1', 'file2'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['file1', 'file2'])
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'segment_container': True,
+            'use_slo': True,
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True
+        })
 
     def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
         self.disable_get_swift_service_mock()
@@ -882,20 +1045,36 @@ class TestUpload(SwiftTestCase):
 
 
 class TestCopy(SwiftTestCase):
-    @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
-    def test_copy_posix_destination(self, mock_download):
-        p = SwiftPath('swift://tenant/container')
-        p.copy('path', num_retries=1, object_threads=100)
-        mock_download.assert_called_once_with(
-            p,
-            object_threads=100,
-            output_dir=path(u'path'),
-            remove_prefix=True)
+    @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
+    def test_copy_posix_destination(self, mock_download_object):
+        p = SwiftPath('swift://tenant/container/file_source.txt')
+        p.copy('file_dest')
+        mock_download_object.assert_called_once_with(p, path(u'file_dest'))
 
     def test_copy_swift_destination(self):
+        p = SwiftPath('swift://tenant/container/file_source')
+        with self.assertRaisesRegexp(ValueError, 'swift path'):
+            p.copy('swift://tenant/container/file_dest')
+
+
+class TestCopytree(SwiftTestCase):
+    @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
+    def test_copytree_posix_destination(self, mock_download):
+        p = SwiftPath('swift://tenant/container')
+        p.copytree('path', swift_download_options={
+            'num_retries': 1,
+            'object_threads': 100
+        })
+        mock_download.assert_called_once_with(
+            p,
+            path(u'path'),
+            object_threads=100,
+            num_retries=1)
+
+    def test_copytree_swift_destination(self):
         p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            p.copy('swift://swift/path')
+            p.copytree('swift://swift/path')
 
 
 class TestStat(SwiftTestCase):

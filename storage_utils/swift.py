@@ -14,15 +14,15 @@ Note that these variables can also be passed to the methods themselves.
 
 Examples:
 
-    Basic usage of swift is shown in the following with an example of how
-    to download a swift path to the current working directory.
+    A basic example of configuring the swift authentication parameters
+    and downloading a directory::
 
     >>> from storage_utils import swift
     >>> swift.update_settings(auth_url='swift_auth_url.com',
     ...                       username='swift_user',
     ...                       password='swift_pass')
     >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
-    >>> swift_path.download()
+    >>> swift_path.download('dest_dir')
 
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
@@ -36,10 +36,13 @@ import operator
 import os
 import tempfile
 
-from storage_utils.third_party.path import Path
+from storage_utils import is_swift_path
+from storage_utils import path
 from storage_utils import utils
+from storage_utils.third_party.path import Path
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
+from swiftclient.service import SwiftUploadObject
 
 
 # Default module-level settings for swift authentication.
@@ -213,19 +216,24 @@ def make_condition(operator, right_operand):
             condition.
 
     Examples:
-        >>> from storage_utils.swift import make_condition
-        >>> from storage_utils.swift import SwiftPath
-        >>> p = SwiftPath('swift://tenant/container/resource')
-        >>> # Ensure that the amount of listed objects are greater than 6
-        >>> cond = make_condition('>', 6)
-        >>> objs = p.list(num_objs_cond=cond)
+        To make a condition and use it in `SwiftPath.list`::
 
-        >>> cond = make_condition('>', 100)
-        >>> # ConditionNotMetError is thrown when the condition is not met
-        >>> objs = p.list(num_objs_cond=cond)
-        >>> Traceback (most recent call last):
-        ... storage_utils.swift.ConditionNotMetError: condition not met: num
-        ... listed objects is not > 100
+            from storage_utils.swift import make_condition
+            from storage_utils.swift import SwiftPath
+            p = SwiftPath('swift://tenant/container/resource')
+            # Ensure that the amount of listed objects are greater than 6
+            cond = make_condition('>', 6)
+            objs = p.list(num_objs_cond=cond)
+
+        An illustration of what it looks like when a condition doesn't pass::
+
+            cond = make_condition('>', 100)
+            # ConditionNotMetError is thrown when the condition is not met
+            objs = p.list(num_objs_cond=cond)
+            Traceback (most recent call last):
+            ...
+            storage_utils.swift.ConditionNotMetError: condition not met: num
+            listed objects is not > 100
     """
     return _Condition(operator, right_operand)
 
@@ -283,7 +291,6 @@ def _propagate_swift_exceptions(func):
 def _delegate_to_buffer(attr_name, valid_modes=None):
     "Factory function that delegates file-like properties to underlying buffer"
     def wrapper(self, *args, **kwargs):
-        print 'in wrapper'
         if self.closed:
             raise ValueError('I/O operation on closed file')
         if valid_modes and self.mode not in valid_modes:
@@ -297,6 +304,11 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
                                  (self, attr_name))
     wrapper.__name__ = attr_name
     return wrapper
+
+
+def _with_slash(path):
+    "Appends a trailing slash to a path if it doesn't have one"
+    return path if not path or path.endswith('/') else path + '/'
 
 
 class SwiftFile(object):
@@ -326,7 +338,7 @@ class SwiftFile(object):
     One can modify which parameters are use for swift upload when writing
     by passing them to ``open`` like so::
 
-        with path('..').open(mode='r', use_slo=True) as obj:
+        with path('..').open(mode='r', swift_upload_options={'use_slo': True}) as obj:
             obj.write('Hello world!')
 
     In the above, `SwiftPath.upload` will be passed ``use_slo=False`` when
@@ -367,7 +379,7 @@ class SwiftFile(object):
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
         if self.mode in ('r', 'rb'):
-            return cStringIO.StringIO(self._swift_path.read_object())
+            return cStringIO.StringIO(self._swift_path._read_object())
         elif self.mode in ('w', 'wb'):
             return cStringIO.StringIO()
         else:
@@ -437,20 +449,27 @@ class SwiftPath(str):
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
 
+    def is_ambiguous(self):
+        """Returns true if it cannot be determined if the path is a
+        file or directory
+        """
+        f = self.resource
+        return f and not f.endswith('/') and not f.ext
+
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
         return Path(self).name
 
     @property
-    def ext(self):
-        "The extension of the path, mimicking path.py's ext property"
-        return Path(self).ext
-
-    @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
         return self.__class__(Path(self).parent)
+
+    @property
+    def ext(self):
+        """The extension of the file"""
+        return Path(self).ext
 
     def dirname(self):
         """The directory name of the path, mimicking path.py's dirname()"""
@@ -490,7 +509,7 @@ class SwiftPath(str):
         parts = self._get_parts()
         joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
 
-        return Path(joined_resource) if joined_resource else None
+        return path(joined_resource) if joined_resource else None
 
     def _get_swift_connection_options(self, **options):
         """Returns options for constructing ``SwiftService`` and
@@ -582,12 +601,12 @@ class SwiftPath(str):
         return results
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError))
-    def read_object(self):
+    def _read_object(self):
         """Reads an individual object.
 
         This method retries `num_retries` times if swift is unavailable or if
         the object is not found. View
-        `module-level documentation <storage_utils.swift>` for more
+        `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
         """
@@ -615,11 +634,10 @@ class SwiftPath(str):
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(content)
             fp.flush()
-            suo = swift_service.SwiftUploadObject(fp.name,
-                                                  object_name=self.resource)
+            suo = SwiftUploadObject(fp.name, object_name=self.resource)
             return self.upload([suo], **swift_upload_args)
 
-    def open(self, mode='r', swift_upload_kwargs=None):
+    def open(self, mode='r', swift_upload_options=None):
         """Opens a `SwiftFile` that can be read or written to.
 
         For examples of reading and writing opened objects, view
@@ -628,7 +646,7 @@ class SwiftPath(str):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
-            swift_upload_kwargs (dict): A dictionary of arguments that will be
+            swift_upload_options (dict): A dictionary of arguments that will be
                 passed as keyword args to `SwiftPath.upload` if any writes
                 occur on the opened resource.
 
@@ -638,21 +656,22 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        swift_upload_kwargs = swift_upload_kwargs or {}
-        return SwiftFile(self, mode=mode, **swift_upload_kwargs)
+        swift_upload_options = swift_upload_options or {}
+        return SwiftFile(self, mode=mode, **swift_upload_options)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self,
              starts_with=None,
              limit=None,
              num_objs_cond=None,
+             # intentionally not documented
              list_as_dir=False):
         """List contents using the resource of the path as a prefix.
 
         This method retries `num_retries` times if swift is unavailable
         or if the number of objects returned does not match the
         ``num_objs_cond`` condition. View
-        `module-level documentation <storage_utils.swift>` for more
+        `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -697,8 +716,7 @@ class SwiftPath(str):
             list_kwargs['delimiter'] = '/'
 
             # Ensure that the prefix has a '/' at the end of it for listdir
-            if list_kwargs['prefix'] and not list_kwargs['prefix'].endswith('/'):
-                list_kwargs['prefix'] += '/'
+            list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
 
         if self.container:
             results = self._swift_connection_call(connection.get_container,
@@ -740,7 +758,7 @@ class SwiftPath(str):
 
         This method retries `num_retries` times if swift is unavailable or if
         the number of globbed patterns does not match the ``num_objs_cond``
-        condition. View `module-level documentation <storage_utils.swift>`
+        condition. View `module-level documentation <swiftretry>`
         for more information about configuring retry logic at the module or
         method level.
 
@@ -775,6 +793,8 @@ class SwiftPath(str):
     def first(self):
         """Returns the first result from the list results of the path
 
+        See `module-level retry <swiftretry>` documentation for more.
+
         Raises:
             SwiftError: A swift client error occurred.
         """
@@ -787,6 +807,8 @@ class SwiftPath(str):
 
         Returns True if the path exists, False otherwise.
 
+        See `module-level retry <swiftretry>` documentation for more.
+
         Returns:
             bool: True if the path exists, False otherwise.
 
@@ -798,14 +820,133 @@ class SwiftPath(str):
         except NotFoundError:
             return False
 
+    @_swift_retry(exceptions=(UnavailableError))
+    def _download_object(self, out_file):
+        """Downloads a single object to an output file.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View module-level documentation for more information about configuring
+        retry logic at the module or method level.
+
+        Args:
+            out_file (str): The output file
+
+        Raises:
+            ValueError: This method was called on a path that has no
+                container or object
+        """
+        if not self.resource:
+            raise ValueError('can only call download_object on object path')
+
+        service = self._get_swift_service()
+        self._swift_service_call(service.download,
+                                 container=self.container,
+                                 objects=[self.resource],
+                                 options={'out_file': out_file})
+
+    @_swift_retry(exceptions=(UnavailableError))
+    def download_objects(self,
+                         dest,
+                         objects,
+                         object_threads=10,
+                         container_threads=10,):
+        """Downloads a list of objects to a destination folder.
+
+        Note that this method takes a list of complete relative or absolute
+        paths to objects (in contrast to taking a prefix). If any object
+        does not exist, the call will fail with partially downloaded objects
+        residing in the destination path.
+
+        This method retries ``num_retries`` times if swift is unavailable.
+        View `module-level documentation <swiftretry>` for more information
+        about configuring retry logic at the module or method level.
+
+        Args:
+            dest (str): The destination folder to download to. The directory
+                will be created if it doesnt exist.
+            object_threads (int): The amount of threads to use for downloading
+                objects.
+            container_threads (int): The amount of threads to use for
+                downloading containers.
+            objs (List[str|PosixPath|SwiftPath]): The list of objects to
+                download. The objects can paths relative to the download path
+                or absolute swift paths. Any absolute swift path must be
+                children of the download path
+
+        Returns:
+            dict: A mapping of all requested ``objs`` to their location on
+                disk
+
+        Raises:
+            ValueError: This method was called on a path that has no
+                container
+
+        Examples:
+
+            To download a objects to a ``dest/folder`` destination::
+
+                from storage_utils import path
+                p = path('swift://tenant/container/dir/')
+                results = p.download_objects('dest/folder', ['subdir/f1.txt',
+                                                             'subdir/f2.txt'])
+                print results
+                {
+                    'subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
+
+            To download full swift paths relative to a download path::
+
+                from storage_utils import path
+                p = path('swift://tenant/container/dir/')
+                results = p.download_objects('dest/folder', [
+                    'swift://tenant/container/dir/subdir/f1.txt',
+                    'swift://tenant/container/dir/subdir/f2.txt'
+                ])
+                print results
+                {
+                    'swift://tenant/container/dir/subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'swift://tenant/container/dir/subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
+        """
+        if not self.container:
+            raise ValueError('cannot call download_objects on tenant with no container')
+
+        # Convert requested download objects to full object paths
+        obj_base = self.resource or path('')
+        objs_to_download = {
+            obj: path(obj).resource if is_swift_path(obj) else obj_base / obj
+            for obj in objects
+        }
+
+        for obj in objs_to_download:
+            if is_swift_path(obj) and not obj.startswith(_with_slash(self)):
+                raise ValueError(
+                    '"%s" must be child of download path "%s"' % (obj, self))
+
+        service = self._get_swift_service(object_dd_threads=object_threads,
+                                          container_threads=container_threads)
+        download_options = {
+            'prefix': _with_slash(self.resource),
+            'out_directory': dest,
+            'remove_prefix': True
+        }
+        results = self._swift_service_call(service.download,
+                                           container=self.container,
+                                           objects=objs_to_download.values(),
+                                           options=download_options)
+        results = {r['object']: r['path'] for r in results}
+
+        # Return results mapped back to their input name
+        return {obj: results[objs_to_download[obj]] for obj in objects}
+
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def download(self,
-                 output_dir=None,
-                 remove_prefix=False,
+                 dest,
                  object_threads=10,
                  container_threads=10,
                  num_objs_cond=None):
-        """Downloads a path.
+        """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
         the number of downloaded objects does not match the ``num_objs_cond``
@@ -813,14 +954,12 @@ class SwiftPath(str):
         for more information about configuring retry logic at the module or
         method level.
 
+        Note that the destintation directory will be created automatically if
+        it doesn't exist.
+
         Args:
-            output_dir (str): The output directory to download results to.
-                If None, results are downloaded to the working directory.
-            remove_prefix (bool): Removes the prefix in the path from the
-                downloaded results. For example, if our swift path is
-                swift://tenant/container/my_prefix, all results under my_prefix
-                will be downloaded without my_prefix attached to them if
-                remove_prefix is true.
+            dest (str): The destination directory to download results to.
+                The directory will be created if it doesn't exist.
             object_threads (int): The amount of threads to use for downloading
                 objects.
             container_threads (int): The amount of threads to use for
@@ -833,14 +972,19 @@ class SwiftPath(str):
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
                 meet the ``num_objs_cond`` condition.
+
+        Returns:
+            dict: A mapping of the destination to the download path
         """
+        if not self.container:
+            raise ValueError('cannot call download on tenant with no container')
+
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
         download_options = {
-            'prefix': self.resource,
-            'out_directory': output_dir,
-            'remove_prefix': remove_prefix,
-            'skip_identical': True,
+            'prefix': _with_slash(self.resource),
+            'out_directory': dest,
+            'remove_prefix': True
         }
         results = self._swift_service_call(service.download,
                                            self.container,
@@ -849,6 +993,8 @@ class SwiftPath(str):
         if num_objs_cond:
             num_objs_cond.assert_is_met_by(len(results),
                                            'num downloaded objects')
+
+        return {self: dest}
 
     @_swift_retry(exceptions=UnavailableError)
     def upload(self,
@@ -878,7 +1024,8 @@ class SwiftPath(str):
                 path('swift://tenant/container').upload(['.'])
 
         Args:
-            to_upload (list): A list of file and directory names to upload.
+            to_upload (list): A list of file names, directory names, or
+                `SwiftUploadObject` objects to upload.
             segment_size (int|str): Upload files in segments no larger than
                 <segment_size> (in bytes) and then create a "manifest" file
                 that will download all the segments as if it were the original
@@ -896,9 +1043,6 @@ class SwiftPath(str):
                 of manifest objects left alone (in the case of overwrites).
             changed (bool): Upload only files that have changed since last
                 upload.
-            object_name (str): Upload file and name object to <object_name>.
-                If uploading dir, use <object_name> as object prefix instead
-                of the folder name.
             object_threads (int): The number of threads to use when uploading
                 full objects.
             segment_threads (int): The number of threads to use when uploading
@@ -909,32 +1053,49 @@ class SwiftPath(str):
         """
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
-        swift_upload_objects = [name for name in to_upload if
-                                isinstance(name, swift_service.SwiftUploadObject)]  # nopep8
-        all_files_to_upload = utils.walk_files_and_dirs(
-            [name for name in to_upload
-             if not isinstance(name, swift_service.SwiftUploadObject)])
+        swift_upload_objects = [
+            name for name in to_upload
+            if isinstance(name, SwiftUploadObject)
+        ]
+        all_files_to_upload = utils.walk_files_and_dirs([
+            name for name in to_upload
+            if not isinstance(name, SwiftUploadObject)
+        ])
+
+        # Verify no absolute paths are being uploaded
+        for f in all_files_to_upload:
+            if f.startswith('/'):
+                raise ValueError('cannot upload absolute path %s' % f)
+
+        # Convert everything to swift upload objects and prepend the relative
+        # resource directory to uploaded results
+        resource_base = _with_slash(self.resource) or path('')
+        swift_upload_objects.extend([
+            SwiftUploadObject(f, object_name=resource_base / f)
+            for f in all_files_to_upload
+        ])
+
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
             'segment_container': segment_container,
             'leave_segments': leave_segments,
-            'changed': True,
-            'object_name': object_name
+            'changed': changed
         }
         return self._swift_service_call(service.upload,
                                         self.container,
-                                        all_files_to_upload + swift_upload_objects,  # nopep8
+                                        swift_upload_objects,
                                         options=upload_options)
 
     copy = utils.copy
+    copytree = utils.copytree
 
     @_swift_retry(exceptions=UnavailableError)
     def remove(self):
         """Removes a single object.
 
         This method retries `num_retries` times if swift is unavailable.
-        View `module-level documentation <storage_utils.swift>` for more
+        View `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
 
@@ -982,9 +1143,8 @@ class SwiftPath(str):
         produce a `NotFoundError`.
 
         This method retries ``num_retries`` times if swift is unavailable.
-        View module-level documentation for more
-        information about configuring retry logic at the module or method
-        level.
+        View `module-level documentation <swiftretry>` for more information
+        about configuring retry logic at the module or method level.
 
         The return value is dependent on if the path points to a tenant,
         container, or object.
@@ -1072,7 +1232,7 @@ class SwiftPath(str):
         """Post operations on the path.
 
         This method retries `num_retries` times if swift is unavailable.
-        View `module-level documentation <storage_utils.swift>` for more
+        View `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
 

@@ -16,6 +16,7 @@ By using the ``path`` factory function, users can write code that is portable ac
 * ``remove``: Removes the resource.
 * ``rmtree``: Removes a directory and all resources it contains.
 * ``copy``: Copies the path to a destination.
+* ``copytree``: Copies a directory to a destination.
 
 .. NOTE::
    ``Path`` fully implements the above methods, but ``SwiftPath`` may only partially implement the method (e.g. only allowing prefix globbing). Read the ``SwiftPath`` documentation below about restrictions on the methods.

@@ -22,9 +22,10 @@ class PosixPath(Path):
 
     Provides additional functionality on the Path class from path.py,
     vendored into ``storage_utils.third_party.path``, specifically around the
-    ``copy`` command.
+    ``copy`` and ``copytree`` methods.
     """
     copy = utils.copy
+    copytree = utils.copytree
 
     def open(self, *args, **kwargs):
         """

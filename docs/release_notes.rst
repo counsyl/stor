@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v4.0.0
+------
+
+* Added `SwiftPath.copytree` for copying directories
+* Updated semantics of `SwiftPath.copy` to only copy one file at a time
+* Added `SwiftPath.download_objects` to download a list of objects
+
 v3.0.0
 ------
 
