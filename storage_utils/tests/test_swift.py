@@ -955,7 +955,6 @@ class TestDownload(SwiftTestCase):
         self.assertEquals(options_passed['container_threads'], 30)
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
     def test_abs_path(self, mock_walk_files_and_dirs):
@@ -966,6 +965,7 @@ class TestUpload(SwiftTestCase):
         with self.assertRaisesRegexp(ValueError, 'absolute'):
             swift_p.upload(['/abs_path/file1'])
 
+    @mock.patch('storage_utils.swift.num_retries', 5)
     @mock.patch('time.sleep', autospec=True)
     def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
