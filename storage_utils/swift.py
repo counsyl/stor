@@ -32,6 +32,7 @@ from cached_property import cached_property
 import cStringIO
 from functools import wraps
 import json
+import logging
 import operator
 import os
 import tempfile
@@ -43,6 +44,9 @@ from storage_utils.third_party.path import Path
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient.service import SwiftUploadObject
+
+
+logger = logging.getLogger(__name__)
 
 
 # Default module-level settings for swift authentication.
@@ -277,10 +281,12 @@ def _propagate_swift_exceptions(func):
 
             http_status = getattr(client_exception, 'http_status', None)
             if http_status == 403:
+                logger.error('encountered unauthorized error in swift operation - %s', str(e))
                 raise UnauthorizedError(str(e), e)
             elif http_status == 404:
                 raise NotFoundError(str(e), e)
             elif http_status == 503:
+                logger.error('encountered unavailable error in swift operation - %s', str(e))
                 raise UnavailableError(str(e), e)
             elif 'reset contents for reupload' in str(e):
                 # When experiencing HA issues, we sometimes encounter a
@@ -288,8 +294,10 @@ def _propagate_swift_exceptions(func):
                 # is thrown here -
                 # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
                 # Treat this as an UnavailableError
+                logger.error('encountered unavailable error in swift put_object operation - %s', str(e))
                 raise UnavailableError(str(e), e)
             else:
+                logger.error('encountered unexpected swift error - %s', str(e))
                 raise SwiftError(str(e), e)
 
     return wrapper
@@ -1089,6 +1097,7 @@ class SwiftPath(str):
             'leave_segments': leave_segments,
             'changed': changed
         }
+        print 'upload objects', swift_upload_objects
         return self._swift_service_call(service.upload,
                                         self.container,
                                         swift_upload_objects,
