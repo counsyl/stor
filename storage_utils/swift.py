@@ -1097,7 +1097,6 @@ class SwiftPath(str):
             'leave_segments': leave_segments,
             'changed': changed
         }
-        print 'upload objects', swift_upload_objects
         return self._swift_service_call(service.upload,
                                         self.container,
                                         swift_upload_objects,
