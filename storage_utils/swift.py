@@ -281,12 +281,12 @@ def _propagate_swift_exceptions(func):
 
             http_status = getattr(client_exception, 'http_status', None)
             if http_status == 403:
-                logger.error('encountered unauthorized error in swift operation - %s', str(e))
+                logger.error('unauthorized error in swift operation - %s', str(e))
                 raise UnauthorizedError(str(e), e)
             elif http_status == 404:
                 raise NotFoundError(str(e), e)
             elif http_status == 503:
-                logger.error('encountered unavailable error in swift operation - %s', str(e))
+                logger.error('unavailable error in swift operation - %s', str(e))
                 raise UnavailableError(str(e), e)
             elif 'reset contents for reupload' in str(e):
                 # When experiencing HA issues, we sometimes encounter a
@@ -294,10 +294,10 @@ def _propagate_swift_exceptions(func):
                 # is thrown here -
                 # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
                 # Treat this as an UnavailableError
-                logger.error('encountered unavailable error in swift put_object operation - %s', str(e))
+                logger.error('unavailable error in swift put_object operation - %s', str(e))
                 raise UnavailableError(str(e), e)
             else:
-                logger.error('encountered unexpected swift error - %s', str(e))
+                logger.error('unexpected swift error - %s', str(e))
                 raise SwiftError(str(e), e)
 
     return wrapper
