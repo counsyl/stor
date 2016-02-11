@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.1.0
+------
+
+* Caught HA error for uploading objects and raised it as a `swift.UnavailableError`
+
 v4.0.0
 ------
 

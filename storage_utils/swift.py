@@ -282,6 +282,13 @@ def _propagate_swift_exceptions(func):
                 raise NotFoundError(str(e), e)
             elif http_status == 503:
                 raise UnavailableError(str(e), e)
+            elif 'reset contents for reupload' in str(e):
+                # When experiencing HA issues, we sometimes encounter a
+                # ClientException from swiftclient during upload. The exception
+                # is thrown here -
+                # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
+                # Treat this as an UnavailableError
+                raise UnavailableError(str(e), e)
             else:
                 raise SwiftError(str(e), e)
 
