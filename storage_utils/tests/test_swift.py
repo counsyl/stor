@@ -974,7 +974,7 @@ class TestUpload(SwiftTestCase):
             "failure and no ability to reset contents for reupload.")
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaisesRegexp(swift.UnavailableError, 'put_object'):
+        with self.assertRaisesRegexp(swift.FailedUploadError, 'put_object'):
             swift_p.upload(['upload'])
 
         self.assertEquals(len(self.mock_swift.upload.call_args_list), 6)

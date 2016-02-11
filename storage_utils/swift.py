@@ -84,7 +84,7 @@ initial_retry_sleep = 1
 num_retries = os.environ.get('OS_NUM_RETRIES', 0)
 """The number of times to retry
 
-Uses the ``OS_NUM_RETRIES`` environemnt variable or defaults to 0
+Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0
 """
 
 
@@ -101,13 +101,32 @@ return a time to sleep in seconds.
 
 
 def update_settings(**settings):
-    """Updates swift settings.
+    """Updates swift module settings.
+
+    All settings should be updated using this function.
 
     Args:
         **settings: keyword arguments for settings. Can
             include settings for auth_url, username,
             password, initial_retry_sleep, num_retries,
             and retry_sleep_function.
+
+    Examples:
+
+        To update all authentication settings at once, do::
+
+            from storage_utils import swift
+            swift.update_settings(auth_url='swift_auth_url.com',
+                                  username='swift_user',
+                                  password='swift_pass')
+
+        To update every retry setting at once, do::
+
+            from storage_utils import swift
+            swift.update_settings(initial_retry_sleep=5,
+                                  num_retries=5,
+                                  retry_sleep_function=custom_retry_func)
+
     """
     for setting, value in settings.items():
         if setting not in globals():
@@ -136,6 +155,11 @@ class NotFoundError(SwiftError):
 
 class UnavailableError(SwiftError):
     """Thrown when a 503 response is returned from swift"""
+    pass
+
+
+class FailedUploadError(UnavailableError):
+    """Thrown when an upload fails because of availability issues"""
     pass
 
 
@@ -293,9 +317,9 @@ def _propagate_swift_exceptions(func):
                 # ClientException from swiftclient during upload. The exception
                 # is thrown here -
                 # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
-                # Treat this as an UnavailableError
-                logger.error('unavailable error in swift put_object operation - %s', str(e))
-                raise UnavailableError(str(e), e)
+                # Treat this as a FailedUploadError
+                logger.error('upload error in swift put_object operation - %s', str(e))
+                raise FailedUploadError(str(e), e)
             else:
                 logger.error('unexpected swift error - %s', str(e))
                 raise SwiftError(str(e), e)

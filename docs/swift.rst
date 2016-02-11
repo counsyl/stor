@@ -5,14 +5,21 @@
 Swift
 =====
 
+Updating Settings
+-----------------
+
+.. autofunction:: update_settings
+
 Authentication Settings
 -----------------------
 
 .. autodata:: auth_url
 
 .. autodata:: username
+  :annotation: = None
 
 .. autodata:: password
+  :annotation: = None
 
 .. _swiftretry:
 
@@ -22,9 +29,9 @@ Retry Settings
 .. autodata:: initial_retry_sleep
 
 .. autodata:: num_retries
+  :annotation: = 0
 
 .. autodata:: retry_sleep_function
-
 
 SwiftPath
 ---------
@@ -83,6 +90,8 @@ Exceptions
 .. autoexception:: NotFoundError
 
 .. autoexception:: UnavailableError
+
+.. autoexception:: FailedUploadError
 
 .. autoexception:: UnauthorizedError
 
