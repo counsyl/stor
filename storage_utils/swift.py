@@ -62,7 +62,7 @@ username = os.environ.get('OS_USERNAME')
 If not set, the ``OS_USERNAME`` environment variable will be used.
 """
 
-password = os.environ.get('OS_USERNAME')
+password = os.environ.get('OS_PASSWORD')
 """The swift password
 
 If not set, the ``OS_PASSWORD`` environment variable will be used.
