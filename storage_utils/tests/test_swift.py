@@ -965,6 +965,20 @@ class TestUpload(SwiftTestCase):
         with self.assertRaisesRegexp(ValueError, 'absolute'):
             swift_p.upload(['/abs_path/file1'])
 
+    @mock.patch('storage_utils.swift.num_retries', 5)
+    @mock.patch('time.sleep', autospec=True)
+    def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        self.mock_swift.upload.side_effect = ClientException(
+            "put_object('HHGF5BCXX_160209_SN357_0342_A', 'pileups/s_1_TAAAGGC/s_1_TAAAGGC.chr15-80450512.txt', ...) "
+            "failure and no ability to reset contents for reupload.")
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaisesRegexp(swift.FailedUploadError, 'put_object'):
+            swift_p.upload(['upload'])
+
+        self.assertEquals(len(self.mock_swift.upload.call_args_list), 6)
+
     def test_upload_to_dir(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.return_value = []
