@@ -3,41 +3,11 @@ from storage_utils.swift import SwiftPath
 import unittest
 
 
-class SwiftTestCase(unittest.TestCase):
-    """A test class that mocks out the swift service.
+class SwiftTestMixin(object):
+    """A mixin with helpers for mocking out swift.
 
-    SwiftTestCase should be used in all tests that might hit Swift
-    object-based storage in order to prevent network calls or hitting
-    production storage.
-
-    This class provides the following variables for use in testing:
-
-    - mock_swift_service: A mock of the SwiftService class defined in
-      swiftclient.service.
-
-    - mock_swift_get_conn: A mock of the get_conn function in the
-      swiftclient.service module
-
-    - mock_swift_conn: A mock of the SwiftConnection returned by
-      get_conn
-
-    - mock_get_swift: A mock of the _get_swift_service method of
-      SwiftPath
-
-    - mock_swift: A mock of the SwiftService instance returned by
-      _get_swift_service in SwiftPath
-
-    - mock_swift_username: A mock for replacing the OS_USERNAME
-      environment variable used by Swift
-
-    - mock_swift_password: A mock for replacing the OS_PASSWORD
-      environment variable used by Swift.
-
-    - mock_swift_auth_url: A mock for replacing the OS_AUTH_URL
-      environment variable used by Swift.
-
-    Note that one must call super(...).setUp() in their setUp methods that
-    inherit this class.
+    SwiftTestMixin should be used to create base test classes for anything
+    that accesses swift.
     """
     def disable_get_swift_service_mock(self):
         """Disables the mock for getting the swift service.
@@ -49,8 +19,33 @@ class SwiftTestCase(unittest.TestCase):
             # to be stopped on test cleanup. Disable errors from that
             pass
 
-    def setUp(self):
+    def setup_swift_mocks(self):
         """Sets all of the relevant mocks for Swift communication.
+        The following variables are set up when calling this:
+
+        - mock_swift_service: A mock of the SwiftService class defined in
+          swiftclient.service.
+
+        - mock_swift_get_conn: A mock of the get_conn function in the
+          swiftclient.service module
+
+        - mock_swift_conn: A mock of the SwiftConnection returned by
+          get_conn
+
+        - mock_get_swift: A mock of the _get_swift_service method of
+          SwiftPath
+
+        - mock_swift: A mock of the SwiftService instance returned by
+          _get_swift_service in SwiftPath
+
+        - mock_swift_username: A mock for replacing the OS_USERNAME
+          environment variable used by Swift
+
+        - mock_swift_password: A mock for replacing the OS_PASSWORD
+          environment variable used by Swift.
+
+        - mock_swift_auth_url: A mock for replacing the OS_AUTH_URL
+          environment variable used by Swift.
         """
         # Ensure that SwiftService will never be instantiated in tests
         swift_service_patcher = mock.patch('swiftclient.service.SwiftService',
@@ -96,3 +91,10 @@ class SwiftTestCase(unittest.TestCase):
         sorted lists
         """
         self.assertEquals(sorted(r1), sorted(r2))
+
+
+class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
+    """A TestCase class that sets up swift mocks and provides additional assertions"""
+    def setUp(self):
+        super(SwiftTestCase, self).setUp()
+        self.setup_swift_mocks()
