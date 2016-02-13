@@ -10,7 +10,7 @@ import unittest
 
 
 class TestCopy(unittest.TestCase):
-    def test_posix_destination(self):
+    def test_posix_dir_destination(self):
         with storage_utils.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
@@ -18,8 +18,23 @@ class TestCopy(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
+            dest.makedirs_p()
             utils.copy(source / '1', dest)
             self.assertTrue((dest / '1').exists())
+            self.assertEquals((dest / '1').open().read(), '1')
+
+    def test_posix_file_destination(self):
+        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / 'source'
+            os.mkdir(source)
+            with open(source / '1', 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = tmp_d / 'my' / 'dest' / '1'
+            dest.parent.makedirs_p()
+            utils.copy(source / '1', dest)
+            self.assertTrue(dest.exists())
+            self.assertEquals(dest.open().read(), '1')
 
     def test_ambigious_swift_destination(self):
         with storage_utils.NamedTemporaryDirectory() as tmp_d:
