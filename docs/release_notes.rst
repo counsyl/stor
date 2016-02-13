@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v4.2.0
+------
+
+* Updated to use new https auth endpoint by default
+* Uses a newer fork of python-swiftclient
+
 v4.1.0
 ------
 

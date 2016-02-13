@@ -81,9 +81,7 @@ def copy(source, dest, swift_retry_options=None):
 
     Args:
         source (path|str): The source directory to copy from
-        dest (path|str): The destination file. In contrast to
-            ``shutil.copy``, the parent directory is created if it doesn't
-            already exist.
+        dest (path|str): The destination file or directory.
         swift_retry_options (dict): Optional retry arguments to use for swift
             upload or download. View the
             `swift module-level documentation <swiftretry>` for more
@@ -122,7 +120,6 @@ def copy(source, dest, swift_retry_options=None):
 
     dest_file = dest if dest.name else dest / source.name
     if is_posix_path(dest):
-        dest_file.makedirs_p()
         if is_swift_path(source):
             source._download_object(dest_file, **swift_retry_options)
         else:

@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 # Default module-level settings for swift authentication.
 # If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
 # environment variables will be used
-auth_url = os.environ.get('OS_AUTH_URL', 'http://swift.counsyl.com/auth/v2.0')
+auth_url = os.environ.get('OS_AUTH_URL', 'https://swift.counsyl.com/auth/v2.0')
 """The swift authentication URL
 
 If not set, the ``OS_AUTH_URL`` environment variable will be used. If
