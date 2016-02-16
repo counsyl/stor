@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.2.1
+------
+
+* Absolute and relative swift upload paths are handled properly
+
 v4.2.0
 ------
 

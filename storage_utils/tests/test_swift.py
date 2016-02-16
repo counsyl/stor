@@ -962,8 +962,30 @@ class TestUpload(SwiftTestCase):
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaisesRegexp(ValueError, 'absolute'):
-            swift_p.upload(['/abs_path/file1'])
+        swift_p.upload(['/abs_path/file1'])
+
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['/abs_path/file1'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/abs_path/file1'])
+
+    def test_relative_path(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['./relative_path/file1']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p.upload(['./relative_path/file1'])
+
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['./relative_path/file1'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/relative_path/file1'])
 
     @mock.patch('storage_utils.swift.num_retries', 5)
     @mock.patch('time.sleep', autospec=True)

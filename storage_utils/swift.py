@@ -1101,16 +1101,13 @@ class SwiftPath(str):
             if not isinstance(name, SwiftUploadObject)
         ])
 
-        # Verify no absolute paths are being uploaded
-        for f in all_files_to_upload:
-            if f.startswith('/'):
-                raise ValueError('cannot upload absolute path %s' % f)
-
         # Convert everything to swift upload objects and prepend the relative
-        # resource directory to uploaded results
+        # resource directory to uploaded results. Note that any absolute or
+        # relative posix upload paths will have leading "." and "/" chars
+        # removed when constructing the final object path
         resource_base = _with_slash(self.resource) or path('')
         swift_upload_objects.extend([
-            SwiftUploadObject(f, object_name=resource_base / f)
+            SwiftUploadObject(f, object_name=resource_base / f.lstrip('./'))
             for f in all_files_to_upload
         ])
 
