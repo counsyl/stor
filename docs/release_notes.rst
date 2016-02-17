@@ -4,7 +4,7 @@ Release Notes
 v4.2.1
 ------
 
-* rmtree() on a container also deletes the segment container if it exists
+* `SwiftPath.rmtree` on a container also deletes the segment container if it exists
 
 v4.2.0
 ------
