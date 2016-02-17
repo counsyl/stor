@@ -370,8 +370,8 @@ def _posix_path_to_object_name(p):
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
     p_parts = Path(p).expand().split('/')
-    obj_name_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    return Path('') if obj_name_start is None else Path('/'.join(p_parts[obj_name_start:]))
+    obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
+    return Path('') if obj_start is None else Path('/'.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
