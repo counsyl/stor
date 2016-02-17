@@ -145,9 +145,54 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
+    Note that this function has similar behavior to shutil.copytree, meaning
+    that a posix destination must not exist beforehand.
+
+    For example, assume the following file hierarchy::
+
+        a/
+        - b/
+        - - 1.txt
+
+    Doing a copytree from ``a`` to a new posix destination of ``c`` is
+    performed with::
+
+        path('a').copytree('c')
+
+    The end result for c looks like::
+
+        c/
+        - b/
+        - - 1.txt
+
+    Note that the user can override which copy command is used for posix
+    copies, and it is up to them to ensure that their code abides by the
+    semantics of the provided copy command. This function has been tested
+    in production using the default command of ``cp -r`` and using ``mcp -r``.
+
+    Using swift source and destinations work in a similar manner. Assume
+    the destination is a swift path and we upload the same ``a`` folder::
+
+        path('a').copytree('swift://tenant/container/folder')
+
+    The end swift result will have one object::
+
+        path('swift://tenant/container/folder/b/1.txt')
+
+    Similarly one can do::
+
+        path('swift://tenant/container/folder/').copytree('c')
+
+    The end result for c looks the same as the above posix example::
+
+        c/
+        - b/
+        - - 1.txt
+
     Args:
         source (path|str): The source directory to copy from
-        dest (path|str): The directory to copy to
+        dest (path|str): The directory to copy to. Must not exist if
+            its a posix directory
         copy_cmd (str): If copying to / from posix, this command is
             used.
         swift_upload_options (dict): When the destination is a swift path,
@@ -161,6 +206,8 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
     swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
+    if is_posix_path(dest) and dest.exists():
+        raise OSError('file exists - "%s"' % dest)
 
     if is_posix_path(dest):
         dest.expand().abspath().parent.makedirs_p()
