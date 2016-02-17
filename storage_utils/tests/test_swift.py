@@ -1304,7 +1304,17 @@ class TestRmtree(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.rmtree()
 
-        self.mock_swift.delete.assert_called_once_with('container')
+        self.assertEquals(self.mock_swift.delete.call_args_list,
+                          [mock.call('container'), mock.call('container_segments')])
+        self.assertFalse(mock_list.called)
+
+    def test_w_only_container_no_segment_container(self, mock_list):
+        self.mock_swift.delete.side_effect = [{}, swift.NotFoundError('not found')]
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.rmtree()
+
+        self.assertEquals(self.mock_swift.delete.call_args_list,
+                          [mock.call('container'), mock.call('container_segments')])
         self.assertFalse(mock_list.called)
 
     def test_w_container_and_resource(self, mock_list):

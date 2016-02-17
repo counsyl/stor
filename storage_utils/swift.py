@@ -1165,8 +1165,16 @@ class SwiftPath(str):
         """
         service = self._get_swift_service()
         if not self.resource:
-            return self._swift_service_call(service.delete,
-                                            self.container)
+            results = self._swift_service_call(service.delete,
+                                               self.container)
+            # Try to delete a segment container since swift client does not
+            # do this automatically
+            try:
+                self._swift_service_call(service.delete,
+                                         '%s_segments' % self.container)
+            except NotFoundError:
+                pass
+            return results
         else:
             to_delete = [p.resource for p in self.list()]
             return self._swift_service_call(service.delete,
