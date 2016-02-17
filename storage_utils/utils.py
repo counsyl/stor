@@ -207,7 +207,7 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
     if is_posix_path(dest) and dest.exists():
-        raise OSError('file exists - "%s"' % dest)
+        raise OSError('destination already exists - "%s"' % dest)
 
     if is_posix_path(dest):
         dest.expand().abspath().parent.makedirs_p()
