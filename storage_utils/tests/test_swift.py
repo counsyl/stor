@@ -955,6 +955,28 @@ class TestDownload(SwiftTestCase):
         self.assertEquals(options_passed['container_threads'], 30)
 
 
+class TestPosixPathToObjectName(SwiftTestCase):
+    def test_abs_path(self):
+        self.assertEquals(swift._posix_path_to_object_name('/abs/path/'),
+                          'abs/path')
+
+    def test_hidden_file(self):
+        self.assertEquals(swift._posix_path_to_object_name('.hidden'),
+                          '.hidden')
+
+    def test_hidden_dir(self):
+        self.assertEquals(swift._posix_path_to_object_name('.git/file'),
+                          '.git/file')
+
+    def test_no_obj_name(self):
+        self.assertEquals(swift._posix_path_to_object_name('.'),
+                          '')
+
+    def test_poorly_formatted_path(self):
+        self.assertEquals(swift._posix_path_to_object_name('.//poor//path//file'),
+                          'poor/path/file')
+
+
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
     def test_abs_path(self, mock_walk_files_and_dirs):
