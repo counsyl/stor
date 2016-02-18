@@ -94,7 +94,7 @@ tag: venv
 	# We won't push changes or tags here allowing the pipeline to do that, so we don't accidentally do that locally.
 
 .PHONY: dist
-dist: venv
+dist: venv fullname
 	$(WITH_VENV) python setup.py sdist
 
 .PHONY: publish-docs
@@ -108,3 +108,8 @@ sdist: dist
 .PHONY: version
 version:
 	@echo ${VERSION}
+
+.PHONY: fullname
+fullname:
+	python setup.py --fullname
+
