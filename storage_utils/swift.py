@@ -1160,20 +1160,35 @@ class SwiftPath(str):
         information about configuring retry logic at the module or method
         level.
 
+        Note that when removing a container, the associated segment container
+        will also be removed if it exists. So, if one removes
+        ``swift://tenant/container``, ``swift://tenant/container_segments``
+        will also be deleted.
+
         Raises:
             SwiftError: A swift client error occurred.
         """
         service = self._get_swift_service()
+        deleting_segments = '_segments' in self.container
+        if deleting_segments:
+            logger.warning('performing rmtree with segment container "%s". '
+                           'This could cause issues when accessing objects '
+                           'referencing those segments. Note that segments '
+                           'and segment containers are automatically deleted '
+                           'when their associated objects or containers are '
+                           'deleted.', self.container)
+
         if not self.resource:
             results = self._swift_service_call(service.delete,
                                                self.container)
             # Try to delete a segment container since swift client does not
             # do this automatically
-            try:
-                self._swift_service_call(service.delete,
-                                         '%s_segments' % self.container)
-            except NotFoundError:
-                pass
+            if not deleting_segments:
+                try:
+                    self._swift_service_call(service.delete,
+                                             '%s_segments' % self.container)
+                except NotFoundError:
+                    pass
             return results
         else:
             to_delete = [p.resource for p in self.list()]
