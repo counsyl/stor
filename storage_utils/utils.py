@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import errno
 import logging
 import os
 import shlex
@@ -199,6 +200,10 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
             pass these options as keyword arguments to `SwiftPath.upload`.
         swift_download_options (dict): When the source is a swift path,
             pass these options as keyword arguments to `SwiftPath.download`.
+
+    Raises:
+        ValueError: if two swift paths specified
+        OSError: if destination is a posix path and it already exists
     """
     source = path(source)
     dest = path(dest)
@@ -207,7 +212,7 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
     if is_posix_path(dest) and dest.exists():
-        raise OSError('destination already exists - "%s"' % dest)
+        raise OSError(errno.EEXIST, 'destination already exists - "%s"' % dest)
 
     if is_posix_path(dest):
         dest.expand().abspath().parent.makedirs_p()
