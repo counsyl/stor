@@ -1209,7 +1209,8 @@ class SwiftPath(str):
             # Try to delete a segment container since swift client does not
             # do this automatically
             if not deleting_segments:
-                segment_containers = ('%s_segments' % self.container, '.segments_%s' % self.container)
+                segment_containers = ('%s_segments' % self.container,
+                                      '.segments_%s' % self.container)
                 for segment_container in segment_containers:
                     try:
                         self._swift_service_call(service.delete, segment_container)
