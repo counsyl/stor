@@ -5,7 +5,7 @@ v4.2.3
 ------
 
 * Absolute and relative swift upload paths are handled properly
-* copytree abides by shutil behavior, checking that the destination doesnt already exist
+* copytree abides by shutil behavior, checking that the destination doesn't already exist
 
 v4.2.2
 ------
