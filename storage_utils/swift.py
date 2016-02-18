@@ -345,9 +345,33 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
-def _with_slash(path):
+def _with_slash(p):
     "Appends a trailing slash to a path if it doesn't have one"
-    return path if not path or path.endswith('/') else path + '/'
+    return p if not p or p.endswith('/') else p + '/'
+
+
+def _posix_path_to_object_name(p):
+    """Given a posix path, consruct its object name.
+
+    Any relative or absolute directory markers at the beginning of
+    the path will be stripped, for example::
+
+        ../../my_file -> my_file
+        ./my_dir -> my_dir
+        .hidden_dir/file -> .hidden_dir/file
+        /absolute_dir -> absolute_dir
+
+    Args:
+        p (str): The input path
+
+    Returns:
+        Path: The object name. An empty path will be returned in
+            the case of the input path only consisting of absolute
+            or relative directory markers (i.e. '/' -> '', './' -> '')
+    """
+    p_parts = Path(p).expand().split('/')
+    obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
+    return Path('') if obj_start is None else Path('/'.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
@@ -1104,16 +1128,11 @@ class SwiftPath(str):
             if not isinstance(name, SwiftUploadObject)
         ])
 
-        # Verify no absolute paths are being uploaded
-        for f in all_files_to_upload:
-            if f.startswith('/'):
-                raise ValueError('cannot upload absolute path %s' % f)
-
         # Convert everything to swift upload objects and prepend the relative
-        # resource directory to uploaded results
+        # resource directory to uploaded results.
         resource_base = _with_slash(self.resource) or path('')
         swift_upload_objects.extend([
-            SwiftUploadObject(f, object_name=resource_base / f)
+            SwiftUploadObject(f, object_name=resource_base / _posix_path_to_object_name(f))
             for f in all_files_to_upload
         ])
 
