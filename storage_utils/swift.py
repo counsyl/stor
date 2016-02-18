@@ -1168,6 +1168,9 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
         """
+        if not self.container:
+            raise ValueError('swift path must include container for rmtree')
+
         service = self._get_swift_service()
         deleting_segments = '_segments' in self.container
         if deleting_segments:

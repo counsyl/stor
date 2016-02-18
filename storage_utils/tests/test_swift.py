@@ -1299,6 +1299,12 @@ class TestRemove(SwiftTestCase):
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestRmtree(SwiftTestCase):
+    def test_w_only_tenant(self, mock_list):
+        self.mock_swift.delete.return_value = {}
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'include container'):
+            swift_p.rmtree()
+
     def test_w_only_container(self, mock_list):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
