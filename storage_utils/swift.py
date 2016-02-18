@@ -1040,7 +1040,6 @@ class SwiftPath(str):
                to_upload,
                segment_size=DEFAULT_SEGMENT_SIZE,
                use_slo=True,
-               segment_container=None,
                leave_segments=False,
                changed=False,
                object_name=None,
@@ -1053,14 +1052,19 @@ class SwiftPath(str):
         information about configuring retry logic at the module or method
         level.
 
-        Note that this method upload on paths relative to the current
-        directory. In order to load files relative to a target directory,
-        use path as a context manager to change the directory.
-
         For example::
 
             with path('/path/to/upload/dir'):
                 path('swift://tenant/container').upload(['.'])
+
+        Notes:
+
+            - This method upload on paths relative to the current
+              directory. In order to load files relative to a target directory,
+              use path as a context manager to change the directory.
+
+            - When large files are split into segments, they are uploaded
+              to a segment container named .segments_${container_name}
 
         Args:
             to_upload (list): A list of file names, directory names, or
@@ -1074,10 +1078,6 @@ class SwiftPath(str):
             use_slo (bool): When used in conjunction with segment_size, it
                 will create a Static Large Object instead of the default
                 Dynamic Large Object.
-            segment_container (str): Upload the segments into the specified
-                container. If not specified, the segments will be uploaded to
-                a <container>_segments container to not pollute the main
-                <container> listings.
             leave_segments (bool): Indicates that you want the older segments
                 of manifest objects left alone (in the case of overwrites).
             changed (bool): Upload only files that have changed since last
@@ -1090,6 +1090,9 @@ class SwiftPath(str):
             Raises:
                 SwiftError: A swift client error occurred.
         """
+        if not self.container:
+            raise ValueError('must specify container when uploading')
+
         service = self._get_swift_service(object_uu_threads=object_threads,
                                           segment_threads=segment_threads)
         swift_upload_objects = [
@@ -1117,7 +1120,7 @@ class SwiftPath(str):
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
-            'segment_container': segment_container,
+            'segment_container': '.segments_%s' % self.container,
             'leave_segments': leave_segments,
             'changed': changed
         }
@@ -1172,7 +1175,7 @@ class SwiftPath(str):
             raise ValueError('swift path must include container for rmtree')
 
         service = self._get_swift_service()
-        deleting_segments = '_segments' in self.container
+        deleting_segments = 'segments' in self.container
         if deleting_segments:
             logger.warning('performing rmtree with segment container "%s". '
                            'This could cause issues when accessing objects '
@@ -1187,11 +1190,12 @@ class SwiftPath(str):
             # Try to delete a segment container since swift client does not
             # do this automatically
             if not deleting_segments:
-                try:
-                    self._swift_service_call(service.delete,
-                                             '%s_segments' % self.container)
-                except NotFoundError:
-                    pass
+                segment_containers = ('%s_segments' % self.container, '.segments_%s' % self.container)
+                for segment_container in segment_containers:
+                    try:
+                        self._swift_service_call(service.delete, segment_container)
+                    except NotFoundError:
+                        pass
             return results
         else:
             to_delete = [p.resource for p in self.list()]
