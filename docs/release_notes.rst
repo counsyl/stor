@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.3.0
+------
+
+* The default segment container is .segments_$container
+
 v4.2.3
 ------
 

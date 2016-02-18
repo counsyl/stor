@@ -1031,7 +1031,6 @@ class TestUpload(SwiftTestCase):
         swift_p.upload(['upload'],
                        segment_size=1000,
                        use_slo=True,
-                       segment_container=True,
                        leave_segments=True,
                        changed=True)
         upload_args = self.mock_swift.upload.call_args_list[0][0]
@@ -1046,8 +1045,8 @@ class TestUpload(SwiftTestCase):
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {
-            'segment_container': True,
             'use_slo': True,
+            'segment_container': '.segments_container',
             'leave_segments': True,
             'segment_size': 1000,
             'changed': True
@@ -1061,7 +1060,6 @@ class TestUpload(SwiftTestCase):
         swift_p.upload(['upload'],
                        segment_size=1000,
                        use_slo=True,
-                       segment_container=True,
                        leave_segments=True,
                        changed=True)
         upload_args = self.mock_swift.upload.call_args_list[0][0]
@@ -1076,12 +1074,24 @@ class TestUpload(SwiftTestCase):
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {
-            'segment_container': True,
+            'segment_container': '.segments_container',
             'use_slo': True,
             'leave_segments': True,
             'segment_size': 1000,
             'changed': True
         })
+
+    def test_upload_to_tenant(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'must specify container'):
+            swift_p.upload(['upload'],
+                           segment_size=1000,
+                           use_slo=True,
+                           leave_segments=True,
+                           changed=True)
 
     def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
         self.disable_get_swift_service_mock()
@@ -1090,7 +1100,6 @@ class TestUpload(SwiftTestCase):
         swift_p.upload([],
                        segment_size=1000,
                        use_slo=True,
-                       segment_container=True,
                        leave_segments=True,
                        changed=True,
                        object_name='obj_name',
@@ -1355,7 +1364,9 @@ class TestRmtree(SwiftTestCase):
         swift_p.rmtree()
 
         self.assertEquals(self.mock_swift.delete.call_args_list,
-                          [mock.call('container'), mock.call('container_segments')])
+                          [mock.call('container'),
+                           mock.call('container_segments'),
+                           mock.call('.segments_container')])
         self.assertFalse(mock_list.called)
 
     def test_w_only_segment_container(self, mock_list):
@@ -1368,12 +1379,16 @@ class TestRmtree(SwiftTestCase):
         self.assertFalse(mock_list.called)
 
     def test_w_only_container_no_segment_container(self, mock_list):
-        self.mock_swift.delete.side_effect = [{}, swift.NotFoundError('not found')]
+        self.mock_swift.delete.side_effect = [{},
+                                              swift.NotFoundError('not found'),
+                                              swift.NotFoundError('not found')]
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.rmtree()
 
         self.assertEquals(self.mock_swift.delete.call_args_list,
-                          [mock.call('container'), mock.call('container_segments')])
+                          [mock.call('container'),
+                           mock.call('container_segments'),
+                           mock.call('.segments_container')])
         self.assertFalse(mock_list.called)
 
     def test_w_container_and_resource(self, mock_list):
