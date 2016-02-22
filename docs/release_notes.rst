@@ -5,6 +5,7 @@ v4.4.1
 ------
 
 * Fixed bug in copying to posix directory
+* Copying to a container also throws an error if the path is ambiguous
 
 v4.4.0
 ------

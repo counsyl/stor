@@ -130,7 +130,7 @@ def copy(source, dest, swift_retry_options=None):
             logger.info('performing copy with command - %s', copy_cmd)
             check_call(copy_cmd)
     else:
-        dest_file = dest if dest.name else dest / source.name
+        dest_file = dest if not dest.endswith('/') else dest / source.name
         if not dest_file.parent.container:
             raise ValueError((
                 'cannot copy to tenant "%s" and file '
