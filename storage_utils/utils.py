@@ -139,7 +139,6 @@ def copy(source, dest, swift_retry_options=None):
         dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
         dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)],
                                 **swift_retry_options)
-        return dest_file.parent, source
 
 
 def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
