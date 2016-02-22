@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z ${SWIFT_TEST_USERNAME+1} ]; then
-    echo "Ignoring swift integration tests. To run the tests, set the SWIFT_TEST_USERNAME and SWIFT_TEST_PASSWORD environment variables"
+    >&2 echo "Skipping swift integration tests. To run the tests, set the SWIFT_TEST_USERNAME and SWIFT_TEST_PASSWORD environment variables"
 else
     echo "Installing hpc smoketest for integration test"
     pip install --no-deps hpc-smoketest==1.0.0
