@@ -593,7 +593,6 @@ class SwiftPath(str):
                 'OS_AUTH_URL, OS_USERNAME, and OS_PASSWORD environment vars '
                 'must be set for swift authentication. The username, password '
                 'and auth_url settings variables may also be set with update_settings.'
-                '"%s" "%s" "%s"' % (username, password, auth_url)
             ))
 
         # Set additional options on top of what was passed in
