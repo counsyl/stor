@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.4.1
+------
+
+* Fixed bug in copying to posix directory
+
 v4.4.0
 ------
 
