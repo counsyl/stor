@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.4.0
+------
+
+* Added integration tests
+
 v4.3.0
 ------
 
