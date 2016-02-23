@@ -7,8 +7,8 @@ import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
-import tempfile
 
+from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import make_condition
@@ -1113,10 +1113,17 @@ class TestUpload(SwiftTestCase):
 
 class TestCopy(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
-    def test_copy_posix_destination(self, mock_download_object):
+    def test_copy_posix_file_destination(self, mock_download_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
-        p.copy('file_dest')
-        mock_download_object.assert_called_once_with(p, path(u'file_dest'))
+        p.copy('file_dest.txt')
+        mock_download_object.assert_called_once_with(p, path(u'file_dest.txt'))
+
+    @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
+    def test_copy_posix_dir_destination(self, mock_download_object):
+        p = SwiftPath('swift://tenant/container/file_source.txt')
+        with NamedTemporaryDirectory() as tmp_d:
+            p.copy(tmp_d)
+            mock_download_object.assert_called_once_with(p, path(tmp_d) / 'file_source.txt')
 
     def test_copy_swift_destination(self):
         p = SwiftPath('swift://tenant/container/file_source')

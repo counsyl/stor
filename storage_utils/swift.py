@@ -516,8 +516,7 @@ class SwiftPath(str):
         """Returns true if it cannot be determined if the path is a
         file or directory
         """
-        f = self.resource
-        return f and not f.endswith('/') and not f.ext
+        return not self.endswith('/') and not self.ext
 
     @property
     def name(self):

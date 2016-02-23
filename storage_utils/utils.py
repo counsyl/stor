@@ -119,9 +119,9 @@ def copy(source, dest, swift_retry_options=None):
     if is_swift_path(dest) and dest.is_ambiguous():
         raise ValueError('swift destination must be file with extension or directory with slash')
 
-    dest_file = dest if dest.name else dest / source.name
     if is_posix_path(dest):
         if is_swift_path(source):
+            dest_file = dest if not dest.isdir() else dest / source.name
             source._download_object(dest_file, **swift_retry_options)
         else:
             copy_cmd = ['cp',
@@ -130,6 +130,7 @@ def copy(source, dest, swift_retry_options=None):
             logger.info('performing copy with command - %s', copy_cmd)
             check_call(copy_cmd)
     else:
+        dest_file = dest if not dest.endswith('/') else dest / source.name
         if not dest_file.parent.container:
             raise ValueError((
                 'cannot copy to tenant "%s" and file '
@@ -138,7 +139,6 @@ def copy(source, dest, swift_retry_options=None):
         dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
         dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)],
                                 **swift_retry_options)
-        return dest_file.parent, source
 
 
 def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
