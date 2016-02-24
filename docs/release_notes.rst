@@ -5,6 +5,7 @@ v4.5.0
 ------
 
 * Added `SwiftPath.temp_url` for generating temporary object URLs
+* Added environment variable ``OS_TEMP_URL_KEY`` for pulling in default temp url key
 
 v4.4.1
 ------
