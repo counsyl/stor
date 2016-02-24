@@ -1472,63 +1472,71 @@ class TestCompatHelpers(SwiftTestCase):
 
 class TestSwiftAuthCaching(SwiftTestCase):
     def setUp(self):
-        keystone_mock_obj = mock.patch('swiftclient.client.get_auth_keystone', autospec=True)
-        self.keystone_mock = keystone_mock_obj.start()
-        self.addCleanup(keystone_mock_obj.stop)
-        self.keystone_mock.side_effect = lambda _1, _2, _3, opts: (opts['tenant_name'] + 'url',
-                                                                   opts['tenant_name'] + 'token')
-        super(TestSwiftAuthCaching, self).setUp()
+        self.setup_swift_mocks()
         self.disable_get_swift_service_mock()
+
+        def different_auth_per_tenant(auth_url, username, password, opts):
+            return opts['tenant_name'] + 'url', opts['tenant_name'] + 'token'
+
+        self.mock_swift_get_auth_keystone.side_effect = different_auth_per_tenant
 
     def test_simple_auth_caching(self):
         path('swift://AUTH_seq_upload_prod')._get_swift_service()
         call_seq = mock.call(swift.auth_url, swift.username, swift.password,
                              {'tenant_name': 'AUTH_seq_upload_prod'})
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
         path('swift://AUTH_seq_upload_prod')._get_swift_service()
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
 
     def test_swift_auth_caching_multiple_tenants(self):
         path('swift://AUTH_seq_upload_prod')._get_swift_service()
         call_seq = mock.call(swift.auth_url, swift.username, swift.password,
                              {'tenant_name': 'AUTH_seq_upload_prod'})
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
         self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
         path('swift://AUTH_seq_upload_prod')._get_swift_service()
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
 
         path('swift://AUTH_final_analysis_prod')._get_swift_service()
         call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
                                     {'tenant_name': 'AUTH_final_analysis_prod'})
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq, call_final_prod])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
         path('swift://AUTH_final_analysis_prod')._get_swift_service()
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq, call_final_prod])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
 
     def test_update_settings_clears_cache(self):
         path('swift://AUTH_final_analysis_prod')._get_swift_service()
         call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
                                     {'tenant_name': 'AUTH_final_analysis_prod'})
         self.assertIn('AUTH_final_analysis_prod', swift._cached_auth_token_map)
-        self.assertEqual(self.keystone_mock.call_args_list,
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_final_prod])
         swift.update_settings()
         self.assertEqual(swift._cached_auth_token_map, {})
         path('swift://AUTH_final_analysis_prod')._get_swift_service()
-        self.assertEqual(self.keystone_mock.call_args_list,
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_final_prod, call_final_prod])
 
     def test_auth_caching_connection(self):
         path('swift://AUTH_seq_upload_prod')._get_swift_connection()
         call_seq = mock.call(swift.auth_url, swift.username, swift.password,
                              {'tenant_name': 'AUTH_seq_upload_prod'})
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
         self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
         path('swift://AUTH_seq_upload_prod')._get_swift_connection()
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
 
         path('swift://AUTH_final_analysis_prod')._get_swift_connection()
         call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
                                     {'tenant_name': 'AUTH_final_analysis_prod'})
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq, call_final_prod])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                        [call_seq, call_final_prod])
         path('swift://AUTH_final_analysis_prod')._get_swift_connection()
-        self.assertEqual(self.keystone_mock.call_args_list, [call_seq, call_final_prod])
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])

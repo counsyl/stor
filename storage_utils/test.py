@@ -21,6 +21,11 @@ class SwiftTestMixin(object):
 
     def setup_swift_mocks(self):
         """Sets all of the relevant mocks for Swift communication.
+
+        If you are testing outside of this library, you should either mock
+        swift object methods or you should focus on manipulating return value
+        of mock_swift.
+
         The following variables are set up when calling this:
 
         - mock_swift_service: A mock of the SwiftService class defined in
@@ -32,7 +37,10 @@ class SwiftTestMixin(object):
         - mock_swift_conn: A mock of the SwiftConnection returned by
           get_conn
 
-        - mock_get_swift: A mock of the _get_swift_service method of
+        - mock_swift_get_auth_keystone: mock of the get_keystone_auth function
+          that caches identity credentials
+
+        - mock_get_swift_service: A mock of the _get_swift_service method of
           SwiftPath
 
         - mock_swift: A mock of the SwiftService instance returned by
@@ -61,6 +69,13 @@ class SwiftTestMixin(object):
         self.mock_swift_conn = mock.Mock()
         self.mock_swift_get_conn.return_value = self.mock_swift_conn
 
+        # Ensure that no keystone auth calls will go out
+        swift_keystone_mock_patcher = mock.patch('swiftclient.client.get_auth_keystone',
+                                                 autospec=True)
+        self.addCleanup(swift_keystone_mock_patcher.stop)
+        self.mock_swift_get_auth_keystone = swift_keystone_mock_patcher.start()
+        self.mock_swift_get_auth_keystone.return_value = ('dummy_storage_url', 'dummy_auth_token')
+
         # This is the mock that will always be returned by _get_swift_service.
         # The user can mock out any swift methods on this mock
         self.mock_swift = mock.Mock()
@@ -83,9 +98,11 @@ class SwiftTestMixin(object):
         self._auth_patcher = mock.patch('storage_utils.swift.auth_url', '__dummy__')
         self.addCleanup(self._auth_patcher.stop)
         self.mock_swift_auth_url = self._auth_patcher.start()
+
+        # ensures we never cache data between tests
         _cache_patcher = mock.patch.dict('storage_utils.swift._cached_auth_token_map', clear=True)
-        _cache_patcher.start()
         self.addCleanup(_cache_patcher.stop)
+        _cache_patcher.start()
 
     def assertSwiftListResultsEqual(self, r1, r2):
         """
