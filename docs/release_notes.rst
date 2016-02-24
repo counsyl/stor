@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.5.0
+------
+
+* Cache authentication credentials for performance.
+
 v4.4.1
 ------
 
