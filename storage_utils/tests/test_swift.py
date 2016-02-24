@@ -3,6 +3,7 @@ import os
 from tempfile import NamedTemporaryFile
 import unittest
 
+import freezegun
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
@@ -375,6 +376,50 @@ class TestSwiftFile(SwiftTestCase):
         obj.close()
 
         self.assertFalse(mock_upload.called)
+
+
+class TestTempURL(SwiftTestCase):
+    @freezegun.freeze_time('2016-02-23 12:00:00')
+    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
+    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    def test_success(self):
+        temp_url = SwiftPath('swift://tenant/container/obj').temp_url()
+        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100'  # nopep8
+        self.assertEquals(temp_url, expected)
+
+    @freezegun.freeze_time('2016-02-23 12:00:00')
+    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
+    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    def test_success_w_inline(self):
+        temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True)
+        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
+        self.assertEquals(temp_url, expected)
+
+    @freezegun.freeze_time('2016-02-23 12:00:00')
+    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
+    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    def test_success_w_inline_and_filename(self):
+        temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True, filename='file')
+        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline&filename=file'  # nopep8
+        self.assertEquals(temp_url, expected)
+
+    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
+    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    def test_no_obj(self):
+        with self.assertRaisesRegexp(ValueError, 'on object'):
+            temp_url = SwiftPath('swift://tenant/container').temp_url()
+
+    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
+    @mock.patch('storage_utils.swift.auth_url', None)
+    def test_no_auth_url(self):
+        with self.assertRaisesRegexp(ValueError, 'auth_url'):
+            SwiftPath('swift://tenant/container/obj').temp_url()
+
+    @mock.patch('storage_utils.swift.temp_url_key', None)
+    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    def test_no_temp_url_key(self):
+        with self.assertRaisesRegexp(ValueError, 'temp_url_key'):
+            SwiftPath('swift://tenant/container/obj').temp_url()
 
 
 @mock.patch('storage_utils.swift.num_retries', 5)

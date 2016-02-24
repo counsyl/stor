@@ -67,6 +67,8 @@ SwiftPath
 
   .. automethod:: stat(\**retry_args)
 
+  .. automethod:: temp_url
+
 
 SwiftFile
 ---------
