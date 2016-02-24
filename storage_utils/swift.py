@@ -697,8 +697,6 @@ class SwiftPath(str):
         """
         global temp_url_key, auth_url
 
-        print 'globals', temp_url_key, auth_url
-
         if not self.resource:
             raise ValueError('can only create temporary URL on object')
         if not temp_url_key:
