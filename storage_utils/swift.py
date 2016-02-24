@@ -72,6 +72,12 @@ password = os.environ.get('OS_PASSWORD')
 If not set, the ``OS_PASSWORD`` environment variable will be used.
 """
 
+temp_url_key = os.environ.get('OS_TEMP_URL_KEY')
+"""The key for generating temporary URLs
+
+If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
+"""
+
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
@@ -108,8 +114,8 @@ def update_settings(**settings):
     Args:
         **settings: keyword arguments for settings. Can
             include settings for auth_url, username,
-            password, initial_retry_sleep, num_retries,
-            and retry_sleep_function.
+            password, temp_url_key, initial_retry_sleep,
+            num_retries, and retry_sleep_function.
 
     Examples:
 
@@ -677,6 +683,24 @@ class SwiftPath(str):
                                                        self.container,
                                                        self.resource)
         return content
+
+    def temp_url(self, lifetime=30, method='GET'):
+        """Obtains a temporary URL to an object.
+
+        Args:
+            lifetime (int): The time (in seconds) the temporary
+                URL will be valid
+            method (str): The HTTP method that can be used on
+                the temporary URL
+        """
+        global temp_url_key
+
+        if not self.resource:
+            raise ValueError('can only create temporary URL on object')
+        if not temp_url_key:
+            raise ValueError(
+                'a temporary url key must be set with update_settings(temp_url_key=<KEY> '
+                'or by setting the OS_TEMP_URL_KEY environment variable')
 
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
