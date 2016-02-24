@@ -36,6 +36,7 @@ import logging
 import operator
 import os
 import tempfile
+from urlparse import urlparse
 
 from storage_utils import is_swift_path
 from storage_utils import path
@@ -44,6 +45,7 @@ from storage_utils.third_party.path import Path
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient.service import SwiftUploadObject
+from swiftclient.utils import generate_temp_url
 
 
 logger = logging.getLogger(__name__)
@@ -684,7 +686,7 @@ class SwiftPath(str):
                                                        self.resource)
         return content
 
-    def temp_url(self, lifetime=30, method='GET'):
+    def temp_url(self, lifetime=300, method='GET'):
         """Obtains a temporary URL to an object.
 
         Args:
@@ -693,7 +695,9 @@ class SwiftPath(str):
             method (str): The HTTP method that can be used on
                 the temporary URL
         """
-        global temp_url_key
+        global temp_url_key, auth_url
+
+        print 'globals', temp_url_key, auth_url
 
         if not self.resource:
             raise ValueError('can only create temporary URL on object')
@@ -701,6 +705,17 @@ class SwiftPath(str):
             raise ValueError(
                 'a temporary url key must be set with update_settings(temp_url_key=<KEY> '
                 'or by setting the OS_TEMP_URL_KEY environment variable')
+        if not auth_url:
+            raise ValueError(
+                'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
+                'or by setting the OS_AUTH_URL environment variable')
+
+        auth_url_parts = urlparse(auth_url)
+        storage_url = '%s://%s' % (auth_url_parts.scheme, auth_url_parts.netloc)
+        full_path = '/v1/%s' % self[len(self.swift_drive):]
+        obj_url = generate_temp_url(full_path, lifetime, temp_url_key, method)
+
+        return '%s%s' % (storage_url, obj_url)
 
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
