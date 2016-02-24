@@ -36,7 +36,7 @@ import logging
 import operator
 import os
 import tempfile
-from urlparse import urlparse
+import urlparse
 
 from storage_utils import is_swift_path
 from storage_utils import path
@@ -686,7 +686,7 @@ class SwiftPath(str):
                                                        self.resource)
         return content
 
-    def temp_url(self, lifetime=300, method='GET'):
+    def temp_url(self, lifetime=300, method='GET', inline=False, filename=None):
         """Obtains a temporary URL to an object.
 
         Args:
@@ -694,6 +694,10 @@ class SwiftPath(str):
                 URL will be valid
             method (str): The HTTP method that can be used on
                 the temporary URL
+            inline (bool, default False): If True, render inline as opposed to
+                an attachment
+            filename (str, optional): A urlencoded filename to use for
+                attachment, otherwise defaults to object name
         """
         global temp_url_key, auth_url
 
@@ -708,12 +712,22 @@ class SwiftPath(str):
                 'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
                 'or by setting the OS_AUTH_URL environment variable')
 
-        auth_url_parts = urlparse(auth_url)
-        storage_url = '%s://%s' % (auth_url_parts.scheme, auth_url_parts.netloc)
-        full_path = '/v1/%s' % self[len(self.swift_drive):]
-        obj_url = generate_temp_url(full_path, lifetime, temp_url_key, method)
+        obj_path = '/v1/%s' % self[len(self.swift_drive):]
+        obj_url = generate_temp_url(obj_path, lifetime, temp_url_key, method)
+        obj_url_parts = urlparse.urlparse(obj_url)
+        query = obj_url_parts.query.split('&')
+        if inline:
+            query.append('inline')
+        if filename:
+            query.append('filename=%s' % filename)
 
-        return '%s%s' % (storage_url, obj_url)
+        auth_url_parts = urlparse.urlparse(auth_url)
+        return urlparse.urlunparse((auth_url_parts.scheme,
+                                    auth_url_parts.netloc,
+                                    obj_url_parts.path,
+                                    auth_url_parts.params,
+                                    '&'.join(query),
+                                    auth_url_parts.fragment))
 
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
