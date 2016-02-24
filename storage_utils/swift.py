@@ -36,6 +36,7 @@ import logging
 import operator
 import os
 import tempfile
+import threading
 
 from storage_utils import is_swift_path
 from storage_utils import path
@@ -43,6 +44,7 @@ from storage_utils import utils
 from storage_utils.third_party.path import Path
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
+from swiftclient import client as swift_client
 from swiftclient.service import SwiftUploadObject
 
 
@@ -71,6 +73,10 @@ password = os.environ.get('OS_PASSWORD')
 
 If not set, the ``OS_PASSWORD`` environment variable will be used.
 """
+
+# singleton that collects together auth tokens for storage URLs
+_cached_auth_token_map = {}
+_singleton_lock = threading.Lock()
 
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
@@ -132,6 +138,30 @@ def update_settings(**settings):
         if setting not in globals():
             raise ValueError('invalid setting "%s"' % setting)
         globals()[setting] = value
+
+    with _singleton_lock:
+        _cached_auth_token_map.clear()
+
+
+def _get_or_create_auth_credentials(tenant_name):
+    try:
+        return _cached_auth_token_map[tenant_name]
+    except KeyError:
+        storage_url, auth_token = swift_client.get_auth_keystone(
+            auth_url, username, password,
+            {'tenant_name': tenant_name},
+        )
+        creds = {
+            'os_storage_url': storage_url,
+            'os_auth_token': auth_token
+        }
+
+        # Note: we are intentionally ignoring the rare race condition where
+        # authentication starts in one thread, then settings are updated, and
+        # then authentication finishes in the other.
+        with _singleton_lock:
+            _cached_auth_token_map[tenant_name] = creds
+        return creds
 
 
 class SwiftError(Exception):
@@ -599,6 +629,7 @@ class SwiftPath(str):
         options['os_auth_url'] = auth_url
         options['os_username'] = username
         options['os_password'] = password
+        options.update(**_get_or_create_auth_credentials(self.tenant))
 
         # Merge options with global and local ones
         options = dict(swift_service._default_global_options,

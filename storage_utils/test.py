@@ -83,6 +83,9 @@ class SwiftTestMixin(object):
         self._auth_patcher = mock.patch('storage_utils.swift.auth_url', '__dummy__')
         self.addCleanup(self._auth_patcher.stop)
         self.mock_swift_auth_url = self._auth_patcher.start()
+        _cache_patcher = mock.patch.dict('storage_utils.swift._cached_auth_token_map', clear=True)
+        _cache_patcher.start()
+        self.addCleanup(_cache_patcher.stop)
 
     def assertSwiftListResultsEqual(self, r1, r2):
         """
