@@ -5,6 +5,7 @@ v6.0.0
 ------
 
 * Swift conditions are now functions that take results and return a Boolean.
+* `SwiftPath.download` returns a list of downloaded paths
 
 v5.0.0
 ------
