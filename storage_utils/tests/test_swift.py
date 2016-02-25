@@ -7,7 +7,6 @@ import freezegun
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
-from swiftclient.service import SwiftUploadObject
 
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
@@ -303,8 +302,8 @@ class TestSwiftFile(SwiftTestCase):
                                                   mock_sleep):
         swift_p = SwiftPath('swift://tenant/container/obj')
         with NamedTemporaryFile(delete=False) as ntf1,\
-             NamedTemporaryFile(delete=False) as ntf2,\
-             NamedTemporaryFile(delete=False) as ntf3:
+                NamedTemporaryFile(delete=False) as ntf2,\
+                NamedTemporaryFile(delete=False) as ntf3:
             with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
                 ntf.side_effect = [ntf1, ntf2, ntf3]
                 with swift_p.open(mode='wb') as obj:
@@ -367,7 +366,7 @@ class TestTempURL(SwiftTestCase):
     @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_no_obj(self):
         with self.assertRaisesRegexp(ValueError, 'on object'):
-            temp_url = SwiftPath('swift://tenant/container').temp_url()
+            SwiftPath('swift://tenant/container').temp_url()
 
     @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
     @mock.patch('storage_utils.swift.auth_url', None)
@@ -1045,7 +1044,8 @@ class TestUpload(SwiftTestCase):
     def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.side_effect = ClientException(
-            "put_object('HHGF5BCXX_160209_SN357_0342_A', 'pileups/s_1_TAAAGGC/s_1_TAAAGGC.chr15-80450512.txt', ...) "
+            "put_object('HHGF5BCXX_160209_SN357_0342_A', "
+            "'pileups/s_1_TAAAGGC/s_1_TAAAGGC.chr15-80450512.txt', ...) "
             "failure and no ability to reset contents for reupload.")
 
         swift_p = SwiftPath('swift://tenant/container/path')
@@ -1466,6 +1466,7 @@ class TestPost(SwiftTestCase):
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)
 
+
 class TestCompatHelpers(SwiftTestCase):
     def test_noops(self):
         self.assertEqual(SwiftPath('swift://tenant').expanduser(),
@@ -1480,7 +1481,6 @@ class TestCompatHelpers(SwiftTestCase):
                          SwiftPath('swift://tenant/container/blah/a'))
         self.assertEqual(SwiftPath('swift://tenant/container//a/b').expand(),
                          SwiftPath('swift://tenant/container/a/b'))
-
 
     def test_expandvars(self):
         original = SwiftPath('swift://tenant/container/$somevar/another')

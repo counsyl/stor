@@ -33,7 +33,6 @@ import cStringIO
 from functools import wraps
 import json
 import logging
-import operator
 import os
 import tempfile
 import urlparse
