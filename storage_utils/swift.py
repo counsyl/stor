@@ -686,7 +686,7 @@ class SwiftPath(str):
                                                        self.resource)
         return content
 
-    def temp_url(self, lifetime=300, method='GET', inline=False, filename=None):
+    def temp_url(self, lifetime=300, method='GET', inline=True, filename=None):
         """Obtains a temporary URL to an object.
 
         Args:
@@ -694,8 +694,9 @@ class SwiftPath(str):
                 URL will be valid
             method (str): The HTTP method that can be used on
                 the temporary URL
-            inline (bool, default False): If True, render inline as opposed to
-                an attachment
+            inline (bool, default True): If False, URL will have a
+                Content-Disposition header that causes browser to download as
+                attachment.
             filename (str, optional): A urlencoded filename to use for
                 attachment, otherwise defaults to object name
         """
