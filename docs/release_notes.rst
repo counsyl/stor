@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.0.0
+------
+
+* Swift conditions are now functions that take results and return a Boolean.
+
 v5.0.0
 ------
 
