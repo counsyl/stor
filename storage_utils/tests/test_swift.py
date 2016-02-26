@@ -1033,12 +1033,12 @@ class TestDownload(SwiftTestCase):
 class TestFileNameToObjectName(SwiftTestCase):
     @mock.patch('os.path', ntpath)
     def test_abs_windows_path(self):
-        self.assertEquals(swift.file_name_to_object_name('C:\windows\path\\'),
+        self.assertEquals(swift.file_name_to_object_name(r'C:\windows\path\\'),
                           'windows/path')
 
     @mock.patch('os.path', ntpath)
     def test_rel_windows_path(self):
-        self.assertEquals(swift.file_name_to_object_name('.\windows\path\\'),
+        self.assertEquals(swift.file_name_to_object_name(r'.\windows\path\\'),
                           'windows/path')
 
     def test_abs_path(self):
