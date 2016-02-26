@@ -1005,23 +1005,23 @@ class TestDownload(SwiftTestCase):
 
 class TestPosixPathToObjectName(SwiftTestCase):
     def test_abs_path(self):
-        self.assertEquals(swift._posix_path_to_object_name('/abs/path/'),
+        self.assertEquals(swift.file_name_to_object_name('/abs/path/'),
                           'abs/path')
 
     def test_hidden_file(self):
-        self.assertEquals(swift._posix_path_to_object_name('.hidden'),
+        self.assertEquals(swift.file_name_to_object_name('.hidden'),
                           '.hidden')
 
     def test_hidden_dir(self):
-        self.assertEquals(swift._posix_path_to_object_name('.git/file'),
+        self.assertEquals(swift.file_name_to_object_name('.git/file'),
                           '.git/file')
 
     def test_no_obj_name(self):
-        self.assertEquals(swift._posix_path_to_object_name('.'),
+        self.assertEquals(swift.file_name_to_object_name('.'),
                           '')
 
     def test_poorly_formatted_path(self):
-        self.assertEquals(swift._posix_path_to_object_name('.//poor//path//file'),
+        self.assertEquals(swift.file_name_to_object_name('.//poor//path//file'),
                           'poor/path/file')
 
 

@@ -35,13 +35,14 @@ import json
 import logging
 import operator
 import os
+import posixpath
 import tempfile
 import urlparse
 
 from storage_utils import is_swift_path
 from storage_utils import path
 from storage_utils import utils
-from storage_utils.third_party.path import Path
+from storage_utils.posix import PosixPath
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient.service import SwiftUploadObject
@@ -354,12 +355,12 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
 
 
 def _with_slash(p):
-    "Appends a trailing slash to a path if it doesn't have one"
-    return p if not p or p.endswith('/') else p + '/'
+    "Appends a trailing slash to a swift path if it doesn't have one"
+    return p if not p or p.endswith(posixpath.sep) else p + posixpath.sep
 
 
-def _posix_path_to_object_name(p):
-    """Given a posix path, consruct its object name.
+def file_name_to_object_name(p):
+    """Given a file path, consruct its object name.
 
     Any relative or absolute directory markers at the beginning of
     the path will be stripped, for example::
@@ -369,17 +370,22 @@ def _posix_path_to_object_name(p):
         .hidden_dir/file -> .hidden_dir/file
         /absolute_dir -> absolute_dir
 
+    Note that windows paths will have their back slashes changed to
+    forward slashes::
+
+        \my\windows\file -> my/windows/file
+
     Args:
         p (str): The input path
 
     Returns:
-        Path: The object name. An empty path will be returned in
+        PosixPath: The object name. An empty path will be returned in
             the case of the input path only consisting of absolute
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
-    p_parts = Path(p).expand().split('/')
+    p_parts = path(p).expand().split(os.sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    return Path('') if obj_start is None else Path('/'.join(p_parts[obj_start:]))
+    return PosixPath('') if obj_start is None else PosixPath(posixpath.sep.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
@@ -515,7 +521,7 @@ class SwiftPath(str):
 
     def __div__(self, rel):
         """Join two path components, adding a separator character if needed."""
-        return SwiftPath(os.path.join(self, rel))
+        return SwiftPath(posixpath.join(self, rel))
 
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
@@ -524,35 +530,35 @@ class SwiftPath(str):
         """Returns true if it cannot be determined if the path is a
         file or directory
         """
-        return not self.endswith('/') and not self.ext
+        return not self.endswith(posixpath.sep) and not self.ext
 
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
-        return Path(self).name
+        return PosixPath(self).name
 
     @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
-        return self.__class__(Path(self).parent)
+        return self.__class__(PosixPath(self).parent)
 
     @property
     def ext(self):
         """The extension of the file"""
-        return Path(self).ext
+        return PosixPath(self).ext
 
     def dirname(self):
         """The directory name of the path, mimicking path.py's dirname()"""
-        return self.__class__(Path(self).dirname())
+        return self.__class__(PosixPath(self).dirname())
 
     def basename(self):
         """The base name name of the path, mimicking path.py's basename()"""
-        return Path(self).basename()
+        return PosixPath(self).basename()
 
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings."""
         if len(self) > len(self.swift_drive):
-            return self[len(self.swift_drive):].split('/')
+            return self[len(self.swift_drive):].split(posixpath.sep)
         else:
             return []
 
@@ -570,16 +576,16 @@ class SwiftPath(str):
 
     @property
     def resource(self):
-        """Returns the resource as a ``path.Path`` object or None.
+        """Returns the resource as a ``PosixPath`` object or None.
 
         A resource can be a single object or a prefix to objects.
         Note that it's important to keep the trailing slash in a resource
         name for prefix queries.
         """
         parts = self._get_parts()
-        joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
+        joined_resource = posixpath.sep.join(parts[2:]) if len(parts) > 2 else None
 
-        return path(joined_resource) if joined_resource else None
+        return PosixPath(joined_resource) if joined_resource else None
 
     def _get_swift_connection_options(self, **options):
         """Returns options for constructing ``SwiftService`` and
@@ -827,9 +833,9 @@ class SwiftPath(str):
             # Swift doesn't allow a delimeter for tenant-level listing,
             # however, this isn't a problem for list_as_dir since a tenant
             # will only have containers
-            list_kwargs['delimiter'] = '/'
+            list_kwargs['delimiter'] = posixpath.sep
 
-            # Ensure that the prefix has a '/' at the end of it for listdir
+            # Ensure that the prefix has a slash at the end of it for listdir
             list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
 
         if self.container:
@@ -840,9 +846,10 @@ class SwiftPath(str):
             results = self._swift_connection_call(connection.get_account,
                                                   **list_kwargs)
 
-        path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
+        path_pre = SwiftPath('%s%s' % (self.swift_drive, tenant)) / (self.container or '')
         paths = list({
-            path_pre / (r.get('name') or r['subdir'].rstrip('/')) for r in results[1]
+            path_pre / (r.get('name') or r['subdir'].rstrip(posixpath.sep))
+            for r in results[1]
         })
 
         if num_objs_cond:
@@ -1183,7 +1190,7 @@ class SwiftPath(str):
         # resource directory to uploaded results.
         resource_base = _with_slash(self.resource) or path('')
         swift_upload_objects.extend([
-            SwiftUploadObject(f, object_name=resource_base / _posix_path_to_object_name(f))
+            SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
             for f in all_files_to_upload
         ])
 
@@ -1332,7 +1339,7 @@ class SwiftPath(str):
             {
                 'Account': 'AUTH_seq_upload_prod',
                 'Container': '2016-01',
-                'Object': Path('object.txt'),
+                'Object': PosixPath('object.txt'),
                 'Content-Type': 'application/octet-stream',
                 # The size of the object
                 'Content-Length': '112',
@@ -1423,5 +1430,5 @@ class SwiftPath(str):
 
     def normpath(self):
         "Normalize path following linux conventions"
-        normed = os.path.normpath('/' + str(self)[len(self.swift_drive):])[1:]
+        normed = os.path.normpath(posixpath.sep + str(self)[len(self.swift_drive):])[1:]
         return type(self)(self.swift_drive + normed)

@@ -1,7 +1,9 @@
 from contextlib import contextmanager
 import errno
 import logging
+import ntpath
 import os
+import posixpath
 import shlex
 from subprocess import check_call
 from swiftclient.service import SwiftUploadObject
