@@ -3,7 +3,6 @@ import logging
 import ntpath
 import os
 import posixpath
-import re
 import shlex
 import shutil
 from subprocess import check_call

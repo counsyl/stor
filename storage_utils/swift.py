@@ -384,9 +384,11 @@ def file_name_to_object_name(p):
             the case of the input path only consisting of absolute
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
-    p_parts = path(p).expand().splitdrive()[1].split(os.path.sep)
+    os_sep = os.path.sep
+    posix_sep = posixpath.sep
+    p_parts = path(p).expand().splitdrive()[1].split(os_sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    return PosixPath('') if obj_start is None else PosixPath(posixpath.sep.join(p_parts[obj_start:]))
+    return PosixPath('') if obj_start is None else PosixPath(posix_sep.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
