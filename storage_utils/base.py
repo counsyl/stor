@@ -9,8 +9,6 @@ class StorageUtilsPathMixin(object):
     Objects that utilize this mixin are able to be cross compatible when
     copying between storage systems, for example, copying from a posix file
     system to swift or vice versa.
-
-
     """
     copy = utils.copy
     copytree = utils.copytree

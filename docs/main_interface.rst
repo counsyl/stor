@@ -22,7 +22,7 @@ By using the ``path`` factory function, users can write code that is portable ac
    ``Path`` fully implements the above methods, but ``SwiftPath`` may only partially implement the method (e.g. only allowing prefix globbing). Read the ``SwiftPath`` documentation below about restrictions on the methods.
 
 .. NOTE::
-    Currently copying from object storage to windows is not supported.
+    Copying from object storage to windows is currently not supported.
 
 
 SwiftPath

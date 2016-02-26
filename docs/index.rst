@@ -4,7 +4,7 @@ Counsyl Storage Utils provides utilities for performing Posix/Windows file syste
 
 Path Quick Start
 ----------------
-The core of this project is a ``path`` factory function for accessing Posix/Window file systems or Swift object based storage in a unified manner. The returned paths behave in the same manner of those from `path.py <https://pypi.python.org/pypi/path.py>`_. The ``path`` factory can be used to instantiate a path to a Posix file system or to Swift object storage like so:
+The core of this project is a ``path`` factory function for accessing Posix/Windows file systems or Swift object based storage in a unified manner. The returned paths behave in the same manner of those from `path.py <https://pypi.python.org/pypi/path.py>`_. The ``path`` factory can be used to instantiate a path to a Posix file system or to Swift object storage like so:
 
 .. code-block:: python
 
@@ -31,7 +31,7 @@ In Depth Documentation
 For more detailed documentation about the various interfaces offered by Counsyl Storage Utils, check out the following:
 
 - :ref:`main_interface`: In depth documentation about the main interface.
-- :ref:`swift`: In depth documentation about swift access.
-- :ref:`posix`: In depth documentation about posix access.
-- :ref:`windows`: In depth documentation about windows access.
-- :ref:`testing`: Testing components for testing with swift storage.
+- :ref:`swift`: In depth documentation about Swift access.
+- :ref:`posix`: In depth documentation about Posix access.
+- :ref:`windows`: In depth documentation about Windows access.
+- :ref:`testing`: Testing components for testing with Swift storage.
