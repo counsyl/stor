@@ -357,7 +357,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
 
 def _with_slash(p):
     "Appends a trailing slash to a swift path if it doesn't have one"
-    return p if not p or p.endswith(posixpath.sep) else p + posixpath.sep
+    return p if not p or p.endswith('/') else p + '/'
 
 
 def file_name_to_object_name(p):
@@ -385,10 +385,9 @@ def file_name_to_object_name(p):
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
     os_sep = os.path.sep
-    posix_sep = posixpath.sep
     p_parts = path(p).expand().splitdrive()[1].split(os_sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    return PosixPath('') if obj_start is None else PosixPath(posix_sep.join(p_parts[obj_start:]))
+    return PosixPath('') if obj_start is None else PosixPath('/'.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
@@ -533,7 +532,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         """Returns true if it cannot be determined if the path is a
         file or directory
         """
-        return not self.endswith(posixpath.sep) and not self.ext
+        return not self.endswith('/') and not self.ext
 
     @property
     def name(self):
@@ -561,7 +560,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings."""
         if len(self) > len(self.swift_drive):
-            return self[len(self.swift_drive):].split(posixpath.sep)
+            return self[len(self.swift_drive):].split('/')
         else:
             return []
 
@@ -586,7 +585,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         name for prefix queries.
         """
         parts = self._get_parts()
-        joined_resource = posixpath.sep.join(parts[2:]) if len(parts) > 2 else None
+        joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
 
         return PosixPath(joined_resource) if joined_resource else None
 
@@ -836,7 +835,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
             # Swift doesn't allow a delimeter for tenant-level listing,
             # however, this isn't a problem for list_as_dir since a tenant
             # will only have containers
-            list_kwargs['delimiter'] = posixpath.sep
+            list_kwargs['delimiter'] = '/'
 
             # Ensure that the prefix has a slash at the end of it for listdir
             list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
@@ -851,7 +850,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
         path_pre = SwiftPath('%s%s' % (self.swift_drive, tenant)) / (self.container or '')
         paths = list({
-            path_pre / (r.get('name') or r['subdir'].rstrip(posixpath.sep))
+            path_pre / (r.get('name') or r['subdir'].rstrip('/'))
             for r in results[1]
         })
 
@@ -1422,7 +1421,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
     def expandvars(self):
         "Expand system environment variables in path"
-        return type(self)(os.path.expandvars(self))
+        return type(self)(posixpath.expandvars(self))
 
     def expand(self):
         "Expand variables and normalize path"
@@ -1430,5 +1429,5 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
     def normpath(self):
         "Normalize path following linux conventions"
-        normed = os.path.normpath(posixpath.sep + str(self)[len(self.swift_drive):])[1:]
+        normed = posixpath.normpath('/' + str(self)[len(self.swift_drive):])[1:]
         return type(self)(self.swift_drive + normed)
