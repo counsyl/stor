@@ -1061,6 +1061,11 @@ class TestFileNameToObjectName(SwiftTestCase):
         self.assertEquals(swift.file_name_to_object_name('.//poor//path//file'),
                           'poor/path/file')
 
+    @mock.patch.dict(os.environ, {'HOME': '/home/wes/'})
+    def test_path_w_env_var(self):
+        self.assertEquals(swift.file_name_to_object_name('$HOME/path//file'),
+                          'home/wes/path/file')
+
 
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
