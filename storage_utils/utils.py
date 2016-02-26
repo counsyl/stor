@@ -40,7 +40,7 @@ def is_windows_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return len(p) >= 3 and p[1:2] == ':\\'
+    return len(p) >= 3 and p[1:3] == ':\\'
 
 
 def is_posix_path(p):
