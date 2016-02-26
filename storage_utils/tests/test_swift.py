@@ -1033,12 +1033,12 @@ class TestDownload(SwiftTestCase):
 class TestFileNameToObjectName(SwiftTestCase):
     @mock.patch('os.path', ntpath)
     def test_abs_windows_path(self):
-        self.assertEquals(swift.file_name_to_object_name('C:\\windows\\path\\'),
+        self.assertEquals(swift.file_name_to_object_name('C:\windows\path\\'),
                           'windows/path')
 
     @mock.patch('os.path', ntpath)
     def test_rel_windows_path(self):
-        self.assertEquals(swift.file_name_to_object_name('.\\windows\\path\\'),
+        self.assertEquals(swift.file_name_to_object_name('.\windows\path\\'),
                           'windows/path')
 
     def test_abs_path(self):
@@ -1101,17 +1101,17 @@ class TestUpload(SwiftTestCase):
 
     @mock.patch('os.path', ntpath)
     def test_relative_windows_path(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['.\\relative_path\\file1']
+        mock_walk_files_and_dirs.return_value = [r'.\relative_path\file1']
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        swift_p.upload(['.\\relative_path\\file1'])
+        swift_p.upload([r'.\relative_path\file1'])
 
         upload_args = self.mock_swift.upload.call_args_list[0][0]
         self.assertEquals(len(upload_args), 2)
         self.assertEquals(upload_args[0], 'container')
         self.assertEquals([o.source for o in upload_args[1]],
-                          ['.\\relative_path\\file1'])
+                          [r'.\relative_path\file1'])
         self.assertEquals([o.object_name for o in upload_args[1]],
                           ['path/relative_path/file1'])
 
