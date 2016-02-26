@@ -69,7 +69,6 @@ SwiftPath
 
   .. automethod:: temp_url
 
-
 SwiftFile
 ---------
 
@@ -100,3 +99,9 @@ Exceptions
 .. autoexception:: ConfigurationError
 
 .. autoexception:: ConditionNotMetError
+
+
+Utilities
+---------
+
+.. autofunction:: file_name_to_object_name

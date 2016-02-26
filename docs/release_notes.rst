@@ -1,10 +1,19 @@
 Release Notes
 =============
 
+v5.1.0
+------
+
+* Added `storage_utils.is_windows_path` and `WindowsPath` for windows compatibility
+* Updated swift methods so that they always use forward slashes in paths, even if
+  objects are uploaded from windows
+* Added `swift.file_name_to_object_name` for converting file names on any system to
+  their associated object name
+
 v5.0.0
 ------
 
-* Default `SwiftPath.temp_url` to using `inline=True`, since that's the general
+* Default `SwiftPath.temp_url` to using ``inline=True``, since that's the general
   expectation for how we've used Apache filer / generally you expect URLs to
   render in-browser rather than default to attachment.
 
