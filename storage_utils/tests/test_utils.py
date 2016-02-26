@@ -1,6 +1,7 @@
 import storage_utils
+from storage_utils.posix import PosixPath
 from storage_utils.swift import SwiftPath
-from storage_utils.third_party.path import Path
+from storage_utils.windows import WindowsPath
 from storage_utils import utils
 import unittest
 
@@ -12,7 +13,11 @@ class TestPath(unittest.TestCase):
 
     def test_posix_path_returned(self):
         p = storage_utils.path('my/posix/path')
-        self.assertTrue(isinstance(p, Path))
+        self.assertTrue(isinstance(p, PosixPath))
+
+    def test_windows_path_returned(self):
+        p = storage_utils.path('C:\\my\\windows\\path')
+        self.assertTrue(isinstance(p, WindowsPath))
 
 
 class TestIsSwiftPath(unittest.TestCase):

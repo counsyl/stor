@@ -90,13 +90,23 @@ class TestCopytree(unittest.TestCase):
             utils.copytree(source, dest)
             self.assertTrue((dest / '1').exists())
 
+    def test_posix_destination_w_cmd(self):
+        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / 'source'
+            os.mkdir(source)
+            with open(source / '1', 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = tmp_d / 'my' / 'dest'
+            utils.copytree(source, dest, copy_cmd='cp -r')
+            self.assertTrue((dest / '1').exists())
+
     def test_posix_destination_already_exists(self):
         with storage_utils.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / '1'
-            with open(source, 'w') as tmp_file:
-                tmp_file.write('1')
+            source.makedirs_p()
 
-            with self.assertRaisesRegexp(OSError, 'already exists'):
+            with self.assertRaisesRegexp(OSError, 'exists'):
                 utils.copytree(source, tmp_d)
 
     def test_posix_destination_w_error(self):

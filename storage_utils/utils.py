@@ -1,7 +1,7 @@
 from contextlib import contextmanager
-import errno
 import logging
 import os
+import re
 import shlex
 import shutil
 from subprocess import check_call
@@ -30,7 +30,7 @@ def is_swift_path(p):
 def is_windows_path(p):
     """Determines if the path is a Windows path.
 
-    All supported windows paths start with a drive letter followed by :\
+    All supported windows paths start with a drive letter followed by :\\
 
     Note that storage utils does not current support relative windows paths.
 
@@ -40,7 +40,7 @@ def is_windows_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return len(p) >= 3 and p[1:3] == ':\\'
+    return re.match('^[a-zA-Z]:\\)*', p)
 
 
 def is_posix_path(p):
@@ -97,8 +97,8 @@ def path(p):
 def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
-    Note that this utility can be called from either swift or posix
-    paths created with `storage_utils.path`.
+    Note that this utility can be called from either swift, posix, or
+    windows paths created with `storage_utils.path`.
 
     Args:
         source (path|str): The source directory to copy from
@@ -144,11 +144,7 @@ def copy(source, dest, swift_retry_options=None):
             dest_file = dest if not dest.isdir() else dest / source.name
             source._download_object(dest_file, **swift_retry_options)
         else:
-            copy_cmd = ['cp' if is_posix_path(dest) else 'copy',
-                        str(source.abspath().expand()),
-                        str(dest.abspath().expand())]
-            logger.info('performing copy with command - %s', copy_cmd)
-            check_call(copy_cmd)
+            shutil.copy(source, dest)
     else:
         dest_file = dest if not dest.endswith('/') else dest / source.name
         if not dest_file.parent.container:
