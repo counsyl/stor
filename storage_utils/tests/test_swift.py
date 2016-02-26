@@ -1256,6 +1256,12 @@ class TestCopytree(SwiftTestCase):
         with self.assertRaises(ValueError):
             p.copytree('swift://swift/path')
 
+    @mock.patch('os.path', ntpath)
+    def test_copytree_windows_destination(self):
+        p = SwiftPath('swift://tenant/container')
+        with self.assertRaisesRegexp(ValueError, 'not supported'):
+            p.copytree(r'windows\path')
+
 
 class TestStat(SwiftTestCase):
     def test_tenant(self):

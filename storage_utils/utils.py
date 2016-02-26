@@ -215,6 +215,9 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
     if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
+            from storage_utils.windows import WindowsPath
+            if isinstance(dest, WindowsPath):
+                raise ValueError('swift copytree to windows is not supported')
             source.download(dest, **swift_download_options)
         else:
             if copy_cmd:
