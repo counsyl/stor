@@ -86,6 +86,9 @@ def path(p):
     if is_swift_path(p):
         from storage_utils.swift import SwiftPath
         return SwiftPath(p)
+    elif is_windows_path(p):
+        from storage_utils.windows import WindowsPath
+        return WindowsPath(p)
     else:
         from storage_utils.posix import PosixPath
         return PosixPath(p)
@@ -228,8 +231,6 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
     swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
-    if is_posix_path(dest) and dest.exists():
-        raise OSError(errno.EEXIST, 'destination already exists - "%s"' % dest)
 
     if is_posix_path(dest) or is_windows_path(dest):
         dest.expand().abspath().parent.makedirs_p()
