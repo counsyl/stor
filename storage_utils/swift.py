@@ -39,6 +39,7 @@ import posixpath
 import tempfile
 import urlparse
 
+from storage_utils import base
 from storage_utils import is_swift_path
 from storage_utils import path
 from storage_utils import utils
@@ -494,7 +495,7 @@ class SwiftFile(object):
                                           **self._swift_upload_kwargs)
 
 
-class SwiftPath(str):
+class SwiftPath(base.StorageUtilsPathMixin, str):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
@@ -1205,9 +1206,6 @@ class SwiftPath(str):
                                         self.container,
                                         swift_upload_objects,
                                         options=upload_options)
-
-    copy = utils.copy
-    copytree = utils.copytree
 
     @_swift_retry(exceptions=UnavailableError)
     def remove(self):

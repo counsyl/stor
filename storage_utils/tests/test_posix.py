@@ -104,7 +104,7 @@ class TestCopytree(unittest.TestCase):
             invalid_source = tmp_d / 'source'
             dest = tmp_d / 'my' / 'dest'
 
-            with self.assertRaises(subprocess.CalledProcessError):
+            with self.assertRaises(OSError):
                 utils.copytree(invalid_source, dest)
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
