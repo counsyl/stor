@@ -608,6 +608,32 @@ class TestList(SwiftTestCase):
                                           prefix=None,
                                           full_listing=True)
 
+    @mock.patch('os.path', ntpath)
+    def test_list_windows(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }, {
+            'name': 'path/to/resource3'
+        }, {
+            'name': 'path/to/resource4'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = list(swift_p.list())
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container/path/to/resource1',
+            'swift://tenant/container/path/to/resource2',
+            'swift://tenant/container/path/to/resource3',
+            'swift://tenant/container/path/to/resource4'
+        ])
+        mock_list.assert_called_once_with('container',
+                                          limit=None,
+                                          prefix='path',
+                                          full_listing=True)
+
     def test_list_multiple_return(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
@@ -1065,6 +1091,22 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(upload_args[0], 'container')
         self.assertEquals([o.source for o in upload_args[1]],
                           ['./relative_path/file1'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/relative_path/file1'])
+
+    @mock.patch('os.path', ntpath)
+    def test_relative_windows_path(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['.\\relative_path\\file1']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p.upload(['.\\relative_path\\file1'])
+
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['.\\relative_path\\file1'])
         self.assertEquals([o.object_name for o in upload_args[1]],
                           ['path/relative_path/file1'])
 

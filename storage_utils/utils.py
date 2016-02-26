@@ -32,9 +32,8 @@ def is_swift_path(p):
 def is_windows_path(p):
     """Determines if the path is a Windows path.
 
-    All supported windows paths start with a drive letter followed by :\\
-
-    Note that storage utils does not current support relative windows paths.
+    This utility assumes that a path is windows if its running on a windows
+    system and isn't a swift path
 
     Args:
         p (str): The path string
@@ -48,8 +47,8 @@ def is_windows_path(p):
 def is_posix_path(p):
     """Determines if the path is a posix path.
 
-    This utility assumes that all paths that aren't swift paths
-    are posix file system paths.
+    This utility assumes that a path is posix if its running on a posix
+    system and isn't a swift path
 
     Args:
         p (str): The path string
