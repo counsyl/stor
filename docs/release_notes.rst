@@ -1,10 +1,11 @@
 Release Notes
 =============
 
-v5.1.0
+v6.0.0
 ------
 
-* Added `storage_utils.is_windows_path` and `WindowsPath` for windows compatibility
+* Changed ``is_posix_path`` to  `storage_utils.is_filesystem_path`
+* Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows
 * Added `swift.file_name_to_object_name` for converting file names on any system to

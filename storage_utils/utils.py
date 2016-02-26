@@ -28,11 +28,8 @@ def is_swift_path(p):
     return p.startswith(SwiftPath.swift_drive)
 
 
-def is_windows_path(p):
-    """Determines if the path is a Windows path.
-
-    This utility assumes that a path is windows if its running on a windows
-    system and isn't a swift path
+def is_filesystem_path(p):
+    """Determines if the path is posix or windows filesystem.
 
     Args:
         p (str): The path string
@@ -40,22 +37,7 @@ def is_windows_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return not is_swift_path(p) and os.path == ntpath
-
-
-def is_posix_path(p):
-    """Determines if the path is a posix path.
-
-    This utility assumes that a path is posix if its running on a posix
-    system and isn't a swift path
-
-    Args:
-        p (str): The path string
-
-    Returns:
-        bool: True if p is a posix path, False otherwise.
-    """
-    return not is_swift_path(p) and os.path == posixpath
+    return not is_swift_path(p)
 
 
 def path(p):
@@ -86,10 +68,10 @@ def path(p):
     if is_swift_path(p):
         from storage_utils.swift import SwiftPath
         return SwiftPath(p)
-    elif is_windows_path(p):
+    elif os.path == ntpath:
         from storage_utils.windows import WindowsPath
         return WindowsPath(p)
-    elif is_posix_path(p):
+    elif os.path == posixpath:
         from storage_utils.posix import PosixPath
         return PosixPath(p)
     else:  # pragma: no cover
@@ -141,7 +123,7 @@ def copy(source, dest, swift_retry_options=None):
     if is_swift_path(dest) and dest.is_ambiguous():
         raise ValueError('swift destination must be file with extension or directory with slash')
 
-    if is_posix_path(dest) or is_windows_path(dest):
+    if is_filesystem_path(dest):
         if is_swift_path(source):
             dest_file = dest if not dest.isdir() else dest / source.name
             source._download_object(dest_file, **swift_retry_options)
@@ -230,7 +212,7 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
 
-    if is_posix_path(dest) or is_windows_path(dest):
+    if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
             source.download(dest, **swift_download_options)

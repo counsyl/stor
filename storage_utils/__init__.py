@@ -6,16 +6,14 @@ that the main functions below are the only ones directly used.
 instantiated).
 """
 
-from storage_utils.utils import is_posix_path
+from storage_utils.utils import is_filesystem_path
 from storage_utils.utils import is_swift_path
-from storage_utils.utils import is_windows_path
 from storage_utils.utils import NamedTemporaryDirectory
 from storage_utils.utils import path
 
 __all__ = [
-    'is_posix_path',
+    'is_filesystem_path',
     'is_swift_path',
-    'is_windows_path',
     'NamedTemporaryDirectory',
     'path'
 ]

@@ -31,12 +31,12 @@ class TestIsSwiftPath(unittest.TestCase):
         self.assertFalse(storage_utils.is_swift_path('my/posix/path'))
 
 
-class TestIsPosixPath(unittest.TestCase):
+class TestIsFilesystemPath(unittest.TestCase):
     def test_true(self):
-        self.assertTrue(storage_utils.is_posix_path('my/posix/path'))
+        self.assertTrue(storage_utils.is_filesystem_path('my/posix/path'))
 
     def test_false(self):
-        self.assertFalse(storage_utils.is_posix_path('swift://my/swift/path'))
+        self.assertFalse(storage_utils.is_filesystem_path('swift://my/swift/path'))
 
 
 class TestWalkFilesAndDirs(unittest.TestCase):
