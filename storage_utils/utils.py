@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 import logging
+import ntpath
 import os
+import posixpath
 import re
 import shlex
 import shutil
@@ -40,7 +42,7 @@ def is_windows_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return re.match('^[a-zA-Z]:\\)*', p)
+    return not is_swift_path(p) and os.path == ntpath
 
 
 def is_posix_path(p):
@@ -55,7 +57,7 @@ def is_posix_path(p):
     Returns:
         bool: True if p is a posix path, False otherwise.
     """
-    return not (is_swift_path(p) or is_windows_path(p))
+    return not is_swift_path(p) and os.path == posixpath
 
 
 def path(p):
@@ -89,9 +91,11 @@ def path(p):
     elif is_windows_path(p):
         from storage_utils.windows import WindowsPath
         return WindowsPath(p)
-    else:
+    elif is_posix_path(p):
         from storage_utils.posix import PosixPath
         return PosixPath(p)
+    else:  # pragma: no cover
+        assert False, 'path not compatible with storage utils'
 
 
 def copy(source, dest, swift_retry_options=None):

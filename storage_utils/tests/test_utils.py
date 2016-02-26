@@ -1,3 +1,5 @@
+import mock
+import ntpath
 import storage_utils
 from storage_utils.posix import PosixPath
 from storage_utils.swift import SwiftPath
@@ -15,7 +17,8 @@ class TestPath(unittest.TestCase):
         p = storage_utils.path('my/posix/path')
         self.assertTrue(isinstance(p, PosixPath))
 
-    def test_windows_path_returned(self):
+    @mock.patch('os.path', ntpath)
+    def test_abs_windows_path_returned(self):
         p = storage_utils.path('C:\\my\\windows\\path')
         self.assertTrue(isinstance(p, WindowsPath))
 

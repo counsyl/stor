@@ -4,7 +4,6 @@ import storage_utils
 from storage_utils import path
 from storage_utils import swift
 from storage_utils import utils
-import subprocess
 import tempfile
 import unittest
 

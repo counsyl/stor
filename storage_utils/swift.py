@@ -374,7 +374,7 @@ def file_name_to_object_name(p):
     Note that windows paths will have their back slashes changed to
     forward slashes::
 
-        \my\windows\file -> my/windows/file
+        C:\\my\\windows\\file -> my/windows/file
 
     Args:
         p (str): The input path
@@ -384,7 +384,7 @@ def file_name_to_object_name(p):
             the case of the input path only consisting of absolute
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
-    p_parts = path(p).expand().split(os.sep)
+    p_parts = path(p).expand().splitdrive()[1].split(os.path.sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
     return PosixPath('') if obj_start is None else PosixPath(posixpath.sep.join(p_parts[obj_start:]))
 

@@ -1,4 +1,5 @@
 import cStringIO
+import ntpath
 import os
 from tempfile import NamedTemporaryFile
 import unittest
@@ -1003,7 +1004,17 @@ class TestDownload(SwiftTestCase):
         self.assertEquals(options_passed['container_threads'], 30)
 
 
-class TestPosixPathToObjectName(SwiftTestCase):
+class TestFileNameToObjectName(SwiftTestCase):
+    @mock.patch('os.path', ntpath)
+    def test_abs_windows_path(self):
+        self.assertEquals(swift.file_name_to_object_name('C:\\windows\\path\\'),
+                          'windows/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_rel_windows_path(self):
+        self.assertEquals(swift.file_name_to_object_name('.\\windows\\path\\'),
+                          'windows/path')
+
     def test_abs_path(self):
         self.assertEquals(swift.file_name_to_object_name('/abs/path/'),
                           'abs/path')
