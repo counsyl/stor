@@ -1,3 +1,4 @@
+import logging
 import os
 import unittest
 import uuid
@@ -14,9 +15,13 @@ class BaseIntegrationTest(unittest.TestCase):
         if not os.environ.get('SWIFT_TEST_USERNAME'):
             raise unittest.SkipTest('SWIFT_TEST_USERNAME env var not set. Skipping integration test')
 
+        logging.getLogger('requests').setLevel(logging.CRITICAL)
+        logging.getLogger('swiftclient').setLevel(logging.CRITICAL)
+        logging.getLogger('keystoneclient').setLevel(logging.CRITICAL)
+
         swift.update_settings(username=os.environ.get('SWIFT_TEST_USERNAME'),
                               password=os.environ.get('SWIFT_TEST_PASSWORD'),
-                              num_retries=5)
+                              num_retries=0)
 
         self.test_container = path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
         if self.test_container.exists():
@@ -26,9 +31,7 @@ class BaseIntegrationTest(unittest.TestCase):
 
     def tearDown(self):
         super(BaseIntegrationTest, self).tearDown()
-        print 'removing container '
         self.test_container.rmtree()
-        print 'done removing container'
 
     def get_dataset_obj_names(self, num_test_files):
         return ['%s' % name for name in range(num_test_files)]
@@ -42,8 +45,49 @@ class BaseIntegrationTest(unittest.TestCase):
                 with open(name, 'w') as f:
                     f.write(self.generate_dataset_obj_contents(name, object_size))
 
+    def assertCorrectObjectContents(self, test_obj_name, which_test_obj, test_obj_size):
+        with open(test_obj_name, 'r') as test_obj:
+            contents = test_obj.read()
+            expected = self.generate_dataset_obj_contents(which_test_obj, test_obj_size)
+            self.assertEquals(contents, expected)
+
 
 class SwiftIntegrationTest(BaseIntegrationTest):
+    def test_copy_to_from_container(self):
+        num_test_objs = 5
+        test_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            for which_obj in self.get_dataset_obj_names(num_test_objs):
+                obj_path = path(self.test_container) / ('%s.txt' % which_obj)
+                path(which_obj).copy(obj_path)
+                obj_path.copy('copied_file')
+                self.assertCorrectObjectContents('copied_file', which_obj, test_obj_size)
+
+    def test_list_glob(self):
+        num_test_objs = 20
+        test_obj_size = 100
+        test_dir = self.test_container / 'test'
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            path('.').copytree(test_dir)
+
+        objs = set(test_dir.list(condition=lambda results: len(results) == num_test_objs))
+        expected_objs = {
+            test_dir / obj_name
+            for obj_name in self.get_dataset_obj_names(num_test_objs)
+        }
+        self.assertEquals(len(objs), num_test_objs)
+        self.assertEquals(objs, expected_objs)
+
+        expected_glob = {
+            test_dir / obj_name
+            for obj_name in self.get_dataset_obj_names(num_test_objs) if obj_name.startswith('1')
+        }
+        self.assertTrue(len(expected_glob) > 1)
+        globbed_objs = set(test_dir.glob('1*', condition=lambda results: len(results) == len(expected_glob)))
+        self.assertEquals(globbed_objs, expected_glob)
+
     def test_copytree_to_from_container(self):
         num_test_objs = 10
         test_obj_size = 100
@@ -57,10 +101,6 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             })
 
             # Verify contents of all downloaded test objects
-            for obj_name in self.get_dataset_obj_names(num_test_objs):
-                full_obj_name = path('test') / obj_name
-                self.assertTrue(full_obj_name.exists())
-                with open(full_obj_name, 'r') as test_obj:
-                    contents = test_obj.read()
-                    expected = self.generate_dataset_obj_contents(obj_name, test_obj_size)
-                    self.assertEquals(contents, expected)
+            for which_obj in self.get_dataset_obj_names(num_test_objs):
+                obj_path = path('test') / which_obj
+                self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
