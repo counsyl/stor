@@ -174,6 +174,16 @@ class UnauthorizedError(SwiftError):
     pass
 
 
+class ConflictError(SwiftError):
+    """Thrown when a 409 response is returned from swift
+
+    This error is thrown when deleting a container and
+    some object storage nodes report that the container
+    has objects while others don't.
+    """
+    pass
+
+
 class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
@@ -255,6 +265,8 @@ def _propagate_swift_exceptions(func):
                 raise UnauthorizedError(str(e), e)
             elif http_status == 404:
                 raise NotFoundError(str(e), e)
+            elif http_status == 409:
+                raise ConflictError(str(e), e)
             elif http_status == 503:
                 logger.error('unavailable error in swift operation - %s', str(e))
                 raise UnavailableError(str(e), e)

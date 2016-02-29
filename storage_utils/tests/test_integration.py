@@ -64,6 +64,26 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 obj_path.copy('copied_file')
                 self.assertCorrectObjectContents('copied_file', which_obj, test_obj_size)
 
+    def test_hidden_file_dir_copytree(self):
+        test_swift_dir = path(self.test_container) / 'test'
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            open('.hidden_file', 'w').close()
+            os.symlink('.hidden_file', 'symlink')
+            os.mkdir('.hidden_dir')
+            open('.hidden_dir/file1', 'w').close()
+            open('.hidden_dir/file2', 'w').close()
+            path('.').copytree(test_swift_dir)
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            test_swift_dir.copytree('test', swift_download_options={
+                'condition': lambda results: len(results) == 4
+            })
+            self.assertTrue(path('test/.hidden_file').isfile())
+            self.assertTrue(path('test/symlink').isfile())
+            self.assertTrue(path('test/.hidden_dir').isdir())
+            self.assertTrue(path('test/.hidden_dir/file1').isfile())
+            self.assertTrue(path('test/.hidden_dir/file2').isfile())
+
     def test_list_glob(self):
         num_test_objs = 20
         test_obj_size = 100
