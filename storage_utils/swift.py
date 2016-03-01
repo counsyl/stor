@@ -1169,7 +1169,7 @@ class SwiftPath(str):
                                         self.container,
                                         [self.resource])
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, ConflictError))
     def rmtree(self):
         """Removes a resource and all of its contents.
 
