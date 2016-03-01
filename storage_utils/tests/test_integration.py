@@ -1,7 +1,10 @@
 import logging
 import os
+import time
 import unittest
 import uuid
+
+import mock
 
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
@@ -21,7 +24,7 @@ class BaseIntegrationTest(unittest.TestCase):
 
         swift.update_settings(username=os.environ.get('SWIFT_TEST_USERNAME'),
                               password=os.environ.get('SWIFT_TEST_PASSWORD'),
-                              num_retries=0)
+                              num_retries=5)
 
         self.test_container = path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
         if self.test_container.exists():
@@ -103,6 +106,35 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             self.assertTrue(path('test/.hidden_dir').isdir())
             self.assertTrue(path('test/.hidden_dir/file1').isfile())
             self.assertTrue(path('test/.hidden_dir/file2').isfile())
+
+    def test_condition_failures(self):
+        num_test_objs = 20
+        test_obj_size = 100
+        test_dir = self.test_container / 'test'
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            path('.').copytree(test_dir)
+
+        # Verify a ConditionNotMet exception is thrown when attempting to list
+        # a file that hasn't been uploaded
+        expected_objs = {
+            test_dir / which_obj
+            for which_obj in self.get_dataset_obj_names(num_test_objs + 1)
+        }
+
+        with mock.patch('time.sleep') as mock_sleep:
+            with self.assertRaises(swift.ConditionNotMetError):
+                test_dir.list(condition=lambda results: expected_objs == set(results))
+            self.assertTrue(swift.num_retries > 0)
+            self.assertEquals(len(mock_sleep.call_args_list), swift.num_retries)
+
+        # Verify that the condition passes when excluding the non-extant file
+        expected_objs = {
+            test_dir / which_obj
+            for which_obj in self.get_dataset_obj_names(num_test_objs)
+        }
+        objs = test_dir.list(condition=lambda results: expected_objs == set(results))
+        self.assertEquals(expected_objs, set(objs))
 
     def test_list_glob(self):
         num_test_objs = 20
