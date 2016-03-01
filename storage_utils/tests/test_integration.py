@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 import unittest
 import uuid
 
@@ -16,7 +15,8 @@ class BaseIntegrationTest(unittest.TestCase):
         super(BaseIntegrationTest, self).setUp()
 
         if not os.environ.get('SWIFT_TEST_USERNAME'):
-            raise unittest.SkipTest('SWIFT_TEST_USERNAME env var not set. Skipping integration test')
+            raise unittest.SkipTest(
+                'SWIFT_TEST_USERNAME env var not set. Skipping integration test')
 
         # Disable loggers so nose output wont be trashed
         logging.getLogger('requests').setLevel(logging.CRITICAL)
@@ -96,7 +96,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             })
 
             # Verify there are five segments
-            segment_container = path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)
+            segment_container = path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
             objs = set(segment_container.list(condition=lambda results: len(results) == 5))
             self.assertEquals(len(objs), 5)
 
@@ -107,7 +107,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
 
     def test_hidden_file_nested_dir_copytree(self):
         test_swift_dir = path(self.test_container) / 'test'
-        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+        with NamedTemporaryDirectory(change_dir=True):
             open('.hidden_file', 'w').close()
             os.symlink('.hidden_file', 'symlink')
             os.mkdir('.hidden_dir')
@@ -116,7 +116,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             open('.hidden_dir/nested/file2', 'w').close()
             path('.').copytree(test_swift_dir)
 
-        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+        with NamedTemporaryDirectory(change_dir=True):
             test_swift_dir.copytree('test', swift_download_options={
                 'condition': lambda results: len(results) == 4
             })
@@ -177,7 +177,8 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             for obj_name in self.get_dataset_obj_names(num_test_objs) if obj_name.startswith('1')
         }
         self.assertTrue(len(expected_glob) > 1)
-        globbed_objs = set(test_dir.glob('1*', condition=lambda results: len(results) == len(expected_glob)))
+        globbed_objs = set(
+            test_dir.glob('1*', condition=lambda results: len(results) == len(expected_glob)))
         self.assertEquals(globbed_objs, expected_glob)
 
     def test_copytree_to_from_container(self):
