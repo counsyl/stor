@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v6.1.0
+------
+
+* Integration tests are part of package's tests
+* Addition of `swift.ConflictError` exception, which is thrown when storage
+  nodes have consistency issue deleting container
+* Retry logic on `SwiftPath.rmtree` so that container deletes will retry
+  when hitting a `swift.ConflictError`
+
 v6.0.0
 ------
 
