@@ -64,6 +64,26 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 obj_path.copy('copied_file')
                 self.assertCorrectObjectContents('copied_file', which_obj, test_obj_size)
 
+    def test_static_large_obj_copy(self):
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            segment_size = 1048576
+            obj_size = segment_size * 4 + 100
+            self.create_dataset(tmp_d, 1, obj_size)
+            obj_path = path(tmp_d) / self.get_dataset_obj_names(1)[0]
+            obj_path.copy(self.test_container / 'large_object.txt', swift_retry_options={
+                'segment_size': segment_size
+            })
+
+            # Verify there are five segments
+            segment_container = path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)
+            objs = set(segment_container.list(condition=lambda results: len(results) == 5))
+            self.assertEquals(len(objs), 5)
+
+            # Copy back the large object and verify its contents
+            obj_path = path(tmp_d) / 'large_object.txt'
+            path(self.test_container / 'large_object.txt').copy(obj_path)
+            self.assertCorrectObjectContents(obj_path, self.get_dataset_obj_names(1)[0], obj_size)
+
     def test_hidden_file_dir_copytree(self):
         test_swift_dir = path(self.test_container) / 'test'
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
