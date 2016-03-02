@@ -2,10 +2,26 @@ import mock
 import os
 import storage_utils
 from storage_utils import path
+from storage_utils import posix
 from storage_utils import swift
 from storage_utils import utils
+from storage_utils import windows
 import tempfile
 import unittest
+
+
+class TestDiv(unittest.TestCase):
+    def test_success(self):
+        p = posix.PosixPath('my/path') / 'other/path'
+        self.assertEquals(p, posix.PosixPath('my/path/other/path'))
+
+    def test_w_windows_path(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot join paths'):
+            posix.PosixPath('my/path') / windows.WindowsPath(r'other\path')
+
+    def test_w_swift_component(self):
+        p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
+        self.assertEquals(p, posix.PosixPath('my/path/name'))
 
 
 class TestCopy(unittest.TestCase):

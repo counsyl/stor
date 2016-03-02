@@ -521,12 +521,9 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     def __add__(self, more):
         return SwiftPath(super(SwiftPath, self).__add__(more))
 
-    def __div__(self, rel):
-        """Join two path components, adding a separator character if needed."""
-        return SwiftPath(posixpath.join(self, rel))
-
-    # Make the / operator work even when true division is enabled.
-    __truediv__ = __div__
+    @property
+    def path_module(self):
+        return posixpath
 
     def is_ambiguous(self):
         """Returns true if it cannot be determined if the path is a

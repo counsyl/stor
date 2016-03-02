@@ -13,6 +13,20 @@ class StorageUtilsPathMixin(object):
     copy = utils.copy
     copytree = utils.copytree
 
+    @property
+    def path_module(self):
+        """The path module used for path manipulation functions"""
+        raise NotImplementedError('must implement path_module')  # pragma: no cover
+
+    def __div__(self, rel):
+        """Join two path components, adding a separator character if needed."""
+        if isinstance(rel, StorageUtilsPathMixin) and rel.path_module != self.path_module:
+            raise ValueError('cannot join paths with different path modules')
+        return type(self)(self.path_module.join(self, rel))
+
+    # Make the / operator work even when true division is enabled.
+    __truediv__ = __div__
+
 
 class StorageUtilsPath(StorageUtilsPathMixin, Path):
     """
@@ -34,6 +48,10 @@ class StorageUtilsPath(StorageUtilsPathMixin, Path):
     the docs for these methods, assume ``src`` references ``self``,
     the Path instance.
     """
+    @property
+    def path_module(self):
+        return self.module
+
     def open(self, *args, **kwargs):
         """
         Opens a path and retains interface compatibility with
