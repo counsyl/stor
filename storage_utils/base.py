@@ -1,5 +1,3 @@
-import posixpath
-
 from storage_utils import utils
 from storage_utils.third_party.path import ClassProperty
 from storage_utils.third_party.path import Path
