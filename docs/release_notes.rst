@@ -4,7 +4,8 @@ Release Notes
 v6.0.0
 ------
 
-* Changed ``is_posix_path`` to  `storage_utils.is_filesystem_path`
+* Renamed `storage_utils.is_posix_path` to `storage_utils.is_filesystem_path` but
+  kept `storage_utils.is_posix_path` for backwards compatibility
 * Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows

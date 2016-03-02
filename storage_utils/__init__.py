@@ -11,8 +11,13 @@ from storage_utils.utils import is_swift_path
 from storage_utils.utils import NamedTemporaryDirectory
 from storage_utils.utils import path
 
+
+# For compatibility with earlier versions of storage utils
+is_posix_path = is_filesystem_path
+
 __all__ = [
     'is_filesystem_path',
+    'is_posix_path',
     'is_swift_path',
     'NamedTemporaryDirectory',
     'path'
