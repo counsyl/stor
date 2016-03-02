@@ -502,6 +502,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     with a similar interface to the path library.
     """
     swift_drive = drive = 'swift://'
+    path_module = posixpath
 
     def __init__(self, swift):
         """Validates swift path is in the proper format.
@@ -516,14 +517,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         return super(SwiftPath, self).__init__(swift)
 
     def __repr__(self):
-        return 'SwiftPath("%s")' % self
-
-    def __add__(self, more):
-        return SwiftPath(super(SwiftPath, self).__add__(more))
-
-    @property
-    def path_module(self):
-        return posixpath
+        return '%s("%s")' % (type(self).__name__, self)
 
     def is_ambiguous(self):
         """Returns true if it cannot be determined if the path is a
@@ -539,7 +533,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
-        return self.__class__(PosixPath(self).parent)
+        return self.path_class(PosixPath(self).parent)
 
     @property
     def ext(self):
@@ -548,7 +542,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
     def dirname(self):
         """The directory name of the path, mimicking path.py's dirname()"""
-        return self.__class__(PosixPath(self).dirname())
+        return self.path_class(PosixPath(self).dirname())
 
     def basename(self):
         """The base name name of the path, mimicking path.py's basename()"""
@@ -1418,7 +1412,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
     def expandvars(self):
         "Expand system environment variables in path"
-        return type(self)(posixpath.expandvars(self))
+        return self.path_class(posixpath.expandvars(self))
 
     def expand(self):
         "Expand variables and normalize path"
@@ -1427,4 +1421,4 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     def normpath(self):
         "Normalize path following linux conventions"
         normed = posixpath.normpath('/' + str(self)[len(self.swift_drive):])[1:]
-        return type(self)(self.swift_drive + normed)
+        return self.path_class(self.swift_drive + normed)

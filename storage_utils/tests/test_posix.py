@@ -24,6 +24,20 @@ class TestDiv(unittest.TestCase):
         self.assertEquals(p, posix.PosixPath('my/path/name'))
 
 
+class TestAdd(unittest.TestCase):
+    def test_success(self):
+        p = posix.PosixPath('my/path') + 'other/path'
+        self.assertEquals(p, posix.PosixPath('my/pathother/path'))
+
+    def test_w_windows_path(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot add paths'):
+            posix.PosixPath('my/path') + windows.WindowsPath(r'other\path')
+
+    def test_w_swift_component(self):
+        p = posix.PosixPath('my/path') + swift.SwiftPath('swift://t/c/name').name
+        self.assertEquals(p, posix.PosixPath('my/pathname'))
+
+
 class TestCopy(unittest.TestCase):
     def test_posix_dir_destination(self):
         with storage_utils.NamedTemporaryDirectory() as tmp_d:
