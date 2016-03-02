@@ -387,7 +387,8 @@ def file_name_to_object_name(p):
     os_sep = os.path.sep
     p_parts = path(p).expand().splitdrive()[1].split(os_sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    return PosixPath('') if obj_start is None else PosixPath('/'.join(p_parts[obj_start:]))
+    parts_class = SwiftPath.parts_class
+    return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
@@ -503,6 +504,8 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     """
     swift_drive = drive = 'swift://'
     path_module = posixpath
+    # Parts of a swift path are returned using this class
+    parts_class = PosixPath
 
     def __init__(self, swift):
         """Validates swift path is in the proper format.
@@ -528,7 +531,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
-        return PosixPath(self).name
+        return self.parts_class(PosixPath(self).name)
 
     @property
     def parent(self):
@@ -546,7 +549,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
     def basename(self):
         """The base name name of the path, mimicking path.py's basename()"""
-        return PosixPath(self).basename()
+        return self.parts_class(PosixPath(self).basename())
 
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings."""
@@ -578,7 +581,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         parts = self._get_parts()
         joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
 
-        return PosixPath(joined_resource) if joined_resource else None
+        return self.parts_class(joined_resource) if joined_resource else None
 
     def _get_swift_connection_options(self, **options):
         """Returns options for constructing ``SwiftService`` and
