@@ -37,6 +37,7 @@ import operator
 import os
 import tempfile
 import threading
+import urlparse
 
 from storage_utils import is_swift_path
 from storage_utils import path
@@ -46,6 +47,7 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
 from swiftclient.service import SwiftUploadObject
+from swiftclient.utils import generate_temp_url
 
 
 logger = logging.getLogger(__name__)
@@ -77,6 +79,12 @@ If not set, the ``OS_PASSWORD`` environment variable will be used.
 # singleton that collects together auth tokens for storage URLs
 _cached_auth_token_map = {}
 _singleton_lock = threading.Lock()
+
+temp_url_key = os.environ.get('OS_TEMP_URL_KEY')
+"""The key for generating temporary URLs
+
+If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
+"""
 
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
@@ -114,8 +122,8 @@ def update_settings(**settings):
     Args:
         **settings: keyword arguments for settings. Can
             include settings for auth_url, username,
-            password, initial_retry_sleep, num_retries,
-            and retry_sleep_function.
+            password, temp_url_key, initial_retry_sleep,
+            num_retries, and retry_sleep_function.
 
     Examples:
 
@@ -708,6 +716,50 @@ class SwiftPath(str):
                                                        self.container,
                                                        self.resource)
         return content
+
+    def temp_url(self, lifetime=300, method='GET', inline=True, filename=None):
+        """Obtains a temporary URL to an object.
+
+        Args:
+            lifetime (int): The time (in seconds) the temporary
+                URL will be valid
+            method (str): The HTTP method that can be used on
+                the temporary URL
+            inline (bool, default True): If False, URL will have a
+                Content-Disposition header that causes browser to download as
+                attachment.
+            filename (str, optional): A urlencoded filename to use for
+                attachment, otherwise defaults to object name
+        """
+        global temp_url_key, auth_url
+
+        if not self.resource:
+            raise ValueError('can only create temporary URL on object')
+        if not temp_url_key:
+            raise ValueError(
+                'a temporary url key must be set with update_settings(temp_url_key=<KEY> '
+                'or by setting the OS_TEMP_URL_KEY environment variable')
+        if not auth_url:
+            raise ValueError(
+                'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
+                'or by setting the OS_AUTH_URL environment variable')
+
+        obj_path = '/v1/%s' % self[len(self.swift_drive):]
+        obj_url = generate_temp_url(obj_path, lifetime, temp_url_key, method)
+        obj_url_parts = urlparse.urlparse(obj_url)
+        query = obj_url_parts.query.split('&')
+        if inline:
+            query.append('inline')
+        if filename:
+            query.append('filename=%s' % filename)
+
+        auth_url_parts = urlparse.urlparse(auth_url)
+        return urlparse.urlunparse((auth_url_parts.scheme,
+                                    auth_url_parts.netloc,
+                                    obj_url_parts.path,
+                                    auth_url_parts.params,
+                                    '&'.join(query),
+                                    auth_url_parts.fragment))
 
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
