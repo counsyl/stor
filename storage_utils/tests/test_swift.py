@@ -808,6 +808,60 @@ class TestExists(SwiftTestCase):
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix='path')
 
+    def test_directory_exists(self):
+        pass
+
+    def test_matching_prefix_path_does_not_count(self):
+        swift_p = SwiftPath('swift://tenant/container/myprefix')
+        self.mock_swift_conn.get_container.return_value = ({}, [{
+            'name': 'myprefix_123.txt'
+        }])
+        result = swift_p.exists()
+        self.assertFalse(result)
+
+    def test_also_checks_for_subdirs(self):
+        swift_p = SwiftPath('swift://tenant/XYZ/analysis')
+        self.mock_swift_conn.get_container.side_effect = [
+            ({}, [{'name': 'analysis.log'}]),
+            ({}, [{'name': 'analysis/alignments/s_1_AAAAA.bam'}]),
+        ]
+        result = swift_p.exists()
+        self.assertTrue(result)
+
+    def test_trailing_slash_semantics_in_self(self):
+        swift_p = SwiftPath('swift://tenant/XYZ/analysis/')
+        self.mock_swift_conn.get_container.side_effect = [
+            ({}, [{'name': 'analysis/alignments/s_1_AAAAA.bam'}]),
+        ]
+        result = swift_p.exists()
+        self.assertTrue(result)
+        self.mock_swift_conn.assert_called_with('XYZ', full_listing=False,
+                                                limit=1,
+                                                prefix='XYZ/analysis/')
+
+        swift_p = SwiftPath('swift://tenant/XYZ/analysis')
+        self.mock_swift_conn.get_container.reset_mock()
+        self.mock_swift_conn.get_container.side_effect = [
+            ({}, [{'name': 'analysis.log'}]),
+            ({}, [{'name': 'analysis/alignments/s_1_AAAAA.bam'}]),
+        ]
+        result = swift_p.exists()
+        self.assertTrue(result)
+        self.mock_swift_conn.assert_has_calls([
+            mock.call('XYZ', full_listing=False, limit=1,
+                       prefix='XYZ/analysis'),
+            mock.call('XYZ', full_listing=False, limit=1,
+                       prefix='XYZ/analysis/'),
+        ])
+
+    def test_trailing_slash_in_first_result(self):
+        swift_p = SwiftPath('swift://tenant/XYZ/analysis')
+        self.mock_swift_conn.get_container.side_effect = [
+            ({}, [{'name': 'analysis/'}]),
+        ]
+        result = swift_p.exists()
+        self.assertTrue(result)
+
 
 class TestDownloadObject(SwiftTestCase):
     def test_container(self):
