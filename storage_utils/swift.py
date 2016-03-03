@@ -305,6 +305,8 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
 
 def _with_trailing_slash(p):
     "Returns a path with a single trailing slash"
+    if not p:
+        return p
     return type(p)(p.rstrip('/') + '/')
 
 

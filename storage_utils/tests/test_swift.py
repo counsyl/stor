@@ -849,9 +849,9 @@ class TestExists(SwiftTestCase):
         self.assertTrue(result)
         self.mock_swift_conn.assert_has_calls([
             mock.call('XYZ', full_listing=False, limit=1,
-                       prefix='XYZ/analysis'),
+                      prefix='XYZ/analysis'),
             mock.call('XYZ', full_listing=False, limit=1,
-                       prefix='XYZ/analysis/'),
+                      prefix='XYZ/analysis/'),
         ])
 
     def test_trailing_slash_in_first_result(self):
