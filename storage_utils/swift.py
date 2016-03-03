@@ -876,30 +876,29 @@ class SwiftPath(str):
             SwiftError: A non-404 swift client error occurred.
         """
         try:
-            first_result = path(self.rstrip('/')).first(num_retries=0)
-            if not first_result:
-                return False
+            # first see if there is a specific corresponding object
+            if self.stat():
+                return True
+        except NotFoundError:
+            pass
+        try:
+            # otherwise we could be a directory, so try to grab first
+            # file/subfolder
+            first_result = (self.rstrip('/') + '/').first()
         except NotFoundError:
             return False
+        # i.e., if we're a container
         if not self.resource:
             return bool(first_result)
+        # finally, walk parents of first_result and see if any of them are a
+        # match (TODO (jtratner): replace with simple if
+        # self.relpathto(first_result))
         first_result = path(first_result.rstrip('/'))
         comparison_path = path(self.rstrip('/'))
-        # see if we match parent components
         while first_result.resource:
-            print first_result
             first_result = first_result.parent
             if first_result == comparison_path:
                 return True
-        # finally, see if we have a directory path that overlaps with a file
-        # name, e.g. swift://A/C/t1.txt and swift://A/C/t/another.txt, since
-        # '1' comes before '/'
-        try:
-            first_directory = (self + '/').first(num_retries=0)
-            if first_directory and path(first_directory.rstrip('/')) == self:
-                return True
-        except NotFoundError:
-            return False
         return False
 
     @_swift_retry(exceptions=(UnavailableError))
