@@ -63,7 +63,7 @@ clean:
 
 .PHONY: clean-docs
 clean-docs:
-	cd docs && make clean
+	$(WITH_VENV) cd docs && make clean
 
 
 .PHONY: teardown
