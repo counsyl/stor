@@ -126,3 +126,5 @@ Exceptions
 .. autoexception:: ConfigurationError
 
 .. autoexception:: ConditionNotMetError
+
+.. autoexception:: ConflictError

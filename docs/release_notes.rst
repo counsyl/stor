@@ -4,6 +4,11 @@ Release Notes
 v6.0.0
 ------
 
+* Integration tests are part of package's tests
+* Addition of `swift.ConflictError` exception, which is thrown when storage
+  nodes have consistency issue deleting container
+* Retry logic on `SwiftPath.rmtree` so that container deletes will retry
+  when hitting a `swift.ConflictError`
 * Swift conditions are now functions that take results and return a Boolean.
 * `SwiftPath.download` returns a list of downloaded paths
 

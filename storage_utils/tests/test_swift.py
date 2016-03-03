@@ -1396,6 +1396,17 @@ class TestRmtree(SwiftTestCase):
         with self.assertRaisesRegexp(ValueError, 'include container'):
             swift_p.rmtree()
 
+    @mock.patch('time.sleep', autospec=True)
+    def test_rmtree_confict(self, mock_sleep, mock_list):
+        self.mock_swift.delete.side_effect = ClientException('conflict',
+                                                             http_status=409)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.ConflictError):
+            swift_p.rmtree(num_retries=5)
+
+        self.assertEquals(len(mock_sleep.call_args_list), 5)
+
     def test_w_only_container(self, mock_list):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
