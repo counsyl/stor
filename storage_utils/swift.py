@@ -303,9 +303,9 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
-def _with_slash(p):
-    "Appends a trailing slash to a path if it doesn't have one"
-    return p if not p or p.endswith('/') else p + '/'
+def _with_trailing_slash(p):
+    "Returns a path with a single trailing slash"
+    return type(p)(p.rstrip('/') + '/')
 
 
 def _posix_path_to_object_name(p):
@@ -780,7 +780,7 @@ class SwiftPath(str):
             list_kwargs['delimiter'] = '/'
 
             # Ensure that the prefix has a '/' at the end of it for listdir
-            list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
+            list_kwargs['prefix'] = _with_trailing_slash(list_kwargs['prefix'])
 
         if self.container:
             results = self._swift_connection_call(connection.get_container,
@@ -884,7 +884,7 @@ class SwiftPath(str):
         try:
             # otherwise we could be a directory, so try to grab first
             # file/subfolder
-            return bool(path(self.rstrip('/') + '/').first(num_retries=0))
+            return bool(_with_trailing_slash(self).first(num_retries=0))
         except NotFoundError:
             return False
 
@@ -988,14 +988,14 @@ class SwiftPath(str):
         }
 
         for obj in objs_to_download:
-            if is_swift_path(obj) and not obj.startswith(_with_slash(self)):
+            if is_swift_path(obj) and not obj.startswith(_with_trailing_slash(self)):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
         download_options = {
-            'prefix': _with_slash(self.resource),
+            'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
@@ -1052,7 +1052,7 @@ class SwiftPath(str):
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
         download_options = {
-            'prefix': _with_slash(self.resource),
+            'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
@@ -1134,7 +1134,7 @@ class SwiftPath(str):
 
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results.
-        resource_base = _with_slash(self.resource) or path('')
+        resource_base = _with_trailing_slash(self.resource) or path('')
         swift_upload_objects.extend([
             SwiftUploadObject(f, object_name=resource_base / _posix_path_to_object_name(f))
             for f in all_files_to_upload
