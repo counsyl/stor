@@ -366,8 +366,9 @@ def _propagate_swift_exceptions(func):
                 raise FailedUploadError(str(e), e)
             elif 'Unauthorized.' in str(e):
                 # Swiftclient catches keystone auth errors at
-                # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536
-                # Parse the message since they dont bubble the exception or provide more information
+                # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
+                # Parse the message since they don't bubble the exception or
+                # provide more information
                 logger.warning('auth error in swift operation - %s', str(e))
                 raise AuthenticationError(str(e), e)
             else:
@@ -1421,7 +1422,6 @@ class SwiftPath(str):
         if not self.container or self.resource:
             raise ValueError('post only works on container paths')
 
-        service = self._get_swift_service()
         return self._swift_service_call('post',
                                         container=self.container,
                                         options=options)
