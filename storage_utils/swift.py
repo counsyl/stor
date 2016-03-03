@@ -875,6 +875,7 @@ class SwiftPath(str):
         Raises:
             SwiftError: A non-404 swift client error occurred.
         """
+        first_result = None
         try:
             # first see if there is a specific corresponding object
             if self.stat():
@@ -886,6 +887,8 @@ class SwiftPath(str):
             # file/subfolder
             first_result = path(self.rstrip('/') + '/').first()
         except NotFoundError:
+            return False
+        if not first_result:
             return False
         # i.e., if we're a container
         if not self.resource:
