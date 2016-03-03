@@ -30,6 +30,7 @@ the `SwiftPath` class.
 from backoff.backoff import with_backoff
 from cached_property import cached_property
 import cStringIO
+import copy
 from functools import wraps
 import json
 import logging
@@ -139,8 +140,7 @@ def update_settings(**settings):
             raise ValueError('invalid setting "%s"' % setting)
         globals()[setting] = value
 
-    with _singleton_lock:
-        _cached_auth_token_map.clear()
+    _clear_cached_auth_credentials()
 
 
 def _get_or_create_auth_credentials(tenant_name):
@@ -162,6 +162,11 @@ def _get_or_create_auth_credentials(tenant_name):
         with _singleton_lock:
             _cached_auth_token_map[tenant_name] = creds
         return creds
+
+
+def _clear_cached_auth_credentials():
+    with _singleton_lock:
+        _cached_auth_token_map.clear()
 
 
 class SwiftError(Exception):
@@ -195,6 +200,15 @@ class FailedUploadError(UnavailableError):
 
 class UnauthorizedError(SwiftError):
     """Thrown when a 403 response is returned from swift"""
+    pass
+
+
+class AuthenticationError(SwiftError):
+    """Thrown when a client has improper authentication credentials.
+
+    Swiftclient throws this error when trying to authenticate with
+    the keystone client. This is similar to a 401 HTTP response.
+    """
     pass
 
 
@@ -350,10 +364,29 @@ def _propagate_swift_exceptions(func):
                 # Treat this as a FailedUploadError
                 logger.error('upload error in swift put_object operation - %s', str(e))
                 raise FailedUploadError(str(e), e)
+            elif 'Unauthorized.' in str(e):
+                # Swiftclient catches keystone auth errors at
+                # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536
+                # Parse the message since they dont bubble the exception or provide more information
+                logger.warning('auth error in swift operation - %s', str(e))
+                raise AuthenticationError(str(e), e)
             else:
                 logger.error('unexpected swift error - %s', str(e))
                 raise SwiftError(str(e), e)
 
+    return wrapper
+
+
+def _retry_on_cached_auth_err(func):
+    """Retry a function with cleared auth credentials on AuthenticationError"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except AuthenticationError:
+            logger.info('auth failed, retrying with cleared auth cache')
+            _clear_cached_auth_credentials()
+            return func(*args, **kwargs)
     return wrapper
 
 
@@ -674,15 +707,23 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return swift_service.get_conn(conn_opts)
 
+    @_retry_on_cached_auth_err
     @_propagate_swift_exceptions
-    def _swift_connection_call(self, method, *args, **kwargs):
-        """Runs a method call on a ``Connection`` object."""
+    def _swift_connection_call(self, method_name, *args, **kwargs):
+        """Instantiates a ``Connection`` object and runs ``method_name``."""
+        connection = self._get_swift_connection()
+        method = getattr(connection, method_name)
         return method(*args, **kwargs)
 
+    @_retry_on_cached_auth_err
     @_propagate_swift_exceptions
-    def _swift_service_call(self, method, *args, **kwargs):
-        """Runs a method call on a ``SwiftService`` object."""
-        results = method(*args, **kwargs)
+    def _swift_service_call(self, method_name, *args, **kwargs):
+        """Instantiates a ``SwiftService`` object and runs ``method_name``."""
+        method_options = copy.deepcopy(kwargs)
+        service_options = method_options.pop('_service_options', {})
+        service = self._get_swift_service(**service_options)
+        method = getattr(service, method_name)
+        results = method(*args, **method_options)
 
         results = [results] if isinstance(results, dict) else list(results)
         for r in results:
@@ -703,8 +744,7 @@ class SwiftPath(str):
         information about configuring retry logic at the module or method
         level.
         """
-        connection = self._get_swift_connection()
-        headers, content = self._swift_connection_call(connection.get_object,
+        headers, content = self._swift_connection_call('get_object',
                                                        self.container,
                                                        self.resource)
         return content
@@ -785,7 +825,6 @@ class SwiftPath(str):
             ConditionNotMetError: Results were returned, but they did not
                 meet the num_objs_cond condition.
         """
-        connection = self._get_swift_connection()
         tenant = self.tenant
         prefix = self.resource
         full_listing = limit is None
@@ -812,11 +851,11 @@ class SwiftPath(str):
             list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
 
         if self.container:
-            results = self._swift_connection_call(connection.get_container,
+            results = self._swift_connection_call('get_container',
                                                   self.container,
                                                   **list_kwargs)
         else:
-            results = self._swift_connection_call(connection.get_account,
+            results = self._swift_connection_call('get_account',
                                                   **list_kwargs)
 
         path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
@@ -931,8 +970,7 @@ class SwiftPath(str):
         if not self.resource:
             raise ValueError('can only call download_object on object path')
 
-        service = self._get_swift_service()
-        self._swift_service_call(service.download,
+        self._swift_service_call('download',
                                  container=self.container,
                                  objects=[self.resource],
                                  options={'out_file': out_file})
@@ -1017,14 +1055,17 @@ class SwiftPath(str):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
-        service = self._get_swift_service(object_dd_threads=object_threads,
-                                          container_threads=container_threads)
+        service_options = {
+            'object_dd_threads': object_threads,
+            'container_threads': container_threads
+        }
         download_options = {
             'prefix': _with_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
-        results = self._swift_service_call(service.download,
+        results = self._swift_service_call('download',
+                                           _service_options=service_options,
                                            container=self.container,
                                            objects=objs_to_download.values(),
                                            options=download_options)
@@ -1072,15 +1113,18 @@ class SwiftPath(str):
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
 
-        service = self._get_swift_service(object_dd_threads=object_threads,
-                                          container_threads=container_threads)
+        service_options = {
+            'object_dd_threads': object_threads,
+            'container_threads': container_threads
+        }
         download_options = {
             'prefix': _with_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
-        results = self._swift_service_call(service.download,
+        results = self._swift_service_call('download',
                                            self.container,
+                                           _service_options=service_options,
                                            options=download_options)
 
         if num_objs_cond:
@@ -1147,8 +1191,6 @@ class SwiftPath(str):
         if not self.container:
             raise ValueError('must specify container when uploading')
 
-        service = self._get_swift_service(object_uu_threads=object_threads,
-                                          segment_threads=segment_threads)
         swift_upload_objects = [
             name for name in to_upload
             if isinstance(name, SwiftUploadObject)
@@ -1166,6 +1208,10 @@ class SwiftPath(str):
             for f in all_files_to_upload
         ])
 
+        service_options = {
+            'object_uu_threads': object_threads,
+            'segment_threads': segment_threads
+        }
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
@@ -1173,9 +1219,10 @@ class SwiftPath(str):
             'leave_segments': leave_segments,
             'changed': changed
         }
-        return self._swift_service_call(service.upload,
+        return self._swift_service_call('upload',
                                         self.container,
                                         swift_upload_objects,
+                                        _service_options=service_options,
                                         options=upload_options)
 
     copy = utils.copy
@@ -1198,8 +1245,7 @@ class SwiftPath(str):
             raise ValueError('path must contain a container and resource to '
                              'remove')
 
-        service = self._get_swift_service()
-        return self._swift_service_call(service.delete,
+        return self._swift_service_call('delete',
                                         self.container,
                                         [self.resource])
 
@@ -1223,7 +1269,6 @@ class SwiftPath(str):
         if not self.container:
             raise ValueError('swift path must include container for rmtree')
 
-        service = self._get_swift_service()
         deleting_segments = 'segments' in self.container
         if deleting_segments:
             logger.warning('performing rmtree with segment container "%s". '
@@ -1234,7 +1279,7 @@ class SwiftPath(str):
                            'deleted.', self.container)
 
         if not self.resource:
-            results = self._swift_service_call(service.delete,
+            results = self._swift_service_call('delete',
                                                self.container)
             # Try to delete a segment container since swift client does not
             # do this automatically
@@ -1243,13 +1288,13 @@ class SwiftPath(str):
                                       '.segments_%s' % self.container)
                 for segment_container in segment_containers:
                     try:
-                        self._swift_service_call(service.delete, segment_container)
+                        self._swift_service_call('delete', segment_container)
                     except NotFoundError:
                         pass
             return results
         else:
             to_delete = [p.resource for p in self.list()]
-            return self._swift_service_call(service.delete,
+            return self._swift_service_call('delete',
                                             self.container,
                                             to_delete)
 
@@ -1329,8 +1374,7 @@ class SwiftPath(str):
                 object can't be found.
         """
         stat_objects = [self.resource] if self.resource else None
-        service = self._get_swift_service()
-        result = self._swift_service_call(service.stat,
+        result = self._swift_service_call('stat',
                                           container=self.container,
                                           objects=stat_objects)[0]
 
@@ -1378,7 +1422,7 @@ class SwiftPath(str):
             raise ValueError('post only works on container paths')
 
         service = self._get_swift_service()
-        return self._swift_service_call(service.post,
+        return self._swift_service_call('post',
                                         container=self.container,
                                         options=options)
 
