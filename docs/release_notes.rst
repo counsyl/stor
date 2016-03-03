@@ -1,10 +1,16 @@
 Release Notes
 =============
 
+v6.0.0
+------
+
+* Swift conditions are now functions that take results and return a Boolean.
+* `SwiftPath.download` returns a list of downloaded paths
+
 v5.0.0
 ------
 
-* Default `SwiftPath.temp_url` to using `inline=True`, since that's the general
+* Default `SwiftPath.temp_url` to using ``inline=True``, since that's the general
   expectation for how we've used Apache filer / generally you expect URLs to
   render in-browser rather than default to attachment.
 
