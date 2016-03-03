@@ -884,7 +884,7 @@ class SwiftPath(str):
         try:
             # otherwise we could be a directory, so try to grab first
             # file/subfolder
-            first_result = (self.rstrip('/') + '/').first()
+            first_result = path(self.rstrip('/') + '/').first()
         except NotFoundError:
             return False
         # i.e., if we're a container
@@ -1306,7 +1306,7 @@ class SwiftPath(str):
                 'Last-Modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
                 # The MD5 checksum of the object. NOTE that if a large
                 # object is uploaded in segments that this will be the
-                # checksum of a segment
+                # checksum of the *manifest* file of the object
                 'ETag': '87f0b7f04557315e6d1e6db21742d31c',
                 'Manifest': None
             }
