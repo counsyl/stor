@@ -875,34 +875,18 @@ class SwiftPath(str):
         Raises:
             SwiftError: A non-404 swift client error occurred.
         """
-        first_result = None
         try:
             # first see if there is a specific corresponding object
-            if self.stat():
+            if self.stat(num_retries=0):
                 return True
         except NotFoundError:
             pass
         try:
             # otherwise we could be a directory, so try to grab first
             # file/subfolder
-            first_result = path(self.rstrip('/') + '/').first()
+            return bool(path(self.rstrip('/') + '/').first(num_retries=0))
         except NotFoundError:
             return False
-        if not first_result:
-            return False
-        # i.e., if we're a container
-        if not self.resource:
-            return bool(first_result)
-        # finally, walk parents of first_result and see if any of them are a
-        # match (TODO (jtratner): replace with simple if
-        # self.relpathto(first_result))
-        first_result = path(first_result.rstrip('/'))
-        comparison_path = path(self.rstrip('/'))
-        while first_result.resource:
-            first_result = first_result.parent
-            if first_result == comparison_path:
-                return True
-        return False
 
     @_swift_retry(exceptions=(UnavailableError))
     def _download_object(self, out_file):
