@@ -92,6 +92,10 @@ In the above, ``condition`` takes the results from `SwiftPath.download` and veri
 until finally throwing a `ConditionNotMetError` if the condition is not met. If ``condition`` passes,
 ``download`` returns results.
 
+Note that if you want to combine multiple conditions, you can do this easily as::
+
+  condition = lambda results: all(f(results) for f in my_list_of_conditions)
+
 SwiftFile
 ---------
 
