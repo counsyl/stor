@@ -77,32 +77,39 @@ class SwiftIntegrationTest(BaseIntegrationTest):
     def test_cached_auth_and_auth_invalidation(self):
         from swiftclient.client import get_auth_keystone as real_get_keystone
         swift._clear_cached_auth_credentials()
-        with mock.patch('swiftclient.client.get_auth_keystone') as mock_get_keystone:
-            mock_get_keystone.side_effect = real_get_keystone
+        with mock.patch('swiftclient.client.get_auth_keystone', autospec=True) as mock_get_ks:
+            mock_get_ks.side_effect = real_get_keystone
             s = path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
-            self.assertEquals(len(mock_get_keystone.call_args_list), 1)
+            self.assertEquals(len(mock_get_ks.call_args_list), 1)
 
             # The keystone auth should not be called on another stat
+            mock_get_ks.reset_mock()
             s = path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
-            self.assertEquals(len(mock_get_keystone.call_args_list), 1)
+            self.assertEquals(len(mock_get_ks.call_args_list), 0)
 
             # Set the auth cache to something bad. The auth keystone should
             # be called again on another stat
+            mock_get_ks.reset_mock()
             swift._cached_auth_token_map['AUTH_swft_test']['os_auth_token'] = 'bad_auth'
             s = path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
-            self.assertEquals(len(mock_get_keystone.call_args_list), 2)
+            self.assertEquals(len(mock_get_ks.call_args_list), 1)
 
-        # Now make the auth always be invalid and verify that an auth error is thrown
-        # This also tests that keystone auth errors are propagated as swift
-        # AuthenticationErrors
-        with mock.patch('keystoneclient.v2_0.client.Client') as mock_keystone:
-            from keystoneclient.exceptions import Unauthorized
-            mock_keystone.side_effect = Unauthorized
-            with self.assertRaises(swift.AuthenticationError):
-                path(self.test_container).stat()
+            # Now make the auth always be invalid and verify that an auth error is thrown
+            # This also tests that keystone auth errors are propagated as swift
+            # AuthenticationErrors
+            mock_get_ks.reset_mock()
+            with mock.patch('keystoneclient.v2_0.client.Client') as mock_ks_client:
+                from keystoneclient.exceptions import Unauthorized
+                mock_ks_client.side_effect = Unauthorized
+                with self.assertRaises(swift.AuthenticationError):
+                    path(self.test_container).stat()
+
+                # Verify that getting the auth was called two more times because of retry
+                # logic
+                self.assertEquals(len(mock_get_ks.call_args_list), 2)
 
     def test_copy_to_from_container(self):
         num_test_objs = 5
