@@ -73,7 +73,8 @@ class Path(text_type):
     copytree = utils.copytree
 
     def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, super(Path, self).__repr__())
+        return '%s(%s)' % (type(self).__name__, super(Path,
+                           self).__repr__().lstrip('u'))
 
     def __div__(self, rel):
         """Join two path components (self / rel), adding a separator character if needed."""
@@ -308,7 +309,9 @@ class FileSystemPath(Path):
         Ensure the path as retrieved from a Python API, such as
         :func:`os.listdir`, is a proper Unicode string.
         """
-        if PY3 or isinstance(path, text_type):
+        if PY3:  # pragma: no cover
+            return path
+        if isinstance(path, text_type):
             return path
         return path.decode(sys.getfilesystemencoding(), 'surrogateescape')
 
@@ -340,11 +343,11 @@ class FileSystemPath(Path):
         """ See: :func:`os.path.isfile` """
         return self.path_module.isfile(self)
 
-    def islink(self):
+    def islink(self):  # pragma: no cover (temporary)
         """ See: :func:`os.path.islink` """
         return self.path_module.islink(self)
 
-    def ismount(self):
+    def ismount(self):  # pragma: no cover (temporary)
         """ See: :func:`os.path.ismount` """
         return self.path_module.ismount(self)
 
@@ -400,7 +403,7 @@ class FileSystemPath(Path):
         cwd = self.path_class(start)
         return cwd.relpathto(self)
 
-    def relpathto(self, dest):
+    def relpathto(self, dest):  # pragma: no cover (temporary)
         """ Return a relative path from `self` to `dest`.
 
         If there is no relative path from `self` to `dest`, for example if
