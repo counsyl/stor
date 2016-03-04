@@ -15,8 +15,12 @@ class TestDiv(unittest.TestCase):
         p = posix.PosixPath('my/path') / 'other/path'
         self.assertEquals(p, posix.PosixPath('my/path/other/path'))
 
+    def test_rdiv(self):
+        p = 'my/path' / posix.PosixPath('other/path')
+        self.assertEquals(p, posix.PosixPath('my/path/other/path'))
+
     def test_w_windows_path(self):
-        with self.assertRaisesRegexp(ValueError, 'cannot join paths'):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             posix.PosixPath('my/path') / windows.WindowsPath(r'other\path')
 
     def test_w_swift_component(self):
@@ -30,12 +34,16 @@ class TestAdd(unittest.TestCase):
         self.assertEquals(p, posix.PosixPath('my/pathother/path'))
 
     def test_w_windows_path(self):
-        with self.assertRaisesRegexp(ValueError, 'cannot add paths'):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             posix.PosixPath('my/path') + windows.WindowsPath(r'other\path')
 
     def test_w_swift_component(self):
         p = posix.PosixPath('my/path') + swift.SwiftPath('swift://t/c/name').name
         self.assertEquals(p, posix.PosixPath('my/pathname'))
+
+    def test_invalid_radd(self):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
+            1 + posix.PosixPath('my/path')
 
 
 class TestCopy(unittest.TestCase):

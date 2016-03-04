@@ -10,11 +10,11 @@ class TestDiv(unittest.TestCase):
         self.assertEquals(p, windows.WindowsPath(r'my\path\other\path'))
 
     def test_w_posix_path(self):
-        with self.assertRaisesRegexp(ValueError, 'cannot join paths'):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             windows.WindowsPath(r'my\path') / posix.PosixPath('other/path')
 
     def test_w_swift_component(self):
-        with self.assertRaisesRegexp(ValueError, 'cannot join paths'):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             windows.WindowsPath(r'my\path') / swift.SwiftPath('swift://t/c/name').name
 
 
@@ -24,9 +24,9 @@ class TestAdd(unittest.TestCase):
         self.assertEquals(p, windows.WindowsPath(r'my\pathother\path'))
 
     def test_w_posix_path(self):
-        with self.assertRaisesRegexp(ValueError, 'cannot add paths'):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             windows.WindowsPath(r'my\path') + posix.PosixPath('other/path')
 
     def test_w_swift_component(self):
-        with self.assertRaisesRegexp(ValueError, 'cannot add paths'):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             windows.WindowsPath(r'my\path') + swift.SwiftPath('swift://t/c/name').name

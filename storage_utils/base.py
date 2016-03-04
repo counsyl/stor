@@ -1,6 +1,7 @@
 from storage_utils import utils
 from storage_utils.third_party.path import ClassProperty
 from storage_utils.third_party.path import Path
+from storage_utils.third_party.path import string_types
 
 
 class StorageUtilsPathMixin(object):
@@ -18,28 +19,47 @@ class StorageUtilsPathMixin(object):
     @classmethod
     def path_module(cls):
         """The path module used for path manipulation functions"""
-        raise NotImplementedError('must implement path_module')  # pragma: no cover
+        raise NotImplementedError('must implement path_module')  # pragma: no cover nopep8
 
     @ClassProperty
     @classmethod
     def path_class(cls):
         """What class should be used to construct new instances from this class"""
         return cls
+    _next_class = path_class
+
+    def _has_incompatible_path_module(self, other):
+        """Returns true if the other path is a storage utils path and has a
+        compatible path module for path operations"""
+        return isinstance(other, StorageUtilsPathMixin) and other.path_module != self.path_module
 
     def __div__(self, rel):
-        """Join two path components, adding a separator character if needed."""
-        if isinstance(rel, StorageUtilsPathMixin) and rel.path_module != self.path_module:
-            raise ValueError('cannot join paths with different path modules')
+        """Join two path components (self / rel), adding a separator character if needed."""
+        if self._has_incompatible_path_module(rel):
+            return NotImplemented
         return self.path_class(self.path_module.join(self, rel))
+
+    def __rdiv__(self, rel):
+        """Join two path components (rel / self), adding a separator character if needed."""
+        if self._has_incompatible_path_module(rel):
+            return NotImplemented
+        return self.path_class(self.path_module.join(rel, self))
 
     # Make the / operator work even when true division is enabled.
     __truediv__ = __div__
+    __rtruediv__ = __rdiv__
 
     def __add__(self, more):
-        if isinstance(more, StorageUtilsPathMixin) and more.path_module != self.path_module:
-            raise ValueError('cannot add paths with different path modules')
-
+        if self._has_incompatible_path_module(more):
+            return NotImplemented
         return self.path_class(super(StorageUtilsPathMixin, self).__add__(more))
+
+    def __radd__(self, other):
+        if self._has_incompatible_path_module(other):
+            return NotImplemented
+        if not isinstance(other, string_types):
+            return NotImplemented
+        return self.path_class(other.__add__(self))
 
 
 class StorageUtilsPath(StorageUtilsPathMixin, Path):
