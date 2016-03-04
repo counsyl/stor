@@ -208,7 +208,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         test_dir = self.test_container / 'test'
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-            path('.').copytree(test_dir)
+            Path('.').copytree(test_dir)
 
         objs = set(test_dir.list(condition=lambda results: len(results) == num_test_objs))
         expected_objs = {
@@ -237,13 +237,13 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 storage_utils.join(self.test_container, 'test'))
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            path(self.test_container / 'test').copytree('test', swift_download_options={
+            Path(self.test_container / 'test').copytree('test', swift_download_options={
                 'condition': lambda results: len(results) == num_test_objs
             })
 
             # Verify contents of all downloaded test objects
             for which_obj in self.get_dataset_obj_names(num_test_objs):
-                obj_path = path('test') / which_obj
+                obj_path = Path('test') / which_obj
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
     def test_is_methods(self):
