@@ -304,3 +304,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
     else:
         yield tempdir
     tempdir.rmtree()
+
+class ClassProperty(property):
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()

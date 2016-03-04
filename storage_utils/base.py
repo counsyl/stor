@@ -1,5 +1,4 @@
 from storage_utils import utils
-from storage_utils.third_party.path import ClassProperty
 
 import errno
 import glob
@@ -51,13 +50,13 @@ class Path(text_type):
                 assert False, 'path is not compatible with storage utils'
         return text_type.__new__(cls, path)
 
-    @ClassProperty
+    @utils.ClassProperty
     @classmethod
     def path_class(cls):
         """What class should be used to construct new instances from this class"""
         return cls
 
-    @ClassProperty
+    @utils.ClassProperty
     @classmethod
     def parts_class(cls):
         """What class should be used to construct path *components*"""
