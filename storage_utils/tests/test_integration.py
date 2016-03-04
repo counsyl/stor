@@ -95,6 +95,15 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             self.assertEquals(s['Account'], 'AUTH_swft_test')
             self.assertEquals(len(mock_get_keystone.call_args_list), 2)
 
+        # Now make the auth always be invalid and verify that an auth error is thrown
+        # This also tests that keystone auth errors are propagated as swift
+        # AuthenticationErrors
+        with mock.patch('keystoneclient.v2_0.client.Client') as mock_keystone:
+            from keystoneclient.exceptions import Unauthorized
+            mock_keystone.side_effect = Unauthorized
+            with self.assertRaises(swift.AuthenticationError):
+                path(self.test_container).stat()
+
     def test_copy_to_from_container(self):
         num_test_objs = 5
         min_obj_size = 100
