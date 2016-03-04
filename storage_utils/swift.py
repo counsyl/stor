@@ -305,9 +305,11 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
-def _with_slash(p):
-    "Appends a trailing slash to a swift path if it doesn't have one"
-    return p if not p or p.endswith('/') else p + '/'
+def _with_trailing_slash(p):
+    "Returns a path with a single trailing slash or None if not a path"
+    if not p:
+        return p
+    return type(p)(p.rstrip('/') + '/')
 
 
 def file_name_to_object_name(p):
@@ -781,8 +783,8 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
             # will only have containers
             list_kwargs['delimiter'] = '/'
 
-            # Ensure that the prefix has a slash at the end of it for listdir
-            list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
+            # Ensure that the prefix has a '/' at the end of it for listdir
+            list_kwargs['prefix'] = _with_trailing_slash(list_kwargs['prefix'])
 
         if self.container:
             results = self._swift_connection_call(connection.get_container,
@@ -879,7 +881,15 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
             SwiftError: A non-404 swift client error occurred.
         """
         try:
-            return bool(self.first(num_retries=0))
+            # first see if there is a specific corresponding object
+            self.stat(num_retries=0)
+            return True
+        except NotFoundError:
+            pass
+        try:
+            # otherwise we could be a directory, so try to grab first
+            # file/subfolder
+            return bool(_with_trailing_slash(self).first(num_retries=0))
         except NotFoundError:
             return False
 
@@ -983,14 +993,14 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         }
 
         for obj in objs_to_download:
-            if is_swift_path(obj) and not obj.startswith(_with_slash(self)):
+            if is_swift_path(obj) and not obj.startswith(_with_trailing_slash(self)):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
         download_options = {
-            'prefix': _with_slash(self.resource),
+            'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
@@ -1047,7 +1057,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         service = self._get_swift_service(object_dd_threads=object_threads,
                                           container_threads=container_threads)
         download_options = {
-            'prefix': _with_slash(self.resource),
+            'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
@@ -1129,7 +1139,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results.
-        resource_base = _with_slash(self.resource) or path('')
+        resource_base = _with_trailing_slash(self.resource) or path('')
         swift_upload_objects.extend([
             SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
             for f in all_files_to_upload
@@ -1285,7 +1295,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
                 'Last-Modified': 'Fri, 15 Jan 2016 05:22:46 GMT',
                 # The MD5 checksum of the object. NOTE that if a large
                 # object is uploaded in segments that this will be the
-                # checksum of a segment
+                # checksum of the *manifest* file of the object
                 'ETag': '87f0b7f04557315e6d1e6db21742d31c',
                 'Manifest': None
             }
