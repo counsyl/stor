@@ -406,3 +406,35 @@ class FileSystemPath(Path):
         else:
             relpath = self.module.join(*segments)
         return self.path_class(relpath)
+
+    def mkdir(self, mode=0o777):
+        """ .. seealso:: :func:`os.mkdir` """
+        os.mkdir(self, mode)
+        return self
+
+    def mkdir_p(self, mode=0o777):
+        """ Like :meth:`mkdir`, but does not raise an exception if the
+        directory already exists. """
+        try:
+            self.mkdir(mode)
+        except OSError:
+            _, e, _ = sys.exc_info()
+            if e.errno != errno.EEXIST:
+                raise
+        return self
+
+    def rmdir(self):
+        """ .. seealso:: :func:`os.rmdir` """
+        os.rmdir(self)
+        return self
+
+    def rmdir_p(self):
+        """ Like :meth:`rmdir`, but does not raise an exception if the
+        directory is not empty or does not exist. """
+        try:
+            self.rmdir()
+        except OSError:
+            _, e, _ = sys.exc_info()
+            if e.errno != errno.ENOTEMPTY and e.errno != errno.EEXIST:
+                raise
+        return self
