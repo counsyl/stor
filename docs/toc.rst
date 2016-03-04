@@ -9,6 +9,7 @@ Table of Contents
    main_interface
    swift
    posix
+   windows
    testing
    contributing
    release_notes

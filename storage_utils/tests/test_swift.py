@@ -1,4 +1,5 @@
 import cStringIO
+import ntpath
 import os
 from tempfile import NamedTemporaryFile
 import unittest
@@ -611,6 +612,32 @@ class TestList(SwiftTestCase):
                                           prefix=None,
                                           full_listing=True)
 
+    @mock.patch('os.path', ntpath)
+    def test_list_windows(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }, {
+            'name': 'path/to/resource3'
+        }, {
+            'name': 'path/to/resource4'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = list(swift_p.list())
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container/path/to/resource1',
+            'swift://tenant/container/path/to/resource2',
+            'swift://tenant/container/path/to/resource3',
+            'swift://tenant/container/path/to/resource4'
+        ])
+        mock_list.assert_called_once_with('container',
+                                          limit=None,
+                                          prefix='path',
+                                          full_listing=True)
+
     def test_list_multiple_return(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
@@ -1022,26 +1049,41 @@ class TestDownload(SwiftTestCase):
         self.assertEquals(options_passed['container_threads'], 30)
 
 
-class TestPosixPathToObjectName(SwiftTestCase):
+class TestFileNameToObjectName(SwiftTestCase):
+    @mock.patch('os.path', ntpath)
+    def test_abs_windows_path(self):
+        self.assertEquals(swift.file_name_to_object_name(r'C:\windows\path\\'),
+                          'windows/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_rel_windows_path(self):
+        self.assertEquals(swift.file_name_to_object_name(r'.\windows\path\\'),
+                          'windows/path')
+
     def test_abs_path(self):
-        self.assertEquals(swift._posix_path_to_object_name('/abs/path/'),
+        self.assertEquals(swift.file_name_to_object_name('/abs/path/'),
                           'abs/path')
 
     def test_hidden_file(self):
-        self.assertEquals(swift._posix_path_to_object_name('.hidden'),
+        self.assertEquals(swift.file_name_to_object_name('.hidden'),
                           '.hidden')
 
     def test_hidden_dir(self):
-        self.assertEquals(swift._posix_path_to_object_name('.git/file'),
+        self.assertEquals(swift.file_name_to_object_name('.git/file'),
                           '.git/file')
 
     def test_no_obj_name(self):
-        self.assertEquals(swift._posix_path_to_object_name('.'),
+        self.assertEquals(swift.file_name_to_object_name('.'),
                           '')
 
     def test_poorly_formatted_path(self):
-        self.assertEquals(swift._posix_path_to_object_name('.//poor//path//file'),
+        self.assertEquals(swift.file_name_to_object_name('.//poor//path//file'),
                           'poor/path/file')
+
+    @mock.patch.dict(os.environ, {'HOME': '/home/wes/'})
+    def test_path_w_env_var(self):
+        self.assertEquals(swift.file_name_to_object_name('$HOME/path//file'),
+                          'home/wes/path/file')
 
 
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
@@ -1073,6 +1115,22 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(upload_args[0], 'container')
         self.assertEquals([o.source for o in upload_args[1]],
                           ['./relative_path/file1'])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/relative_path/file1'])
+
+    @mock.patch('os.path', ntpath)
+    def test_relative_windows_path(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = [r'.\relative_path\file1']
+        self.mock_swift.upload.return_value = []
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        swift_p.upload([r'.\relative_path\file1'])
+
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          [r'.\relative_path\file1'])
         self.assertEquals([o.object_name for o in upload_args[1]],
                           ['path/relative_path/file1'])
 
@@ -1217,6 +1275,12 @@ class TestCopytree(SwiftTestCase):
         p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
             p.copytree('swift://swift/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_copytree_windows_destination(self):
+        p = SwiftPath('swift://tenant/container')
+        with self.assertRaisesRegexp(ValueError, 'not supported'):
+            p.copytree(r'windows\path')
 
 
 class TestStat(SwiftTestCase):

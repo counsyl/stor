@@ -4,6 +4,13 @@ Release Notes
 v6.0.0
 ------
 
+* Renamed `storage_utils.is_posix_path` to `storage_utils.is_filesystem_path` but
+  kept `storage_utils.is_posix_path` for backwards compatibility
+* Added `WindowsPath` for windows compatibility
+* Updated swift methods so that they always use forward slashes in paths, even if
+  objects are uploaded from windows
+* Added `swift.file_name_to_object_name` for converting file names on any system to
+  their associated object name
 * Integration tests are part of package's tests
 * Addition of `swift.ConflictError` exception, which is thrown when storage
   nodes have consistency issue deleting container
@@ -18,7 +25,6 @@ v5.0.0
 * Default `SwiftPath.temp_url` to using ``inline=True``, since that's the general
   expectation for how we've used Apache filer / generally you expect URLs to
   render in-browser rather than default to attachment.
-
 
 v4.5.0
 ------
