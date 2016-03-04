@@ -5,7 +5,7 @@ import ntpath
 from storage_utils import base
 
 
-class WindowsPath(base.Path):
+class WindowsPath(base.FileSystemPath):
     """Represents a windows path.
 
     This class inherits a vendored path.py ``Path`` object and

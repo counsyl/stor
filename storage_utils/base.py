@@ -57,6 +57,12 @@ class Path(text_type):
         """What class should be used to construct new instances from this class"""
         return cls
 
+    @ClassProperty
+    @classmethod
+    def parts_class(cls):
+        """What class should be used to construct path *components*"""
+        return cls
+
     def _has_incompatible_path_module(self, other):
         """Returns true if the other path is a storage utils path and has a
         compatible path module for path operations"""
@@ -129,7 +135,7 @@ class Path(text_type):
 
     def basename(self):
         """ .. seealso:: :attr:`name`, :func:`os.path.basename` """
-        return self.path_class(self.path_module.basename(self))
+        return self.parts_class(self.path_module.basename(self))
 
     def expand(self):
         """ Clean up a filename by calling :meth:`expandvars()`,
