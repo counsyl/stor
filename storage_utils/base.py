@@ -211,57 +211,57 @@ class Path(text_type):
         """
         return self.path_class(self.path_module.join(self, *others))
 
-    def open(self, **kwargs):  # pragma: no cover
+    def open(self, **kwargs):
         raise NotImplementedError
 
-    def listdir(self):  # pragma: no cover
+    def listdir(self):
         raise NotImplementedError
 
-    def glob(self, pattern):  # pragma: no cover
+    def glob(self, pattern):
         """ Glob for pattern relative to this directory.
 
         Note that Swift currently only supports a single trailing *"""
         raise NotImplementedError
 
-    def exists(self):  # pragma: no cover
+    def exists(self):
         """Checks whether path exists on local filesystem or on swift.
 
         For directories on swift, checks whether directory sentinel exists or
         at least one subdirectory exists"""
         raise NotImplementedError
 
-    def isabs(self):  # pragma: no cover
+    def isabs(self):
         """ See: :func:`os.path.isabs`
 
         Always True with SwiftPath"""
         raise NotImplementedError
 
-    def isdir(self):  # pragma: no cover
+    def isdir(self):
         """ See: :func:`os.path.isdir` """
         raise NotImplementedError
 
-    def isfile(self):  # pragma: no cover
+    def isfile(self):
         """ See: :func:`os.path.isfile` """
         raise NotImplementedError
 
-    def islink(self):  # pragma: no cover
+    def islink(self):
         """ See: :func:`os.path.islink`
 
         Always False on Swift."""
         raise NotImplementedError
 
-    def ismount(self):  # pragma: no cover
+    def ismount(self):
         """ See: :func:`os.path.ismount`
 
         Always True on Swift.
         """
         raise NotImplementedError
 
-    def remove(self):  # pragma: no cover
+    def remove(self):
         """ Delete single path or object """
         raise NotImplementedError
 
-    def rmtree(self):  # pragma: no cover
+    def rmtree(self):
         """Delete entire directory (or all paths starting with prefix).
 
         See shutil.rmtree"""
