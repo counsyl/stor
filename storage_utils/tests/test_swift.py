@@ -1736,6 +1736,7 @@ class TestIsMethods(SwiftTestCase):
 
     def test_isfile_nonexistent_file(self):
         self.mock_swift.stat.side_effect = _service_404_exception()
+        self.assertFalse(SwiftPath('swift://A/B/C.html').isfile())
 
     def test_isfile_directory_sentinel(self):
         self.mock_swift.stat.return_value = _make_stat_response(
