@@ -879,8 +879,7 @@ class SwiftPath(str):
         """
         try:
             # first see if there is a specific corresponding object
-            if self.stat(num_retries=0):
-                return True
+            return bool(self.stat(num_retries=0))
         except NotFoundError:
             pass
         try:
