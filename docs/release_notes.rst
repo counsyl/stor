@@ -4,6 +4,7 @@ Release Notes
 v6.0.0
 ------
 
+* Cache authentication credentials for performance.
 * Renamed `storage_utils.is_posix_path` to `storage_utils.is_filesystem_path` but
   kept `storage_utils.is_posix_path` for backwards compatibility
 * Added `WindowsPath` for windows compatibility

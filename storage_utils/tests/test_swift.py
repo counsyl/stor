@@ -454,6 +454,16 @@ class TestList(SwiftTestCase):
         # Verify that list was retried one time
         self.assertEquals(len(mock_list.call_args_list), 2)
 
+    def test_list_authentication_error(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = ClientException(
+            'Unauthorized. Check username, password and tenant name/id.',
+            http_status=None)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.AuthenticationError):
+            swift_p.list()
+
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
@@ -1612,3 +1622,86 @@ class TestCompatHelpers(SwiftTestCase):
                          SwiftPath("swift://"))
         self.assertEqual(SwiftPath("swift://tenant/container/..").normpath(),
                          SwiftPath("swift://tenant"))
+
+
+class TestAuthCacheRetrying(SwiftTestCase):
+    @mock.patch('storage_utils.swift._clear_cached_auth_credentials', spec_set=True)
+    def test_refresh_cache_once_on_auth_err(self, mock_clear_cached_auth_credentials):
+        self.mock_swift.download.side_effect = swift.AuthenticationError('auth err')
+
+        with self.assertRaises(swift.AuthenticationError):
+            SwiftPath('swift://tenant/container/dir').download('.')
+
+        mock_clear_cached_auth_credentials.assert_called_once_with()
+
+
+class TestSwiftAuthCaching(SwiftTestCase):
+    def setUp(self):
+        self.setup_swift_mocks()
+        self.disable_get_swift_service_mock()
+
+        def different_auth_per_tenant(auth_url, username, password, opts):
+            return opts['tenant_name'] + 'url', opts['tenant_name'] + 'token'
+
+        self.mock_swift_get_auth_keystone.side_effect = different_auth_per_tenant
+
+    def test_simple_auth_caching(self):
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
+
+    def test_swift_auth_caching_multiple_tenants(self):
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+        self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+                                    {'tenant_name': 'AUTH_final_analysis_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
+
+    def test_update_settings_clears_cache(self):
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+                                    {'tenant_name': 'AUTH_final_analysis_prod'})
+        self.assertIn('AUTH_final_analysis_prod', swift._cached_auth_token_map)
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_final_prod])
+        swift.update_settings()
+        self.assertEqual(swift._cached_auth_token_map, {})
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_final_prod, call_final_prod])
+
+    def test_auth_caching_connection(self):
+        path('swift://AUTH_seq_upload_prod')._get_swift_connection()
+        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+        self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
+        path('swift://AUTH_seq_upload_prod')._get_swift_connection()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+
+        path('swift://AUTH_final_analysis_prod')._get_swift_connection()
+        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+                                    {'tenant_name': 'AUTH_final_analysis_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
+        path('swift://AUTH_final_analysis_prod')._get_swift_connection()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
