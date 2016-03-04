@@ -1,6 +1,7 @@
 from storage_utils import utils
 from storage_utils.third_party.path import ClassProperty
 
+import errno
 import glob
 import os
 import ntpath
@@ -334,3 +335,19 @@ class FileSystemPath(Path):
         return self
 
     rmtree = shutil.rmtree
+
+    def makedirs(self, mode=0o777):
+        """ .. seealso:: :func:`os.makedirs` """
+        os.makedirs(self, mode)
+        return self
+
+    def makedirs_p(self, mode=0o777):
+        """ Like :meth:`makedirs`, but does not raise an exception if the
+        directory already exists. """
+        try:
+            self.makedirs(mode)
+        except OSError:
+            _, e, _ = sys.exc_info()
+            if e.errno != errno.EEXIST:
+                raise
+        return self
