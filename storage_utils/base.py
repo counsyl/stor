@@ -148,6 +148,11 @@ class Path(text_type):
     def name(self):
         return self.basename()
 
+    @property
+    def ext(self):
+        """ The file extension, for example ``'.py'``. """
+        return self.splitext()[1]
+
     def splitpath(self):
         """ p.splitpath() -> Return ``(p.parent, p.name)``.
 
