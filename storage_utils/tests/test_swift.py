@@ -989,7 +989,9 @@ class TestDownloadObjects(SwiftTestCase):
         self.assertEquals(download_kwargs['options'], {
             'prefix': 'd/',
             'out_directory': 'output_dir',
-            'remove_prefix': True
+            'remove_prefix': True,
+            'skip_identical': False,
+            'shuffle': True
         })
 
     def test_absolute_paths(self):
@@ -1001,10 +1003,14 @@ class TestDownloadObjects(SwiftTestCase):
             'path': 'output_dir/e/f/g.txt'
         }]
         swift_p = SwiftPath('swift://tenant/container/d')
-        r = swift_p.download_objects('output_dir', [
-            'swift://tenant/container/d/e/f.txt',
-            'swift://tenant/container/d/e/f/g.txt'
-        ])
+        r = swift_p.download_objects(
+            'output_dir',
+            [
+                'swift://tenant/container/d/e/f.txt',
+                'swift://tenant/container/d/e/f/g.txt'
+            ],
+            skip_identical=True,
+            shuffle=False)
         self.assertEquals(r, {
             'swift://tenant/container/d/e/f.txt': 'output_dir/e/f.txt',
             'swift://tenant/container/d/e/f/g.txt': 'output_dir/e/f/g.txt'
@@ -1018,7 +1024,9 @@ class TestDownloadObjects(SwiftTestCase):
         self.assertEquals(download_kwargs['options'], {
             'prefix': 'd/',
             'out_directory': 'output_dir',
-            'remove_prefix': True
+            'remove_prefix': True,
+            'skip_identical': True,
+            'shuffle': False
         })
 
     def test_absolute_paths_not_child_of_download_path(self):
@@ -1041,13 +1049,15 @@ class TestDownload(SwiftTestCase):
         self.mock_swift.download.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.download('output_dir')
+        swift_p.download('output_dir', skip_identical=True, shuffle=False)
         self.mock_swift.download.assert_called_once_with(
             'container',
             options={
                 'prefix': None,
                 'out_directory': 'output_dir',
-                'remove_prefix': True
+                'remove_prefix': True,
+                'skip_identical': True,
+                'shuffle': False
             })
 
     def test_download_resource(self):
@@ -1060,7 +1070,9 @@ class TestDownload(SwiftTestCase):
             options={
                 'prefix': 'r/',
                 'out_directory': 'output_dir',
-                'remove_prefix': True
+                'remove_prefix': True,
+                'skip_identical': False,
+                'shuffle': True
             })
 
     def test_download_resource_wo_slash(self):
@@ -1073,7 +1085,9 @@ class TestDownload(SwiftTestCase):
             options={
                 'prefix': 'r/',
                 'out_directory': 'output_dir',
-                'remove_prefix': True
+                'remove_prefix': True,
+                'skip_identical': False,
+                'shuffle': True
             })
 
     def test_download_w_identical(self):
@@ -1089,7 +1103,9 @@ class TestDownload(SwiftTestCase):
             options={
                 'prefix': None,
                 'out_directory': 'output_dir',
-                'remove_prefix': True
+                'remove_prefix': True,
+                'skip_identical': False,
+                'shuffle': True
             })
 
     @mock.patch('time.sleep', autospec=True)
@@ -1227,7 +1243,9 @@ class TestUpload(SwiftTestCase):
                        segment_size=1000,
                        use_slo=True,
                        leave_segments=True,
-                       changed=True)
+                       changed=True,
+                       checksum=False,
+                       skip_identical=True)
         upload_args = self.mock_swift.upload.call_args_list[0][0]
         upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
 
@@ -1244,7 +1262,9 @@ class TestUpload(SwiftTestCase):
             'segment_container': '.segments_container',
             'leave_segments': True,
             'segment_size': 1000,
-            'changed': True
+            'changed': True,
+            'skip_identical': True,
+            'checksum': False
         })
 
     def test_upload_to_container(self, mock_walk_files_and_dirs):
@@ -1273,7 +1293,9 @@ class TestUpload(SwiftTestCase):
             'use_slo': True,
             'leave_segments': True,
             'segment_size': 1000,
-            'changed': True
+            'changed': True,
+            'skip_identical': False,
+            'checksum': True
         })
 
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):
@@ -1297,7 +1319,6 @@ class TestUpload(SwiftTestCase):
                        use_slo=True,
                        leave_segments=True,
                        changed=True,
-                       object_name='obj_name',
                        object_threads=20,
                        segment_threads=30)
 
