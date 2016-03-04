@@ -82,7 +82,7 @@ def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either swift, posix, or
-    windows paths created with `storage_utils.Path`.
+    windows paths created with ``storage_utils.Path``.
 
     Args:
         source (path|str): The source directory to copy from
@@ -95,15 +95,15 @@ def copy(source, dest, swift_retry_options=None):
     Examples:
         Copying a swift file to a local path behaves as follows::
 
-            >>> from storage_utils import path
-            >>> swift_p = path('swift://tenant/container/dir/file.txt')
+            >>> import storage_utils
+            >>> swift_p = 'swift://tenant/container/dir/file.txt'
             >>> # file.txt will be copied to other_dir/other_file.txt
-            >>> swift_p.copy('other_dir/other_file.txt')
+            >>> storage_utils.copy(swift_p, 'other_dir/other_file.txt')
 
         Copying from a local path to swift behaves as follows::
 
-            >>> from storage_utils import path
-            >>> local_p = path('my/local/file.txt')
+            >>> from storage_utils import Path
+            >>> local_p = Path('my/local/file.txt')
             >>> # File will be uploaded to swift://tenant/container/dir/my_file.txt
             >>> local_p.copy('swift://tenant/container/dir/')
 
