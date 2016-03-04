@@ -361,3 +361,48 @@ class FileSystemPath(Path):
             if e.errno != errno.EEXIST:
                 raise
         return self
+
+    def relpath(self, start='.'):
+        """ Return this path as a relative path,
+        based from `start`, which defaults to the current working directory.
+        """
+        cwd = self.path_class(start)
+        return cwd.relpathto(self)
+
+    def relpathto(self, dest):
+        """ Return a relative path from `self` to `dest`.
+
+        If there is no relative path from `self` to `dest`, for example if
+        they reside on different drives in Windows, then this returns
+        ``dest.abspath()``.
+        """
+        origin = self.abspath()
+        dest = self.path_class(dest).abspath()
+
+        orig_list = origin.normcase().splitall()
+        # Don't normcase dest!  We want to preserve the case.
+        dest_list = dest.splitall()
+
+        if orig_list[0] != self.module.normcase(dest_list[0]):
+            # Can't get here from there.
+            return dest
+
+        # Find the location where the two paths start to differ.
+        i = 0
+        for start_seg, dest_seg in zip(orig_list, dest_list):
+            if start_seg != self.module.normcase(dest_seg):
+                break
+            i += 1
+
+        # Now i is the point where the two paths diverge.
+        # Need a certain number of "os.pardir"s to work up
+        # from the origin to the point of divergence.
+        segments = [os.pardir] * (len(orig_list) - i)
+        # Need to add the diverging part of dest_list.
+        segments += dest_list[i:]
+        if len(segments) == 0:
+            # If they happen to be identical, use os.curdir.
+            relpath = os.curdir
+        else:
+            relpath = self.module.join(*segments)
+        return self.path_class(relpath)
