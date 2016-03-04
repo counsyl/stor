@@ -1220,7 +1220,7 @@ class SwiftPath(Path):
                 of manifest objects left alone (in the case of overwrites).
             changed (bool, default False): Upload only files that have changed since last
                 upload.
-            skip_identical (bool, default False): Skip downloading files that are identical
+            skip_identical (bool, default False): Skip uploading files that are identical
                 on both sides. Note this incurs reading the contents of all pre-existing local
                 files.
             checksum (bool, default True): Peform checksum validation of upload.
