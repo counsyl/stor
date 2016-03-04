@@ -32,22 +32,22 @@ class Path(text_type):
     """
 
     def __new__(cls, path):
-        if cls is not Path:
-            return cls(path)
-        if utils.is_swift_path(path):
-            from storage_utils.swift import SwiftPath
+        if cls is Path:
+            if utils.is_swift_path(path):
+                from storage_utils.swift import SwiftPath
 
-            return SwiftPath(path)
-        elif os.path == ntpath:
-            from storage_utils.windows import WindowsPath
+                cls = SwiftPath
+            elif os.path == ntpath:
+                from storage_utils.windows import WindowsPath
 
-            return WindowsPath(path)
-        elif os.path == posixpath:
-            from storage_utils.posix import PosixPath
+                cls = WindowsPath
+            elif os.path == posixpath:
+                from storage_utils.posix import PosixPath
 
-            return PosixPath(path)
-        else:  # pragma: no cover
-            assert False, 'path is not compatible with storage utils'
+                cls = PosixPath
+            else:  # pragma: no cover
+                assert False, 'path is not compatible with storage utils'
+        return text_type.__new__(cls, path)
 
     @ClassProperty
     @classmethod
