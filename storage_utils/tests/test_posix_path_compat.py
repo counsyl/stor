@@ -53,18 +53,13 @@ class TestBasics(unittest.TestCase):
         """
 
         """
-        try:
-            Path(None)
-        except TypeError:
-            pass
-        else:
-            raise Exception("DID NOT RAISE")
-
-    def test_construction_from_int(self):
-        """
-        Path class will construct a path as a string of the number
-        """
-        assert Path(1) == '1'
+        for val in (1, None):
+            try:
+                Path(val)
+            except TypeError:
+                pass
+            else:
+                raise Exception("DID NOT RAISE on %s" % val)
 
     def test_string_compatibility(self):
         """ Test compatibility with ordinary strings. """
