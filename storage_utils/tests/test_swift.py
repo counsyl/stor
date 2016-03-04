@@ -15,6 +15,28 @@ from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 
 
+def _service_404_exception():
+    return ClientException('dummy', http_status=404)
+
+
+def _make_stat_response(stat_response=None):
+    "Fills in response for stat service to avoid mocking up as much data"
+    defaults = {
+        'headers': {},
+        'container': None,
+        'success': True,
+        'action': '',
+        'items': [
+            ('ETag', 'dummy'),
+            ('Size', 0)
+        ],
+        'object': None
+    }
+    if stat_response:
+        defaults.update(**stat_response)
+    return [defaults]
+
+
 class TestBasicPathMethods(unittest.TestCase):
     def test_name(self):
         p = path('swift://tenant/container/path/to/resource')
@@ -761,6 +783,7 @@ class TestFirst(SwiftTestCase):
 
 class TestExists(SwiftTestCase):
     def test_false(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [])
 
@@ -771,6 +794,7 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix=None)
 
     def test_false_404(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('not found', http_status=404)
 
@@ -781,6 +805,7 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix=None)
 
     def test_raises_on_non_404_error(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('fail', http_status=504)
 
@@ -790,77 +815,35 @@ class TestExists(SwiftTestCase):
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix=None)
 
-    def test_true(self):
-        mock_list = self.mock_swift_conn.get_container
-        mock_list.return_value = ({}, [{
-            'name': 'path1'
-        }, {
-            'name': 'path2'
-        }, {
-            'name': 'path3'
-        }, {
-            'name': 'path4'
-        }])
-
+    def test_true_file(self):
+        self.mock_swift.stat.return_value = _make_stat_response()
         swift_p = SwiftPath('swift://tenant/container/path')
         result = swift_p.exists()
         self.assertTrue(result)
-        mock_list.assert_called_once_with('container', full_listing=False,
-                                          limit=1, prefix='path')
+        self.assertFalse(self.mock_swift_conn.get_container.call_args_list)
 
-    def test_directory_exists(self):
-        pass
-
-    def test_matching_prefix_path_does_not_count(self):
-        swift_p = SwiftPath('swift://tenant/container/myprefix')
-        self.mock_swift_conn.get_container.return_value = ({}, [{
-            'name': 'myprefix_123.txt'
-        }])
-        result = swift_p.exists()
-        self.assertFalse(result)
-
-    def test_also_checks_for_subdirs(self):
-        swift_p = SwiftPath('swift://tenant/XYZ/analysis')
-        self.mock_swift_conn.get_container.side_effect = [
-            ({}, [{'name': 'analysis.log'}]),
-            ({}, [{'name': 'analysis/alignments/s_1_AAAAA.bam'}]),
-        ]
-        result = swift_p.exists()
-        self.assertTrue(result)
-
-    def test_trailing_slash_semantics_in_self(self):
-        swift_p = SwiftPath('swift://tenant/XYZ/analysis/')
-        self.mock_swift_conn.get_container.side_effect = [
-            ({}, [{'name': 'analysis/alignments/s_1_AAAAA.bam'}]),
-        ]
-        result = swift_p.exists()
-        self.assertTrue(result)
-        self.mock_swift_conn.assert_called_with('XYZ', full_listing=False,
-                                                limit=1,
-                                                prefix='XYZ/analysis/')
-
-        swift_p = SwiftPath('swift://tenant/XYZ/analysis')
-        self.mock_swift_conn.get_container.reset_mock()
-        self.mock_swift_conn.get_container.side_effect = [
-            ({}, [{'name': 'analysis.log'}]),
-            ({}, [{'name': 'analysis/alignments/s_1_AAAAA.bam'}]),
-        ]
-        result = swift_p.exists()
-        self.assertTrue(result)
-        self.mock_swift_conn.assert_has_calls([
-            mock.call('XYZ', full_listing=False, limit=1,
-                      prefix='XYZ/analysis'),
-            mock.call('XYZ', full_listing=False, limit=1,
-                      prefix='XYZ/analysis/'),
+    def test_true_directory_with_no_dir_object(self):
+        swift_p = SwiftPath('swift://tenant/container/dirname')
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [
+            {'name': 'container/dirname/file1.txt'},
         ])
-
-    def test_trailing_slash_in_first_result(self):
-        swift_p = SwiftPath('swift://tenant/XYZ/analysis')
-        self.mock_swift_conn.get_container.side_effect = [
-            ({}, [{'name': 'analysis/'}]),
-        ]
         result = swift_p.exists()
         self.assertTrue(result)
+        mock_list.assert_called_with('container', full_listing=False,
+                                     limit=1, prefix='dirname/')
+
+    def test_directory_does_not_exist(self):
+        mock_list = self.mock_swift_conn.get_container
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        mock_list.return_value = ({}, [])
+        # key is we append trailing slash so only *could* match if there were a
+        # file within the directory
+        result = path('swift://A/B/C/D')
+        self.assertFalse(result.exists())
+        mock_list.assert_called_with('B', full_listing=False,
+                                     limit=1, prefix='C/D/')
 
 
 class TestDownloadObject(SwiftTestCase):
@@ -1238,7 +1221,7 @@ class TestCopytree(SwiftTestCase):
 
 class TestStat(SwiftTestCase):
     def test_tenant(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '0',
                 'x-account-storage-policy-3xreplica-container-count': '31',
@@ -1268,7 +1251,7 @@ class TestStat(SwiftTestCase):
                 ('Bytes in policy "3xreplica"', '24993077101523')
             ],
             'object': None
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1286,7 +1269,7 @@ class TestStat(SwiftTestCase):
         })
 
     def test_tenant_no_access_control(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '0',
                 'x-account-storage-policy-3xreplica-container-count': '31',
@@ -1315,7 +1298,7 @@ class TestStat(SwiftTestCase):
                 ('Bytes in policy "3xreplica"', '24993077101523')
             ],
             'object': None
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1330,7 +1313,7 @@ class TestStat(SwiftTestCase):
         })
 
     def test_container(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '0',
                 'x-container-object-count': '43868',
@@ -1356,7 +1339,7 @@ class TestStat(SwiftTestCase):
                 ('Sync To', ''),
                 ('Sync Key', '')
             ]
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/container')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1371,7 +1354,7 @@ class TestStat(SwiftTestCase):
         })
 
     def test_object(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '112',
                 'x-object-meta-x-agi-ctime': '2016-01-15T05:22:00.0Z',
@@ -1402,7 +1385,7 @@ class TestStat(SwiftTestCase):
                 ('Manifest', None)
             ],
             'object': 'object.txt'
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/container')
         res = swift_p.stat()
         self.assertEquals(res, {
