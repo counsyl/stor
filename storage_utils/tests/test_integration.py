@@ -93,17 +93,22 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             self.assertEquals(len(mock_get_ks.call_args_list), 0)
 
             # Set the auth cache to something bad. The auth keystone should
-            # be called again on another stat
+            # be called twice on another stat. It's first called by the swiftclient
+            # when retrying auth (with the bad token) and then called by us without
+            # a token after the swiftclient raises an authorization error.
             mock_get_ks.reset_mock()
             swift._cached_auth_token_map['AUTH_swft_test']['os_auth_token'] = 'bad_auth'
             s = Path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
-            self.assertEquals(len(mock_get_ks.call_args_list), 1)
+            self.assertEquals(len(mock_get_ks.call_args_list), 2)
+            self.assertEquals(mock_get_ks.call_args_list[0][0][3]['auth_token'], 'bad_auth')
+            self.assertTrue('auth_token' not in mock_get_ks.call_args_list[1][0][3])
 
             # Now make the auth always be invalid and verify that an auth error is thrown
             # This also tests that keystone auth errors are propagated as swift
             # AuthenticationErrors
             mock_get_ks.reset_mock()
+            swift._clear_cached_auth_credentials()
             with mock.patch('keystoneclient.v2_0.client.Client') as mock_ks_client:
                 from keystoneclient.exceptions import Unauthorized
                 mock_ks_client.side_effect = Unauthorized
@@ -203,7 +208,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         test_dir = self.test_container / 'test'
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-            path('.').copytree(test_dir)
+            Path('.').copytree(test_dir)
 
         objs = set(test_dir.list(condition=lambda results: len(results) == num_test_objs))
         expected_objs = {
@@ -232,13 +237,13 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 storage_utils.join(self.test_container, 'test'))
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            path(self.test_container / 'test').copytree('test', swift_download_options={
+            Path(self.test_container / 'test').copytree('test', swift_download_options={
                 'condition': lambda results: len(results) == num_test_objs
             })
 
             # Verify contents of all downloaded test objects
             for which_obj in self.get_dataset_obj_names(num_test_objs):
-                obj_path = path('test') / which_obj
+                obj_path = Path('test') / which_obj
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
     def test_is_methods(self):

@@ -211,13 +211,13 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
     swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
+    from storage_utils.windows import WindowsPath
+    if is_swift_path(source) and isinstance(dest, WindowsPath):
+        raise ValueError('swift copytree to windows is not supported')
 
     if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
-            from storage_utils.windows import WindowsPath
-            if isinstance(dest, WindowsPath):
-                raise ValueError('swift copytree to windows is not supported')
             source.download(dest, **swift_download_options)
         else:
             if copy_cmd:
@@ -304,6 +304,7 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
     else:
         yield tempdir
     tempdir.rmtree()
+
 
 class ClassProperty(property):
     def __get__(self, cls, owner):
