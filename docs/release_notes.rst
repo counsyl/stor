@@ -4,6 +4,13 @@ Release Notes
 v6.0.0
 ------
 
+* Provided a cross-compatible API at module level that accepts strings or ``Path`` objects for easy usage,
+  and implemented most ``os.path.is*`` methods on swift, particularly ``isdir()`` and ``isfile()``.
+* Removed certain "fancy" path.py methods from ``FileSystemPath`` to reduce the
+  public API surface and make it easier to test everything in use.
+* Eliminated ``storage_utils.third_party`` and integrated into library (added
+  note to LICENSE file with original inspiration)
+* Reworked path hierarchy so that all classes inherit from ``storage_utils.Path``
 * Segment containers are ignored by default when doing `SwiftPath.listdir`
 * Cache authentication credentials for performance.
 * Renamed ``storage_utils.is_posix_path``.
