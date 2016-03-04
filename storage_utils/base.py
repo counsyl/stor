@@ -34,6 +34,8 @@ class Path(text_type):
 
     def __new__(cls, path):
         if cls is Path:
+            if not hasattr(path, 'startswith'):
+                raise TypeError('must be a string like')
             if utils.is_swift_path(path):
                 from storage_utils.swift import SwiftPath
 
@@ -152,6 +154,10 @@ class Path(text_type):
     @property
     def name(self):
         return self.basename()
+
+    @property
+    def drive(self):
+        return self.splitdrive()[0]
 
     @property
     def ext(self):
@@ -285,6 +291,9 @@ class FileSystemPath(Path):
     def __exit__(self, *_):
         os.chdir(self._old_dir)
 
+    def chdir(self):
+        os.chdir(self)
+
     def stat(self):
         """Performs os.stat on object.
 
@@ -362,6 +371,28 @@ class FileSystemPath(Path):
                 raise
         return self
 
+    def _splitall(self):
+        r""" Return a list of the path components in this path.
+
+        The first item in the list will be a Path.  Its value will be
+        either :data:`os.curdir`, :data:`os.pardir`, empty, or the root
+        directory of this path (for example, ``'/'`` or ``'C:\\'``).  The
+        other items in the list will be strings.
+
+        ``path.Path.joinpath(*result)`` will yield the original path.
+        """
+        parts = []
+        loc = self
+        while loc != os.curdir and loc != os.pardir:
+            prev = loc
+            loc, child = prev.splitpath()
+            if loc == prev:
+                break
+            parts.append(child)
+        parts.append(loc)
+        parts.reverse()
+        return parts
+
     def relpath(self, start='.'):
         """ Return this path as a relative path,
         based from `start`, which defaults to the current working directory.
@@ -379,18 +410,18 @@ class FileSystemPath(Path):
         origin = self.abspath()
         dest = self.path_class(dest).abspath()
 
-        orig_list = origin.normcase().splitall()
+        orig_list = origin.normcase()._splitall()
         # Don't normcase dest!  We want to preserve the case.
-        dest_list = dest.splitall()
+        dest_list = dest._splitall()
 
-        if orig_list[0] != self.module.normcase(dest_list[0]):
+        if orig_list[0] != self.path_module.normcase(dest_list[0]):
             # Can't get here from there.
             return dest
 
         # Find the location where the two paths start to differ.
         i = 0
         for start_seg, dest_seg in zip(orig_list, dest_list):
-            if start_seg != self.module.normcase(dest_seg):
+            if start_seg != self.path_module.normcase(dest_seg):
                 break
             i += 1
 
@@ -404,7 +435,7 @@ class FileSystemPath(Path):
             # If they happen to be identical, use os.curdir.
             relpath = os.curdir
         else:
-            relpath = self.module.join(*segments)
+            relpath = self.path_module.join(*segments)
         return self.path_class(relpath)
 
     def mkdir(self, mode=0o777):

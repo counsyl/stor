@@ -110,11 +110,6 @@ class TestBasics(unittest.TestCase):
         # .abspath()
         assert Path(os.curdir).abspath() == os.getcwd()
 
-        # .getcwd()
-        cwd = Path.getcwd()
-        assert isinstance(cwd, Path)
-        assert cwd == os.getcwd()
-
     def test_joinpath_on_instance(self):
         res = Path('foo')
         foo_bar = res.joinpath('bar')
@@ -263,25 +258,22 @@ class TestScratchDir(unittest.TestCase):
 class TestChdir(unittest.TestCase):
     def test_chdir_or_cd(self):
         """ tests the chdir or cd method """
+        original_dir = os.getcwd()
         with NamedTemporaryDirectory() as tmpdir:
-            d = Path(str(tmpdir))
-            cwd = d.getcwd()
+            current = Path(str(tmpdir)).expand()
+            os.chdir(str(tmpdir))
+            current = Path(os.getcwd())
+            target = (current / 'subdir')
+            target.makedirs_p()
 
-            # ensure the cwd isn't our tempdir
-            assert str(d) != str(cwd)
-            # now, we're going to chdir to tempdir
-            d.chdir()
+            target.chdir()
+            assert Path(os.getcwd()) == target
 
-            # we now ensure that our cwd is the tempdir
-            assert str(d.getcwd()) == str(tmpdir)
-            # we're resetting our path
-            d = Path(cwd)
+            current.chdir()
+            assert Path(os.getcwd()) == current
 
-            # we ensure that our cwd is still set to tempdir
-            assert str(d.getcwd()) == str(tmpdir)
+            with target:
+                assert Path(os.getcwd()).expand() == target
 
-            # we're calling the alias cd method
-            d.cd()
-            # now, we ensure cwd isn'r tempdir
-            assert str(d.getcwd()) == str(cwd)
-            assert str(d.getcwd()) != str(tmpdir)
+            assert Path(os.getcwd()).expand() == current
+        os.chdir(original_dir)
