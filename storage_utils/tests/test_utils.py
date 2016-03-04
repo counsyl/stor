@@ -1,6 +1,9 @@
+import mock
+import ntpath
 import storage_utils
+from storage_utils.posix import PosixPath
 from storage_utils.swift import SwiftPath
-from storage_utils.third_party.path import Path
+from storage_utils.windows import WindowsPath
 from storage_utils import utils
 import unittest
 
@@ -12,7 +15,12 @@ class TestPath(unittest.TestCase):
 
     def test_posix_path_returned(self):
         p = storage_utils.path('my/posix/path')
-        self.assertTrue(isinstance(p, Path))
+        self.assertTrue(isinstance(p, PosixPath))
+
+    @mock.patch('os.path', ntpath)
+    def test_abs_windows_path_returned(self):
+        p = storage_utils.path('C:\\my\\windows\\path')
+        self.assertTrue(isinstance(p, WindowsPath))
 
 
 class TestIsSwiftPath(unittest.TestCase):
@@ -23,12 +31,15 @@ class TestIsSwiftPath(unittest.TestCase):
         self.assertFalse(storage_utils.is_swift_path('my/posix/path'))
 
 
-class TestIsPosixPath(unittest.TestCase):
+class TestIsFilesystemPath(unittest.TestCase):
+    def test_is_posix_path(self):
+        self.assertEquals(storage_utils.is_posix_path, storage_utils.is_filesystem_path)
+
     def test_true(self):
-        self.assertTrue(storage_utils.is_posix_path('my/posix/path'))
+        self.assertTrue(storage_utils.is_filesystem_path('my/posix/path'))
 
     def test_false(self):
-        self.assertFalse(storage_utils.is_posix_path('swift://my/swift/path'))
+        self.assertFalse(storage_utils.is_filesystem_path('swift://my/swift/path'))
 
 
 class TestWalkFilesAndDirs(unittest.TestCase):

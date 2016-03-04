@@ -2,5 +2,5 @@
 
 Posix
 =====
-.. automodule:: storage_utils.posix
-  :members:
+.. autoclass:: storage_utils.posix.PosixPath
+  :members: copytree, copy, open
