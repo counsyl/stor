@@ -264,7 +264,7 @@ class FileSystemPath(Path):
         argument.
         """
         kwargs.pop('swift_upload_kwargs', None)
-        return builtins.open(*args, **kwargs)
+        return builtins.open(self, *args, **kwargs)
 
     def __enter__(self):
         self._old_dir = os.getcwd()
