@@ -19,7 +19,7 @@ class StorageUtilsPathMixin(object):
     @classmethod
     def path_module(cls):
         """The path module used for path manipulation functions"""
-        raise NotImplementedError('must implement path_module')  # pragma: no cover nopep8
+        raise NotImplementedError('must implement path_module')  # pragma: no cover
 
     @ClassProperty
     @classmethod
