@@ -148,7 +148,8 @@ class TestScratchDir(unittest.TestCase):
             f = 'testfile.txt'
             af = d / f
             assert af == os.path.join(d, f)
-            af.touch()
+            with af.open('wb') as fp:
+                fp.write('blah')
             try:
                 assert af.exists()
 
@@ -218,7 +219,8 @@ class TestScratchDir(unittest.TestCase):
             # Placeholder file so that when removedirs() is called,
             # it doesn't remove the temporary directory itself.
             tempf = d / 'temp.txt'
-            tempf.touch()
+            with tempf.open('wb') as fp:
+                fp.write('blah')
             try:
                 foo = d / 'foo'
                 boz = foo / 'bar' / 'baz' / 'boz'
