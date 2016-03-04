@@ -14,6 +14,7 @@ class TestDiv(unittest.TestCase):
     def test_success(self):
         p = posix.PosixPath('my/path') / 'other/path'
         self.assertEquals(p, posix.PosixPath('my/path/other/path'))
+        self.assertEquals(p, storage_utils.join('my/path', 'other/path'))
 
     def test_rdiv(self):
         p = 'my/path' / posix.PosixPath('other/path')
@@ -26,6 +27,8 @@ class TestDiv(unittest.TestCase):
     def test_w_swift_component(self):
         p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
         self.assertEquals(p, posix.PosixPath('my/path/name'))
+        self.assertEquals(storage_utils.join('my/path',
+                                             swift.SwiftPath('swift://t/c/name').name))
 
 
 class TestAdd(unittest.TestCase):
@@ -177,7 +180,16 @@ class TestOpen(unittest.TestCase):
             })
             p.close()
 
+    def test_functional_open(self):
+        with tempfile.NamedTemporaryFile() as f:
+            with storage_utils.open(f.name, 'wb', swift_upload_kwargs={}) as f:
+                f.write('blah')
+
     def test_open_works_wo_swift_params(self):
         with tempfile.NamedTemporaryFile() as f:
-            p = storage_utils.path(f.name).open()
+            p = storage_utils.Path(f.name).open()
+            p.close()
+
+        with tempfile.NamedTemporaryFile() as f:
+            p = storage_utils.open(f.name)
             p.close()
