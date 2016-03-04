@@ -1446,7 +1446,7 @@ class SwiftPath(Path):
         except NotFoundError:
             pass
         try:
-            return 'directory' in self.stat().get('Content Type', '')
+            return 'directory' in self.stat().get('Content-Type', '')
         except NotFoundError:
             pass
         return False
@@ -1455,7 +1455,7 @@ class SwiftPath(Path):
         """Checks the object exists & is not a directory sentinel on Swift.
         """
         try:
-            return 'directory' not in self.stat().get('Content Type', '')
+            return 'directory' not in self.stat().get('Content-Type', '')
         except NotFoundError:
             return False
 

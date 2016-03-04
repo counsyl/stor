@@ -1739,14 +1739,14 @@ class TestIsMethods(SwiftTestCase):
 
     def test_isfile_directory_sentinel(self):
         self.mock_swift.stat.return_value = _make_stat_response(
-            {'items': [('Content-Type', 'application/directory')]})
-        self.assertTrue(storage_utils.isfile('swift://A/B/C'))
+            {'items': [('Content Type', 'application/directory')]})
+        self.assertFalse(storage_utils.isfile('swift://A/B/C'))
         self.mock_swift.stat.assert_called_with(container='B',
                                                 objects=['C'])
 
     def test_isdir_directory_sentinel_empty(self):
         self.mock_swift.stat.return_value = _make_stat_response(
-            {'items': [('Content-Type', 'application/directory')]})
+            {'items': [('Content Type', 'application/directory')]})
         self.mock_list.return_value = ({}, [])
         self.assertTrue(SwiftPath('swift://A/B/C').isdir())
 
