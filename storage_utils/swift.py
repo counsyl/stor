@@ -1440,15 +1440,20 @@ class SwiftPath(Path):
         return True
 
     def isdir(self):
-        if _with_slash(self).first():
-            return True
-        else:
-            try:
-                return 'directory' in self.stat().get('Content Type', '')
-            except NotFoundError:
-                return False
+        try:
+            if _with_trailing_slash(self).first():
+                return True
+        except NotFoundError:
+            pass
+        try:
+            return 'directory' in self.stat().get('Content Type', '')
+        except NotFoundError:
+            pass
+        return False
 
     def isfile(self):
+        """Checks the object exists & is not a directory sentinel on Swift.
+        """
         try:
             return 'directory' not in self.stat().get('Content Type', '')
         except NotFoundError:
