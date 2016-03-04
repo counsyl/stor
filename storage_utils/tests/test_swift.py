@@ -1757,6 +1757,11 @@ class TestIsMethods(SwiftTestCase):
         self.mock_swift.stat.assert_called_with(container='B',
                                                 objects=['C'])
 
+    def test_isfile_tenants_and_containers(self):
+        self.assertFalse(SwiftPath('swift://AUTH_final').isfile())
+        self.assertFalse(SwiftPath('swift://AUTH_final/container').isfile())
+        self.assertEqual(self.mock_swift.stat.call_args_list, [])
+
     def test_isdir_directory_sentinel_empty(self):
         self.mock_swift.stat.return_value = _make_stat_response(
             {'items': [('Content Type', 'application/directory')]})
