@@ -478,6 +478,14 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         """
         return not self.endswith('/') and not self.ext
 
+    def is_segment_container(self):
+        """True if this path is a segment container"""
+        container = self.container
+        if not self.resource and container:
+            return container.startswith('.segments_') or container.endswith('_segments')
+        else:
+            return False
+
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
@@ -731,7 +739,8 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
              limit=None,
              condition=None,
              # intentionally not documented
-             list_as_dir=False):
+             list_as_dir=False,
+             ignore_segment_containers=True):
         """List contents using the resource of the path as a prefix.
 
         This method retries `num_retries` times if swift is unavailable
@@ -798,16 +807,19 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
             for r in results[1]
         })
 
+        if ignore_segment_containers:
+            paths = [p for p in paths if not p.is_segment_container()]
+
         _check_condition(condition, paths)
         return paths
 
-    def listdir(self):
+    def listdir(self, ignore_segment_containers=True):
         """Lists the path as a dir, returning top-level directories and files
 
         For information about retry logic on this method, see
         `SwiftPath.list`
         """
-        return self.list(list_as_dir=True)
+        return self.list(list_as_dir=True, ignore_segment_containers=ignore_segment_containers)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def glob(self, pattern, condition=None):

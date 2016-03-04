@@ -85,7 +85,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 obj_path.copy('copied_file')
                 self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
 
-    def test_static_large_obj_copy(self):
+    def test_static_large_obj_copy_and_segment_container(self):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             segment_size = 1048576
             obj_size = segment_size * 4 + 100
@@ -95,8 +95,16 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 'segment_size': segment_size
             })
 
-            # Verify there are five segments
+            # Verify there is a segment container and that it can be ignored when listing a dir
             segment_container = path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
+            containers = path(self.test_container.parent).listdir(ignore_segment_containers=False)
+            self.assertTrue(segment_container in containers)
+            self.assertTrue(self.test_container in containers)
+            containers = path(self.test_container.parent).listdir(ignore_segment_containers=True)
+            self.assertFalse(segment_container in containers)
+            self.assertTrue(self.test_container in containers)
+
+            # Verify there are five segments
             objs = set(segment_container.list(condition=lambda results: len(results) == 5))
             self.assertEquals(len(objs), 5)
 
