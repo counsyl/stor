@@ -8,7 +8,10 @@ Main Interface
 
 Common Path Methods
 -------------------
-By using the ``path`` factory function, users can write code that is portable across Swift storage, Windows, and Posix-based file systems. In order to ensure portability, users can only use the following methods:
+
+By using the top-level functions in the storage_utils module (or the main
+``Path`` interface) users can write code that is portable across Swift storage,
+Windows, and Posix-based filesystems.  In particular, the following methods:
 
 * ``open``: Opens the resource identified by the path and returns a file (or file-like) object.
 * ``glob``: Globs the path based on an input pattern. Returns matching path objects.
@@ -19,7 +22,9 @@ By using the ``path`` factory function, users can write code that is portable ac
 * ``copytree``: Copies a directory to a destination.
 
 .. NOTE::
-   ``Path`` fully implements the above methods, but ``SwiftPath`` may only partially implement the method (e.g. only allowing prefix globbing). Read the ``SwiftPath`` documentation below about restrictions on the methods.
+   ``Path`` fully implements the above methods, but ``SwiftPath`` may only
+   partially implement the method (e.g. only allowing prefix globbing). Read
+   the ``SwiftPath`` documentation below about restrictions on the methods.
 
 .. NOTE::
     Copying from object storage to windows is currently not supported.
@@ -27,12 +32,22 @@ By using the ``path`` factory function, users can write code that is portable ac
 
 SwiftPath
 ---------
-``SwiftPath`` objects returned from the ``path`` factory partially support the common path methods listed above along with supporting the basic path manipulation methods (e.g. 'my' / 'path' == 'my/path'). For more information on accessing swift, go to the :ref:`swift` section.
+
+``SwiftPath`` objects returned from the ``path`` factory partially support the
+common path methods listed above along with supporting the basic path
+manipulation methods (e.g. 'my' / 'path' == 'my/path'). For more information on
+accessing swift, go to the :ref:`swift` section.
 
 PosixPath
 ---------
-``PosixPath`` objects return from the ``path`` factory fully support the common path methods listed above and also provide additional functionality. For more information, go to the :ref:`posix` section.
+
+``PosixPath`` objects return from the ``path`` factory fully support the common
+path methods listed above and also provide additional functionality. For more
+information, go to the :ref:`posix` section.
 
 WindowsPath
 -----------
-``WindowsPath`` objects return from the ``path`` factory fully support the common path methods listed above and also provide additional functionality. For more information, go to the :ref:`windows` section.
+
+``WindowsPath`` objects return from the ``path`` factory fully support the
+common path methods listed above and also provide additional functionality. For
+more information, go to the :ref:`windows` section.
