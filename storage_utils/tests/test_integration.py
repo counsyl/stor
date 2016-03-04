@@ -5,6 +5,7 @@ import uuid
 
 import mock
 
+import storage_utils
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import swift
@@ -234,3 +235,29 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             for which_obj in self.get_dataset_obj_names(num_test_objs):
                 obj_path = path('test') / which_obj
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
+
+    def test_is_methods(self):
+        container = self.test_container
+        container = self.test_container
+        self.assertTrue(storage_utils.isdir(container))
+        self.assertFalse(storage_utils.isfile(container))
+        self.assertTrue(storage_utils.exists(container))
+        file_with_prefix = storage_utils.join(container, 'analysis.txt')
+        folder = storage_utils.join(container, 'analysis')
+        subfolder = storage_utils.join(container, 'analysis', 'alignments')
+        file_in_folder = storage_utils.join(container, 'analysis', 'alignments',
+                                            'bam.bam')
+        self.assertFalse(storage_utils.exists(file_in_folder))
+        self.assertFalse(storage_utils.isdir(folder))
+        self.assertFalse(storage_utils.isdir(folder + '/'))
+        with storage_utils.open(file_with_prefix, 'w') as fp:
+            fp.write('data\n')
+        self.assertFalse(storage_utils.isdir(folder))
+        self.assertTrue(storage_utils.isfile(file_with_prefix))
+
+        with storage_utils.open(file_in_folder, 'w') as fp:
+            fp.write('blah.txt\n')
+
+        self.assertTrue(storage_utils.isdir(folder))
+        self.assertFalse(storage_utils.isfile(folder))
+        self.assertTrue(storage_utils.isdir(subfolder))

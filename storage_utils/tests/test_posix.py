@@ -28,7 +28,8 @@ class TestDiv(unittest.TestCase):
         p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
         self.assertEquals(p, posix.PosixPath('my/path/name'))
         self.assertEquals(storage_utils.join('my/path',
-                                             swift.SwiftPath('swift://t/c/name').name))
+                                             swift.SwiftPath('swift://t/c/name').name),
+                          p)
 
 
 class TestAdd(unittest.TestCase):
