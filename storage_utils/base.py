@@ -119,7 +119,7 @@ class Path(text_type):
         """See :func:`os.path.normpath` """
         return self.path_class(self.path_module.normpath(self))
 
-    def realpath(self):
+    def realpath(self):  # pragma: no cover (temporary)
         """See :func:`os.path.realpath` """
         return self.path_class(self.path_module.realpath(self))
 
@@ -295,13 +295,7 @@ class FileSystemPath(Path):
     def chdir(self):
         os.chdir(self)
 
-    def stat(self):
-        """Performs os.stat on object.
-
-        Not part of cross-compatible API because SwiftPath.stat() returns a
-        dictionary of headers (and most attributes would not map anyways).
-        """
-        return self.path_module.stat(self)
+    # no stat() because we want to provide a cross-compatible API at some point
 
     @staticmethod
     def _always_unicode(path):  # pragma: no cover (OS-dependent)
