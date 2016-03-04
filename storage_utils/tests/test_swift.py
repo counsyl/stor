@@ -8,12 +8,10 @@ import freezegun
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
-from swiftclient.service import SwiftUploadObject
 
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import swift
-from storage_utils.swift import make_condition
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 
@@ -37,55 +35,13 @@ class TestBasicPathMethods(unittest.TestCase):
 
 
 class TestCondition(unittest.TestCase):
-    def test_invalid_condition(self):
-        with self.assertRaises(ValueError):
-            make_condition('bad_cond', 3)
+    def test_invalid_condition_type(self):
+        with self.assertRaisesRegexp(ValueError, 'must be callable'):
+            swift._validate_condition('bad_cond')
 
-    def test_eq_cond(self):
-        eq3 = make_condition('==', 3)
-        self.assertIsNone(eq3.assert_is_met_by(3, 'var'))
-        with self.assertRaises(swift.ConditionNotMetError):
-            eq3.assert_is_met_by(4, 'var')
-
-    def test_ne_cond(self):
-        ne3 = make_condition('!=', 3)
-        self.assertIsNone(ne3.assert_is_met_by(4, 'var'))
-        with self.assertRaises(swift.ConditionNotMetError):
-            ne3.assert_is_met_by(3, 'var')
-
-    def test_gt_cond(self):
-        gt3 = make_condition('>', 3)
-        self.assertIsNone(gt3.assert_is_met_by(4, 'var'))
-        with self.assertRaises(swift.ConditionNotMetError):
-            gt3.assert_is_met_by(3, 'var')
-
-    def test_ge_cond(self):
-        ge3 = make_condition('>=', 3)
-        self.assertIsNone(ge3.assert_is_met_by(4, 'var'))
-        self.assertIsNone(ge3.assert_is_met_by(3, 'var'))
-        with self.assertRaises(swift.ConditionNotMetError):
-            ge3.assert_is_met_by(2, 'var')
-
-    def test_lt_cond(self):
-        lt3 = make_condition('<', 3)
-        self.assertIsNone(lt3.assert_is_met_by(2, 'var'))
-        with self.assertRaises(swift.ConditionNotMetError):
-            lt3.assert_is_met_by(3, 'var')
-
-    def test_le_cond(self):
-        le3 = make_condition('<=', 3)
-        self.assertIsNone(le3.assert_is_met_by(2, 'var'))
-        self.assertIsNone(le3.assert_is_met_by(3, 'var'))
-        with self.assertRaises(swift.ConditionNotMetError):
-            le3.assert_is_met_by(4, 'var')
-
-    def test_repr(self):
-        cond = make_condition('<=', 3)
-        # Import private _Condition class in order to eval it for test
-        from storage_utils.swift import _Condition  # flake8: noqa
-        evaled_repr = eval(repr(cond))
-        self.assertEquals(cond.operator, evaled_repr.operator)
-        self.assertEquals(cond.right_operand, evaled_repr.right_operand)
+    def test_invalid_condition_args(self):
+        with self.assertRaisesRegexp(ValueError, 'exactly one argument'):
+            swift._validate_condition(lambda: True)  # pragma: no cover
 
 
 class TestNew(SwiftTestCase):
@@ -347,8 +303,8 @@ class TestSwiftFile(SwiftTestCase):
                                                   mock_sleep):
         swift_p = SwiftPath('swift://tenant/container/obj')
         with NamedTemporaryFile(delete=False) as ntf1,\
-             NamedTemporaryFile(delete=False) as ntf2,\
-             NamedTemporaryFile(delete=False) as ntf3:
+                NamedTemporaryFile(delete=False) as ntf2,\
+                NamedTemporaryFile(delete=False) as ntf3:
             with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
                 ntf.side_effect = [ntf1, ntf2, ntf3]
                 with swift_p.open(mode='wb') as obj:
@@ -411,7 +367,7 @@ class TestTempURL(SwiftTestCase):
     @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_no_obj(self):
         with self.assertRaisesRegexp(ValueError, 'on object'):
-            temp_url = SwiftPath('swift://tenant/container').temp_url()
+            SwiftPath('swift://tenant/container').temp_url()
 
     @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
     @mock.patch('storage_utils.swift.auth_url', None)
@@ -449,7 +405,7 @@ class TestList(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(swift.ConditionNotMetError):
-            swift_p.list(num_objs_cond=make_condition('==', 3))
+            swift_p.list(condition=lambda results: len(results) == 3)
 
         # Verify that list was retried at least once
         self.assertTrue(len(mock_list.call_args_list) > 1)
@@ -498,7 +454,7 @@ class TestList(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(swift.ConditionNotMetError):
             swift_p.list(
-                num_objs_cond=make_condition('==', 3),
+                condition=lambda results: len(results) == 3,
                 num_retries=5,
                 initial_retry_sleep=100,
                 retry_sleep_function=lambda t, attempt: t + 1)
@@ -528,7 +484,33 @@ class TestList(SwiftTestCase):
         ]
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        results = swift_p.list(num_objs_cond=make_condition('>', 1))
+        results = swift_p.list(condition=lambda results: len(results) > 1)
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container/path/to/resource1',
+            'swift://tenant/container/path/to/resource2'
+        ])
+
+        # Verify that list was retried once
+        self.assertEquals(len(mock_list.call_args_list), 2)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_has_paths_condition_met_on_second_try(self, mock_sleep):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = [
+            ({}, [{
+                'name': 'path/to/resource1'
+            }]),
+            ({}, [{
+                'name': 'path/to/resource1'
+            }, {
+                'name': 'path/to/resource2'
+            }])
+        ]
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        expected_paths = set(['swift://tenant/container/path/to/resource1',
+                              'swift://tenant/container/path/to/resource2'])
+        results = swift_p.list(condition=lambda results: expected_paths.issubset(results))
         self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container/path/to/resource1',
             'swift://tenant/container/path/to/resource2'
@@ -746,12 +728,12 @@ class TestGlob(SwiftTestCase):
     def test_multi_glob_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift_p.glob('*invalid_pattern*', num_objs_cond=None)
+            swift_p.glob('*invalid_pattern*', condition=None)
 
     def test_invalid_glob_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(ValueError):
-            swift_p.glob('invalid_*pattern', num_objs_cond=None)
+            swift_p.glob('invalid_*pattern', condition=None)
 
     @mock.patch('time.sleep', autospec=True)
     def test_cond_not_met(self, mock_list, mock_sleep):
@@ -762,7 +744,7 @@ class TestGlob(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaises(swift.ConditionNotMetError):
             swift_p.glob('pattern*',
-                         num_objs_cond=swift.make_condition('>', 2),
+                         condition=lambda results: len(results) > 2,
                          num_retries=3)
 
         # Verify that global was tried three times
@@ -775,7 +757,7 @@ class TestGlob(SwiftTestCase):
         ]
         swift_p = SwiftPath('swift://tenant/container')
         paths = swift_p.glob('pattern*',
-                             num_objs_cond=swift.make_condition('==', 2))
+                             condition=lambda results: len(results) == 2)
         self.assertSwiftListResultsEqual(paths, [
             SwiftPath('swift://tenant/container1'),
             SwiftPath('swift://tenant/container2')
@@ -1014,7 +996,7 @@ class TestDownload(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.download('output_dir',
-                         num_objs_cond=make_condition('==', 3))
+                         condition=lambda results: len(results) == 3)
         self.assertEquals(len(self.mock_swift.download.call_args_list), 2)
 
     def test_download_correct_thread_options(self):
@@ -1120,7 +1102,8 @@ class TestUpload(SwiftTestCase):
     def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.side_effect = ClientException(
-            "put_object('HHGF5BCXX_160209_SN357_0342_A', 'pileups/s_1_TAAAGGC/s_1_TAAAGGC.chr15-80450512.txt', ...) "
+            "put_object('HHGF5BCXX_160209_SN357_0342_A', "
+            "'pileups/s_1_TAAAGGC/s_1_TAAAGGC.chr15-80450512.txt', ...) "
             "failure and no ability to reset contents for reupload.")
 
         swift_p = SwiftPath('swift://tenant/container/path')
@@ -1477,6 +1460,17 @@ class TestRmtree(SwiftTestCase):
         with self.assertRaisesRegexp(ValueError, 'include container'):
             swift_p.rmtree()
 
+    @mock.patch('time.sleep', autospec=True)
+    def test_rmtree_confict(self, mock_sleep, mock_list):
+        self.mock_swift.delete.side_effect = ClientException('conflict',
+                                                             http_status=409)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.ConflictError):
+            swift_p.rmtree(num_retries=5)
+
+        self.assertEquals(len(mock_sleep.call_args_list), 5)
+
     def test_w_only_container(self, mock_list):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
@@ -1547,6 +1541,7 @@ class TestPost(SwiftTestCase):
         self.mock_swift.post.assert_called_once_with(container='container',
                                                      options=None)
 
+
 class TestCompatHelpers(SwiftTestCase):
     def test_noops(self):
         self.assertEqual(SwiftPath('swift://tenant').expanduser(),
@@ -1561,7 +1556,6 @@ class TestCompatHelpers(SwiftTestCase):
                          SwiftPath('swift://tenant/container/blah/a'))
         self.assertEqual(SwiftPath('swift://tenant/container//a/b').expand(),
                          SwiftPath('swift://tenant/container/a/b'))
-
 
     def test_expandvars(self):
         original = SwiftPath('swift://tenant/container/$somevar/another')

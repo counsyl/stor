@@ -11,6 +11,13 @@ v6.0.0
   objects are uploaded from windows
 * Added `swift.file_name_to_object_name` for converting file names on any system to
   their associated object name
+* Integration tests are part of package's tests
+* Addition of `swift.ConflictError` exception, which is thrown when storage
+  nodes have consistency issue deleting container
+* Retry logic on `SwiftPath.rmtree` so that container deletes will retry
+  when hitting a `swift.ConflictError`
+* Swift conditions are now functions that take results and return a Boolean.
+* `SwiftPath.download` returns a list of downloaded paths
 
 v5.0.0
 ------
@@ -18,7 +25,6 @@ v5.0.0
 * Default `SwiftPath.temp_url` to using ``inline=True``, since that's the general
   expectation for how we've used Apache filer / generally you expect URLs to
   render in-browser rather than default to attachment.
-
 
 v4.5.0
 ------
