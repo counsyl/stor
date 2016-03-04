@@ -990,7 +990,9 @@ class SwiftPath(Path):
                          dest,
                          objects,
                          object_threads=10,
-                         container_threads=10,):
+                         container_threads=10,
+                         skip_identical=False,
+                         shuffle=True):
         """Downloads a list of objects to a destination folder.
 
         Note that this method takes a list of complete relative or absolute
@@ -1005,14 +1007,21 @@ class SwiftPath(Path):
         Args:
             dest (str): The destination folder to download to. The directory
                 will be created if it doesnt exist.
-            object_threads (int): The amount of threads to use for downloading
-                objects.
-            container_threads (int): The amount of threads to use for
-                downloading containers.
-            objs (List[str|PosixPath|SwiftPath]): The list of objects to
+            objects (List[str|PosixPath|SwiftPath]): The list of objects to
                 download. The objects can paths relative to the download path
                 or absolute swift paths. Any absolute swift path must be
                 children of the download path
+            object_threads (int, default 10): The amount of threads to use for downloading
+                objects.
+            container_threads (int, default 10): The amount of threads to use for
+                downloading containers.
+            skip_identical (bool, default False): Skip downloading files that are identical
+                on both sides. Note this incurs reading the contents of all pre-existing local
+                files.
+            shuffle (bool, default True): When downloading a complete container,
+                download order is randomised in order to reduce the load on individual drives
+                when doing threaded downloads. Disable this option to submit download jobs to
+                the thread pool in the order they are listed in the object store.
 
         Returns:
             dict: A mapping of all requested ``objs`` to their location on
@@ -1072,7 +1081,9 @@ class SwiftPath(Path):
         download_options = {
             'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
-            'remove_prefix': True
+            'remove_prefix': True,
+            'skip_identical': skip_identical,
+            'shuffle': shuffle
         }
         results = self._swift_service_call('download',
                                            _service_options=service_options,
@@ -1089,11 +1100,13 @@ class SwiftPath(Path):
                  dest,
                  object_threads=10,
                  container_threads=10,
+                 skip_identical=False,
+                 shuffle=True,
                  condition=None):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
-        the number of downloaded objects does not match the ``condition``
+        the returned download result does not match the ``condition``
         condition. View `module-level documentation <storage_utils.swift>`
         for more information about configuring retry logic at the module or
         method level.
@@ -1108,10 +1121,18 @@ class SwiftPath(Path):
                 objects.
             container_threads (int): The amount of threads to use for
                 downloading containers.
+            skip_identical (bool, default False): Skip downloading files that are identical
+                on both sides. Note this incurs reading the contents of all pre-existing local
+                files.
+            shuffle (bool, default True): When downloading a complete container,
+                download order is randomised in order to reduce the load on individual drives
+                when doing threaded downloads. Disable this option to submit download jobs to
+                the thread pool in the order they are listed in the object store.
             condition (SwiftCondition): The method will only return
-                when the results matches the condition. In the event of the
+                when the results of download matches the condition. In the event of the
                 condition never matching after retries, partially downloaded
-                results will not be deleted.
+                results will not be deleted. Note that users are not expected to write
+                conditions for download without an understanding of the structure of the results.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1119,7 +1140,8 @@ class SwiftPath(Path):
                 meet the condition.
 
         Returns:
-            List[SwiftPath]: Every downloaded path.
+            List[dict]: A list of every operation performed in the download by the
+                underlying swift client
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
@@ -1132,7 +1154,9 @@ class SwiftPath(Path):
         download_options = {
             'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
-            'remove_prefix': True
+            'remove_prefix': True,
+            'skip_identical': skip_identical,
+            'shuffle': shuffle
         }
         results = self._swift_service_call('download',
                                            self.container,
@@ -1142,22 +1166,25 @@ class SwiftPath(Path):
         _check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def upload(self,
                to_upload,
                segment_size=DEFAULT_SEGMENT_SIZE,
+               object_threads=10,
+               segment_threads=10,
                use_slo=True,
                leave_segments=False,
                changed=False,
-               object_name=None,
-               object_threads=10,
-               segment_threads=10):
+               skip_identical=False,
+               checksum=True,
+               condition=None):
         """Uploads a list of files and directories to swift.
 
-        This method retries `num_retries` times if swift is unavailable.
-        View `module-level documentation <storage_utils.swift>` for more
-        information about configuring retry logic at the module or method
-        level.
+        This method retries `num_retries` times if swift is unavailable or if
+        the returned upload result does not match the ``condition``
+        condition. View `module-level documentation <storage_utils.swift>`
+        for more information about configuring retry logic at the module or
+        method level.
 
         For example::
 
@@ -1176,26 +1203,44 @@ class SwiftPath(Path):
         Args:
             to_upload (list): A list of file names, directory names, or
                 `SwiftUploadObject` objects to upload.
-            segment_size (int|str): Upload files in segments no larger than
+            object_threads (int, default 10): The number of threads to use when uploading
+                full objects.
+            segment_threads (int, default 10): The number of threads to use when uploading
+                object segments.
+            segment_size (int|str, default 1GB): Upload files in segments no larger than
                 <segment_size> (in bytes) and then create a "manifest" file
                 that will download all the segments as if it were the original
                 file. Sizes may also be expressed as bytes with the B suffix,
                 kilobytes with the K suffix, megabytes with the M suffix or
                 gigabytes with the G suffix.'
-            use_slo (bool): When used in conjunction with segment_size, it
+            use_slo (bool, default True): When used in conjunction with segment_size, it
                 will create a Static Large Object instead of the default
                 Dynamic Large Object.
-            leave_segments (bool): Indicates that you want the older segments
+            leave_segments (bool, default False): Indicates that you want the older segments
                 of manifest objects left alone (in the case of overwrites).
-            changed (bool): Upload only files that have changed since last
+            changed (bool, default False): Upload only files that have changed since last
                 upload.
-            object_threads (int): The number of threads to use when uploading
-                full objects.
-            segment_threads (int): The number of threads to use when uploading
-                object segments.
+            skip_identical (bool, default False): Skip uploading files that are identical
+                on both sides. Note this incurs reading the contents of all pre-existing local
+                files.
+            checksum (bool, default True): Peform checksum validation of upload.
+                condition (SwiftCondition): The method will only return
+                when the results of download matches the condition. In the event of the
+                condition never matching after retries, partially downloaded
+                results will not be deleted. Note that users are not expected to write
+                conditions for download without an understanding of the structure of the results.
+            condition (SwiftCondition): The method will only return
+                when the results of upload matches the condition. In the event of the
+                condition never matching after retries, partially uploaded
+                results will not be deleted. Note that users are not expected to write
+                conditions for upload without an understanding of the structure of the results.
 
-            Raises:
-                SwiftError: A swift client error occurred.
+        Raises:
+            SwiftError: A swift client error occurred.
+
+        Returns:
+            List[dict]: A list of every operation performed in the upload by the
+                underlying swift client
         """
         if not self.container:
             raise ValueError('must specify container when uploading')
@@ -1226,13 +1271,18 @@ class SwiftPath(Path):
             'use_slo': use_slo,
             'segment_container': '.segments_%s' % self.container,
             'leave_segments': leave_segments,
-            'changed': changed
+            'changed': changed,
+            'skip_identical': skip_identical,
+            'checksum': checksum
         }
-        return self._swift_service_call('upload',
-                                        self.container,
-                                        swift_upload_objects,
-                                        _service_options=service_options,
-                                        options=upload_options)
+        results = self._swift_service_call('upload',
+                                           self.container,
+                                           swift_upload_objects,
+                                           _service_options=service_options,
+                                           options=upload_options)
+
+        _check_condition(condition, results)
+        return results
 
     @_swift_retry(exceptions=UnavailableError)
     def remove(self):

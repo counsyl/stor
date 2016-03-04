@@ -4,6 +4,7 @@ Release Notes
 v6.0.0
 ------
 
+* Added additional options to `SwiftPath.upload` and `SwiftPath.download`
 * Provided a cross-compatible API at module level that accepts strings or ``Path`` objects for easy usage,
   and implemented most ``os.path.is*`` methods on swift, particularly ``isdir()`` and ``isfile()``.
 * Removed certain "fancy" path.py methods from ``FileSystemPath`` to reduce the
