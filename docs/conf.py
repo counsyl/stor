@@ -51,7 +51,7 @@ pygments_style = 'sphinx'
 
 intersphinx_mapping = {
     'python': ('http://python.readthedocs.org/en/v2.7.2/', None),
-    'django': ('http://django.readthedocs.org/en/latest/', None),
+    #'django': ('http://django.readthedocs.org/en/latest/', None),
     #'celery': ('http://celery.readthedocs.org/en/latest/', None),
 }
 

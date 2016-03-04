@@ -576,6 +576,33 @@ class TestList(SwiftTestCase):
                                           full_listing=True,
                                           delimiter='/')
 
+    def test_listdir_ignore_segment_containers(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'subdir': 'path/to/resource1/'
+        }, {
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }, {
+            'name': 'path/to/resource3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container_segments/path/to')
+        results = list(swift_p.listdir(ignore_segment_containers=True))
+        # Note that objects in segment containers will not be ignored, so
+        # all results should be returned
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container_segments/path/to/resource1',
+            'swift://tenant/container_segments/path/to/resource2',
+            'swift://tenant/container_segments/path/to/resource3'
+        ])
+        mock_list.assert_called_once_with('container_segments',
+                                          limit=None,
+                                          prefix='path/to/',
+                                          full_listing=True,
+                                          delimiter='/')
+
     def test_listdir_on_container(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
@@ -601,22 +628,41 @@ class TestList(SwiftTestCase):
                                           full_listing=True,
                                           delimiter='/')
 
-    def test_listdir_on_tenant(self):
+    def test_listdir_on_tenant_allow_segment_containers(self):
         mock_list = self.mock_swift_conn.get_account
         mock_list.return_value = ({}, [{
             'name': 'container1'
         }, {
-            'name': 'container2'
+            'name': 'container2_segments'
         }, {
-            'name': 'container3'
+            'name': '.segments_container3'
         }])
 
         swift_p = SwiftPath('swift://tenant/')
-        results = list(swift_p.listdir())
+        results = list(swift_p.listdir(ignore_segment_containers=False))
         self.assertSwiftListResultsEqual(results, [
             'swift://tenant/container1',
-            'swift://tenant/container2',
-            'swift://tenant/container3'
+            'swift://tenant/container2_segments',
+            'swift://tenant/.segments_container3'
+        ])
+        mock_list.assert_called_once_with(limit=None,
+                                          prefix=None,
+                                          full_listing=True)
+
+    def test_listdir_on_tenant_ignore_segment_containers(self):
+        mock_list = self.mock_swift_conn.get_account
+        mock_list.return_value = ({}, [{
+            'name': 'container1'
+        }, {
+            'name': 'container2_segments'
+        }, {
+            'name': '.segments_container3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/')
+        results = list(swift_p.listdir(ignore_segment_containers=True))
+        self.assertSwiftListResultsEqual(results, [
+            'swift://tenant/container1'
         ])
         mock_list.assert_called_once_with(limit=None,
                                           prefix=None,

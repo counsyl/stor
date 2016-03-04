@@ -4,6 +4,7 @@ Release Notes
 v6.0.0
 ------
 
+* Segment containers are ignored by default when doing `SwiftPath.listdir`
 * Cache authentication credentials for performance.
 * Renamed `storage_utils.is_posix_path` to `storage_utils.is_filesystem_path` but
   kept `storage_utils.is_posix_path` for backwards compatibility
