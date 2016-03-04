@@ -40,9 +40,8 @@ import tempfile
 import threading
 import urlparse
 
-from storage_utils import base
 from storage_utils import is_swift_path
-from storage_utils import path
+from storage_utils.base import Path
 from storage_utils import utils
 from storage_utils.posix import PosixPath
 from swiftclient import exceptions as swift_exceptions
@@ -513,12 +512,12 @@ class SwiftFile(object):
                                           **self._swift_upload_kwargs)
 
 
-class SwiftPath(base.StorageUtilsPathMixin, str):
+class SwiftPath(Path):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
     """
-    swift_drive = drive = 'swift://'
+    swift_drive = 'swift://'
     path_module = posixpath
     # Parts of a swift path are returned using this class
     parts_class = PosixPath
@@ -547,25 +546,12 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
-        return self.parts_class(PosixPath(self).name)
+        return self.parts_class(super(self, SwiftPath).name)
 
     @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
-        return self.path_class(PosixPath(self).parent)
-
-    @property
-    def ext(self):
-        """The extension of the file"""
-        return PosixPath(self).ext
-
-    def dirname(self):
-        """The directory name of the path, mimicking path.py's dirname()"""
-        return self.path_class(PosixPath(self).dirname())
-
-    def basename(self):
-        """The base name name of the path, mimicking path.py's basename()"""
-        return self.parts_class(PosixPath(self).basename())
+        return self.path_class(super(self, SwiftPath).parent)
 
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings."""
@@ -1056,9 +1042,9 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
             raise ValueError('cannot call download_objects on tenant with no container')
 
         # Convert requested download objects to full object paths
-        obj_base = self.resource or path('')
+        obj_base = self.resource or PosixPath('')
         objs_to_download = {
-            obj: path(obj).resource if is_swift_path(obj) else obj_base / obj
+            obj: SwiftPath(obj).resource if is_swift_path(obj) else obj_base / obj
             for obj in objects
         }
 
@@ -1213,7 +1199,7 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
 
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results.
-        resource_base = _with_trailing_slash(self.resource) or path('')
+        resource_base = _with_trailing_slash(self.resource) or PosixPath('')
         swift_upload_objects.extend([
             SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
             for f in all_files_to_upload
@@ -1441,17 +1427,35 @@ class SwiftPath(base.StorageUtilsPathMixin, str):
         return wrapper
 
     abspath = _noop('abspath')
-    expanduser = _noop('expanduser')
-
-    def expandvars(self):
-        "Expand system environment variables in path"
-        return self.path_class(posixpath.expandvars(self))
-
-    def expand(self):
-        "Expand variables and normalize path"
-        return self.expandvars().normpath()
 
     def normpath(self):
-        "Normalize path following linux conventions"
+        "Normalize path following linux conventions (keeps swift:// prefix)"
         normed = posixpath.normpath('/' + str(self)[len(self.swift_drive):])[1:]
         return self.path_class(self.swift_drive + normed)
+
+    realpath = _noop('realpath')
+    expanduser = _noop('expanduser')
+
+    def isabs(self):
+        return True
+
+    def isdir(self):
+        if _with_slash(self).first():
+            return True
+        else:
+            try:
+                return 'directory' in self.stat().get('Content Type', '')
+            except NotFoundError:
+                return False
+
+    def isfile(self):
+        try:
+            return 'directory' not in self.stat().get('Content Type', '')
+        except NotFoundError:
+            return False
+
+    def islink(self):
+        return False
+
+    def ismount(self):
+        return True

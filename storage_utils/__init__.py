@@ -1,24 +1,99 @@
 """
-Counsyl Storage Utils comes with the ability to create paths in a similar
-manner to `path.py <https://pypi.python.org/pypi/path.py>`_. It is expected
-that the main functions below are the only ones directly used.
-(i.e. ``Path`` or ``SwiftPath`` objects should never be explicitly
-instantiated).
+storage-utils
+=============
+
+Storage utils is a library that aims to make it easy to write code that works
+with both local posix filesystems and Swift Object Based Storage. In general,
+you should be able to replace most uses of ``os.path`` and ``open`` with::
+
+    import storage_utils as path
+    from storage_utils import open
+
+And your code will work either with posix paths or swift paths (defined as
+strings in the format ``swift://<TENANT>/<CONTAINER>/<OBJECT>``).  Storage
+Utils also provides an object-oriented API similar to Python 3's new pathlib,
+accessible via ``storage_utils.Path``.
+
+storage_utils is heavily inspired by / based on the path.py library, but
+modified to avoid the need to know whether you have a Path or a string for most
+functions.
+
+See `storage_utils.swift` for more information on Swift-specific functionality.
 """
 
 from storage_utils.utils import is_filesystem_path
 from storage_utils.utils import is_swift_path
 from storage_utils.utils import NamedTemporaryDirectory
-from storage_utils.utils import path
+from storage_utils.base import Path
 
 
-# For compatibility with earlier versions of storage utils
-is_posix_path = is_filesystem_path
+def _delegate_to_path(name):
+    def wrapper(path, *args, **kwargs):
+        f = getattr(Path(path), name)
+        return f(*args, **kwargs)
+    wrapper.__doc__ = getattr(Path, name)
+    wrapper.__name__ = name
+    return wrapper
+
+# extra compat!
+open = _delegate_to_path('open')
+abspath = _delegate_to_path('abspath')
+normcase = _delegate_to_path('normcase')
+normpath = _delegate_to_path('normpath')
+realpath = _delegate_to_path('realpath')
+expanduser = _delegate_to_path('expanduser')
+expandvars = _delegate_to_path('expandvars')
+dirname = _delegate_to_path('dirname')
+basename = _delegate_to_path('basename')
+expand = _delegate_to_path('expand')
+join = _delegate_to_path('join')
+split = _delegate_to_path('split')
+splitext = _delegate_to_path('splitext')
+listdir = _delegate_to_path('listdir')
+glob = _delegate_to_path('glob')
+exists = _delegate_to_path('exists')
+isabs = _delegate_to_path('isabs')
+isdir = _delegate_to_path('isdir')
+isfile = _delegate_to_path('isfile')
+islink = _delegate_to_path('islink')
+ismount = _delegate_to_path('ismount')
+
+
+def path(pth):
+    import warnings
+
+    # DeprecationWarnings are hidden by default. We want to get rid of this
+    # sooner rather than later.
+    warnings.warn(UserWarning,
+                  'Using the ``path()`` function directly is deprecated -'
+                  ' either use storage_utils.Path or the functional API'
+                  ' directly')
+    return Path(pth)
+
 
 __all__ = [
     'is_filesystem_path',
     'is_posix_path',
     'is_swift_path',
     'NamedTemporaryDirectory',
-    'path'
+    'abspath',
+    'normcase',
+    'normpath',
+    'realpath',
+    'expanduser',
+    'expandvars',
+    'dirname',
+    'basename',
+    'expand',
+    'join',
+    'split',
+    'splitext',
+    'listdir',
+    'glob',
+    'exists',
+    'isabs',
+    'isdir',
+    'isfile',
+    'islink',
+    'ismount',
 ]

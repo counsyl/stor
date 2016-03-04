@@ -5,7 +5,7 @@ import posixpath
 from storage_utils import base
 
 
-class PosixPath(base.StorageUtilsPath):
+class PosixPath(base.FileSystemPath):
     """Represents a posix path.
 
     This class inherits a vendored path.py ``Path`` object and
