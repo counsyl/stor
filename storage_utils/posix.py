@@ -15,4 +15,4 @@ class PosixPath(base.FileSystemPath):
     ``module`` attribute and sets it to ``posixpath`` to ensure
     that it always represents a posix path.
     """
-    module = posixpath
+    path_module = posixpath

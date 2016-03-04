@@ -13,6 +13,7 @@ from six import text_type
 from six import string_types
 from six import PY3
 
+
 class Path(text_type):
     """
     Wraps path operations with an object-oriented API that makes it easier to
@@ -51,17 +52,9 @@ class Path(text_type):
 
     @ClassProperty
     @classmethod
-    def path_module(cls):
-        """The path module used for path manipulation functions"""
-        raise NotImplementedError('must implement path_module')
-
-    @ClassProperty
-    @classmethod
     def path_class(cls):
         """What class should be used to construct new instances from this class"""
         return cls
-
-    _next_class = path_class
 
     def _has_incompatible_path_module(self, other):
         """Returns true if the other path is a storage utils path and has a
@@ -107,35 +100,35 @@ class Path(text_type):
 
     def abspath(self):
         """ .. seealso:: :func:`os.path.abspath` """
-        return self._next_class(self.module.abspath(self))
+        return self.path_class(self.path_module.abspath(self))
 
     def normcase(self):
         """ .. seealso:: :func:`os.path.normcase` """
-        return self._next_class(self.module.normcase(self))
+        return self.path_class(self.path_module.normcase(self))
 
     def normpath(self):
         """ .. seealso:: :func:`os.path.normpath` """
-        return self._next_class(self.module.normpath(self))
+        return self.path_class(self.path_module.normpath(self))
 
     def realpath(self):
         """ .. seealso:: :func:`os.path.realpath` """
-        return self._next_class(self.module.realpath(self))
+        return self.path_class(self.path_module.realpath(self))
 
     def expanduser(self):
         """ .. seealso:: :func:`os.path.expanduser` """
-        return self._next_class(self.module.expanduser(self))
+        return self.path_class(self.path_module.expanduser(self))
 
     def expandvars(self):
         """ .. seealso:: :func:`os.path.expandvars` """
-        return self._next_class(self.module.expandvars(self))
+        return self.path_class(self.path_module.expandvars(self))
 
     def dirname(self):
         """ .. seealso:: :attr:`parent`, :func:`os.path.dirname` """
-        return self._next_class(self.module.dirname(self))
+        return self.path_class(self.path_module.dirname(self))
 
     def basename(self):
         """ .. seealso:: :attr:`name`, :func:`os.path.basename` """
-        return self._next_class(self.module.basename(self))
+        return self.path_class(self.path_module.basename(self))
 
     def expand(self):
         """ Clean up a filename by calling :meth:`expandvars()`,
@@ -161,8 +154,8 @@ class Path(text_type):
 
         .. seealso:: :attr:`parent`, :attr:`name`, :func:`os.path.split`
         """
-        parent, child = self.module.split(self)
-        return self._next_class(parent), child
+        parent, child = self.path_module.split(self)
+        return self.path_class(parent), child
 
     def splitext(self):
         """ p.splitext() -> Return ``(p.stripext(), p.ext)``.
@@ -176,18 +169,30 @@ class Path(text_type):
 
         .. seealso:: :func:`os.path.splitext`
         """
-        filename, ext = self.module.splitext(self)
-        return self._next_class(filename), ext
+        filename, ext = self.path_module.splitext(self)
+        return self.path_class(filename), ext
+
+    def splitdrive(self):
+        """ p.splitdrive() -> Return ``(p.drive, <the rest of p>)``.
+
+        Split the drive specifier from this path.  If there is
+        no drive specifier, :samp:`{p.drive}` is empty, so the return value
+        is simply ``(Path(''), p)``.  This is always the case on Unix.
+
+        .. seealso:: :func:`os.path.splitdrive`
+        """
+        drive, rel = self.path_module.splitdrive(self)
+        return self.path_class(drive), rel
 
     def joinpath(self, *others):
         """
         Join first to zero or more :class:`Path` components, adding a separator
         character (:samp:`{first}.module.sep`) if needed.  Returns a new
-        instance of :samp:`{first}._next_class`.
+        instance of :samp:`{first}.path_class`.
 
         .. seealso:: :func:`os.path.join`
         """
-        return self._next_class(self.module.join(self, *others))
+        return self.path_class(self.path_module.join(self, *others))
 
     def open(self, **kwargs):
         raise NotImplementedError
@@ -275,7 +280,7 @@ class FileSystemPath(Path):
         Not part of cross-compatible API because SwiftPath.stat() returns a
         dictionary of headers (and most attributes would not map anyways).
         """
-        return self.module.stat(self)
+        return self.path_module.stat(self)
 
     @staticmethod
     def _always_unicode(path):
@@ -296,32 +301,32 @@ class FileSystemPath(Path):
                 for child in map(self._always_unicode, os.listdir(self))]
 
     def glob(self, pattern):
-        cls = self._next_class
+        cls = self.path_class
         return [cls(s) for s in glob.glob(self / pattern)]
 
     def exists(self):
         """ .. seealso:: :func:`os.path.exists` """
-        return self.module.exists(self)
+        return self.path_module.exists(self)
 
     def isabs(self):
         """ .. seealso:: :func:`os.path.isabs` """
-        return self.module.isabs(self)
+        return self.path_module.isabs(self)
 
     def isdir(self):
         """ .. seealso:: :func:`os.path.isdir` """
-        return self.module.isdir(self)
+        return self.path_module.isdir(self)
 
     def isfile(self):
         """ .. seealso:: :func:`os.path.isfile` """
-        return self.module.isfile(self)
+        return self.path_module.isfile(self)
 
     def islink(self):
         """ .. seealso:: :func:`os.path.islink` """
-        return self.module.islink(self)
+        return self.path_module.islink(self)
 
     def ismount(self):
         """ .. seealso:: :func:`os.path.ismount` """
-        return self.module.ismount(self)
+        return self.path_module.ismount(self)
 
     def remove(self):
         """ .. seealso:: :func:`os.remove` """

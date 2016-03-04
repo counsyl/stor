@@ -546,12 +546,12 @@ class SwiftPath(Path):
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
-        return self.parts_class(super(self, SwiftPath).name)
+        return self.parts_class(super(SwiftPath, self).name)
 
     @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
-        return self.path_class(super(self, SwiftPath).parent)
+        return self.path_class(super(SwiftPath, self).parent)
 
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings."""
