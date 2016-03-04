@@ -34,10 +34,10 @@ import copy
 from functools import wraps
 import json
 import logging
-import operator
 import os
 import tempfile
 import threading
+import urlparse
 
 from storage_utils import is_swift_path
 from storage_utils import path
@@ -47,6 +47,7 @@ from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
 from swiftclient.service import SwiftUploadObject
+from swiftclient.utils import generate_temp_url
 
 
 logger = logging.getLogger(__name__)
@@ -79,12 +80,17 @@ If not set, the ``OS_PASSWORD`` environment variable will be used.
 _cached_auth_token_map = {}
 _singleton_lock = threading.Lock()
 
+temp_url_key = os.environ.get('OS_TEMP_URL_KEY')
+"""The key for generating temporary URLs
+
+If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
+"""
+
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
-# When a swift method takes a condition, these variables are used to
-# configure retry logic. These variables can also be passed
-# to the methods themselves
+# These variables are used to configure retry logic for swift.
+# These variables can also be passed to the methods themselves
 initial_retry_sleep = 1
 """The time to sleep before the first retry"""
 
@@ -115,8 +121,8 @@ def update_settings(**settings):
     Args:
         **settings: keyword arguments for settings. Can
             include settings for auth_url, username,
-            password, initial_retry_sleep, num_retries,
-            and retry_sleep_function.
+            password, temp_url_key, initial_retry_sleep,
+            num_retries, and retry_sleep_function.
 
     Examples:
 
@@ -212,6 +218,16 @@ class AuthenticationError(SwiftError):
     pass
 
 
+class ConflictError(SwiftError):
+    """Thrown when a 409 response is returned from swift
+
+    This error is thrown when deleting a container and
+    some object storage nodes report that the container
+    has objects while others don't.
+    """
+    pass
+
+
 class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
@@ -226,88 +242,28 @@ class ConditionNotMetError(SwiftError):
     pass
 
 
-class _Condition(object):
-    """A conditional expression that can be applied to some swift methods
+def _validate_condition(condition):
+    """Verifies condition is a function that takes one argument"""
+    if condition is None:
+        return
+    if not (hasattr(condition, '__call__') and hasattr(condition, '__code__')):
+        raise ValueError('condition must be callable')
+    if condition.__code__.co_argcount != 1:
+        raise ValueError('condition must take exactly one argument')
 
-    Condition objects take an operator and a right operand. Left operands
-    can be checked against the condition. If the condition is not met,
-    ConditionNotMetError exceptions are thrown.
 
-    The operators that are supported are ``==``, ``!=``, ``<``, ``>``, ``<=``,
-    and ``>=``.
+def _check_condition(condition, results):
+    """Checks the results against the condition.
 
+    Raises:
+        ConditionNotMetError: If the condition returns False
     """
-    operators = {
-        '==': operator.eq,
-        '!=': operator.ne,
-        '<': operator.lt,
-        '>': operator.gt,
-        '<=': operator.le,
-        '>=': operator.ge
-    }
+    if condition is None:
+        return
 
-    def __init__(self, operator, right_operand):
-        if operator not in self.operators:
-            raise ValueError('invalid operator: "%s"' % operator)
-        self.operator = operator
-        self.right_operand = right_operand
-
-    def assert_is_met_by(self, left_operand, left_operand_name):
-        """Asserts that a condition is met by a left operand
-
-        Args:
-            left_operand: The left operand checked against the condition
-            left_operand_name: The name of the left operand. Used when
-                creating an error message
-
-        Raises:
-            ConditionNotMetError: When the condition is not met
-        """
-        if not self.operators[self.operator](left_operand, self.right_operand):
-            raise ConditionNotMetError(
-                'condition not met: %s is not %s' % (left_operand_name, self)
-            )
-
-    def __str__(self):
-        return '%s %s' % (self.operator, self.right_operand)
-
-    def __repr__(self):
-        return '%s("%s", %s)' % (type(self).__name__,
-                                 self.operator,
-                                 self.right_operand)
-
-
-def make_condition(operator, right_operand):
-    """Creates a condition that can be applied to various swift methods.
-
-    Args:
-        operator (str): The operator for the condition, can be
-            one of ``==``, ``!=``, ``<``, ``>``, ``<=``,
-            and ``>=``.
-        right_operand: The operand on the right side of the
-            condition.
-
-    Examples:
-        To make a condition and use it in `SwiftPath.list`::
-
-            from storage_utils.swift import make_condition
-            from storage_utils.swift import SwiftPath
-            p = SwiftPath('swift://tenant/container/resource')
-            # Ensure that the amount of listed objects are greater than 6
-            cond = make_condition('>', 6)
-            objs = p.list(num_objs_cond=cond)
-
-        An illustration of what it looks like when a condition doesn't pass::
-
-            cond = make_condition('>', 100)
-            # ConditionNotMetError is thrown when the condition is not met
-            objs = p.list(num_objs_cond=cond)
-            Traceback (most recent call last):
-            ...
-            storage_utils.swift.ConditionNotMetError: condition not met: num
-            listed objects is not > 100
-    """
-    return _Condition(operator, right_operand)
+    condition_met = condition(results)
+    if not condition_met:
+        raise ConditionNotMetError('condition not met')
 
 
 def _swift_retry(exceptions=None):
@@ -353,6 +309,8 @@ def _propagate_swift_exceptions(func):
                 raise UnauthorizedError(str(e), e)
             elif http_status == 404:
                 raise NotFoundError(str(e), e)
+            elif http_status == 409:
+                raise ConflictError(str(e), e)
             elif http_status == 503:
                 logger.error('unavailable error in swift operation - %s', str(e))
                 raise UnavailableError(str(e), e)
@@ -750,6 +708,50 @@ class SwiftPath(str):
                                                        self.resource)
         return content
 
+    def temp_url(self, lifetime=300, method='GET', inline=True, filename=None):
+        """Obtains a temporary URL to an object.
+
+        Args:
+            lifetime (int): The time (in seconds) the temporary
+                URL will be valid
+            method (str): The HTTP method that can be used on
+                the temporary URL
+            inline (bool, default True): If False, URL will have a
+                Content-Disposition header that causes browser to download as
+                attachment.
+            filename (str, optional): A urlencoded filename to use for
+                attachment, otherwise defaults to object name
+        """
+        global temp_url_key, auth_url
+
+        if not self.resource:
+            raise ValueError('can only create temporary URL on object')
+        if not temp_url_key:
+            raise ValueError(
+                'a temporary url key must be set with update_settings(temp_url_key=<KEY> '
+                'or by setting the OS_TEMP_URL_KEY environment variable')
+        if not auth_url:
+            raise ValueError(
+                'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
+                'or by setting the OS_AUTH_URL environment variable')
+
+        obj_path = '/v1/%s' % self[len(self.swift_drive):]
+        obj_url = generate_temp_url(obj_path, lifetime, temp_url_key, method)
+        obj_url_parts = urlparse.urlparse(obj_url)
+        query = obj_url_parts.query.split('&')
+        if inline:
+            query.append('inline')
+        if filename:
+            query.append('filename=%s' % filename)
+
+        auth_url_parts = urlparse.urlparse(auth_url)
+        return urlparse.urlunparse((auth_url_parts.scheme,
+                                    auth_url_parts.netloc,
+                                    obj_url_parts.path,
+                                    auth_url_parts.params,
+                                    '&'.join(query),
+                                    auth_url_parts.fragment))
+
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
 
@@ -797,14 +799,14 @@ class SwiftPath(str):
     def list(self,
              starts_with=None,
              limit=None,
-             num_objs_cond=None,
+             condition=None,
              # intentionally not documented
              list_as_dir=False):
         """List contents using the resource of the path as a prefix.
 
         This method retries `num_retries` times if swift is unavailable
         or if the number of objects returned does not match the
-        ``num_objs_cond`` condition. View
+        ``condition`` condition. View
         `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
@@ -814,9 +816,8 @@ class SwiftPath(str):
                 be appended to the resource of the swift path. Note that the
                 current resource path is treated as a directory
             limit (int): Limit the amount of results returned
-            num_objs_cond (SwiftCondition): The method will only return
-                results when the number of objects returned meets this
-                condition.
+            condition (SwiftCondition): The method will only return
+                when the results matches the condition.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -824,11 +825,12 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the num_objs_cond condition.
+                meet the condition.
         """
         tenant = self.tenant
         prefix = self.resource
         full_listing = limit is None
+        _validate_condition(condition)
 
         # When starts_with is provided, treat the resource as a
         # directory that has the starts_with parameter after it. This allows
@@ -864,9 +866,7 @@ class SwiftPath(str):
             path_pre / (r.get('name') or r['subdir'].rstrip('/')) for r in results[1]
         })
 
-        if num_objs_cond:
-            num_objs_cond.assert_is_met_by(len(paths), 'num listed objects')
-
+        _check_condition(condition, paths)
         return paths
 
     def listdir(self):
@@ -878,7 +878,7 @@ class SwiftPath(str):
         return self.list(list_as_dir=True)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
-    def glob(self, pattern, num_objs_cond=None):
+    def glob(self, pattern, condition=None):
         """Globs all objects in the path with the pattern.
 
         This glob is only compatible with patterns that end in * because of
@@ -890,7 +890,7 @@ class SwiftPath(str):
         method will perform a swift query with a prefix of mydir/pattern.
 
         This method retries `num_retries` times if swift is unavailable or if
-        the number of globbed patterns does not match the ``num_objs_cond``
+        the number of globbed patterns does not match the ``condition``
         condition. View `module-level documentation <swiftretry>`
         for more information about configuring retry logic at the module or
         method level.
@@ -898,9 +898,8 @@ class SwiftPath(str):
         Args:
             pattern (str): The pattern to match. The pattern can only have
                 up to one '*' at the end.
-            num_objs_cond (SwiftCondition): The method will only return
-                results when the number of objects returned meets this
-                condition.
+            condition (SwiftCondition): The method will only return
+                when the number of results matches the condition.
 
         Returns:
             List[SwiftPath]: Every matching path.
@@ -908,18 +907,17 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the num_objs_cond condition.
+                meet the condition.
         """
         if pattern.count('*') > 1:
             raise ValueError('multiple pattern globs not supported')
         if '*' in pattern and not pattern.endswith('*'):
             raise ValueError('only prefix queries are supported')
+        _validate_condition(condition)
 
         paths = self.list(starts_with=pattern.replace('*', ''), num_retries=0)
 
-        if num_objs_cond:
-            num_objs_cond.assert_is_met_by(len(paths), 'num globbed objects')
-
+        _check_condition(condition, paths)
         return paths
 
     @_swift_retry(exceptions=UnavailableError)
@@ -1080,11 +1078,11 @@ class SwiftPath(str):
                  dest,
                  object_threads=10,
                  container_threads=10,
-                 num_objs_cond=None):
+                 condition=None):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
-        the number of downloaded objects does not match the ``num_objs_cond``
+        the number of downloaded objects does not match the ``condition``
         condition. View `module-level documentation <storage_utils.swift>`
         for more information about configuring retry logic at the module or
         method level.
@@ -1099,20 +1097,22 @@ class SwiftPath(str):
                 objects.
             container_threads (int): The amount of threads to use for
                 downloading containers.
-            num_objs_cond (SwiftCondition): The method will only return
-                results when the number of objects downloaded meets this
-                condition. Partially downloaded results will not be deleted.
+            condition (SwiftCondition): The method will only return
+                when the results matches the condition. In the event of the
+                condition never matching after retries, partially downloaded
+                results will not be deleted.
 
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the ``num_objs_cond`` condition.
+                meet the condition.
 
         Returns:
-            dict: A mapping of the destination to the download path
+            List[SwiftPath]: Every downloaded path.
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
+        _validate_condition(condition)
 
         service_options = {
             'object_dd_threads': object_threads,
@@ -1128,11 +1128,8 @@ class SwiftPath(str):
                                            _service_options=service_options,
                                            options=download_options)
 
-        if num_objs_cond:
-            num_objs_cond.assert_is_met_by(len(results),
-                                           'num downloaded objects')
-
-        return {self: dest}
+        _check_condition(condition, results)
+        return results
 
     @_swift_retry(exceptions=UnavailableError)
     def upload(self,
@@ -1250,7 +1247,7 @@ class SwiftPath(str):
                                         self.container,
                                         [self.resource])
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, ConflictError))
     def rmtree(self):
         """Removes a resource and all of its contents.
 
