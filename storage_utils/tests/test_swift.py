@@ -432,6 +432,16 @@ class TestList(SwiftTestCase):
         # Verify that list was retried one time
         self.assertEquals(len(mock_list.call_args_list), 2)
 
+    def test_list_authentication_error(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = ClientException(
+            'Unauthorized. Check username, password and tenant name/id.',
+            http_status=None)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.AuthenticationError):
+            swift_p.list()
+
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
@@ -1577,6 +1587,17 @@ class TestCompatHelpers(SwiftTestCase):
                          SwiftPath("swift://tenant"))
 
 
+class TestAuthCacheRetrying(SwiftTestCase):
+    @mock.patch('storage_utils.swift._clear_cached_auth_credentials', spec_set=True)
+    def test_refresh_cache_once_on_auth_err(self, mock_clear_cached_auth_credentials):
+        self.mock_swift.download.side_effect = swift.AuthenticationError('auth err')
+
+        with self.assertRaises(swift.AuthenticationError):
+            SwiftPath('swift://tenant/container/dir').download('.')
+
+        mock_clear_cached_auth_credentials.assert_called_once_with()
+
+
 class TestSwiftAuthCaching(SwiftTestCase):
     def setUp(self):
         self.setup_swift_mocks()
@@ -1643,7 +1664,7 @@ class TestSwiftAuthCaching(SwiftTestCase):
         call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
                                     {'tenant_name': 'AUTH_final_analysis_prod'})
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
-                        [call_seq, call_final_prod])
+                         [call_seq, call_final_prod])
         path('swift://AUTH_final_analysis_prod')._get_swift_connection()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq, call_final_prod])

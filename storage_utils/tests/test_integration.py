@@ -74,6 +74,27 @@ class BaseIntegrationTest(unittest.TestCase):
 
 
 class SwiftIntegrationTest(BaseIntegrationTest):
+    def test_cached_auth_and_auth_invalidation(self):
+        from swiftclient.client import get_auth_keystone as real_get_keystone
+        swift._clear_cached_auth_credentials()
+        with mock.patch('swiftclient.client.get_auth_keystone') as mock_get_keystone:
+            mock_get_keystone.side_effect = real_get_keystone
+            s = path(self.test_container).stat()
+            self.assertEquals(s['Account'], 'AUTH_swft_test')
+            self.assertEquals(len(mock_get_keystone.call_args_list), 1)
+
+            # The keystone auth should not be called on another stat
+            s = path(self.test_container).stat()
+            self.assertEquals(s['Account'], 'AUTH_swft_test')
+            self.assertEquals(len(mock_get_keystone.call_args_list), 1)
+
+            # Set the auth cache to something bad. The auth keystone should
+            # be called again on another stat
+            swift._cached_auth_token_map['AUTH_swft_test']['os_auth_token'] = 'bad_auth'
+            s = path(self.test_container).stat()
+            self.assertEquals(s['Account'], 'AUTH_swft_test')
+            self.assertEquals(len(mock_get_keystone.call_args_list), 2)
+
     def test_copy_to_from_container(self):
         num_test_objs = 5
         min_obj_size = 100
