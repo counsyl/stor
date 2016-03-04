@@ -9,6 +9,7 @@ import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 
+import storage_utils
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import swift
@@ -928,6 +929,18 @@ class TestExists(SwiftTestCase):
         mock_list.assert_called_with('B', full_listing=False,
                                      limit=1, prefix='C/D/')
 
+    @mock.patch.object(SwiftPath, 'exists', autospec=True)
+    def test_non_existent_container_or_tenant(self, mock_exists):
+        mock_exists.return_value = True
+        self.assertTrue(SwiftPath('swift://AUTH_final').isdir())
+        self.assertTrue(SwiftPath('swift://AUTH_final/container').isdir())
+
+    @mock.patch.object(SwiftPath, 'exists', autospec=True)
+    def test_existing_container_or_tenant(self, mock_exists):
+        mock_exists.return_value = False
+        self.assertFalse(SwiftPath('swift://AUTH_final').isdir())
+        self.assertFalse(SwiftPath('swift://AUTH_final/container').isdir())
+
 
 class TestDownloadObject(SwiftTestCase):
     def test_container(self):
@@ -1751,3 +1764,67 @@ class TestSwiftAuthCaching(SwiftTestCase):
         path('swift://AUTH_final_analysis_prod')._get_swift_connection()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq, call_final_prod])
+
+
+class TestIsMethods(SwiftTestCase):
+    def setUp(self):
+        super(TestIsMethods, self).setUp()
+        self.mock_list = self.mock_swift_conn.get_container
+
+    def test_isabs_always_true(self):
+        self.assertEqual(SwiftPath('swift://A/B/C').isabs(), True)
+
+    def test_ismount_always_true(self):
+        self.assertEqual(SwiftPath('swift://A/B/C').ismount(), True)
+
+    def test_islink_always_false(self):
+        self.assertEqual(SwiftPath('swift://A/B/C').islink(), False)
+
+    def test_isfile_existing_file(self):
+        self.mock_swift.stat.return_value = _make_stat_response(
+            {'items': [('Content-Type', 'text/html')]})
+        self.assertTrue(SwiftPath('swift://A/B/C.html').isfile())
+        self.mock_swift.stat.assert_called_with(container='B',
+                                                objects=['C.html'])
+
+    def test_isfile_no_content_type(self):
+        self.mock_swift.stat.return_value = _make_stat_response(
+            {'items': []})
+        self.assertTrue(SwiftPath('swift://A/B/C.html').isfile())
+
+    def test_isfile_nonexistent_file(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        self.assertFalse(SwiftPath('swift://A/B/C.html').isfile())
+
+    def test_isfile_directory_sentinel(self):
+        self.mock_swift.stat.return_value = _make_stat_response(
+            {'items': [('Content Type', 'application/directory')]})
+        self.assertFalse(storage_utils.isfile('swift://A/B/C'))
+        self.mock_swift.stat.assert_called_with(container='B',
+                                                objects=['C'])
+
+    def test_isfile_tenants_and_containers(self):
+        self.assertFalse(SwiftPath('swift://AUTH_final').isfile())
+        self.assertFalse(SwiftPath('swift://AUTH_final/container').isfile())
+        self.assertEqual(self.mock_swift.stat.call_args_list, [])
+
+    def test_isdir_directory_sentinel_empty(self):
+        self.mock_swift.stat.return_value = _make_stat_response(
+            {'items': [('Content Type', 'application/directory')]})
+        self.mock_list.return_value = ({}, [])
+        self.assertTrue(SwiftPath('swift://A/B/C').isdir())
+
+    def test_isdir_no_sentinel_subfile(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        self.mock_list.return_value = ({}, [{'name': 'C/blah'}])
+        self.assertTrue(SwiftPath('swift://A/B/C').isdir())
+
+    def test_isdir_no_files(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        self.mock_list.return_value = ({}, [])
+        self.assertFalse(SwiftPath('swift://A/B/C').isdir())
+
+    def test_isdir_404_on_container(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        self.mock_list.side_effect = _service_404_exception()
+        self.assertFalse(SwiftPath('swift://A/B/C').isdir())

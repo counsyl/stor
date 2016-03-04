@@ -1,7 +1,9 @@
 import mock
 import os
 import storage_utils
+from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
+from storage_utils import Path
 from storage_utils import posix
 from storage_utils import swift
 from storage_utils import utils
@@ -14,6 +16,7 @@ class TestDiv(unittest.TestCase):
     def test_success(self):
         p = posix.PosixPath('my/path') / 'other/path'
         self.assertEquals(p, posix.PosixPath('my/path/other/path'))
+        self.assertEquals(p, storage_utils.join('my/path', 'other/path'))
 
     def test_rdiv(self):
         p = 'my/path' / posix.PosixPath('other/path')
@@ -26,6 +29,9 @@ class TestDiv(unittest.TestCase):
     def test_w_swift_component(self):
         p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
         self.assertEquals(p, posix.PosixPath('my/path/name'))
+        self.assertEquals(storage_utils.join('my/path',
+                                             swift.SwiftPath('swift://t/c/name').name),
+                          p)
 
 
 class TestAdd(unittest.TestCase):
@@ -177,7 +183,57 @@ class TestOpen(unittest.TestCase):
             })
             p.close()
 
+    def test_functional_open(self):
+        with tempfile.NamedTemporaryFile() as f:
+            with storage_utils.open(f.name, 'wb', swift_upload_kwargs={}) as f:
+                f.write('blah')
+
     def test_open_works_wo_swift_params(self):
         with tempfile.NamedTemporaryFile() as f:
-            p = storage_utils.path(f.name).open()
+            p = storage_utils.Path(f.name).open()
             p.close()
+
+        with tempfile.NamedTemporaryFile() as f:
+            p = storage_utils.open(f.name)
+            p.close()
+
+
+class TestMisc(unittest.TestCase):
+    def test_repr(self):
+        self.assertEqual(repr(Path('/a/b')), "PosixPath('/a/b')")
+
+    def test_mk_rm_dir(self):
+        with NamedTemporaryDirectory(change_dir=True) as tmpdir:
+            dirname = tmpdir / 'blah'
+            dirname.mkdir()
+            with self.assertRaises(OSError):
+                dirname.mkdir()
+            dirname.mkdir_p()
+            dirname.rmdir()
+            with self.assertRaises(OSError):
+                dirname.rmdir()
+            dirname.rmdir_p()
+            dirname.mkdir_p()
+            dirname.makedirs_p()
+            with self.assertRaises(OSError):
+                dirname.makedirs()
+            assert dirname.exists()
+            dirname.rmdir_p()
+
+    def test_is_methods(self):
+        with NamedTemporaryDirectory(change_dir=True) as tmpdir:
+            dirname = tmpdir / 'blah'
+            self.assertFalse(dirname.isdir())
+            self.assertFalse(dirname.isfile())
+            dirname.mkdir()
+            self.assertTrue(dirname.isdir())
+            self.assertFalse(dirname.isfile())
+            filename = os.path.join(dirname, 'test.txt')
+            with filename.open('wb') as fp:
+                fp.write('somedata')
+            self.assertFalse(filename.isdir())
+            self.assertTrue(filename.isfile())
+            self.assertFalse(filename.islink())
+            self.assertTrue(filename.abspath().isabs())
+            self.assertFalse(Path('.').isabs())
+            self.assertEqual(dirname.listdir(), [filename])

@@ -32,9 +32,6 @@ class TestIsSwiftPath(unittest.TestCase):
 
 
 class TestIsFilesystemPath(unittest.TestCase):
-    def test_is_posix_path(self):
-        self.assertEquals(storage_utils.is_posix_path, storage_utils.is_filesystem_path)
-
     def test_true(self):
         self.assertTrue(storage_utils.is_filesystem_path('my/posix/path'))
 
@@ -94,3 +91,9 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
             self.assertTrue(tmp_d.exists())
 
         self.assertFalse(tmp_d.exists())
+
+
+class TestPathFunction(unittest.TestCase):
+    def test_path_function_back_compat(self):
+        pth = storage_utils.path('/blah')
+        self.assertIsInstance(pth, storage_utils.Path)

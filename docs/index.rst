@@ -4,23 +4,31 @@ Counsyl Storage Utils provides utilities for performing Posix/Windows file syste
 
 Path Quick Start
 ----------------
-The core of this project is a ``path`` factory function for accessing Posix/Windows file systems or Swift object based storage in a unified manner. The returned paths behave in the same manner of those from `path.py <https://pypi.python.org/pypi/path.py>`_. The ``path`` factory can be used to instantiate a path to a Posix file system or to Swift object storage like so:
+
+The core of this project is a shared cross-compatible API for doing file
+manipulation and file access on Posix/Windows file systems and Swift Object
+Based Storage. The module is designed to work either as a drop-in replacement
+for most functionality found in ``os.path`` or with an object-oriented API via
+``storage_utils.Path``.
+
+Ultimately, storage utils lets you write one piece of code to work with local
+or remote files.
 
 .. code-block:: python
 
-  from storage_utils import path
+  import storage_utils
 
-  p = path('/my/local/path')
+  p = '/my/local/somemanifest.json'
 
   # Perform normal path.py operations
-  p = p / 'file'
-  contents = p.open().read()
+  p = storage_utils.join(p, 'file')
+  with storage_utils.open(p) as fp:
+    json.load(fp)
 
   # Access swift object storage
-  p = path('swift://tenant/container/object/being/accessed')
-
-  # Perform a restricted set of path.py operations
-  files = p.glob('prefix*')
+  p = 'swift://tenant/container/object/somemanifest.json')
+  with storage_utils.open(p) as fp:
+    json.load(fp)
 
 
 With this interface, one can write code that is compatible with Swift, Posix, and Windows file storage. For more details about the path module and how to access Swift storage directory, go to the :ref:`main_interface` section.

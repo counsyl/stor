@@ -54,10 +54,3 @@ class TestBasics(unittest.TestCase):
         # .ext
         self.assertEqual(f.ext, '.csv')
         self.assertEqual(f.parent.ext, '')
-
-        # .drive
-        self.assertEqual(f.drive, 'swift://')
-
-    def test_joinpath_unsupported(self):
-        with self.assertRaises(AttributeError):
-            SwiftPath('swift://').joinpath()

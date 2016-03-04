@@ -4,10 +4,16 @@ Release Notes
 v6.0.0
 ------
 
+* Provided a cross-compatible API at module level that accepts strings or ``Path`` objects for easy usage,
+  and implemented most ``os.path.is*`` methods on swift, particularly ``isdir()`` and ``isfile()``.
+* Removed certain "fancy" path.py methods from ``FileSystemPath`` to reduce the
+  public API surface and make it easier to test everything in use.
+* Eliminated ``storage_utils.third_party`` and integrated into library (added
+  note to LICENSE file with original inspiration)
+* Reworked path hierarchy so that all classes inherit from ``storage_utils.Path``
 * Segment containers are ignored by default when doing `SwiftPath.listdir`
 * Cache authentication credentials for performance.
-* Renamed `storage_utils.is_posix_path` to `storage_utils.is_filesystem_path` but
-  kept `storage_utils.is_posix_path` for backwards compatibility
+* Renamed ``storage_utils.is_posix_path``.
 * Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows
@@ -94,8 +100,8 @@ v2.3.0
 ------
 
 * Included more backwards compatibility methods on `SwiftPath` to be compatible
-  with `PosixPath`, such as `SwiftPath.normpath`, `SwiftPath.expand`, and
-  `SwiftPath.expandvars`.
+  with `PosixPath`, such as ``SwiftPath.normpath``, ``SwiftPath.expand``, and
+  ``SwiftPath.expandvars``.
 
 * Include additional abilty to write objects returned by `SwiftPath.open`.
 
@@ -112,7 +118,7 @@ v2.1.0
 * Updated the default args to `SwiftPath.upload`. Static large objects are
   used by default.
 
-* add `SwiftPath.expand`, `SwiftPath.expandvars` and `SwiftPath.normpath`
+* add ``SwiftPath.expand``, ``SwiftPath.expandvars`` and ``SwiftPath.normpath``
   following ``os.path`` versions of functions.
 
 v2.0.0
