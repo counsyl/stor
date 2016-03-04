@@ -33,7 +33,7 @@ def _delegate_to_path(name):
     def wrapper(path, *args, **kwargs):
         f = getattr(Path(path), name)
         return f(*args, **kwargs)
-    wrapper.__doc__ = getattr(Path, name)
+    wrapper.__doc__ = getattr(Path, name).__doc__
     wrapper.__name__ = name
     return wrapper
 

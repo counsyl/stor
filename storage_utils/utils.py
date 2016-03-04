@@ -82,7 +82,7 @@ def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either swift, posix, or
-    windows paths created with `storage_utils.path`.
+    windows paths created with `storage_utils.Path`.
 
     Args:
         source (path|str): The source directory to copy from
