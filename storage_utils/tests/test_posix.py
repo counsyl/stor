@@ -200,7 +200,7 @@ class TestOpen(unittest.TestCase):
 
 class TestMisc(unittest.TestCase):
     def test_repr(self):
-        self.assertEqual(Path('/a/b'), "PosixPath('/a/b')")
+        self.assertEqual(repr(Path('/a/b')), "PosixPath('/a/b')")
 
     def test_mk_rm_dir(self):
         with NamedTemporaryDirectory(change_dir=True) as tmpdir:
