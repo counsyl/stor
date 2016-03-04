@@ -76,11 +76,6 @@ def path(pth):
 
 
 __all__ = [
-    'copy',
-    'copytree',
-    'is_filesystem_path',
-    'is_swift_path',
-    'NamedTemporaryDirectory',
     'abspath',
     'normcase',
     'normpath',
@@ -101,6 +96,11 @@ __all__ = [
     'isfile',
     'islink',
     'ismount',
+    'copy',
+    'copytree',
     'remove',
     'rmtree',
+    'is_filesystem_path',
+    'is_swift_path',
+    'NamedTemporaryDirectory',
 ]

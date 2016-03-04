@@ -105,35 +105,35 @@ class Path(text_type):
     # --- Operations on Path strings.
 
     def abspath(self):
-        """ .. seealso:: :func:`os.path.abspath` """
+        """See :func:`os.path.abspath` """
         return self.path_class(self.path_module.abspath(self))
 
     def normcase(self):
-        """ .. seealso:: :func:`os.path.normcase` """
+        """See :func:`os.path.normcase` """
         return self.path_class(self.path_module.normcase(self))
 
     def normpath(self):
-        """ .. seealso:: :func:`os.path.normpath` """
+        """See :func:`os.path.normpath` """
         return self.path_class(self.path_module.normpath(self))
 
     def realpath(self):
-        """ .. seealso:: :func:`os.path.realpath` """
+        """See :func:`os.path.realpath` """
         return self.path_class(self.path_module.realpath(self))
 
     def expanduser(self):
-        """ .. seealso:: :func:`os.path.expanduser` """
+        """See :func:`os.path.expanduser` """
         return self.path_class(self.path_module.expanduser(self))
 
     def expandvars(self):
-        """ .. seealso:: :func:`os.path.expandvars` """
+        """See :func:`os.path.expandvars` """
         return self.path_class(self.path_module.expandvars(self))
 
     def dirname(self):
-        """ .. seealso:: :attr:`parent`, :func:`os.path.dirname` """
+        """See :attr:`parent`, :func:`os.path.dirname` """
         return self.path_class(self.path_module.dirname(self))
 
     def basename(self):
-        """ .. seealso:: :attr:`name`, :func:`os.path.basename` """
+        """See :attr:`name`, :func:`os.path.basename` """
         return self.parts_class(self.path_module.basename(self))
 
     def expand(self):
@@ -163,7 +163,7 @@ class Path(text_type):
 
         (naming is to avoid colliding with str.split)
 
-        .. seealso:: :attr:`parent`, :attr:`name`, :func:`os.path.split`
+        See: :attr:`parent`, :attr:`name`, :func:`os.path.split`
         """
         parent, child = self.path_module.split(self)
         return self.path_class(parent), child
@@ -178,7 +178,7 @@ class Path(text_type):
         last path segment.  This has the property that if
         ``(a, b) == p.splitext()``, then ``a + b == p``.
 
-        .. seealso:: :func:`os.path.splitext`
+        See: :func:`os.path.splitext`
         """
         filename, ext = self.path_module.splitext(self)
         return self.path_class(filename), ext
@@ -190,7 +190,7 @@ class Path(text_type):
         no drive specifier, :samp:`{p.drive}` is empty, so the return value
         is simply ``(Path(''), p)``.  This is always the case on Unix.
 
-        .. seealso:: :func:`os.path.splitdrive`
+        See: :func:`os.path.splitdrive`
         """
         drive, rel = self.path_module.splitdrive(self)
         return self.path_class(drive), rel
@@ -201,7 +201,7 @@ class Path(text_type):
         character (:samp:`{first}.module.sep`) if needed.  Returns a new
         instance of :samp:`{first}.path_class`.
 
-        .. seealso:: :func:`os.path.join`
+        See: :func:`os.path.join`
         """
         return self.path_class(self.path_module.join(self, *others))
 
@@ -225,27 +225,27 @@ class Path(text_type):
         raise NotImplementedError
 
     def isabs(self):  # pragma: no cover
-        """ .. seealso:: :func:`os.path.isabs`
+        """ See: :func:`os.path.isabs`
 
         Always True with SwiftPath"""
         raise NotImplementedError
 
     def isdir(self):  # pragma: no cover
-        """ .. seealso:: :func:`os.path.isdir` """
+        """ See: :func:`os.path.isdir` """
         raise NotImplementedError
 
     def isfile(self):  # pragma: no cover
-        """ .. seealso:: :func:`os.path.isfile` """
+        """ See: :func:`os.path.isfile` """
         raise NotImplementedError
 
     def islink(self):  # pragma: no cover
-        """ .. seealso:: :func:`os.path.islink`
+        """ See: :func:`os.path.islink`
 
         Always False on Swift."""
         raise NotImplementedError
 
     def ismount(self):  # pragma: no cover
-        """ .. seealso:: :func:`os.path.ismount`
+        """ See: :func:`os.path.ismount`
 
         Always True on Swift.
         """
@@ -316,38 +316,38 @@ class FileSystemPath(Path):
         return [cls(s) for s in glob.glob(self / pattern)]
 
     def exists(self):
-        """ .. seealso:: :func:`os.path.exists` """
+        """ See: :func:`os.path.exists` """
         return self.path_module.exists(self)
 
     def isabs(self):
-        """ .. seealso:: :func:`os.path.isabs` """
+        """ See: :func:`os.path.isabs` """
         return self.path_module.isabs(self)
 
     def isdir(self):
-        """ .. seealso:: :func:`os.path.isdir` """
+        """ See: :func:`os.path.isdir` """
         return self.path_module.isdir(self)
 
     def isfile(self):
-        """ .. seealso:: :func:`os.path.isfile` """
+        """ See: :func:`os.path.isfile` """
         return self.path_module.isfile(self)
 
     def islink(self):
-        """ .. seealso:: :func:`os.path.islink` """
+        """ See: :func:`os.path.islink` """
         return self.path_module.islink(self)
 
     def ismount(self):
-        """ .. seealso:: :func:`os.path.ismount` """
+        """ See: :func:`os.path.ismount` """
         return self.path_module.ismount(self)
 
     def remove(self):
-        """ .. seealso:: :func:`os.remove` """
+        """ See: :func:`os.remove` """
         os.remove(self)
         return self
 
     rmtree = shutil.rmtree
 
     def makedirs(self, mode=0o777):
-        """ .. seealso:: :func:`os.makedirs` """
+        """ See: :func:`os.makedirs` """
         os.makedirs(self, mode)
         return self
 

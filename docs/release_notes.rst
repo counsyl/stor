@@ -92,8 +92,8 @@ v2.3.0
 ------
 
 * Included more backwards compatibility methods on `SwiftPath` to be compatible
-  with `PosixPath`, such as `SwiftPath.normpath`, `SwiftPath.expand`, and
-  `SwiftPath.expandvars`.
+  with `PosixPath`, such as ``SwiftPath.normpath``, ``SwiftPath.expand``, and
+  ``SwiftPath.expandvars``.
 
 * Include additional abilty to write objects returned by `SwiftPath.open`.
 
@@ -110,7 +110,7 @@ v2.1.0
 * Updated the default args to `SwiftPath.upload`. Static large objects are
   used by default.
 
-* add `SwiftPath.expand`, `SwiftPath.expandvars` and `SwiftPath.normpath`
+* add ``SwiftPath.expand``, ``SwiftPath.expandvars`` and ``SwiftPath.normpath``
   following ``os.path`` versions of functions.
 
 v2.0.0

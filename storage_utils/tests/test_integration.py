@@ -5,9 +5,11 @@ import uuid
 
 import mock
 
+from six.moves import builtins
+
 import storage_utils
 from storage_utils import NamedTemporaryDirectory
-from storage_utils import path
+from storage_utils import Path
 from storage_utils import swift
 
 
@@ -28,7 +30,7 @@ class BaseIntegrationTest(unittest.TestCase):
                               password=os.environ.get('SWIFT_TEST_PASSWORD'),
                               num_retries=5)
 
-        self.test_container = path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
+        self.test_container = Path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
         if self.test_container.exists():
             raise ValueError('test container %s already exists.' % self.test_container)
 
@@ -58,9 +60,9 @@ class BaseIntegrationTest(unittest.TestCase):
         dependent on the object name and should be taken into consideration
         when testing.
         """
-        with path(directory):
+        with Path(directory):
             for name in self.get_dataset_obj_names(num_objects):
-                with open(name, 'w') as f:
+                with builtins.open(name, 'w') as f:
                     f.write(self.get_dataset_obj_contents(name, min_object_size))
 
     def assertCorrectObjectContents(self, test_obj_path, which_test_obj, min_obj_size):
@@ -68,7 +70,7 @@ class BaseIntegrationTest(unittest.TestCase):
         Given a test object and the minimum object size used with create_dataset, assert
         that a file exists with the correct contents
         """
-        with open(test_obj_path, 'r') as test_obj:
+        with builtins.open(test_obj_path, 'r') as test_obj:
             contents = test_obj.read()
             expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
             self.assertEquals(contents, expected)
@@ -80,13 +82,13 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         swift._clear_cached_auth_credentials()
         with mock.patch('swiftclient.client.get_auth_keystone', autospec=True) as mock_get_ks:
             mock_get_ks.side_effect = real_get_keystone
-            s = path(self.test_container).stat()
+            s = Path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
             self.assertEquals(len(mock_get_ks.call_args_list), 1)
 
             # The keystone auth should not be called on another stat
             mock_get_ks.reset_mock()
-            s = path(self.test_container).stat()
+            s = Path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
             self.assertEquals(len(mock_get_ks.call_args_list), 0)
 
@@ -96,7 +98,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             # a token after the swiftclient raises an authorization error.
             mock_get_ks.reset_mock()
             swift._cached_auth_token_map['AUTH_swft_test']['os_auth_token'] = 'bad_auth'
-            s = path(self.test_container).stat()
+            s = Path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
             self.assertEquals(len(mock_get_ks.call_args_list), 2)
             self.assertEquals(mock_get_ks.call_args_list[0][0][3]['auth_token'], 'bad_auth')
@@ -111,7 +113,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 from keystoneclient.exceptions import Unauthorized
                 mock_ks_client.side_effect = Unauthorized
                 with self.assertRaises(swift.AuthenticationError):
-                    path(self.test_container).stat()
+                    Path(self.test_container).stat()
 
                 # Verify that getting the auth was called two more times because of retry
                 # logic
@@ -123,9 +125,9 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, min_obj_size)
             for which_obj in self.get_dataset_obj_names(num_test_objs):
-                obj_path = path(self.test_container) / ('%s.txt' % which_obj)
-                path(which_obj).copy(obj_path)
-                obj_path.copy('copied_file')
+                obj_path = storage_utils.join(self.test_container, '%s.txt' % which_obj)
+                storage_utils.copy(which_obj, obj_path)
+                storage_utils.copy(obj_path, 'copied_file')
                 self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
 
     def test_static_large_obj_copy(self):
@@ -133,42 +135,43 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             segment_size = 1048576
             obj_size = segment_size * 4 + 100
             self.create_dataset(tmp_d, 1, obj_size)
-            obj_path = path(tmp_d) / self.get_dataset_obj_names(1)[0]
+            obj_path = storage_utils.join(tmp_d,
+                                          self.get_dataset_obj_names(1)[0])
             obj_path.copy(self.test_container / 'large_object.txt', swift_retry_options={
                 'segment_size': segment_size
             })
 
             # Verify there are five segments
-            segment_container = path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
+            segment_container = Path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
             objs = set(segment_container.list(condition=lambda results: len(results) == 5))
             self.assertEquals(len(objs), 5)
 
             # Copy back the large object and verify its contents
-            obj_path = path(tmp_d) / 'large_object.txt'
-            path(self.test_container / 'large_object.txt').copy(obj_path)
+            obj_path = Path(tmp_d) / 'large_object.txt'
+            Path(self.test_container / 'large_object.txt').copy(obj_path)
             self.assertCorrectObjectContents(obj_path, self.get_dataset_obj_names(1)[0], obj_size)
 
     def test_hidden_file_nested_dir_copytree(self):
-        test_swift_dir = path(self.test_container) / 'test'
+        test_swift_dir = Path(self.test_container) / 'test'
         with NamedTemporaryDirectory(change_dir=True):
-            open('.hidden_file', 'w').close()
+            builtins.open('.hidden_file', 'w').close()
             os.symlink('.hidden_file', 'symlink')
             os.mkdir('.hidden_dir')
             os.mkdir('.hidden_dir/nested')
-            open('.hidden_dir/nested/file1', 'w').close()
-            open('.hidden_dir/nested/file2', 'w').close()
-            path('.').copytree(test_swift_dir)
+            builtins.open('.hidden_dir/nested/file1', 'w').close()
+            builtins.open('.hidden_dir/nested/file2', 'w').close()
+            Path('.').copytree(test_swift_dir)
 
         with NamedTemporaryDirectory(change_dir=True):
             test_swift_dir.copytree('test', swift_download_options={
                 'condition': lambda results: len(results) == 4
             })
-            self.assertTrue(path('test/.hidden_file').isfile())
-            self.assertTrue(path('test/symlink').isfile())
-            self.assertTrue(path('test/.hidden_dir').isdir())
-            self.assertTrue(path('test/.hidden_dir/nested').isdir())
-            self.assertTrue(path('test/.hidden_dir/nested/file1').isfile())
-            self.assertTrue(path('test/.hidden_dir/nested/file2').isfile())
+            self.assertTrue(Path('test/.hidden_file').isfile())
+            self.assertTrue(Path('test/symlink').isfile())
+            self.assertTrue(Path('test/.hidden_dir').isdir())
+            self.assertTrue(Path('test/.hidden_dir/nested').isdir())
+            self.assertTrue(Path('test/.hidden_dir/nested/file1').isfile())
+            self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
 
     def test_condition_failures(self):
         num_test_objs = 20
@@ -176,7 +179,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         test_dir = self.test_container / 'test'
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-            path('.').copytree(test_dir)
+            Path('.').copytree(test_dir)
 
         # Verify a ConditionNotMet exception is thrown when attempting to list
         # a file that hasn't been uploaded
@@ -229,7 +232,9 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         test_obj_size = 100
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-            path('.').copytree(self.test_container / 'test')
+            storage_utils.copytree(
+                '.',
+                storage_utils.join(self.test_container, 'test'))
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             path(self.test_container / 'test').copytree('test', swift_download_options={
@@ -244,10 +249,18 @@ class SwiftIntegrationTest(BaseIntegrationTest):
     def test_is_methods(self):
         container = self.test_container
         container = self.test_container
+        file_with_prefix = storage_utils.join(container, 'analysis.txt')
+
+        # ensure container is crated but empty
+        sentinel = storage_utils.join(container, 'sentinel')
+        with storage_utils.open(sentinel, 'w') as fp:
+            fp.write('blah')
+        storage_utils.remove(sentinel)
         self.assertTrue(storage_utils.isdir(container))
         self.assertFalse(storage_utils.isfile(container))
         self.assertTrue(storage_utils.exists(container))
-        file_with_prefix = storage_utils.join(container, 'analysis.txt')
+        self.assertFalse(storage_utils.listdir(container))
+
         folder = storage_utils.join(container, 'analysis')
         subfolder = storage_utils.join(container, 'analysis', 'alignments')
         file_in_folder = storage_utils.join(container, 'analysis', 'alignments',
