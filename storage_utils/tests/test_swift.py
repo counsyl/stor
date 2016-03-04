@@ -883,6 +883,18 @@ class TestExists(SwiftTestCase):
         mock_list.assert_called_with('B', full_listing=False,
                                      limit=1, prefix='C/D/')
 
+    @mock.patch.object(SwiftPath, 'exists', autospec=True)
+    def test_non_existent_container_or_tenant(self, mock_exists):
+        mock_exists.return_value = True
+        self.assertTrue(SwiftPath('swift://AUTH_final').isdir())
+        self.assertTrue(SwiftPath('swift://AUTH_final/container').isdir())
+
+    @mock.patch.object(SwiftPath, 'exists', autospec=True)
+    def test_existing_container_or_tenant(self, mock_exists):
+        mock_exists.return_value = False
+        self.assertFalse(SwiftPath('swift://AUTH_final').isdir())
+        self.assertFalse(SwiftPath('swift://AUTH_final/container').isdir())
+
 
 class TestDownloadObject(SwiftTestCase):
     def test_container(self):

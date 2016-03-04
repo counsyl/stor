@@ -1440,6 +1440,8 @@ class SwiftPath(Path):
         return True
 
     def isdir(self):
+        if not self.resource:
+            return self.exists()
         try:
             if _with_trailing_slash(self).first():
                 return True
