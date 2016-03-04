@@ -69,10 +69,9 @@ def path(pth):
 
     # DeprecationWarnings are hidden by default. We want to get rid of this
     # sooner rather than later.
-    warnings.warn(UserWarning,
-                  'Using the ``path()`` function directly is deprecated -'
+    warnings.warn('Using the ``path()`` function directly is deprecated -'
                   ' either use storage_utils.Path or the functional API'
-                  ' directly')
+                  ' directly', UserWarning)
     return Path(pth)
 
 

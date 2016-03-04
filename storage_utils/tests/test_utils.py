@@ -1,4 +1,5 @@
 import mock
+import warnings
 import ntpath
 import storage_utils
 from storage_utils.posix import PosixPath
@@ -94,3 +95,9 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
             self.assertTrue(tmp_d.exists())
 
         self.assertFalse(tmp_d.exists())
+
+
+class TestPathFunction(unittest.TestCase):
+    def test_path_function_back_compat(self):
+        pth = storage_utils.path('/blah')
+        self.assertIsInstance(pth, storage_utils.Path)
