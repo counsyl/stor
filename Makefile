@@ -63,7 +63,7 @@ clean:
 
 .PHONY: clean-docs
 clean-docs:
-	cd docs && make clean
+	$(WITH_VENV) cd docs && make clean
 
 
 .PHONY: teardown
@@ -82,16 +82,8 @@ unit-test: venv
 	status=$$?; \
 	exit $$status;
 
-.PHONY: integration-test
-integration-test: venv
-	$(WITH_VENV) \
-	./integration_test.sh; \
-	status=$$?; \
-	exit $$status;
-
-
 .PHONY: test
-test: unit-test integration-test
+test: venv docs unit-test
 
 # Distribution
 

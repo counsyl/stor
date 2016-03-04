@@ -1,8 +1,10 @@
 from contextlib import contextmanager
-import errno
 import logging
+import ntpath
 import os
+import posixpath
 import shlex
+import shutil
 from subprocess import check_call
 from swiftclient.service import SwiftUploadObject
 import tempfile
@@ -26,17 +28,14 @@ def is_swift_path(p):
     return p.startswith(SwiftPath.swift_drive)
 
 
-def is_posix_path(p):
-    """Determines if the path is a posix path.
-
-    This utility assumes that all paths that aren't swift paths
-    are posix file system paths.
+def is_filesystem_path(p):
+    """Determines if the path is posix or windows filesystem.
 
     Args:
         p (str): The path string
 
     Returns:
-        bool: True if p is a posix path, False otherwise.
+        bool: True if p is a Windows path, False otherwise.
     """
     return not is_swift_path(p)
 
@@ -69,16 +68,21 @@ def path(p):
     if is_swift_path(p):
         from storage_utils.swift import SwiftPath
         return SwiftPath(p)
-    else:
+    elif os.path == ntpath:
+        from storage_utils.windows import WindowsPath
+        return WindowsPath(p)
+    elif os.path == posixpath:
         from storage_utils.posix import PosixPath
         return PosixPath(p)
+    else:  # pragma: no cover
+        assert False, 'path not compatible with storage utils'
 
 
 def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
-    Note that this utility can be called from either swift or posix
-    paths created with `storage_utils.path`.
+    Note that this utility can be called from either swift, posix, or
+    windows paths created with `storage_utils.path`.
 
     Args:
         source (path|str): The source directory to copy from
@@ -119,16 +123,12 @@ def copy(source, dest, swift_retry_options=None):
     if is_swift_path(dest) and dest.is_ambiguous():
         raise ValueError('swift destination must be file with extension or directory with slash')
 
-    if is_posix_path(dest):
+    if is_filesystem_path(dest):
         if is_swift_path(source):
             dest_file = dest if not dest.isdir() else dest / source.name
             source._download_object(dest_file, **swift_retry_options)
         else:
-            copy_cmd = ['cp',
-                        str(source.abspath().expand()),
-                        str(dest.abspath().expand())]
-            logger.info('performing copy with command - %s', copy_cmd)
-            check_call(copy_cmd)
+            shutil.copy(source, dest)
     else:
         dest_file = dest if not dest.endswith('/') else dest / source.name
         if not dest_file.parent.container:
@@ -141,13 +141,13 @@ def copy(source, dest, swift_retry_options=None):
                                 **swift_retry_options)
 
 
-def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
+def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
              swift_download_options=None):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
-    Note that this function has similar behavior to shutil.copytree, meaning
-    that a posix destination must not exist beforehand.
+    Note that this function uses shutil.copytree by default, meaning
+    that a posix or windows destination must not exist beforehand.
 
     For example, assume the following file hierarchy::
 
@@ -194,8 +194,8 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
         source (path|str): The source directory to copy from
         dest (path|str): The directory to copy to. Must not exist if
             its a posix directory
-        copy_cmd (str): If copying to / from posix, this command is
-            used.
+        copy_cmd (str): If copying to / from posix or windows, this command is
+            used instead of shutil.copytree
         swift_upload_options (dict): When the destination is a swift path,
             pass these options as keyword arguments to `SwiftPath.upload`.
         swift_download_options (dict): When the source is a swift path,
@@ -211,19 +211,23 @@ def copytree(source, dest, copy_cmd='cp -r', swift_upload_options=None,
     swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
-    if is_posix_path(dest) and dest.exists():
-        raise OSError(errno.EEXIST, 'destination already exists - "%s"' % dest)
 
-    if is_posix_path(dest):
+    if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
+            from storage_utils.windows import WindowsPath
+            if isinstance(dest, WindowsPath):
+                raise ValueError('swift copytree to windows is not supported')
             source.download(dest, **swift_download_options)
         else:
-            copy_cmd = shlex.split(copy_cmd)
-            copy_cmd.extend([str(source.abspath().expand()),
-                             str(dest.abspath().expand())])
-            logger.info('performing copy with command - %s', copy_cmd)
-            check_call(copy_cmd)
+            if copy_cmd:
+                copy_cmd = shlex.split(copy_cmd)
+                copy_cmd.extend([str(source.abspath().expand()),
+                                 str(dest.abspath().expand())])
+                logger.info('performing copy with command - %s', copy_cmd)
+                check_call(copy_cmd)
+            else:
+                shutil.copytree(source, dest)
     else:
         with source:
             dest.upload(['.'], **swift_upload_options)

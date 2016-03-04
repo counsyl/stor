@@ -2,11 +2,48 @@ import mock
 import os
 import storage_utils
 from storage_utils import path
+from storage_utils import posix
 from storage_utils import swift
 from storage_utils import utils
-import subprocess
+from storage_utils import windows
 import tempfile
 import unittest
+
+
+class TestDiv(unittest.TestCase):
+    def test_success(self):
+        p = posix.PosixPath('my/path') / 'other/path'
+        self.assertEquals(p, posix.PosixPath('my/path/other/path'))
+
+    def test_rdiv(self):
+        p = 'my/path' / posix.PosixPath('other/path')
+        self.assertEquals(p, posix.PosixPath('my/path/other/path'))
+
+    def test_w_windows_path(self):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
+            posix.PosixPath('my/path') / windows.WindowsPath(r'other\path')
+
+    def test_w_swift_component(self):
+        p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
+        self.assertEquals(p, posix.PosixPath('my/path/name'))
+
+
+class TestAdd(unittest.TestCase):
+    def test_success(self):
+        p = posix.PosixPath('my/path') + 'other/path'
+        self.assertEquals(p, posix.PosixPath('my/pathother/path'))
+
+    def test_w_windows_path(self):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
+            posix.PosixPath('my/path') + windows.WindowsPath(r'other\path')
+
+    def test_w_swift_component(self):
+        p = posix.PosixPath('my/path') + swift.SwiftPath('swift://t/c/name').name
+        self.assertEquals(p, posix.PosixPath('my/pathname'))
+
+    def test_invalid_radd(self):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
+            1 + posix.PosixPath('my/path')
 
 
 class TestCopy(unittest.TestCase):
@@ -90,13 +127,23 @@ class TestCopytree(unittest.TestCase):
             utils.copytree(source, dest)
             self.assertTrue((dest / '1').exists())
 
+    def test_posix_destination_w_cmd(self):
+        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / 'source'
+            os.mkdir(source)
+            with open(source / '1', 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = tmp_d / 'my' / 'dest'
+            utils.copytree(source, dest, copy_cmd='cp -r')
+            self.assertTrue((dest / '1').exists())
+
     def test_posix_destination_already_exists(self):
         with storage_utils.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / '1'
-            with open(source, 'w') as tmp_file:
-                tmp_file.write('1')
+            source.makedirs_p()
 
-            with self.assertRaisesRegexp(OSError, 'already exists'):
+            with self.assertRaisesRegexp(OSError, 'exists'):
                 utils.copytree(source, tmp_d)
 
     def test_posix_destination_w_error(self):
@@ -104,7 +151,7 @@ class TestCopytree(unittest.TestCase):
             invalid_source = tmp_d / 'source'
             dest = tmp_d / 'my' / 'dest'
 
-            with self.assertRaises(subprocess.CalledProcessError):
+            with self.assertRaises(OSError):
                 utils.copytree(invalid_source, dest)
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)

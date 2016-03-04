@@ -30,19 +30,21 @@ the `SwiftPath` class.
 from backoff.backoff import with_backoff
 from cached_property import cached_property
 import cStringIO
+import copy
 from functools import wraps
 import json
 import logging
-import operator
 import os
+import posixpath
 import tempfile
 import threading
 import urlparse
 
+from storage_utils import base
 from storage_utils import is_swift_path
 from storage_utils import path
 from storage_utils import utils
-from storage_utils.third_party.path import Path
+from storage_utils.posix import PosixPath
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -89,9 +91,8 @@ If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
-# When a swift method takes a condition, these variables are used to
-# configure retry logic. These variables can also be passed
-# to the methods themselves
+# These variables are used to configure retry logic for swift.
+# These variables can also be passed to the methods themselves
 initial_retry_sleep = 1
 """The time to sleep before the first retry"""
 
@@ -147,8 +148,7 @@ def update_settings(**settings):
             raise ValueError('invalid setting "%s"' % setting)
         globals()[setting] = value
 
-    with _singleton_lock:
-        _cached_auth_token_map.clear()
+    _clear_cached_auth_credentials()
 
 
 def _get_or_create_auth_credentials(tenant_name):
@@ -170,6 +170,11 @@ def _get_or_create_auth_credentials(tenant_name):
         with _singleton_lock:
             _cached_auth_token_map[tenant_name] = creds
         return creds
+
+
+def _clear_cached_auth_credentials():
+    with _singleton_lock:
+        _cached_auth_token_map.clear()
 
 
 class SwiftError(Exception):
@@ -206,6 +211,25 @@ class UnauthorizedError(SwiftError):
     pass
 
 
+class AuthenticationError(SwiftError):
+    """Thrown when a client has improper authentication credentials.
+
+    Swiftclient throws this error when trying to authenticate with
+    the keystone client. This is similar to a 401 HTTP response.
+    """
+    pass
+
+
+class ConflictError(SwiftError):
+    """Thrown when a 409 response is returned from swift
+
+    This error is thrown when deleting a container and
+    some object storage nodes report that the container
+    has objects while others don't.
+    """
+    pass
+
+
 class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
@@ -220,88 +244,28 @@ class ConditionNotMetError(SwiftError):
     pass
 
 
-class _Condition(object):
-    """A conditional expression that can be applied to some swift methods
+def _validate_condition(condition):
+    """Verifies condition is a function that takes one argument"""
+    if condition is None:
+        return
+    if not (hasattr(condition, '__call__') and hasattr(condition, '__code__')):
+        raise ValueError('condition must be callable')
+    if condition.__code__.co_argcount != 1:
+        raise ValueError('condition must take exactly one argument')
 
-    Condition objects take an operator and a right operand. Left operands
-    can be checked against the condition. If the condition is not met,
-    ConditionNotMetError exceptions are thrown.
 
-    The operators that are supported are ``==``, ``!=``, ``<``, ``>``, ``<=``,
-    and ``>=``.
+def _check_condition(condition, results):
+    """Checks the results against the condition.
 
+    Raises:
+        ConditionNotMetError: If the condition returns False
     """
-    operators = {
-        '==': operator.eq,
-        '!=': operator.ne,
-        '<': operator.lt,
-        '>': operator.gt,
-        '<=': operator.le,
-        '>=': operator.ge
-    }
+    if condition is None:
+        return
 
-    def __init__(self, operator, right_operand):
-        if operator not in self.operators:
-            raise ValueError('invalid operator: "%s"' % operator)
-        self.operator = operator
-        self.right_operand = right_operand
-
-    def assert_is_met_by(self, left_operand, left_operand_name):
-        """Asserts that a condition is met by a left operand
-
-        Args:
-            left_operand: The left operand checked against the condition
-            left_operand_name: The name of the left operand. Used when
-                creating an error message
-
-        Raises:
-            ConditionNotMetError: When the condition is not met
-        """
-        if not self.operators[self.operator](left_operand, self.right_operand):
-            raise ConditionNotMetError(
-                'condition not met: %s is not %s' % (left_operand_name, self)
-            )
-
-    def __str__(self):
-        return '%s %s' % (self.operator, self.right_operand)
-
-    def __repr__(self):
-        return '%s("%s", %s)' % (type(self).__name__,
-                                 self.operator,
-                                 self.right_operand)
-
-
-def make_condition(operator, right_operand):
-    """Creates a condition that can be applied to various swift methods.
-
-    Args:
-        operator (str): The operator for the condition, can be
-            one of ``==``, ``!=``, ``<``, ``>``, ``<=``,
-            and ``>=``.
-        right_operand: The operand on the right side of the
-            condition.
-
-    Examples:
-        To make a condition and use it in `SwiftPath.list`::
-
-            from storage_utils.swift import make_condition
-            from storage_utils.swift import SwiftPath
-            p = SwiftPath('swift://tenant/container/resource')
-            # Ensure that the amount of listed objects are greater than 6
-            cond = make_condition('>', 6)
-            objs = p.list(num_objs_cond=cond)
-
-        An illustration of what it looks like when a condition doesn't pass::
-
-            cond = make_condition('>', 100)
-            # ConditionNotMetError is thrown when the condition is not met
-            objs = p.list(num_objs_cond=cond)
-            Traceback (most recent call last):
-            ...
-            storage_utils.swift.ConditionNotMetError: condition not met: num
-            listed objects is not > 100
-    """
-    return _Condition(operator, right_operand)
+    condition_met = condition(results)
+    if not condition_met:
+        raise ConditionNotMetError('condition not met')
 
 
 def _swift_retry(exceptions=None):
@@ -347,6 +311,8 @@ def _propagate_swift_exceptions(func):
                 raise UnauthorizedError(str(e), e)
             elif http_status == 404:
                 raise NotFoundError(str(e), e)
+            elif http_status == 409:
+                raise ConflictError(str(e), e)
             elif http_status == 503:
                 logger.error('unavailable error in swift operation - %s', str(e))
                 raise UnavailableError(str(e), e)
@@ -358,10 +324,30 @@ def _propagate_swift_exceptions(func):
                 # Treat this as a FailedUploadError
                 logger.error('upload error in swift put_object operation - %s', str(e))
                 raise FailedUploadError(str(e), e)
+            elif 'Unauthorized.' in str(e):
+                # Swiftclient catches keystone auth errors at
+                # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
+                # Parse the message since they don't bubble the exception or
+                # provide more information
+                logger.warning('auth error in swift operation - %s', str(e))
+                raise AuthenticationError(str(e), e)
             else:
                 logger.error('unexpected swift error - %s', str(e))
                 raise SwiftError(str(e), e)
 
+    return wrapper
+
+
+def _retry_on_cached_auth_err(func):
+    """Retry a function with cleared auth credentials on AuthenticationError"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except AuthenticationError:
+            logger.info('auth failed, retrying with cleared auth cache')
+            _clear_cached_auth_credentials()
+            return func(*args, **kwargs)
     return wrapper
 
 
@@ -384,12 +370,12 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
 
 
 def _with_slash(p):
-    "Appends a trailing slash to a path if it doesn't have one"
+    "Appends a trailing slash to a swift path if it doesn't have one"
     return p if not p or p.endswith('/') else p + '/'
 
 
-def _posix_path_to_object_name(p):
-    """Given a posix path, consruct its object name.
+def file_name_to_object_name(p):
+    """Given a file path, consruct its object name.
 
     Any relative or absolute directory markers at the beginning of
     the path will be stripped, for example::
@@ -399,17 +385,24 @@ def _posix_path_to_object_name(p):
         .hidden_dir/file -> .hidden_dir/file
         /absolute_dir -> absolute_dir
 
+    Note that windows paths will have their back slashes changed to
+    forward slashes::
+
+        C:\\my\\windows\\file -> my/windows/file
+
     Args:
         p (str): The input path
 
     Returns:
-        Path: The object name. An empty path will be returned in
+        PosixPath: The object name. An empty path will be returned in
             the case of the input path only consisting of absolute
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
-    p_parts = Path(p).expand().split('/')
+    os_sep = os.path.sep
+    p_parts = path(p).expand().splitdrive()[1].split(os_sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    return Path('') if obj_start is None else Path('/'.join(p_parts[obj_start:]))
+    parts_class = SwiftPath.parts_class
+    return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
 
 
 class SwiftFile(object):
@@ -518,12 +511,15 @@ class SwiftFile(object):
                                           **self._swift_upload_kwargs)
 
 
-class SwiftPath(str):
+class SwiftPath(base.StorageUtilsPathMixin, str):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
     """
     swift_drive = drive = 'swift://'
+    path_module = posixpath
+    # Parts of a swift path are returned using this class
+    parts_class = PosixPath
 
     def __init__(self, swift):
         """Validates swift path is in the proper format.
@@ -538,17 +534,7 @@ class SwiftPath(str):
         return super(SwiftPath, self).__init__(swift)
 
     def __repr__(self):
-        return 'SwiftPath("%s")' % self
-
-    def __add__(self, more):
-        return SwiftPath(super(SwiftPath, self).__add__(more))
-
-    def __div__(self, rel):
-        """Join two path components, adding a separator character if needed."""
-        return SwiftPath(os.path.join(self, rel))
-
-    # Make the / operator work even when true division is enabled.
-    __truediv__ = __div__
+        return '%s("%s")' % (type(self).__name__, self)
 
     def is_ambiguous(self):
         """Returns true if it cannot be determined if the path is a
@@ -559,25 +545,25 @@ class SwiftPath(str):
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
-        return Path(self).name
+        return self.parts_class(PosixPath(self).name)
 
     @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
-        return self.__class__(Path(self).parent)
+        return self.path_class(PosixPath(self).parent)
 
     @property
     def ext(self):
         """The extension of the file"""
-        return Path(self).ext
+        return PosixPath(self).ext
 
     def dirname(self):
         """The directory name of the path, mimicking path.py's dirname()"""
-        return self.__class__(Path(self).dirname())
+        return self.path_class(PosixPath(self).dirname())
 
     def basename(self):
         """The base name name of the path, mimicking path.py's basename()"""
-        return Path(self).basename()
+        return self.parts_class(PosixPath(self).basename())
 
     def _get_parts(self):
         """Returns the path parts (excluding swift://) as a list of strings."""
@@ -600,7 +586,7 @@ class SwiftPath(str):
 
     @property
     def resource(self):
-        """Returns the resource as a ``path.Path`` object or None.
+        """Returns the resource as a ``PosixPath`` object or None.
 
         A resource can be a single object or a prefix to objects.
         Note that it's important to keep the trailing slash in a resource
@@ -609,7 +595,7 @@ class SwiftPath(str):
         parts = self._get_parts()
         joined_resource = '/'.join(parts[2:]) if len(parts) > 2 else None
 
-        return path(joined_resource) if joined_resource else None
+        return self.parts_class(joined_resource) if joined_resource else None
 
     def _get_swift_connection_options(self, **options):
         """Returns options for constructing ``SwiftService`` and
@@ -682,15 +668,23 @@ class SwiftPath(str):
         conn_opts = self._get_swift_connection_options(**options)
         return swift_service.get_conn(conn_opts)
 
+    @_retry_on_cached_auth_err
     @_propagate_swift_exceptions
-    def _swift_connection_call(self, method, *args, **kwargs):
-        """Runs a method call on a ``Connection`` object."""
+    def _swift_connection_call(self, method_name, *args, **kwargs):
+        """Instantiates a ``Connection`` object and runs ``method_name``."""
+        connection = self._get_swift_connection()
+        method = getattr(connection, method_name)
         return method(*args, **kwargs)
 
+    @_retry_on_cached_auth_err
     @_propagate_swift_exceptions
-    def _swift_service_call(self, method, *args, **kwargs):
-        """Runs a method call on a ``SwiftService`` object."""
-        results = method(*args, **kwargs)
+    def _swift_service_call(self, method_name, *args, **kwargs):
+        """Instantiates a ``SwiftService`` object and runs ``method_name``."""
+        method_options = copy.deepcopy(kwargs)
+        service_options = method_options.pop('_service_options', {})
+        service = self._get_swift_service(**service_options)
+        method = getattr(service, method_name)
+        results = method(*args, **method_options)
 
         results = [results] if isinstance(results, dict) else list(results)
         for r in results:
@@ -711,8 +705,7 @@ class SwiftPath(str):
         information about configuring retry logic at the module or method
         level.
         """
-        connection = self._get_swift_connection()
-        headers, content = self._swift_connection_call(connection.get_object,
+        headers, content = self._swift_connection_call('get_object',
                                                        self.container,
                                                        self.resource)
         return content
@@ -808,14 +801,14 @@ class SwiftPath(str):
     def list(self,
              starts_with=None,
              limit=None,
-             num_objs_cond=None,
+             condition=None,
              # intentionally not documented
              list_as_dir=False):
         """List contents using the resource of the path as a prefix.
 
         This method retries `num_retries` times if swift is unavailable
         or if the number of objects returned does not match the
-        ``num_objs_cond`` condition. View
+        ``condition`` condition. View
         `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
@@ -825,9 +818,8 @@ class SwiftPath(str):
                 be appended to the resource of the swift path. Note that the
                 current resource path is treated as a directory
             limit (int): Limit the amount of results returned
-            num_objs_cond (SwiftCondition): The method will only return
-                results when the number of objects returned meets this
-                condition.
+            condition (SwiftCondition): The method will only return
+                when the results matches the condition.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -835,12 +827,12 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the num_objs_cond condition.
+                meet the condition.
         """
-        connection = self._get_swift_connection()
         tenant = self.tenant
         prefix = self.resource
         full_listing = limit is None
+        _validate_condition(condition)
 
         # When starts_with is provided, treat the resource as a
         # directory that has the starts_with parameter after it. This allows
@@ -860,25 +852,24 @@ class SwiftPath(str):
             # will only have containers
             list_kwargs['delimiter'] = '/'
 
-            # Ensure that the prefix has a '/' at the end of it for listdir
+            # Ensure that the prefix has a slash at the end of it for listdir
             list_kwargs['prefix'] = _with_slash(list_kwargs['prefix'])
 
         if self.container:
-            results = self._swift_connection_call(connection.get_container,
+            results = self._swift_connection_call('get_container',
                                                   self.container,
                                                   **list_kwargs)
         else:
-            results = self._swift_connection_call(connection.get_account,
+            results = self._swift_connection_call('get_account',
                                                   **list_kwargs)
 
-        path_pre = SwiftPath('swift://%s/%s' % (tenant, self.container or ''))
+        path_pre = SwiftPath('%s%s' % (self.swift_drive, tenant)) / (self.container or '')
         paths = list({
-            path_pre / (r.get('name') or r['subdir'].rstrip('/')) for r in results[1]
+            path_pre / (r.get('name') or r['subdir'].rstrip('/'))
+            for r in results[1]
         })
 
-        if num_objs_cond:
-            num_objs_cond.assert_is_met_by(len(paths), 'num listed objects')
-
+        _check_condition(condition, paths)
         return paths
 
     def listdir(self):
@@ -890,7 +881,7 @@ class SwiftPath(str):
         return self.list(list_as_dir=True)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
-    def glob(self, pattern, num_objs_cond=None):
+    def glob(self, pattern, condition=None):
         """Globs all objects in the path with the pattern.
 
         This glob is only compatible with patterns that end in * because of
@@ -902,7 +893,7 @@ class SwiftPath(str):
         method will perform a swift query with a prefix of mydir/pattern.
 
         This method retries `num_retries` times if swift is unavailable or if
-        the number of globbed patterns does not match the ``num_objs_cond``
+        the number of globbed patterns does not match the ``condition``
         condition. View `module-level documentation <swiftretry>`
         for more information about configuring retry logic at the module or
         method level.
@@ -910,9 +901,8 @@ class SwiftPath(str):
         Args:
             pattern (str): The pattern to match. The pattern can only have
                 up to one '*' at the end.
-            num_objs_cond (SwiftCondition): The method will only return
-                results when the number of objects returned meets this
-                condition.
+            condition (SwiftCondition): The method will only return
+                when the number of results matches the condition.
 
         Returns:
             List[SwiftPath]: Every matching path.
@@ -920,18 +910,17 @@ class SwiftPath(str):
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the num_objs_cond condition.
+                meet the condition.
         """
         if pattern.count('*') > 1:
             raise ValueError('multiple pattern globs not supported')
         if '*' in pattern and not pattern.endswith('*'):
             raise ValueError('only prefix queries are supported')
+        _validate_condition(condition)
 
         paths = self.list(starts_with=pattern.replace('*', ''), num_retries=0)
 
-        if num_objs_cond:
-            num_objs_cond.assert_is_met_by(len(paths), 'num globbed objects')
-
+        _check_condition(condition, paths)
         return paths
 
     @_swift_retry(exceptions=UnavailableError)
@@ -983,8 +972,7 @@ class SwiftPath(str):
         if not self.resource:
             raise ValueError('can only call download_object on object path')
 
-        service = self._get_swift_service()
-        self._swift_service_call(service.download,
+        self._swift_service_call('download',
                                  container=self.container,
                                  objects=[self.resource],
                                  options={'out_file': out_file})
@@ -1069,14 +1057,17 @@ class SwiftPath(str):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
-        service = self._get_swift_service(object_dd_threads=object_threads,
-                                          container_threads=container_threads)
+        service_options = {
+            'object_dd_threads': object_threads,
+            'container_threads': container_threads
+        }
         download_options = {
             'prefix': _with_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
-        results = self._swift_service_call(service.download,
+        results = self._swift_service_call('download',
+                                           _service_options=service_options,
                                            container=self.container,
                                            objects=objs_to_download.values(),
                                            options=download_options)
@@ -1090,11 +1081,11 @@ class SwiftPath(str):
                  dest,
                  object_threads=10,
                  container_threads=10,
-                 num_objs_cond=None):
+                 condition=None):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
-        the number of downloaded objects does not match the ``num_objs_cond``
+        the number of downloaded objects does not match the ``condition``
         condition. View `module-level documentation <storage_utils.swift>`
         for more information about configuring retry logic at the module or
         method level.
@@ -1109,37 +1100,39 @@ class SwiftPath(str):
                 objects.
             container_threads (int): The amount of threads to use for
                 downloading containers.
-            num_objs_cond (SwiftCondition): The method will only return
-                results when the number of objects downloaded meets this
-                condition. Partially downloaded results will not be deleted.
+            condition (SwiftCondition): The method will only return
+                when the results matches the condition. In the event of the
+                condition never matching after retries, partially downloaded
+                results will not be deleted.
 
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: Results were returned, but they did not
-                meet the ``num_objs_cond`` condition.
+                meet the condition.
 
         Returns:
-            dict: A mapping of the destination to the download path
+            List[SwiftPath]: Every downloaded path.
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
+        _validate_condition(condition)
 
-        service = self._get_swift_service(object_dd_threads=object_threads,
-                                          container_threads=container_threads)
+        service_options = {
+            'object_dd_threads': object_threads,
+            'container_threads': container_threads
+        }
         download_options = {
             'prefix': _with_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True
         }
-        results = self._swift_service_call(service.download,
+        results = self._swift_service_call('download',
                                            self.container,
+                                           _service_options=service_options,
                                            options=download_options)
 
-        if num_objs_cond:
-            num_objs_cond.assert_is_met_by(len(results),
-                                           'num downloaded objects')
-
-        return {self: dest}
+        _check_condition(condition, results)
+        return results
 
     @_swift_retry(exceptions=UnavailableError)
     def upload(self,
@@ -1199,8 +1192,6 @@ class SwiftPath(str):
         if not self.container:
             raise ValueError('must specify container when uploading')
 
-        service = self._get_swift_service(object_uu_threads=object_threads,
-                                          segment_threads=segment_threads)
         swift_upload_objects = [
             name for name in to_upload
             if isinstance(name, SwiftUploadObject)
@@ -1214,10 +1205,14 @@ class SwiftPath(str):
         # resource directory to uploaded results.
         resource_base = _with_slash(self.resource) or path('')
         swift_upload_objects.extend([
-            SwiftUploadObject(f, object_name=resource_base / _posix_path_to_object_name(f))
+            SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
             for f in all_files_to_upload
         ])
 
+        service_options = {
+            'object_uu_threads': object_threads,
+            'segment_threads': segment_threads
+        }
         upload_options = {
             'segment_size': segment_size,
             'use_slo': use_slo,
@@ -1225,13 +1220,11 @@ class SwiftPath(str):
             'leave_segments': leave_segments,
             'changed': changed
         }
-        return self._swift_service_call(service.upload,
+        return self._swift_service_call('upload',
                                         self.container,
                                         swift_upload_objects,
+                                        _service_options=service_options,
                                         options=upload_options)
-
-    copy = utils.copy
-    copytree = utils.copytree
 
     @_swift_retry(exceptions=UnavailableError)
     def remove(self):
@@ -1250,12 +1243,11 @@ class SwiftPath(str):
             raise ValueError('path must contain a container and resource to '
                              'remove')
 
-        service = self._get_swift_service()
-        return self._swift_service_call(service.delete,
+        return self._swift_service_call('delete',
                                         self.container,
                                         [self.resource])
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, ConflictError))
     def rmtree(self):
         """Removes a resource and all of its contents.
 
@@ -1275,7 +1267,6 @@ class SwiftPath(str):
         if not self.container:
             raise ValueError('swift path must include container for rmtree')
 
-        service = self._get_swift_service()
         deleting_segments = 'segments' in self.container
         if deleting_segments:
             logger.warning('performing rmtree with segment container "%s". '
@@ -1286,7 +1277,7 @@ class SwiftPath(str):
                            'deleted.', self.container)
 
         if not self.resource:
-            results = self._swift_service_call(service.delete,
+            results = self._swift_service_call('delete',
                                                self.container)
             # Try to delete a segment container since swift client does not
             # do this automatically
@@ -1295,13 +1286,13 @@ class SwiftPath(str):
                                       '.segments_%s' % self.container)
                 for segment_container in segment_containers:
                     try:
-                        self._swift_service_call(service.delete, segment_container)
+                        self._swift_service_call('delete', segment_container)
                     except NotFoundError:
                         pass
             return results
         else:
             to_delete = [p.resource for p in self.list()]
-            return self._swift_service_call(service.delete,
+            return self._swift_service_call('delete',
                                             self.container,
                                             to_delete)
 
@@ -1363,7 +1354,7 @@ class SwiftPath(str):
             {
                 'Account': 'AUTH_seq_upload_prod',
                 'Container': '2016-01',
-                'Object': Path('object.txt'),
+                'Object': PosixPath('object.txt'),
                 'Content-Type': 'application/octet-stream',
                 # The size of the object
                 'Content-Length': '112',
@@ -1381,8 +1372,7 @@ class SwiftPath(str):
                 object can't be found.
         """
         stat_objects = [self.resource] if self.resource else None
-        service = self._get_swift_service()
-        result = self._swift_service_call(service.stat,
+        result = self._swift_service_call('stat',
                                           container=self.container,
                                           objects=stat_objects)[0]
 
@@ -1429,8 +1419,7 @@ class SwiftPath(str):
         if not self.container or self.resource:
             raise ValueError('post only works on container paths')
 
-        service = self._get_swift_service()
-        return self._swift_service_call(service.post,
+        return self._swift_service_call('post',
                                         container=self.container,
                                         options=options)
 
@@ -1446,7 +1435,7 @@ class SwiftPath(str):
 
     def expandvars(self):
         "Expand system environment variables in path"
-        return type(self)(os.path.expandvars(self))
+        return self.path_class(posixpath.expandvars(self))
 
     def expand(self):
         "Expand variables and normalize path"
@@ -1454,5 +1443,5 @@ class SwiftPath(str):
 
     def normpath(self):
         "Normalize path following linux conventions"
-        normed = os.path.normpath('/' + str(self)[len(self.swift_drive):])[1:]
-        return type(self)(self.swift_drive + normed)
+        normed = posixpath.normpath('/' + str(self)[len(self.swift_drive):])[1:]
+        return self.path_class(self.swift_drive + normed)

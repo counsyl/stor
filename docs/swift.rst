@@ -10,6 +10,7 @@ Updating Settings
 
 .. autofunction:: update_settings
 
+
 Authentication Settings
 -----------------------
 
@@ -23,6 +24,7 @@ Authentication Settings
 
 .. _swiftretry:
 
+
 Retry Settings
 --------------
 
@@ -32,6 +34,7 @@ Retry Settings
   :annotation: = 0
 
 .. autodata:: retry_sleep_function
+
 
 SwiftPath
 ---------
@@ -70,6 +73,30 @@ SwiftPath
   .. automethod:: temp_url
 
 
+Using Swift Conditions with Retry Settings
+------------------------------------------
+
+Swift is a storage system with eventual consistency, meaning (for example) that
+uploaded objects may not be able to be listed immediately after being uploaded.
+In order to make applications more resilient to consistency issues, various
+swift methods can take conditions that must pass before results are returned.
+
+For example, imagine your application is downloading data using the
+`SwiftPath.download` method. In order to ensure that your application downloads
+exactly 10 objects, one can do the following::
+
+    SwiftPath('swift://tenant/container/dir').download('.', condition=lambda results: len(results) == 10)
+
+In the above, ``condition`` takes the results from `SwiftPath.download` and verifies there are
+10 elements. If the condition fails, `SwiftPath.download` will retry based on `retry settings <swiftretry>`
+until finally throwing a `ConditionNotMetError` if the condition is not met. If ``condition`` passes,
+``download`` returns results.
+
+Note that if you want to combine multiple conditions, you can do this easily as::
+
+  condition = lambda results: all(f(results) for f in my_list_of_conditions)
+
+
 SwiftFile
 ---------
 
@@ -100,3 +127,10 @@ Exceptions
 .. autoexception:: ConfigurationError
 
 .. autoexception:: ConditionNotMetError
+
+.. autoexception:: ConflictError
+
+Utilities
+---------
+
+.. autofunction:: file_name_to_object_name
