@@ -16,6 +16,28 @@ from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 
 
+def _service_404_exception():
+    return ClientException('dummy', http_status=404)
+
+
+def _make_stat_response(stat_response=None):
+    "Fills in response for stat service to avoid mocking up as much data"
+    defaults = {
+        'headers': {},
+        'container': None,
+        'success': True,
+        'action': '',
+        'items': [
+            ('ETag', 'dummy'),
+            ('Size', 0)
+        ],
+        'object': None
+    }
+    if stat_response:
+        defaults.update(**stat_response)
+    return [defaults]
+
+
 class TestBasicPathMethods(unittest.TestCase):
     def test_name(self):
         p = path('swift://tenant/container/path/to/resource')
@@ -432,6 +454,16 @@ class TestList(SwiftTestCase):
         # Verify that list was retried one time
         self.assertEquals(len(mock_list.call_args_list), 2)
 
+    def test_list_authentication_error(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = ClientException(
+            'Unauthorized. Check username, password and tenant name/id.',
+            http_status=None)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        with self.assertRaises(swift.AuthenticationError):
+            swift_p.list()
+
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
@@ -834,6 +866,7 @@ class TestFirst(SwiftTestCase):
 
 class TestExists(SwiftTestCase):
     def test_false(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [])
 
@@ -844,6 +877,7 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix=None)
 
     def test_false_404(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('not found', http_status=404)
 
@@ -854,6 +888,7 @@ class TestExists(SwiftTestCase):
                                           limit=1, prefix=None)
 
     def test_raises_on_non_404_error(self):
+        self.mock_swift.stat.side_effect = _service_404_exception()
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ClientException('fail', http_status=504)
 
@@ -863,23 +898,35 @@ class TestExists(SwiftTestCase):
         mock_list.assert_called_once_with('container', full_listing=False,
                                           limit=1, prefix=None)
 
-    def test_true(self):
-        mock_list = self.mock_swift_conn.get_container
-        mock_list.return_value = ({}, [{
-            'name': 'path1'
-        }, {
-            'name': 'path2'
-        }, {
-            'name': 'path3'
-        }, {
-            'name': 'path4'
-        }])
-
+    def test_true_file(self):
+        self.mock_swift.stat.return_value = _make_stat_response()
         swift_p = SwiftPath('swift://tenant/container/path')
         result = swift_p.exists()
         self.assertTrue(result)
-        mock_list.assert_called_once_with('container', full_listing=False,
-                                          limit=1, prefix='path')
+        self.assertFalse(self.mock_swift_conn.get_container.call_args_list)
+
+    def test_true_directory_with_no_dir_object(self):
+        swift_p = SwiftPath('swift://tenant/container/dirname')
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [
+            {'name': 'container/dirname/file1.txt'},
+        ])
+        result = swift_p.exists()
+        self.assertTrue(result)
+        mock_list.assert_called_with('container', full_listing=False,
+                                     limit=1, prefix='dirname/')
+
+    def test_directory_does_not_exist(self):
+        mock_list = self.mock_swift_conn.get_container
+        self.mock_swift.stat.side_effect = _service_404_exception()
+        mock_list.return_value = ({}, [])
+        # key is we append trailing slash so only *could* match if there were a
+        # file within the directory
+        result = path('swift://A/B/C/D')
+        self.assertFalse(result.exists())
+        mock_list.assert_called_with('B', full_listing=False,
+                                     limit=1, prefix='C/D/')
 
 
 class TestDownloadObject(SwiftTestCase):
@@ -1294,7 +1341,7 @@ class TestCopytree(SwiftTestCase):
 
 class TestStat(SwiftTestCase):
     def test_tenant(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '0',
                 'x-account-storage-policy-3xreplica-container-count': '31',
@@ -1324,7 +1371,7 @@ class TestStat(SwiftTestCase):
                 ('Bytes in policy "3xreplica"', '24993077101523')
             ],
             'object': None
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1342,7 +1389,7 @@ class TestStat(SwiftTestCase):
         })
 
     def test_tenant_no_access_control(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '0',
                 'x-account-storage-policy-3xreplica-container-count': '31',
@@ -1371,7 +1418,7 @@ class TestStat(SwiftTestCase):
                 ('Bytes in policy "3xreplica"', '24993077101523')
             ],
             'object': None
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1386,7 +1433,7 @@ class TestStat(SwiftTestCase):
         })
 
     def test_container(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '0',
                 'x-container-object-count': '43868',
@@ -1412,7 +1459,7 @@ class TestStat(SwiftTestCase):
                 ('Sync To', ''),
                 ('Sync Key', '')
             ]
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/container')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1427,7 +1474,7 @@ class TestStat(SwiftTestCase):
         })
 
     def test_object(self):
-        self.mock_swift.stat.return_value = [{
+        self.mock_swift.stat.return_value = _make_stat_response({
             'headers': {
                 'content-length': '112',
                 'x-object-meta-x-agi-ctime': '2016-01-15T05:22:00.0Z',
@@ -1458,7 +1505,7 @@ class TestStat(SwiftTestCase):
                 ('Manifest', None)
             ],
             'object': 'object.txt'
-        }]
+        })
         swift_p = SwiftPath('swift://tenant/container')
         res = swift_p.stat()
         self.assertEquals(res, {
@@ -1621,3 +1668,86 @@ class TestCompatHelpers(SwiftTestCase):
                          SwiftPath("swift://"))
         self.assertEqual(SwiftPath("swift://tenant/container/..").normpath(),
                          SwiftPath("swift://tenant"))
+
+
+class TestAuthCacheRetrying(SwiftTestCase):
+    @mock.patch('storage_utils.swift._clear_cached_auth_credentials', spec_set=True)
+    def test_refresh_cache_once_on_auth_err(self, mock_clear_cached_auth_credentials):
+        self.mock_swift.download.side_effect = swift.AuthenticationError('auth err')
+
+        with self.assertRaises(swift.AuthenticationError):
+            SwiftPath('swift://tenant/container/dir').download('.')
+
+        mock_clear_cached_auth_credentials.assert_called_once_with()
+
+
+class TestSwiftAuthCaching(SwiftTestCase):
+    def setUp(self):
+        self.setup_swift_mocks()
+        self.disable_get_swift_service_mock()
+
+        def different_auth_per_tenant(auth_url, username, password, opts):
+            return opts['tenant_name'] + 'url', opts['tenant_name'] + 'token'
+
+        self.mock_swift_get_auth_keystone.side_effect = different_auth_per_tenant
+
+    def test_simple_auth_caching(self):
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
+
+    def test_swift_auth_caching_multiple_tenants(self):
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+        self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
+        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+                                    {'tenant_name': 'AUTH_final_analysis_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
+
+    def test_update_settings_clears_cache(self):
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+                                    {'tenant_name': 'AUTH_final_analysis_prod'})
+        self.assertIn('AUTH_final_analysis_prod', swift._cached_auth_token_map)
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_final_prod])
+        swift.update_settings()
+        self.assertEqual(swift._cached_auth_token_map, {})
+        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_final_prod, call_final_prod])
+
+    def test_auth_caching_connection(self):
+        path('swift://AUTH_seq_upload_prod')._get_swift_connection()
+        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+        self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
+        path('swift://AUTH_seq_upload_prod')._get_swift_connection()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq])
+
+        path('swift://AUTH_final_analysis_prod')._get_swift_connection()
+        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+                                    {'tenant_name': 'AUTH_final_analysis_prod'})
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])
+        path('swift://AUTH_final_analysis_prod')._get_swift_connection()
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
+                         [call_seq, call_final_prod])

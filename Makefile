@@ -74,14 +74,16 @@ teardown:
 lint: venv
 	$(WITH_VENV) flake8 -v $(PACKAGE_NAME)/
 
-.PHONY: test
-test: venv docs
+.PHONY: unit-test
+unit-test: venv
 	$(WITH_VENV) \
 	coverage erase; \
 	tox -v $(TOX_ENV_FLAG); \
 	status=$$?; \
 	exit $$status;
 
+.PHONY: test
+test: venv docs unit-test
 
 # Distribution
 
