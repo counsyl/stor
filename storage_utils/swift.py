@@ -400,7 +400,7 @@ def file_name_to_object_name(p):
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
     os_sep = os.path.sep
-    p_parts = path(p).expand().splitdrive()[1].split(os_sep)
+    p_parts = Path(p).expand().splitdrive()[1].split(os_sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
     parts_class = SwiftPath.parts_class
     return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))

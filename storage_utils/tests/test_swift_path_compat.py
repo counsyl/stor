@@ -57,7 +57,3 @@ class TestBasics(unittest.TestCase):
 
         # .drive
         self.assertEqual(f.drive, 'swift://')
-
-    def test_joinpath_unsupported(self):
-        with self.assertRaises(AttributeError):
-            SwiftPath('swift://').joinpath()

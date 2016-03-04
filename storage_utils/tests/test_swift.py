@@ -1726,7 +1726,8 @@ class TestIsMethods(SwiftTestCase):
         self.mock_swift.stat.return_value = _make_stat_response(
             {'items': [('Content-Type', 'text/html')]})
         self.assertTrue(SwiftPath('swift://A/B/C.html').isfile())
-        self.mock_swift.stat.assert_called_with('B', ['C.html'])
+        self.mock_swift.stat.assert_called_with(container='B',
+                                                objects=['C.html'])
 
     def test_isfile_no_content_type(self):
         self.mock_swift.stat.return_value = _make_stat_response(
@@ -1740,7 +1741,8 @@ class TestIsMethods(SwiftTestCase):
         self.mock_swift.stat.return_value = _make_stat_response(
             {'items': [('Content-Type', 'application/directory')]})
         self.assertTrue(storage_utils.isfile('swift://A/B/C'))
-        self.mock_swift.stat.assert_called_with('B', ['C'])
+        self.mock_swift.stat.assert_called_with(container='B',
+                                                objects=['C'])
 
     def test_isdir_directory_sentinel_empty(self):
         self.mock_swift.stat.return_value = _make_stat_response(

@@ -15,4 +15,4 @@ class WindowsPath(base.Path):
     ``module`` attribute and sets it to ``ntpath`` to ensure
     that it always represents a windows path.
     """
-    module = ntpath
+    path_module = ntpath
