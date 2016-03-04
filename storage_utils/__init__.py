@@ -21,6 +21,8 @@ functions.
 See `storage_utils.swift` for more information on Swift-specific functionality.
 """
 
+from storage_utils.utils import copy
+from storage_utils.utils import copytree
 from storage_utils.utils import is_filesystem_path
 from storage_utils.utils import is_swift_path
 from storage_utils.utils import NamedTemporaryDirectory
@@ -57,6 +59,8 @@ isdir = _delegate_to_path('isdir')
 isfile = _delegate_to_path('isfile')
 islink = _delegate_to_path('islink')
 ismount = _delegate_to_path('ismount')
+remove = _delegate_to_path('remove')
+rmtree = _delegate_to_path('rmtree')
 
 
 def path(pth):
@@ -72,8 +76,9 @@ def path(pth):
 
 
 __all__ = [
+    'copy',
+    'copytree',
     'is_filesystem_path',
-    'is_posix_path',
     'is_swift_path',
     'NamedTemporaryDirectory',
     'abspath',
@@ -96,4 +101,6 @@ __all__ = [
     'isfile',
     'islink',
     'ismount',
+    'remove',
+    'rmtree',
 ]

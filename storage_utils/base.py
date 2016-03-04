@@ -5,6 +5,7 @@ import glob
 import os
 import ntpath
 import posixpath
+import shutil
 import sys
 
 from six.moves import builtins
@@ -234,6 +235,16 @@ class Path(text_type):
         """
         raise NotImplementedError
 
+    def remove(self):
+        """ Delete single path or object """
+        raise NotImplementedError
+
+    def rmtree(self):
+        """Delete entire directory (or all paths starting with prefix).
+
+        See shutil.rmtree"""
+        raise NotImplementedError
+
 
 class FileSystemPath(Path):
     """'Abstract' class implementing file-system specific operations.
@@ -311,3 +322,10 @@ class FileSystemPath(Path):
     def ismount(self):
         """ .. seealso:: :func:`os.path.ismount` """
         return self.module.ismount(self)
+
+    def remove(self):
+        """ .. seealso:: :func:`os.remove` """
+        os.remove(self)
+        return self
+
+    rmtree = shutil.rmtree
