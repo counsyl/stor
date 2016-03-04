@@ -96,6 +96,7 @@ Note that if you want to combine multiple conditions, you can do this easily as:
 
   condition = lambda results: all(f(results) for f in my_list_of_conditions)
 
+
 SwiftFile
 ---------
 
@@ -128,3 +129,8 @@ Exceptions
 .. autoexception:: ConditionNotMetError
 
 .. autoexception:: ConflictError
+
+Utilities
+---------
+
+.. autofunction:: file_name_to_object_name

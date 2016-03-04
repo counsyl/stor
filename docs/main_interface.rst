@@ -8,7 +8,7 @@ Main Interface
 
 Common Path Methods
 -------------------
-By using the ``path`` factory function, users can write code that is portable across Swift storage and Posix-based file systems. In order to ensure portability, users can only use the following methods:
+By using the ``path`` factory function, users can write code that is portable across Swift storage, Windows, and Posix-based file systems. In order to ensure portability, users can only use the following methods:
 
 * ``open``: Opens the resource identified by the path and returns a file (or file-like) object.
 * ``glob``: Globs the path based on an input pattern. Returns matching path objects.
@@ -21,6 +21,9 @@ By using the ``path`` factory function, users can write code that is portable ac
 .. NOTE::
    ``Path`` fully implements the above methods, but ``SwiftPath`` may only partially implement the method (e.g. only allowing prefix globbing). Read the ``SwiftPath`` documentation below about restrictions on the methods.
 
+.. NOTE::
+    Copying from object storage to windows is currently not supported.
+
 
 SwiftPath
 ---------
@@ -29,3 +32,7 @@ SwiftPath
 PosixPath
 ---------
 ``PosixPath`` objects return from the ``path`` factory fully support the common path methods listed above and also provide additional functionality. For more information, go to the :ref:`posix` section.
+
+WindowsPath
+-----------
+``WindowsPath`` objects return from the ``path`` factory fully support the common path methods listed above and also provide additional functionality. For more information, go to the :ref:`windows` section.
