@@ -5,8 +5,7 @@ v6.0.0
 ------
 
 * Cache authentication credentials for performance.
-* Renamed `storage_utils.is_posix_path` to `storage_utils.is_filesystem_path` but
-  kept `storage_utils.is_posix_path` for backwards compatibility
+* Renamed ``storage_utils.is_posix_path``.
 * Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows

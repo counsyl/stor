@@ -1,5 +1,4 @@
 import mock
-import warnings
 import ntpath
 import storage_utils
 from storage_utils.posix import PosixPath
@@ -33,9 +32,6 @@ class TestIsSwiftPath(unittest.TestCase):
 
 
 class TestIsFilesystemPath(unittest.TestCase):
-    def test_is_posix_path(self):
-        self.assertEquals(storage_utils.is_posix_path, storage_utils.is_filesystem_path)
-
     def test_true(self):
         self.assertTrue(storage_utils.is_filesystem_path('my/posix/path'))
 
