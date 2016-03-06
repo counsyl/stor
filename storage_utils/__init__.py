@@ -60,6 +60,7 @@ isdir = _delegate_to_path('isdir')
 isfile = _delegate_to_path('isfile')
 islink = _delegate_to_path('islink')
 ismount = _delegate_to_path('ismount')
+getsize = _delegate_to_path('getsize')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
 
@@ -96,6 +97,7 @@ __all__ = [
     'isfile',
     'islink',
     'ismount',
+    'getsize',
     'copy',
     'copytree',
     'remove',

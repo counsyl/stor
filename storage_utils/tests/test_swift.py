@@ -1553,6 +1553,15 @@ class TestStat(SwiftTestCase):
             'Manifest': None
         })
 
+    def test_getsize_content_length(self):
+        self.mock_swift.stat.return_value = _make_stat_response(
+            {'items': [('Content-Length', '21')]})
+        self.assertEqual(SwiftPath('swift://A/C/d.txt').getsize(), 21)
+
+    def test_getsize_no_content_length(self):
+        self.mock_swift.stat.return_value = _make_stat_response({'items': []})
+        self.assertEqual(SwiftPath('swift://A/C/d.txt').getsize(), 0)
+
 
 class TestRemove(SwiftTestCase):
     def test_invalid_remove(self):

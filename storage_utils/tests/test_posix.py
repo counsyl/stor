@@ -237,3 +237,9 @@ class TestMisc(unittest.TestCase):
             self.assertTrue(filename.abspath().isabs())
             self.assertFalse(Path('.').isabs())
             self.assertEqual(dirname.listdir(), [filename])
+
+    def test_getsize(self):
+        with tempfile.NamedTemporaryFile() as tmp:
+            tmp.write('blah')
+            tmp.flush()
+            self.assertEqual(Path(tmp.name).getsize(), 4)

@@ -1446,6 +1446,14 @@ class SwiftPath(Path):
 
         return stat_values
 
+    def getsize(self):
+        """Returns content-length of object in Swift.
+
+        Note that for containers / tenants, there will be no content-length, in
+        which case this function returns 0 (``os.path.getsize`` has no
+        contract)"""
+        return int(self.stat().get('Content-Length', 0))
+
     @_swift_retry(exceptions=UnavailableError)
     def post(self, options=None):
         """Post operations on the path.
