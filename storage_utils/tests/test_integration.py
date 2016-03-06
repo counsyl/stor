@@ -287,3 +287,14 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         self.assertTrue(storage_utils.isdir(folder))
         self.assertFalse(storage_utils.isfile(folder))
         self.assertTrue(storage_utils.isdir(subfolder))
+
+    def test_metadata_pulling(self):
+        file_in_folder = storage_utils.join(self.test_container,
+                                            'somefile.svg')
+        with storage_utils.open(file_in_folder, 'w') as fp:
+            fp.write('12345\n')
+
+        self.assertEqual(storage_utils.getsize(file_in_folder), 6)
+        stat_data = storage_utils.Path(file_in_folder).stat()
+        self.assertIn('Content-Type', stat_data)
+        self.assertEqual(stat_data['Content-Type'], 'image/svg+xml')

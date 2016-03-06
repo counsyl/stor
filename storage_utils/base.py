@@ -258,6 +258,18 @@ class Path(text_type):
         """
         raise NotImplementedError
 
+    def getsize(self):
+        """Returns size, in bytes of path.
+
+        For Swift containers and tenants, will return 0. For POSIX directories,
+        returns an undefined value.
+
+        Raises:
+            os.error: if file does not exist or is inaccessible
+            NotFoundError/UnauthorizedError: from swift
+        """
+        raise NotImplementedError
+
     def remove(self):
         """ Delete single path or object """
         raise NotImplementedError
@@ -342,6 +354,10 @@ class FileSystemPath(Path):
     def ismount(self):  # pragma: no cover (temporary)
         """ See: :func:`os.path.ismount` """
         return self.path_module.ismount(self)
+
+    def getsize(self):
+        """ See: :func:`os.path.getsize` """
+        return self.path_module.getsize(self)
 
     def remove(self):
         """ See: :func:`os.remove` """
