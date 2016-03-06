@@ -5,8 +5,7 @@ v6.1.0
 ------
 
 * Added `storage_utils.getsize` to public API (along with
-  `storage_utils.FileSystemPath.getsize` and
-  `storage_utils.swift.SwiftPath.getsize`). Port of `os.path.getsize`.
+  `Path.getsize` and `SwiftPath.getsize`). Port of `os.path.getsize`.
 
 v6.0.0
 ------

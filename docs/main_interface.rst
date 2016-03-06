@@ -5,6 +5,18 @@ Main Interface
 
 .. automodule:: storage_utils
   :members:
+  :exclude-members: Path
+
+.. module:: storage_utils.base
+
+Path Class
+----------
+
+The ``storage_utils.Path`` class is the parent to all concrete base classes and
+should be used as the main entry point to the object oriented API.
+
+.. autoclass:: Path
+  :members:
 
 
 Common Path Methods
