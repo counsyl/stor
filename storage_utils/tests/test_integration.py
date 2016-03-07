@@ -254,6 +254,53 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 obj_path = Path('test') / which_obj
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
+    def test_copytree_to_from_container_w_manifest(self):
+        num_test_objs = 10
+        test_obj_size = 100
+        swift_dir = storage_utils.join(self.test_container, 'test')
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            # Make a nested file and an empty directory for testing purposes
+            tmp_d = Path(tmp_d)
+            os.mkdir(tmp_d / 'my_dir')
+            open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
+            os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
+
+            storage_utils.copytree(
+                '.',
+                swift_dir,
+                swift_upload_options={
+                    'use_manifest': True
+                })
+
+            # Validate the contents of the manifest file
+            manifest_contents = swift._get_data_manifest_contents(swift_dir)
+            expected_contents = self.get_dataset_obj_names(num_test_objs)
+            expected_contents.extend(['my_dir/empty_file',
+                                      'my_dir/empty_dir',
+                                      swift.DATA_MANIFEST_FILE_NAME])
+            expected_contents = [Path('test') / c for c in expected_contents]
+            self.assertEquals(set(manifest_contents), set(expected_contents))
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            # Download the results successfully
+            Path(self.test_container / 'test').copytree(
+                'test',
+                swift_download_options={
+                    'use_manifest': True
+                })
+
+            # Now delete one of the objects from swift. A second download
+            # will fail with a condition error
+            Path(self.test_container / 'test' / 'my_dir' / 'empty_dir').remove()
+            with self.assertRaises(swift.ConditionNotMetError):
+                Path(self.test_container / 'test').copytree(
+                    'test',
+                    swift_download_options={
+                        'use_manifest': True,
+                        'num_retries': 0
+                    })
+
     def test_is_methods(self):
         container = self.test_container
         container = self.test_container

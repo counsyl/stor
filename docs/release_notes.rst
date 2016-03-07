@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v6.2.0
+------
+
+* Added ``use_manifest`` option to `SwiftPath.list`, `SwiftPath.download`, and
+  `SwiftPath.upload` for generating data manifests and validation
+
 v6.1.0
 ------
 
