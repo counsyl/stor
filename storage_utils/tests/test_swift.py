@@ -799,6 +799,46 @@ class TestList(SwiftTestCase):
                                           limit=None,
                                           full_listing=True)
 
+    def test_list_w_condition_and_data_manifest(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot have data_manifest and condition'):
+            SwiftPath('swift://tenant/container/path').list(
+                condition=lambda results: True,  # pragma: no cover
+                data_manifest=True)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_data_manifest(self, mock_sleep):
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'my/obj1'
+        }, {
+            'name': 'my/obj2'
+        }, {
+            'name': 'my/obj3'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container/')
+        results = swift_p.list(data_manifest=True)
+        self.assertEquals(set(results), set([
+            'swift://tenant/container/my/obj1',
+            'swift://tenant/container/my/obj2',
+            'swift://tenant/container/my/obj3'
+        ]))
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_data_manifest_validation_err(self, mock_sleep):
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'my/obj1'
+        }, {
+            'name': 'my/obj2'
+        }])
+
+        swift_p = SwiftPath('swift://tenant/container/')
+        with self.assertRaises(swift.ConditionNotMetError):
+            swift_p.list(data_manifest=True)
+
 
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestGlob(SwiftTestCase):
@@ -1151,7 +1191,8 @@ class TestDownload(SwiftTestCase):
                 data_manifest=True)
 
     @mock.patch('time.sleep', autospec=True)
-    def test_download_w_data_manifest(self, mock_sleep):
+    @mock.patch.object(SwiftPath, 'list', autospec=True)
+    def test_download_w_data_manifest(self, mock_list, mock_sleep):
         self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
@@ -1179,8 +1220,12 @@ class TestDownload(SwiftTestCase):
                 'shuffle': True
             })
 
+        # Verify that list was called with a data manifest as well
+        mock_list.assert_called_once_with(mock.ANY, data_manifest=True)
+
     @mock.patch('time.sleep', autospec=True)
-    def test_download_w_data_manifest_validation_err(self, mock_sleep):
+    @mock.patch.object(SwiftPath, 'list', autospec=True)
+    def test_download_w_data_manifest_validation_err(self, mock_list, mock_sleep):
         self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
@@ -1197,6 +1242,10 @@ class TestDownload(SwiftTestCase):
             swift_p.download('output_dir', data_manifest=True, num_retries=2)
 
         self.assertEquals(len(mock_sleep.call_args_list), 2)
+        # Verify that list was called with a data manifest as well
+        self.assertEquals(mock_list.call_args_list, [mock.call(mock.ANY, data_manifest=True),
+                                                     mock.call(mock.ANY, data_manifest=True),
+                                                     mock.call(mock.ANY, data_manifest=True)])
 
 
 class TestFileNameToObjectName(SwiftTestCase):

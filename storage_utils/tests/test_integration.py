@@ -293,13 +293,13 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             # Now delete one of the objects from swift. A second download
             # will fail with a condition error
             Path(self.test_container / 'test' / 'my_dir' / 'empty_dir').remove()
-            with self.assertRaises(swift.ConditionNotMetError):
-                Path(self.test_container / 'test').copytree(
-                    'test',
-                    swift_download_options={
-                        'data_manifest': True,
-                        'num_retries': 0
-                    })
+            with mock.patch('storage_utils.swift.num_retries', 0):
+                with self.assertRaises(swift.ConditionNotMetError):
+                    Path(self.test_container / 'test').copytree(
+                        'test',
+                        swift_download_options={
+                            'data_manifest': True
+                        })
 
     def test_is_methods(self):
         container = self.test_container

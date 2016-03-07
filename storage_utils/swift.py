@@ -462,6 +462,15 @@ def _validate_manifest_download(expected_objs, download_results):
     return set(expected_objs).issubset(downloaded_objs)
 
 
+def _validate_manifest_list(expected_objs, list_results):
+    """
+    Given a list of expected object names and `SwiftPath.list` results,
+    verify all expected objects are in the listed results
+    """
+    listed_objs = {r.resource for r in list_results}
+    return set(expected_objs).issubset(listed_objs)
+
+
 class SwiftFile(object):
     """Provides methods for reading and writing swift objects returned by
     `SwiftPath.open`.
@@ -854,6 +863,7 @@ class SwiftPath(Path):
              starts_with=None,
              limit=None,
              condition=None,
+             data_manifest=False,
              # intentionally not documented
              list_as_dir=False,
              ignore_segment_containers=True):
@@ -873,6 +883,9 @@ class SwiftPath(Path):
             limit (int): Limit the amount of results returned
             condition (function(results) -> bool): The method will only return
                 when the results matches the condition.
+            data_manifest (bool): Perform the list and use the data manfest file to validate
+                the list. The ``condition`` argument cannot be passed when using
+                ``data_manifest``.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -882,10 +895,17 @@ class SwiftPath(Path):
             ConditionNotMetError: Results were returned, but they did not
                 meet the condition.
         """
+        print 'in list'
         tenant = self.tenant
         prefix = self.resource
         full_listing = limit is None
+        if data_manifest and condition:
+            raise ValueError('cannot have data_manifest and condition when calling list')
         _validate_condition(condition)
+
+        if data_manifest:
+            object_names = _get_data_manifest_contents(self)
+            condition = partial(_validate_manifest_list, object_names)
 
         # When starts_with is provided, treat the resource as a
         # directory that has the starts_with parameter after it. This allows
@@ -1210,6 +1230,10 @@ class SwiftPath(Path):
         _validate_condition(condition)
 
         if data_manifest:
+            # Do a full list with the manifest before the download. This will retry until
+            # all results in the manifest can be listed, which helps ensure the download
+            # can be performed without having to be retried
+            self.list(data_manifest=True)
             object_names = _get_data_manifest_contents(self)
             condition = partial(_validate_manifest_download, object_names)
 
