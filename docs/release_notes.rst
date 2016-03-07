@@ -4,8 +4,8 @@ Release Notes
 v6.2.0
 ------
 
-* Added ``data_manifest`` option to `SwiftPath.download` and `SwiftPath.upload` for
-  generating data manifests and validation
+* Added ``data_manifest`` option to `SwiftPath.list`, `SwiftPath.download`, and
+  `SwiftPath.upload` for generating data manifests and validation
 
 v6.1.0
 ------
