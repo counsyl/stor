@@ -471,6 +471,12 @@ def _validate_manifest_list(expected_objs, list_results):
     return set(expected_objs).issubset(listed_objs)
 
 
+def join_conditions(*conditions):
+    def wrapper(results):
+        return all(f(results) for f in conditions)
+    return wrapper
+
+
 class SwiftFile(object):
     """Provides methods for reading and writing swift objects returned by
     `SwiftPath.open`.
@@ -895,17 +901,15 @@ class SwiftPath(Path):
             ConditionNotMetError: Results were returned, but they did not
                 meet the condition.
         """
-        print 'in list'
         tenant = self.tenant
         prefix = self.resource
         full_listing = limit is None
-        if data_manifest and condition:
-            raise ValueError('cannot have data_manifest and condition when calling list')
         _validate_condition(condition)
 
         if data_manifest:
             object_names = _get_data_manifest_contents(self)
-            condition = partial(_validate_manifest_list, object_names)
+            manifest_cond = partial(_validate_manifest_list, object_names)
+            condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
         # When starts_with is provided, treat the resource as a
         # directory that has the starts_with parameter after it. This allows
@@ -1225,8 +1229,6 @@ class SwiftPath(Path):
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
-        if data_manifest and condition:
-            raise ValueError('cannot have data_manifest and condition when calling download')
         _validate_condition(condition)
 
         if data_manifest:
@@ -1235,7 +1237,8 @@ class SwiftPath(Path):
             # can be performed without having to be retried
             self.list(data_manifest=True, num_retries=0)
             object_names = _get_data_manifest_contents(self)
-            condition = partial(_validate_manifest_download, object_names)
+            manifest_cond = partial(_validate_manifest_download, object_names)
+            condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
         service_options = {
             'object_dd_threads': object_threads,
@@ -1341,8 +1344,6 @@ class SwiftPath(Path):
         """
         if not self.container:
             raise ValueError('must specify container when uploading')
-        if data_manifest and condition:
-            raise ValueError('cannot have data_manifest and condition when calling upload')
         if data_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
             raise ValueError('can only upload one directory when using data_manifest')
         _validate_condition(condition)
@@ -1356,7 +1357,7 @@ class SwiftPath(Path):
             if not isinstance(name, SwiftUploadObject)
         ])
         if data_manifest:
-            all_files_to_upload.append(Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME)
+            all_files_to_upload.insert(0, Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME)
 
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results.
@@ -1370,7 +1371,8 @@ class SwiftPath(Path):
             # Generate the data manifest and make a condition for validating all upload results
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
-            condition = partial(_validate_manifest_upload, object_names)
+            manifest_cond = partial(_validate_manifest_upload, object_names)
+            condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
         service_options = {
             'object_uu_threads': object_threads,
