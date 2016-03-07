@@ -92,7 +92,7 @@ If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
-# Name for the data manifest file when using the data_manifest option
+# Name for the data manifest file when using the use_manifest option
 # for upload/download
 DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 
@@ -1317,11 +1317,6 @@ class SwiftPath(Path):
                 on both sides. Note this incurs reading the contents of all pre-existing local
                 files.
             checksum (bool, default True): Peform checksum validation of upload.
-                condition (function(results) -> bool): The method will only return
-                when the results of download matches the condition. In the event of the
-                condition never matching after retries, partially downloaded
-                results will not be deleted. Note that users are not expected to write
-                conditions for download without an understanding of the structure of the results.
             condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition. In the event of the
                 condition never matching after retries, partially uploaded
@@ -1333,7 +1328,7 @@ class SwiftPath(Path):
         Raises:
             SwiftError: A swift client error occurred.
             ConditionNotMetError: The ``condition`` argument did not pass after ``num_retries``
-                or the ``data_manifest`` option was turned on and the upload results could not
+                or the ``use_manifest`` option was turned on and the upload results could not
                 be verified. Partially uploaded results are not deleted.
 
         Returns:
@@ -1343,7 +1338,7 @@ class SwiftPath(Path):
         if not self.container:
             raise ValueError('must specify container when uploading')
         if use_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
-            raise ValueError('can only upload one directory when using data_manifest')
+            raise ValueError('can only upload one directory with use_manifest=True')
         _validate_condition(condition)
 
         swift_upload_objects = [
