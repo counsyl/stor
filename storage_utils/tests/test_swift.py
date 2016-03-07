@@ -57,6 +57,16 @@ class TestBasicPathMethods(unittest.TestCase):
         self.assertEquals(p.basename(), 'resource')
 
 
+class TestManifestUtilities(unittest.TestCase):
+    def test_generate_save_and_read_manifest(self):
+        with NamedTemporaryDirectory() as tmp_d:
+            manifest_contents = ['obj1', 'dir/obj2']
+            swift._generate_and_save_data_manifest(tmp_d, manifest_contents)
+            read_contents = swift._get_data_manifest_contents(tmp_d)
+
+            self.assertEquals(set(manifest_contents), set(read_contents))
+
+
 class TestCondition(unittest.TestCase):
     def test_invalid_condition_type(self):
         with self.assertRaisesRegexp(ValueError, 'must be callable'):
@@ -1133,6 +1143,61 @@ class TestDownload(SwiftTestCase):
         self.assertEquals(options_passed['object_dd_threads'], 20)
         self.assertEquals(options_passed['container_threads'], 30)
 
+    def test_download_w_condition_and_data_manifest(self):
+        with self.assertRaisesRegexp(ValueError, 'cannot have data_manifest and condition'):
+            SwiftPath('swift://tenant/container/path').download(
+                ['.'],
+                condition=lambda results: True,  # pragma: no cover
+                data_manifest=True)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_download_w_data_manifest(self, mock_sleep):
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift.download.return_value = [{
+            'action': 'download_object',
+            'object': 'my/obj1',
+            'success': True
+        }, {
+            'action': 'download_object',
+            'object': 'my/obj2',
+            'success': True
+        }, {
+            'action': 'download_object',
+            'object': 'my/obj3',
+            'success': True
+        }]
+
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.download('output_dir', data_manifest=True)
+        self.mock_swift.download.assert_called_once_with(
+            'container',
+            options={
+                'prefix': None,
+                'out_directory': 'output_dir',
+                'remove_prefix': True,
+                'skip_identical': False,
+                'shuffle': True
+            })
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_download_w_data_manifest_validation_err(self, mock_sleep):
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift.download.return_value = [{
+            'action': 'download_object',
+            'object': 'my/obj1',
+            'success': True
+        }, {
+            'action': 'download_object',
+            'object': 'my/obj2',
+            'success': True
+        }]
+
+        swift_p = SwiftPath('swift://tenant/container')
+        with self.assertRaises(swift.ConditionNotMetError):
+            swift_p.download('output_dir', data_manifest=True, num_retries=2)
+
+        self.assertEquals(len(mock_sleep.call_args_list), 2)
+
 
 class TestFileNameToObjectName(SwiftTestCase):
     @mock.patch('os.path', ntpath)
@@ -1267,6 +1332,86 @@ class TestUpload(SwiftTestCase):
             'checksum': False
         })
 
+    @mock.patch('time.sleep', autospec=True)
+    def test_upload_w_manifest(self, mock_sleep, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        self.mock_swift.upload.return_value = [{
+            'success': True,
+            'action': 'upload_object',
+            'object': 'path/file1'
+        }, {
+            'success': True,
+            'action': 'upload_object',
+            'object': 'path/file2'
+        }, {
+            'success': True,
+            'action': 'upload_object',
+            'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME
+        }]
+
+        with NamedTemporaryDirectory(change_dir=True):
+            swift_p = SwiftPath('swift://tenant/container/path')
+            swift_p.upload(['.'],
+                           segment_size=1000,
+                           use_slo=True,
+                           leave_segments=True,
+                           changed=True,
+                           checksum=False,
+                           skip_identical=True,
+                           data_manifest=True)
+
+        upload_args = self.mock_swift.upload.call_args_list[0][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
+
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals([o.source for o in upload_args[1]],
+                          ['file1', 'file2', './%s' % swift.DATA_MANIFEST_FILE_NAME])
+        self.assertEquals([o.object_name for o in upload_args[1]],
+                          ['path/file1', 'path/file2', 'path/%s' % swift.DATA_MANIFEST_FILE_NAME])
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'use_slo': True,
+            'segment_container': '.segments_container',
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True,
+            'skip_identical': True,
+            'checksum': False
+        })
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_upload_w_manifest_validation_err(self, mock_sleep, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        self.mock_swift.upload.return_value = [{
+            'success': True,
+            'action': 'upload_object',
+            'object': 'path/file1'
+        }, {
+            'success': True,
+            'action': 'upload_object',
+            'object': 'path/file2'
+        }, {
+            'success': False,  # Create an error in the upload results
+            'action': 'upload_object',
+            'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME
+        }]
+
+        with NamedTemporaryDirectory(change_dir=True):
+            swift_p = SwiftPath('swift://tenant/container/path')
+            with self.assertRaises(swift.ConditionNotMetError):
+                swift_p.upload(['.'],
+                               segment_size=1000,
+                               use_slo=True,
+                               leave_segments=True,
+                               changed=True,
+                               checksum=False,
+                               skip_identical=True,
+                               data_manifest=True,
+                               num_retries=2)
+        self.assertEquals(len(mock_sleep.call_args_list), 2)
+
     def test_upload_to_container(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = ['file1', 'file2']
         self.mock_swift.upload.return_value = []
@@ -1325,6 +1470,23 @@ class TestUpload(SwiftTestCase):
         options_passed = self.mock_swift_service.call_args[0][0]
         self.assertEquals(options_passed['object_uu_threads'], 20)
         self.assertEquals(options_passed['segment_threads'], 30)
+
+    def test_upload_w_condition_and_data_manifest(self, mock_walk_files_and_dirs):
+        with self.assertRaisesRegexp(ValueError, 'cannot have data_manifest and condition'):
+            SwiftPath('swift://tenant/container/path').upload(
+                ['.'],
+                condition=lambda results: True,  # pragma: no cover
+                data_manifest=True)
+
+    def test_upload_w_data_manifest_multiple_uploads(self, mock_walk_files_and_dirs):
+        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
+            SwiftPath('swift://tenant/container/path').upload(['.', '.'],
+                                                              data_manifest=True)
+
+    def test_upload_w_data_manifest_single_file(self, mock_walk_files_and_dirs):
+        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
+            SwiftPath('swift://tenant/container/path').upload(['file'],
+                                                              data_manifest=True)
 
 
 class TestCopy(SwiftTestCase):
