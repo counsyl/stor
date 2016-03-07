@@ -93,7 +93,7 @@ DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
 # Name for the data manifest file when using the data_manifest option
 # for upload/download
-DATA_MANIFEST_FILE_NAME = '.swift_data_manifest.csv'
+DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 
 # These variables are used to configure retry logic for swift.
 # These variables can also be passed to the methods themselves
@@ -869,7 +869,7 @@ class SwiftPath(Path):
              starts_with=None,
              limit=None,
              condition=None,
-             data_manifest=False,
+             use_manifest=False,
              # intentionally not documented
              list_as_dir=False,
              ignore_segment_containers=True):
@@ -889,9 +889,8 @@ class SwiftPath(Path):
             limit (int): Limit the amount of results returned
             condition (function(results) -> bool): The method will only return
                 when the results matches the condition.
-            data_manifest (bool): Perform the list and use the data manfest file to validate
-                the list. The ``condition`` argument cannot be passed when using
-                ``data_manifest``.
+            use_manifest (bool): Perform the list and use the data manfest file to validate
+                the list.
 
         Returns:
             List[SwiftPath]: Every path in the listing.
@@ -906,7 +905,7 @@ class SwiftPath(Path):
         full_listing = limit is None
         _validate_condition(condition)
 
-        if data_manifest:
+        if use_manifest:
             object_names = _get_data_manifest_contents(self)
             manifest_cond = partial(_validate_manifest_list, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
@@ -1183,7 +1182,7 @@ class SwiftPath(Path):
                  skip_identical=False,
                  shuffle=True,
                  condition=None,
-                 data_manifest=False):
+                 use_manifest=False):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1214,9 +1213,8 @@ class SwiftPath(Path):
                 condition never matching after retries, partially downloaded
                 results will not be deleted. Note that users are not expected to write
                 conditions for download without an understanding of the structure of the results.
-            data_manifest (bool): Perform the download and use the data manfest file to validate
-                the download. The ``condition`` argument cannot be passed when using
-                ``data_manifest``.
+            use_manifest (bool): Perform the download and use the data manfest file to validate
+                the download.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1231,11 +1229,11 @@ class SwiftPath(Path):
             raise ValueError('cannot call download on tenant with no container')
         _validate_condition(condition)
 
-        if data_manifest:
+        if use_manifest:
             # Do a full list with the manifest before the download. This will retry until
             # all results in the manifest can be listed, which helps ensure the download
             # can be performed without having to be retried
-            self.list(data_manifest=True, num_retries=0)
+            self.list(use_manifest=True, num_retries=0)
             object_names = _get_data_manifest_contents(self)
             manifest_cond = partial(_validate_manifest_download, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
@@ -1271,7 +1269,7 @@ class SwiftPath(Path):
                skip_identical=False,
                checksum=True,
                condition=None,
-               data_manifest=False):
+               use_manifest=False):
         """Uploads a list of files and directories to swift.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1328,9 +1326,8 @@ class SwiftPath(Path):
                 condition never matching after retries, partially uploaded
                 results will not be deleted. Note that users are not expected to write
                 conditions for upload without an understanding of the structure of the results.
-            data_manifest (bool): Generate a data manifest and validate the upload results
-                are in the manifest. The ``condition`` argument cannot be passed when using
-                ``data_manifest``.
+            use_manifest (bool): Generate a data manifest and validate the upload results
+                are in the manifest.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1344,7 +1341,7 @@ class SwiftPath(Path):
         """
         if not self.container:
             raise ValueError('must specify container when uploading')
-        if data_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
+        if use_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
             raise ValueError('can only upload one directory when using data_manifest')
         _validate_condition(condition)
 
@@ -1356,7 +1353,7 @@ class SwiftPath(Path):
             name for name in to_upload
             if not isinstance(name, SwiftUploadObject)
         ])
-        if data_manifest:
+        if use_manifest:
             all_files_to_upload.insert(0, Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME)
 
         # Convert everything to swift upload objects and prepend the relative
@@ -1367,7 +1364,7 @@ class SwiftPath(Path):
             for f in all_files_to_upload
         ])
 
-        if data_manifest:
+        if use_manifest:
             # Generate the data manifest and make a condition for validating all upload results
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)

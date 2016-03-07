@@ -270,7 +270,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 '.',
                 swift_dir,
                 swift_upload_options={
-                    'data_manifest': True
+                    'use_manifest': True
                 })
 
             # Validate the contents of the manifest file
@@ -287,7 +287,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             Path(self.test_container / 'test').copytree(
                 'test',
                 swift_download_options={
-                    'data_manifest': True
+                    'use_manifest': True
                 })
 
             # Now delete one of the objects from swift. A second download
@@ -297,7 +297,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 Path(self.test_container / 'test').copytree(
                     'test',
                     swift_download_options={
-                        'data_manifest': True,
+                        'use_manifest': True,
                         'num_retries': 0
                     })
 
