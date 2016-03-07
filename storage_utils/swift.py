@@ -1233,7 +1233,7 @@ class SwiftPath(Path):
             # Do a full list with the manifest before the download. This will retry until
             # all results in the manifest can be listed, which helps ensure the download
             # can be performed without having to be retried
-            self.list(data_manifest=True)
+            self.list(data_manifest=True, num_retries=0)
             object_names = _get_data_manifest_contents(self)
             condition = partial(_validate_manifest_download, object_names)
 

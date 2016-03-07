@@ -1221,7 +1221,7 @@ class TestDownload(SwiftTestCase):
             })
 
         # Verify that list was called with a data manifest as well
-        mock_list.assert_called_once_with(mock.ANY, data_manifest=True)
+        mock_list.assert_called_once_with(mock.ANY, data_manifest=True, num_retries=0)
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
@@ -1243,9 +1243,10 @@ class TestDownload(SwiftTestCase):
 
         self.assertEquals(len(mock_sleep.call_args_list), 2)
         # Verify that list was called with a data manifest as well
-        self.assertEquals(mock_list.call_args_list, [mock.call(mock.ANY, data_manifest=True),
-                                                     mock.call(mock.ANY, data_manifest=True),
-                                                     mock.call(mock.ANY, data_manifest=True)])
+        self.assertEquals(mock_list.call_args_list,
+                          [mock.call(mock.ANY, data_manifest=True, num_retries=0),
+                           mock.call(mock.ANY, data_manifest=True, num_retries=0),
+                           mock.call(mock.ANY, data_manifest=True, num_retries=0)])
 
 
 class TestFileNameToObjectName(SwiftTestCase):
