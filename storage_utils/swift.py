@@ -449,7 +449,7 @@ def _validate_manifest_download(expected_objs, download_results):
     downloaded_objs = {
         r['object']
         for r in download_results
-        if r['success'] and r['action'] in ('download_object')
+        if r['success'] and r['action'] in ('download_object',)
     }
     return set(expected_objs).issubset(downloaded_objs)
 
