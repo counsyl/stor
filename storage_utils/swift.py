@@ -93,7 +93,7 @@ DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
 # Name for the data manifest file when using the data_manifest option
 # for upload/download
-DATA_MANIFEST_FILE_NAME = 'data_manifest.csv'
+DATA_MANIFEST_FILE_NAME = '.swift_data_manifest.csv'
 
 # These variables are used to configure retry logic for swift.
 # These variables can also be passed to the methods themselves
@@ -424,8 +424,6 @@ def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
         contents = '\n'.join(data_manifest_contents) + '\n'
         out_file.write(contents)
 
-    return manifest_file_name
-
 
 def _get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
@@ -437,6 +435,11 @@ def _get_data_manifest_contents(manifest_dir):
 
 
 def _validate_manifest_upload(expected_objs, upload_results):
+    """
+    Given a list of expected object names and a list of dictionaries of
+    `SwiftPath.upload` results, verify that all expected objects are in
+    the upload results.
+    """
     uploaded_objs = {
         r['object']
         for r in upload_results
@@ -446,6 +449,11 @@ def _validate_manifest_upload(expected_objs, upload_results):
 
 
 def _validate_manifest_download(expected_objs, download_results):
+    """
+    Given a list of expected object names and a list of dictionaries of
+    `SwiftPath.download` results, verify that all expected objects are in
+    the download results.
+    """
     downloaded_objs = {
         r['object']
         for r in download_results
@@ -1335,8 +1343,7 @@ class SwiftPath(Path):
         ])
 
         if data_manifest:
-            # Generate the data manifest and add it to the upload. Assign a condition to
-            # check the results of the upload
+            # Generate the data manifest and make a condition for validating all upload results
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
             condition = partial(_validate_manifest_upload, object_names)
