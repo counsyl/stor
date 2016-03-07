@@ -234,7 +234,8 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
 
 
 def walk_files_and_dirs(files_and_dirs):
-    """Walk all files and directories.
+    """Walk files_and_dirs, recursing any directories and returning all files
+    and empty directories.
 
     Args:
         files_and_dirs (List[str]): All file or directory names to walk.

@@ -31,6 +31,7 @@ from backoff.backoff import with_backoff
 from cached_property import cached_property
 import cStringIO
 import copy
+from functools import partial
 from functools import wraps
 import json
 import logging
@@ -89,6 +90,10 @@ If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
 
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
+
+# Name for the data manifest file when using the data_manifest option
+# for upload/download
+DATA_MANIFEST_FILE_NAME = 'data_manifest.csv'
 
 # These variables are used to configure retry logic for swift.
 # These variables can also be passed to the methods themselves
@@ -404,6 +409,49 @@ def file_name_to_object_name(p):
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
     parts_class = SwiftPath.parts_class
     return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
+
+
+def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
+    """Generates a data manifest for a given directory and saves it.
+
+    Args:
+        manifest_dir (str): The directory in which the manifest will be saved
+        data_manifest_contents (List[str]): The list of all objects that will
+            be part of the manifest.
+    """
+    manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
+    with open(manifest_file_name, 'w') as out_file:
+        contents = '\n'.join(data_manifest_contents) + '\n'
+        out_file.write(contents)
+
+    return manifest_file_name
+
+
+def _get_data_manifest_contents(manifest_dir):
+    """Reads the manifest file and returns a set of expected files"""
+    manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
+    with manifest.open(mode='r') as manifest_file:
+        return [
+            f.strip() for f in manifest_file.readlines() if f.strip()
+        ]
+
+
+def _validate_manifest_upload(expected_objs, upload_results):
+    uploaded_objs = {
+        r['object']
+        for r in upload_results
+        if r['success'] and r['action'] in ('upload_object', 'create_dir_marker')
+    }
+    return set(expected_objs).issubset(uploaded_objs)
+
+
+def _validate_manifest_download(expected_objs, download_results):
+    downloaded_objs = {
+        r['object']
+        for r in download_results
+        if r['success'] and r['action'] in ('download_object')
+    }
+    return set(expected_objs).issubset(downloaded_objs)
 
 
 class SwiftFile(object):
@@ -815,7 +863,7 @@ class SwiftPath(Path):
                 be appended to the resource of the swift path. Note that the
                 current resource path is treated as a directory
             limit (int): Limit the amount of results returned
-            condition (SwiftCondition): The method will only return
+            condition (function(results) -> bool): The method will only return
                 when the results matches the condition.
 
         Returns:
@@ -901,7 +949,7 @@ class SwiftPath(Path):
         Args:
             pattern (str): The pattern to match. The pattern can only have
                 up to one '*' at the end.
-            condition (SwiftCondition): The method will only return
+            condition (function(results) -> bool): The method will only return
                 when the number of results matches the condition.
 
         Returns:
@@ -1102,7 +1150,8 @@ class SwiftPath(Path):
                  container_threads=10,
                  skip_identical=False,
                  shuffle=True,
-                 condition=None):
+                 condition=None,
+                 data_manifest=False):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1128,11 +1177,14 @@ class SwiftPath(Path):
                 download order is randomised in order to reduce the load on individual drives
                 when doing threaded downloads. Disable this option to submit download jobs to
                 the thread pool in the order they are listed in the object store.
-            condition (SwiftCondition): The method will only return
+            condition (function(results) -> bool): The method will only return
                 when the results of download matches the condition. In the event of the
                 condition never matching after retries, partially downloaded
                 results will not be deleted. Note that users are not expected to write
                 conditions for download without an understanding of the structure of the results.
+            data_manifest (bool): Perform the download and use the data manfest file to validate
+                the download. The ``condition`` argument cannot be passed when using
+                ``data_manifest``.
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1145,7 +1197,13 @@ class SwiftPath(Path):
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
+        if data_manifest and condition:
+            raise ValueError('cannot have data_manifest and condition when calling download')
         _validate_condition(condition)
+
+        if data_manifest:
+            object_names = _get_data_manifest_contents(self)
+            condition = partial(_validate_manifest_download, object_names)
 
         service_options = {
             'object_dd_threads': object_threads,
@@ -1177,7 +1235,8 @@ class SwiftPath(Path):
                changed=False,
                skip_identical=False,
                checksum=True,
-               condition=None):
+               condition=None,
+               data_manifest=False):
         """Uploads a list of files and directories to swift.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1224,19 +1283,25 @@ class SwiftPath(Path):
                 on both sides. Note this incurs reading the contents of all pre-existing local
                 files.
             checksum (bool, default True): Peform checksum validation of upload.
-                condition (SwiftCondition): The method will only return
+                condition (function(results) -> bool): The method will only return
                 when the results of download matches the condition. In the event of the
                 condition never matching after retries, partially downloaded
                 results will not be deleted. Note that users are not expected to write
                 conditions for download without an understanding of the structure of the results.
-            condition (SwiftCondition): The method will only return
+            condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition. In the event of the
                 condition never matching after retries, partially uploaded
                 results will not be deleted. Note that users are not expected to write
                 conditions for upload without an understanding of the structure of the results.
+            data_manifest (bool): Generate a data manifest and validate the upload results
+                are in the manifest. The ``condition`` argument cannot be passed when using
+                ``data_manifest``.
 
         Raises:
             SwiftError: A swift client error occurred.
+            ConditionNotMetError: The ``condition`` argument did not pass after ``num_retries``
+                or the ``data_manifest`` option was turned on and the upload results could not
+                be verified. Partially uploaded results are not deleted.
 
         Returns:
             List[dict]: A list of every operation performed in the upload by the
@@ -1244,6 +1309,11 @@ class SwiftPath(Path):
         """
         if not self.container:
             raise ValueError('must specify container when uploading')
+        if data_manifest and condition:
+            raise ValueError('cannot have data_manifest and condition when calling upload')
+        if data_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
+            raise ValueError('can only upload one directory when using data_manifest')
+        _validate_condition(condition)
 
         swift_upload_objects = [
             name for name in to_upload
@@ -1253,6 +1323,8 @@ class SwiftPath(Path):
             name for name in to_upload
             if not isinstance(name, SwiftUploadObject)
         ])
+        if data_manifest:
+            all_files_to_upload.append(Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME)
 
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results.
@@ -1261,6 +1333,13 @@ class SwiftPath(Path):
             SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
             for f in all_files_to_upload
         ])
+
+        if data_manifest:
+            # Generate the data manifest and add it to the upload. Assign a condition to
+            # check the results of the upload
+            object_names = [o.object_name for o in swift_upload_objects]
+            _generate_and_save_data_manifest(to_upload[0], object_names)
+            condition = partial(_validate_manifest_upload, object_names)
 
         service_options = {
             'object_uu_threads': object_threads,
