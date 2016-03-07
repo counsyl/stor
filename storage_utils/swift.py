@@ -41,6 +41,7 @@ import tempfile
 import threading
 import urlparse
 
+import storage_utils
 from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils import utils
@@ -420,7 +421,7 @@ def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
             be part of the manifest.
     """
     manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
-    with open(manifest_file_name, 'w') as out_file:
+    with storage_utils.open(manifest_file_name, 'w') as out_file:
         contents = '\n'.join(data_manifest_contents) + '\n'
         out_file.write(contents)
 
@@ -428,7 +429,7 @@ def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
 def _get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
     manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
-    with manifest.open(mode='r') as manifest_file:
+    with storage_utils.open(manifest, 'r') as manifest_file:
         return [
             f.strip() for f in manifest_file.readlines() if f.strip()
         ]
