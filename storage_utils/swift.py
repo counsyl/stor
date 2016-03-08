@@ -1411,7 +1411,7 @@ class SwiftPath(Path):
                                         [self.resource])
 
     @_swift_retry(exceptions=(UnavailableError, ConflictError))
-    def rmtree(self):
+    def rmtree(self, object_threads=10):
         """Removes a resource and all of its contents.
 
         This method retries `num_retries` times if swift is unavailable.
@@ -1423,6 +1423,10 @@ class SwiftPath(Path):
         will also be removed if it exists. So, if one removes
         ``swift://tenant/container``, ``swift://tenant/container_segments``
         will also be deleted.
+
+        Args:
+            object_threads (int, default 10): The number of threads to use when deleting
+                objects
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1439,25 +1443,40 @@ class SwiftPath(Path):
                            'when their associated objects or containers are '
                            'deleted.', self.container)
 
+        service_options = {
+            'object_dd_threads': object_threads
+        }
+
+        def _ignore_not_found(delete_call):
+            """Ignores 404 errors when performing a delete call"""
+            def wrapper(*args, **kwargs):
+                try:
+                    return delete_call(*args, **kwargs)
+                except NotFoundError:
+                    return []
+            return wrapper
+
         if not self.resource:
-            results = self._swift_service_call('delete',
-                                               self.container)
+            results = _ignore_not_found(self._swift_service_call)('delete',
+                                                                  self.container,
+                                                                  _service_options=service_options)
             # Try to delete a segment container since swift client does not
             # do this automatically
             if not deleting_segments:
                 segment_containers = ('%s_segments' % self.container,
                                       '.segments_%s' % self.container)
                 for segment_container in segment_containers:
-                    try:
-                        self._swift_service_call('delete', segment_container)
-                    except NotFoundError:
-                        pass
+                    _ignore_not_found(self._swift_service_call)('delete',
+                                                                segment_container,
+                                                                _service_options=service_options)
+
             return results
         else:
             to_delete = [p.resource for p in self.list()]
-            return self._swift_service_call('delete',
-                                            self.container,
-                                            to_delete)
+            return _ignore_not_found(self._swift_service_call)('delete',
+                                                               self.container,
+                                                               to_delete,
+                                                               _service_options=service_options)
 
     @_swift_retry(exceptions=UnavailableError)
     def stat(self):

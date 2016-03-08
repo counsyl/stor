@@ -1904,16 +1904,33 @@ class TestRmtree(SwiftTestCase):
 
         self.assertEquals(len(mock_sleep.call_args_list), 5)
 
-    def test_w_only_container(self, mock_list):
+    @mock.patch('time.sleep', autospec=True)
+    def test_not_found(self, mock_sleep, mock_list):
+        self.mock_swift.delete.side_effect = ClientException('not_found',
+                                                             http_status=404)
+
+        swift_p = SwiftPath('swift://tenant/container/path')
+        results = swift_p.rmtree(num_retries=5)
+        self.assertEquals([], results)
+
+    def test_w_only_container_and_threads(self, mock_list):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.rmtree()
+        swift_p.rmtree(object_threads=20)
 
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container'),
                            mock.call('container_segments'),
                            mock.call('.segments_container')])
         self.assertFalse(mock_list.called)
+
+    def test_thread_options_passed_through(self, mock_list):
+        self.disable_get_swift_service_mock()
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.rmtree(object_threads=20)
+
+        options_passed = self.mock_swift_service.call_args[0][0]
+        self.assertEquals(options_passed['object_dd_threads'], 20)
 
     def test_w_only_segment_container(self, mock_list):
         self.mock_swift.delete.return_value = {}
