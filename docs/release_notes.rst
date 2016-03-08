@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.2.2
+------
+
+* Fix ``storage_utils.NamedTemporaryDirectory`` to delete temp directory on exception as well.
+
 v6.2.1
 ------
 

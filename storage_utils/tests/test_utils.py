@@ -92,6 +92,24 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
 
         self.assertFalse(tmp_d.exists())
 
+    def test_w_error(self):
+        tmp_d = None
+        with self.assertRaises(ValueError):
+            with utils.NamedTemporaryDirectory() as tmp_d:
+                self.assertTrue(tmp_d.exists())
+                raise ValueError()
+
+        self.assertFalse(tmp_d.exists())
+
+    def test_w_error_chdir(self):
+        tmp_d = None
+        with self.assertRaises(ValueError):
+            with utils.NamedTemporaryDirectory(change_dir=True) as tmp_d:
+                self.assertTrue(tmp_d.exists())
+                raise ValueError()
+
+        self.assertFalse(tmp_d.exists())
+
 
 class TestPathFunction(unittest.TestCase):
     def test_path_function_back_compat(self):
