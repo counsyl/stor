@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.2.1
+------
+
+* Upgraded swiftclient fork to fix infinite retry bug on auth token invaliation
+
 v6.2.0
 ------
 
