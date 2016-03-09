@@ -553,6 +553,7 @@ class SwiftFile(object):
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
+    tell = _delegate_to_buffer('tell', valid_modes=_VALID_MODES)
     newlines = _delegate_to_buffer('newlines', valid_modes=_VALID_MODES)
 
     read = _delegate_to_buffer('read', valid_modes=_READ_MODES)
