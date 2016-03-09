@@ -256,6 +256,37 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 obj_path = Path('test') / which_obj
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
+    def test_rmtree(self):
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            # Make a couple empty test files and nested files
+            tmp_d = Path(tmp_d)
+            os.mkdir(tmp_d / 'my_dir')
+            open(tmp_d / 'my_dir' / 'dir_file1', 'w').close()
+            open(tmp_d / 'my_dir' / 'dir_file2', 'w').close()
+            open(tmp_d / 'base_file1', 'w').close()
+            open(tmp_d / 'base_file2', 'w').close()
+
+            storage_utils.copytree(
+                '.',
+                self.test_container,
+                swift_upload_options={
+                    'use_manifest': True
+                })
+
+            swift_dir = self.test_container / 'my_dir'
+            self.assertEquals(len(swift_dir.list()), 2)
+            swift_dir.rmtree()
+            self.assertEquals(len(swift_dir.list()), 0)
+
+            base_contents = self.test_container.list()
+            self.assertTrue((self.test_container / 'base_file1') in base_contents)
+            self.assertTrue((self.test_container / 'base_file1') in base_contents)
+
+            self.test_container.rmtree()
+
+            with self.assertRaises(swift.NotFoundError):
+                self.test_container.list()
+
     def test_copytree_to_from_container_w_manifest(self):
         num_test_objs = 10
         test_obj_size = 100

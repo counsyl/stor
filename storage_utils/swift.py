@@ -1410,8 +1410,8 @@ class SwiftPath(Path):
                                         self.container,
                                         [self.resource])
 
-    @_swift_retry(exceptions=(UnavailableError, ConflictError))
-    def rmtree(self):
+    @_swift_retry(exceptions=(UnavailableError, ConflictError, ConditionNotMetError))
+    def rmtree(self, object_threads=10):
         """Removes a resource and all of its contents.
 
         This method retries `num_retries` times if swift is unavailable.
@@ -1424,11 +1424,24 @@ class SwiftPath(Path):
         ``swift://tenant/container``, ``swift://tenant/container_segments``
         will also be deleted.
 
+        Note:
+            Calling rmtree on a directory marker will delete everything under the
+            directory marker but not the marker itself.
+
+        Args:
+            object_threads (int, default 10): The number of threads to use when deleting
+                objects
+
         Raises:
             SwiftError: A swift client error occurred.
+            ConditionNotMetError: Listing the objects after rmtree returns results,
+                indicating something went wrong with the rmtree operation
         """
         if not self.container:
             raise ValueError('swift path must include container for rmtree')
+
+        # Ensure that we treat this path as a dir
+        to_delete = _with_trailing_slash(self)
 
         deleting_segments = 'segments' in self.container
         if deleting_segments:
@@ -1439,25 +1452,44 @@ class SwiftPath(Path):
                            'when their associated objects or containers are '
                            'deleted.', self.container)
 
-        if not self.resource:
-            results = self._swift_service_call('delete',
-                                               self.container)
+        service_options = {
+            'object_dd_threads': object_threads
+        }
+
+        def _ignore_not_found(service_call):
+            """Ignores 404 errors when performing a swift service call"""
+            def wrapper(*args, **kwargs):
+                try:
+                    return service_call(*args, **kwargs)
+                except NotFoundError:
+                    return []
+            return wrapper
+
+        if not to_delete.resource:
+            results = _ignore_not_found(self._swift_service_call)('delete',
+                                                                  to_delete.container,
+                                                                  _service_options=service_options)
             # Try to delete a segment container since swift client does not
             # do this automatically
             if not deleting_segments:
-                segment_containers = ('%s_segments' % self.container,
-                                      '.segments_%s' % self.container)
+                segment_containers = ('%s_segments' % to_delete.container,
+                                      '.segments_%s' % to_delete.container)
                 for segment_container in segment_containers:
-                    try:
-                        self._swift_service_call('delete', segment_container)
-                    except NotFoundError:
-                        pass
-            return results
+                    _ignore_not_found(self._swift_service_call)('delete',
+                                                                segment_container,
+                                                                _service_options=service_options)
         else:
-            to_delete = [p.resource for p in self.list()]
-            return self._swift_service_call('delete',
-                                            self.container,
-                                            to_delete)
+            objs_to_delete = [p.resource for p in to_delete.list()]
+            results = _ignore_not_found(self._swift_service_call)('delete',
+                                                                  self.container,
+                                                                  objs_to_delete,
+                                                                  _service_options=service_options)
+
+        # Verify that all objects have been deleted before returning. Otherwise try deleting again
+        _ignore_not_found(to_delete.list)(condition=lambda results: len(results) == 0,
+                                          num_retries=0)
+
+        return results
 
     @_swift_retry(exceptions=UnavailableError)
     def stat(self):

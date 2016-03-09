@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v6.3.0
+------
+
+* Added ``object_threads`` option to `SwiftPath.rmtree` for specifying number of
+  delete threads
+* Ignore `swift.NotFoundError` exceptions when calling `SwiftPath.rmtree`
+
 v6.2.2
 ------
 
