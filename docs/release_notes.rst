@@ -8,6 +8,11 @@ v6.3.0
   delete threads
 * Ignore `swift.NotFoundError` exceptions when calling `SwiftPath.rmtree`
 
+v6.2.2
+------
+
+* Fix ``storage_utils.NamedTemporaryDirectory`` to delete temp directory on exception as well.
+
 v6.2.1
 ------
 

@@ -1,8 +1,6 @@
 from contextlib import contextmanager
 import logging
-import ntpath
 import os
-import posixpath
 import shlex
 import shutil
 from subprocess import check_call
@@ -38,44 +36,6 @@ def is_filesystem_path(p):
         bool: True if p is a Windows path, False otherwise.
     """
     return not is_swift_path(p)
-
-
-def path(p):
-    """A factory function for returning a path based on its prefix.
-
-    Args:
-        p (str): The path string
-
-    Examples:
-
-        >>> from storage_utils import path
-        >>> p = path('/my/local/path')
-        >>> print type(p)
-        <class 'path.Path'>
-        >>> print p.exists()
-        False
-
-        >>> from storage_utils import path
-        >>> p = path('swift://tenant/container/object')
-        >>> print type(p)
-        <class 'storage_utils.swift.SwiftPath'>
-        >>> print p.exists()
-        False
-
-    Note that it's okay to repeatedly call ``path`` on any ``Path`` object
-    since it will return itself.
-    """
-    if is_swift_path(p):
-        from storage_utils.swift import SwiftPath
-        return SwiftPath(p)
-    elif os.path == ntpath:
-        from storage_utils.windows import WindowsPath
-        return WindowsPath(p)
-    elif os.path == posixpath:
-        from storage_utils.posix import PosixPath
-        return PosixPath(p)
-    else:  # pragma: no cover
-        assert False, 'path not compatible with storage utils'
 
 
 def copy(source, dest, swift_retry_options=None):
@@ -115,8 +75,10 @@ def copy(source, dest, swift_retry_options=None):
             ...
             ValueError: swift destination must be file with extension or directory with slash
     """
-    source = path(source)
-    dest = path(dest)
+    from storage_utils import Path
+
+    source = Path(source)
+    dest = Path(dest)
     swift_retry_options = swift_retry_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
@@ -136,7 +98,7 @@ def copy(source, dest, swift_retry_options=None):
                 'cannot copy to tenant "%s" and file '
                 '"%s"' % (dest_file.parent, dest_file.name)
             ))
-        dest_obj_name = path(dest_file.parent.resource or '') / dest_file.name
+        dest_obj_name = Path(dest_file.parent.resource or '') / dest_file.name
         dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)],
                                 **swift_retry_options)
 
@@ -205,8 +167,10 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
         ValueError: if two swift paths specified
         OSError: if destination is a posix path and it already exists
     """
-    source = path(source)
-    dest = path(dest)
+    from storage_utils import Path
+
+    source = Path(source)
+    dest = Path(dest)
     swift_upload_options = swift_upload_options or {}
     swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
@@ -297,13 +261,17 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
         >>> with NamedTemporaryDirectory() as d:
         >>>     # Do operations within "d", which will be deleted afterwards
     """
-    tempdir = path(tempfile.mkdtemp(suffix, prefix, dir))
-    if change_dir:
-        with tempdir:
+    from storage_utils import Path
+
+    tempdir = Path(tempfile.mkdtemp(suffix, prefix, dir))
+    try:
+        if change_dir:
+            with tempdir:
+                yield tempdir
+        else:
             yield tempdir
-    else:
-        yield tempdir
-    tempdir.rmtree()
+    finally:
+        tempdir.rmtree()
 
 
 class ClassProperty(property):
