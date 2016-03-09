@@ -1885,16 +1885,23 @@ class TestRemove(SwiftTestCase):
         self.mock_swift.delete.assert_called_once_with('container', ['r'])
 
 
-@mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestRmtree(SwiftTestCase):
-    def test_w_only_tenant(self, mock_list):
+    def setUp(self):
+        super(TestRmtree, self).setUp()
+
+        # set up list to return no results by default. This ensures that the
+        # check at the end of rmtree for no results passes
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [])
+
+    def test_w_only_tenant(self):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant')
         with self.assertRaisesRegexp(ValueError, 'include container'):
             swift_p.rmtree()
 
     @mock.patch('time.sleep', autospec=True)
-    def test_rmtree_confict(self, mock_sleep, mock_list):
+    def test_rmtree_confict(self, mock_sleep):
         self.mock_swift.delete.side_effect = ClientException('conflict',
                                                              http_status=409)
 
@@ -1904,7 +1911,7 @@ class TestRmtree(SwiftTestCase):
 
         self.assertEquals(len(mock_sleep.call_args_list), 5)
 
-    def test_not_found(self, mock_list):
+    def test_not_found(self):
         self.mock_swift.delete.side_effect = ClientException('not_found',
                                                              http_status=404)
 
@@ -1912,7 +1919,7 @@ class TestRmtree(SwiftTestCase):
         results = swift_p.rmtree()
         self.assertEquals([], results)
 
-    def test_w_only_container_and_threads(self, mock_list):
+    def test_w_only_container_and_threads(self):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.rmtree(object_threads=20)
@@ -1921,9 +1928,33 @@ class TestRmtree(SwiftTestCase):
                           [mock.call('container'),
                            mock.call('container_segments'),
                            mock.call('.segments_container')])
-        self.assertFalse(mock_list.called)
 
-    def test_thread_options_passed_through(self, mock_list):
+    @mock.patch('time.sleep', autospec=True)
+    def test_w_list_validation_failing_first_time(self, mock_sleep):
+        self.mock_swift.delete.return_value = {}
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = [
+            ({}, [{
+                'name': 'path/to/resource1'
+            }, {
+                'name': 'path/to/resource2'
+            }]),
+            ({}, [])
+        ]
+        swift_p = SwiftPath('swift://tenant/container')
+        swift_p.rmtree(num_retries=1)
+
+        self.assertEquals(self.mock_swift.delete.call_args_list,
+                          [mock.call('container'),
+                           mock.call('container_segments'),
+                           mock.call('.segments_container'),
+                           mock.call('container'),
+                           mock.call('container_segments'),
+                           mock.call('.segments_container')])
+        self.assertTrue(len(mock_list.call_args_list), 2)
+        self.assertTrue(len(mock_sleep.call_args_list), 1)
+
+    def test_thread_options_passed_through(self):
         self.disable_get_swift_service_mock()
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.rmtree(object_threads=20)
@@ -1931,16 +1962,15 @@ class TestRmtree(SwiftTestCase):
         options_passed = self.mock_swift_service.call_args[0][0]
         self.assertEquals(options_passed['object_dd_threads'], 20)
 
-    def test_w_only_segment_container(self, mock_list):
+    def test_w_only_segment_container(self):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container_segments')
         swift_p.rmtree()
 
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container_segments')])
-        self.assertFalse(mock_list.called)
 
-    def test_w_only_container_no_segment_container(self, mock_list):
+    def test_w_only_container_no_segment_container(self):
         self.mock_swift.delete.side_effect = [{},
                                               swift.NotFoundError('not found'),
                                               swift.NotFoundError('not found')]
@@ -1951,21 +1981,31 @@ class TestRmtree(SwiftTestCase):
                           [mock.call('container'),
                            mock.call('container_segments'),
                            mock.call('.segments_container')])
-        self.assertFalse(mock_list.called)
 
-    def test_w_container_and_resource(self, mock_list):
+    def test_w_container_and_resource(self):
         self.mock_swift.delete.return_value = {}
-        mock_list.return_value = [
-            SwiftPath('swift://tenant/container/r1'),
-            SwiftPath('swift://tenant/container/r2')
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = [
+            ({}, [{
+                'name': 'dir/r1'
+            }, {
+                'name': 'dir/r2'
+            }]),
+            ({}, [])
         ]
 
-        swift_p = SwiftPath('swift://tenant/container/r')
+        swift_p = SwiftPath('swift://tenant/container/dir')
         swift_p.rmtree()
 
-        self.mock_swift.delete.assert_called_once_with('container',
-                                                       ['r1', 'r2'])
-        mock_list.assert_called_once_with(mock.ANY)
+        self.assertTrue(len(self.mock_swift.delete.call_args_list), 1)
+        self.assertEquals(self.mock_swift.delete.call_args_list[0][0][0], 'container')
+        self.assertEquals(set(self.mock_swift.delete.call_args_list[0][0][1]),
+                          set(['dir/r1', 'dir/r2']))
+
+        self.assertEquals(mock_list.call_args_list, [
+            mock.call(u'container', full_listing=True, limit=None, prefix='dir/'),
+            mock.call(u'container', full_listing=True, limit=None, prefix='dir/')
+        ])
 
 
 class TestPost(SwiftTestCase):
