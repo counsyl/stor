@@ -258,13 +258,12 @@ class TestSwiftFile(SwiftTestCase):
             swift_p.open(mode='invalid')
 
     def test_invalid_io_op(self):
-        class MyFile(object):
-            closed = False
-            _buffer = cStringIO.StringIO()
-            invalid = swift._delegate_to_buffer('invalid')
-
+        # now invalid delegates are considered invalid on instantiation
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
-            MyFile().invalid()
+            class MyFile(object):
+                closed = False
+                _buffer = cStringIO.StringIO()
+                invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
