@@ -1,4 +1,5 @@
 import cStringIO
+import gzip
 import ntpath
 import os
 from tempfile import NamedTemporaryFile
@@ -15,6 +16,7 @@ from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
+from storage_utils.tests.shared import assert_same_data
 
 
 def _service_404_exception():
@@ -256,13 +258,12 @@ class TestSwiftFile(SwiftTestCase):
             swift_p.open(mode='invalid')
 
     def test_invalid_io_op(self):
-        class MyFile(object):
-            closed = False
-            _buffer = cStringIO.StringIO()
-            invalid = swift._delegate_to_buffer('invalid')
-
+        # now invalid delegates are considered invalid on instantiation
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
-            MyFile().invalid()
+            class MyFile(object):
+                closed = False
+                _buffer = cStringIO.StringIO()
+                invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data')
@@ -366,6 +367,25 @@ class TestSwiftFile(SwiftTestCase):
         obj.close()
 
         self.assertFalse(mock_upload.called)
+
+    def test_works_with_gzip(self):
+        gzip_path = storage_utils.join(storage_utils.dirname(__file__),
+                                       'file_data', 's_3_2126.bcl.gz')
+        text = storage_utils.open(gzip_path).read()
+        with mock.patch.object(SwiftPath, '_read_object', autospec=True) as read_mock:
+            read_mock.return_value = text
+            swift_file = storage_utils.open('swift://A/C/s_3_2126.bcl.gz')
+
+            with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
+                with gzip.open(gzip_path) as gzip_fp:
+                    assert_same_data(swift_file_fp, gzip_fp)
+            swift_file = storage_utils.open('swift://A/C/s_3_2126.bcl.gz')
+            with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
+                with gzip.open(gzip_path) as gzip_fp:
+                    # after seeking should still be same
+                    swift_file_fp.seek(3)
+                    gzip_fp.seek(3)
+                    assert_same_data(swift_file_fp, gzip_fp)
 
 
 class TestTempURL(SwiftTestCase):
