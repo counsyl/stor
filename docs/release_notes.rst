@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v6.3.1
+------
+
+* Add `SwiftFile.tell` method to enable `SwiftFile` to work with `gzip.GzipFile` objects transparently.
+* Make `SwiftFile` delegated methods show up in docs.
+
 v6.3.0
 ------
 

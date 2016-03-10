@@ -371,6 +371,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
             raise AttributeError("'%s' object has no attribute '%s'" %
                                  (self, attr_name))
     wrapper.__name__ = attr_name
+    wrapper.__doc__ = getattr(cStringIO.StringIO(), attr_name).__doc__
     return wrapper
 
 
@@ -554,7 +555,6 @@ class SwiftFile(object):
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
     tell = _delegate_to_buffer('tell', valid_modes=_VALID_MODES)
-    newlines = _delegate_to_buffer('newlines', valid_modes=_VALID_MODES)
 
     read = _delegate_to_buffer('read', valid_modes=_READ_MODES)
     readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
