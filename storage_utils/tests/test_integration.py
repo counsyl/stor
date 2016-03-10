@@ -1,3 +1,4 @@
+import gzip
 import logging
 import os
 import unittest
@@ -11,6 +12,7 @@ import storage_utils
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
 from storage_utils import swift
+from storage_utils.tests.shared import assert_same_data
 
 
 class BaseIntegrationTest(unittest.TestCase):
@@ -378,3 +380,14 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         stat_data = storage_utils.Path(file_in_folder).stat()
         self.assertIn('Content-Type', stat_data)
         self.assertEqual(stat_data['Content-Type'], 'image/svg+xml')
+
+    def test_gzip_on_remote(self):
+        local_gzip = os.path.join(os.path.dirname(__file__),
+                                  'file_data/s_3_2126.bcl.gz')
+        remote_gzip = storage_utils.join(self.test_container,
+                                         storage_utils.basename(local_gzip))
+        storage_utils.copy(local_gzip, remote_gzip)
+        with storage_utils.open(remote_gzip) as fp:
+            with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
+                with gzip.open(local_gzip) as local_gzip_fp:
+                    assert_same_data(remote_gzip_fp, local_gzip_fp)

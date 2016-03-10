@@ -16,6 +16,7 @@ from storage_utils import path
 from storage_utils import swift
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
+from storage_utils.tests.shared import assert_same_data
 
 
 def _service_404_exception():
@@ -375,14 +376,6 @@ class TestSwiftFile(SwiftTestCase):
         with mock.patch.object(SwiftPath, '_read_object', autospec=True) as read_mock:
             read_mock.return_value = text
             swift_file = storage_utils.open('swift://A/C/s_3_2126.bcl.gz')
-
-            def assert_same_data(fp1, fp2):
-                actual_data = fp1.read(100)
-                expected_data = fp2.read(100)
-                while (expected_data or actual_data):
-                    assert actual_data == expected_data
-                    actual_data = swift_file_fp.read(100)
-                    expected_data = gzip_fp.read(100)
 
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
