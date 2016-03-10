@@ -364,12 +364,8 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         if valid_modes and self.mode not in valid_modes:
             raise TypeError('SwiftFile must be in modes %s to %r' %
                             (valid_modes, attr_name))
-        try:
-            func = getattr(self._buffer, attr_name)
-            return func(*args, **kwargs)
-        except AttributeError:
-            raise AttributeError("'%s' object has no attribute '%s'" %
-                                 (self, attr_name))
+        func = getattr(self._buffer, attr_name)
+        return func(*args, **kwargs)
     wrapper.__name__ = attr_name
     wrapper.__doc__ = getattr(cStringIO.StringIO(), attr_name).__doc__
     return wrapper
