@@ -422,8 +422,6 @@ def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
         contents = '\n'.join(data_manifest_contents) + '\n'
         out_file.write(contents)
 
-    return manifest_file_name
-
 
 def _get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
@@ -1362,7 +1360,7 @@ class SwiftPath(Path):
         if use_manifest:
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
-            manifest_file_name = _generate_and_save_data_manifest(to_upload[0], object_names)
+            _generate_and_save_data_manifest(to_upload[0], object_names)
             self.upload([manifest_file_name])
 
             # Make a condition for validating the upload
