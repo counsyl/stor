@@ -157,6 +157,18 @@ class Path(text_type):
         return self.basename()
 
     @property
+    def namebase(self):
+        """ The same as `name`, but with one file extension stripped off.
+
+        For example,
+        ``Path('/home/guido/python.tar.gz').name == 'python.tar.gz'``,
+        but
+        ``Path('/home/guido/python.tar.gz').namebase == 'python.tar'``.
+        """
+        base, ext = self.path_module.splitext(self.name)
+        return base
+
+    @property
     def drive(self):
         return self.splitdrive()[0]
 
