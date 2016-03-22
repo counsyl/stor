@@ -422,6 +422,8 @@ def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
         contents = '\n'.join(data_manifest_contents) + '\n'
         out_file.write(contents)
 
+    return manifest_file_name
+
 
 def _get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
@@ -1346,21 +1348,24 @@ class SwiftPath(Path):
             name for name in to_upload
             if not isinstance(name, SwiftUploadObject)
         ])
-        if use_manifest:
-            all_files_to_upload.insert(0, Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME)
 
         # Convert everything to swift upload objects and prepend the relative
-        # resource directory to uploaded results.
+        # resource directory to uploaded results. Ignore the manifest file in the case of
+        # since it will be uploaded individually
+        manifest_file_name = Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME if use_manifest else None
         resource_base = _with_trailing_slash(self.resource) or PosixPath('')
         swift_upload_objects.extend([
             SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
-            for f in all_files_to_upload
+            for f in all_files_to_upload if f != manifest_file_name
         ])
 
         if use_manifest:
-            # Generate the data manifest and make a condition for validating all upload results
+            # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
-            _generate_and_save_data_manifest(to_upload[0], object_names)
+            manifest_file_name = _generate_and_save_data_manifest(to_upload[0], object_names)
+            self.upload([manifest_file_name])
+
+            # Make a condition for validating the upload
             manifest_cond = partial(_validate_manifest_upload, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
