@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.4.0
+------
+
+* Added `Path.namebase` property
+
 v6.3.1
 ------
 
