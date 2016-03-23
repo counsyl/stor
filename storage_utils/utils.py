@@ -281,6 +281,34 @@ class ClassProperty(property):
 
 
 class BaseProgressLogger(object):
+    """Base class and methods for logging progress.
+
+    Progress loggers that inherit this base class have the ability to
+    track information related to the progress of a group of results.
+
+    Users instantiate the logger as a context manager::
+
+        for MyProgressLogger() as l:
+            for r in results:
+                l.add_result(r)
+
+    When the progress logger is instantiated, the message returned
+    from ``get_start_message`` is logged. As results are added, logs
+    are printed at each result interval. For example, if the
+    ``result_interval`` is 3, progress will be logged for every third result
+    added.
+
+    When exiting the context manager, the log message from ``get_finish_message``
+    is returned.
+
+    To accumulate more results, implement the ``update_progress`` method. For
+    example, to track the amount of bytes tracked so far::
+
+        def update_progress(self, result):
+            self.total_bytes += result['bytes']
+
+    Any custom results can be printed when implementing ``get_progress_message``.
+    """
     def __init__(self, logger, level=logging.INFO, result_interval=10):
         self.logger = logger
         self.level = level
@@ -310,7 +338,7 @@ class BaseProgressLogger(object):
         return '%d:%02d:%02d' % (hours, minutes, seconds)
 
     def get_start_message(self):
-        return None
+        return self.get_progress_message()
 
     def get_finish_message(self):
         return self.get_progress_message()
@@ -322,6 +350,10 @@ class BaseProgressLogger(object):
         pass
 
     def add_result(self, result):
+        """Adds a result to the progress logger and logs messages.
+
+        Messages are logged every time the ``result_interval`` is met.
+        """
         self.num_results += 1
         self.update_progress(result)
         if self.num_results % self.result_interval == 0:
