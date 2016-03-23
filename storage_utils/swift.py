@@ -491,26 +491,28 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
         return 'download complete - %s' % self.get_progress_message()
 
     def get_progress_message(self):
-        hours, minutes, seconds = self.get_elapsed_hours_minutes_seconds()
-        formatted_time_elapsed = '%d:%02d:%02d' % (hours, minutes, seconds)
+        elapsed_time = self.get_elapsed_time()
+        formatted_elapsed_time = self.format_time(elapsed_time)
         mb = self.downloaded_bytes / (1024 * 1024.0)
-        mb_s = mb / time_elapsed.total_seconds()
+        mb_s = mb / elapsed_time.total_seconds()
         return (
             'objects downloaded - %s,'
             ' time elapsed - %s,'
             ' MB downloaded - %0.2f,'
             ' MB/s - %0.2f'
-        ) % (self.num_results, formatted_time_elapsed, mb, mb_s)
+        ) % (self.num_results, formatted_elapsed_time, mb, mb_s)
 
 
 class SwiftUploadLogger(utils.BaseProgressLogger):
     def __init__(self, total_upload_objects):
-        super(SwiftUpLogger, self).__init__(progress_logger)
+        super(SwiftUploadLogger, self).__init__(progress_logger)
         self.total_upload_objects = total_upload_objects
         self.uploaded_bytes = 0
 
-    def update_progress(self, result):
-        self.uploaded_bytes += result.get('read_length', 0)
+    def add_result(self, result):
+        if result.get('action', None) != 'upload_object':
+            return
+        super(SwiftUploadLogger, self).add_result(result)
 
     def get_start_message(self):
         return 'starting upload of %s objects' % self.total_upload_objects
@@ -519,16 +521,12 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         return 'upload complete - %s' % self.get_progress_message()
 
     def get_progress_message(self):
-        hours, minutes, seconds = self.get_elapsed_hours_minutes_seconds()
-        formatted_time_elapsed = '%d:%02d:%02d' % (hours, minutes, seconds)
-        mb = self.uploaded_bytes / (1024 * 1024.0)
-        mb_s = mb / time_elapsed.total_seconds()
+        elapsed_time = self.get_elapsed_time()
+        formatted_elapsed_time = self.format_time(elapsed_time)
         return (
             'objects uploaded - %s/%s,'
-            ' time elapsed - %s,'
-            ' MB uploaded - %0.2f,'
-            ' MB/s - %0.2f'
-        ) % (self.num_results, self.total_upload_objects, formatted_time_elapsed, mb, mb_s)
+            ' time elapsed - %s'
+        ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time)
 
 
 class SwiftFile(object):
