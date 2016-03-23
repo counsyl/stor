@@ -31,6 +31,7 @@ from backoff.backoff import with_backoff
 from cached_property import cached_property
 import cStringIO
 import copy
+import datetime
 from functools import partial
 from functools import wraps
 import json
@@ -475,6 +476,56 @@ def join_conditions(*conditions):
     return wrapper
 
 
+class SwiftProgressLogger(object):
+    def __init__(self, logger, level=logging.INFO, result_interval=1):
+        self.logger = logger
+        self.level = level
+        self.result_interval = result_interval
+        self.num_results = 0
+        self.start_time = datetime.datetime.utcnow()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            print self.get_completed_log_message()
+            self.logger.log(self.level, self.get_completed_log_message())
+
+    def get_completed_log_message(self):
+        return self.get_log_message()
+
+    def get_log_message(self):
+        raise NotImplementedError
+
+    def update_progress(self, result):
+        pass
+
+    def add_result(self, result):
+        self.num_results += 1
+        self.update_progress(result)
+        if self.num_results % self.result_interval == 0:
+            print self.get_log_message()
+            self.logger.log(self.level, self.get_log_message())
+
+
+class SwiftDownloadLogger(SwiftProgressLogger):
+    def __init__(self, *args, **kwargs):
+        super(SwiftDownloadLogger, self).__init__(*args, **kwargs)
+        self.uploaded_bytes = 0
+
+    def update_progress(self, result):
+        self.uploaded_bytes += result.get('read_length', 0)
+
+    def get_completed_log_message(self):
+        return 'download complete'
+
+    def get_log_message(self):
+        minutes_elapsed = datetime.datetime.utcnow() - self.start_time
+        return 'objects downloaded %s, time elapsed %s minutes' % (self.num_results,
+                                                                   minutes_elapsed)
+
+
 class SwiftFile(object):
     """Provides methods for reading and writing swift objects returned by
     `SwiftPath.open`.
@@ -745,18 +796,24 @@ class SwiftPath(Path):
     @_propagate_swift_exceptions
     def _swift_service_call(self, method_name, *args, **kwargs):
         """Instantiates a ``SwiftService`` object and runs ``method_name``."""
-        method_options = copy.deepcopy(kwargs)
+        method_options = copy.copy(kwargs)
         service_options = method_options.pop('_service_options', {})
+        progress_logger = method_options.pop('_progress_logger', None)
         service = self._get_swift_service(**service_options)
         method = getattr(service, method_name)
-        results = method(*args, **method_options)
+        results_iter = method(*args, **method_options)
 
-        results = [results] if isinstance(results, dict) else list(results)
-        for r in results:
+        results_iter = [results_iter] if isinstance(results_iter, dict) else results_iter
+
+        results = []
+        for r in results_iter:
             if 'error' in r:
                 http_status = getattr(r['error'], 'http_status', None)
                 if not http_status or http_status >= 400:
                     raise r['error']
+            results.append(r)
+            if progress_logger:
+                progress_logger.add_result(r)
 
         return results
 
@@ -1247,10 +1304,12 @@ class SwiftPath(Path):
             'skip_identical': skip_identical,
             'shuffle': shuffle
         }
-        results = self._swift_service_call('download',
-                                           self.container,
-                                           _service_options=service_options,
-                                           options=download_options)
+        with SwiftDownloadLogger(logger) as dl:
+            results = self._swift_service_call('download',
+                                               self.container,
+                                               _progress_logger=dl,
+                                               _service_options=service_options,
+                                               options=download_options)
 
         _check_condition(condition, results)
         return results
