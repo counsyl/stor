@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import datetime
 import logging
 import os
 import shlex
@@ -277,3 +278,54 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
 class ClassProperty(property):
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
+
+
+class BaseProgressLogger(object):
+    def __init__(self, logger, level=logging.INFO, result_interval=10):
+        self.logger = logger
+        self.level = level
+        self.result_interval = result_interval
+        self.num_results = 0
+        self.start_time = datetime.datetime.utcnow()
+
+    def __enter__(self):
+        start_msg = self.get_start_message()
+        if start_msg:
+            print start_msg
+            self.logger.log(self.level, start_msg)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            finish_msg = self.get_finish_message()
+            if finish_msg:
+                print finish_msg
+                self.logger.log(self.level, finish_msg)
+
+    def get_elapsed_hours_minutes_seconds(self):
+        time_elapsed = datetime.datetime.utcnow() - self.start_time
+        hours, remainder = divmod(time_elapsed.total_seconds(), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return (hours, minutes, seconds)
+
+    def get_start_message(self):
+        return None
+
+    def get_finish_message(self):
+        return self.get_progress_message()
+
+    def get_progress_message(self):
+        raise NotImplementedError
+
+    def update_progress(self, result):
+        pass
+
+    def add_result(self, result):
+        print 'adding result', result
+        self.num_results += 1
+        self.update_progress(result)
+        if self.num_results % self.result_interval == 0:
+            progress_msg = self.get_progress_message()
+            print progress_msg
+            if progress_msg:
+                self.logger.log(self.level, progress_msg)
