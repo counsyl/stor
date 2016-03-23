@@ -281,7 +281,7 @@ class ClassProperty(property):
 
 
 class BaseProgressLogger(object):
-    def __init__(self, logger, level=logging.INFO, result_interval=1):
+    def __init__(self, logger, level=logging.INFO, result_interval=10):
         self.logger = logger
         self.level = level
         self.result_interval = result_interval
