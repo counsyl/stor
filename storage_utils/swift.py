@@ -1310,9 +1310,9 @@ class SwiftPath(Path):
         with SwiftDownloadLogger() as dl:
             results = self._swift_service_call('download',
                                                self.container,
+                                               options=download_options,
                                                _progress_logger=dl,
-                                               _service_options=service_options,
-                                               options=download_options)
+                                               _service_options=service_options)
 
         _check_condition(condition, results)
         return results
@@ -1443,9 +1443,9 @@ class SwiftPath(Path):
             results = self._swift_service_call('upload',
                                                self.container,
                                                swift_upload_objects,
+                                               options=upload_options,
                                                _progress_logger=ul,
-                                               _service_options=service_options,
-                                               options=upload_options)
+                                               _service_options=service_options)
 
         _check_condition(condition, results)
         return results
