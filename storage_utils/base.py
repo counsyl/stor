@@ -498,7 +498,7 @@ class FileSystemPath(Path):
                 raise
         return self
 
-    def walkfiles(self, pattern=None, errors='strict'):  # pragma: no cover flake8: noqa
+    def walkfiles(self, pattern=None, errors='strict'):  # flake8: noqa pragma: no cover 
         """ D.walkfiles() -> iterator over files in D, recursively.
         The optional argument `pattern` limits the results to files
         with names that match the pattern.  For example,
