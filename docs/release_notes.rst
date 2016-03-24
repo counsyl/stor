@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+v6.4.2
+------
+
+* Added progress logging to `SwiftPath.upload` and `SwiftPath.download` 
+
+v6.4.1
+------
+
+* Updated uploading to ensure manifest is committed first before starting upload
+* Fixed an issue where the manifest is uploaded multiple times on upload retries with ``use_manifest=True``
+
 v6.4.0
 ------
 

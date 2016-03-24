@@ -312,8 +312,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             manifest_contents = swift._get_data_manifest_contents(swift_dir)
             expected_contents = self.get_dataset_obj_names(num_test_objs)
             expected_contents.extend(['my_dir/empty_file',
-                                      'my_dir/empty_dir',
-                                      swift.DATA_MANIFEST_FILE_NAME])
+                                      'my_dir/empty_dir'])
             expected_contents = [Path('test') / c for c in expected_contents]
             self.assertEquals(set(manifest_contents), set(expected_contents))
 

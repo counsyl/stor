@@ -205,7 +205,8 @@ def walk_files_and_dirs(files_and_dirs):
         files_and_dirs (List[str]): All file or directory names to walk.
 
     Returns:
-        List[str]: All files and empty directories under files_and_dirs.
+        dict: All files and empty directories under files_and_dirs keyed to
+            their size. Dictionaries have a size of 0
 
     Raises:
         ValueError: The provided upload name is not a file or a directory.
@@ -216,23 +217,23 @@ def walk_files_and_dirs(files_and_dirs):
         >>> print results
         ['file_name', 'dir_name/file1', 'dir_name/file2']
     """
-    walked_upload_names = []
+    walked_upload_names_and_sizes = {}
     for name in files_and_dirs:
         if os.path.isfile(name):
-            walked_upload_names.append(name)
+            walked_upload_names_and_sizes[name] = os.path.getsize(name)
         elif os.path.isdir(name):
-            for (_dir, _ds, _fs) in os.walk(name):
-                if not (_ds + _fs):
+            for (root_dir, dir_names, file_names) in os.walk(name):
+                if not (dir_names + file_names):
                     # Ensure that empty directories are uploaded as well
-                    walked_upload_names.append(_dir)
+                    walked_upload_names_and_sizes[root_dir] = 0
                 else:
-                    walked_upload_names.extend([
-                        os.path.join(_dir, _f) for _f in _fs
-                    ])
+                    for file_name in file_names:
+                        full_name = os.path.join(root_dir, file_name)
+                        walked_upload_names_and_sizes[full_name] = os.path.getsize(full_name)
         else:
             raise ValueError('file "%s" not found' % name)
 
-    return walked_upload_names
+    return walked_upload_names_and_sizes
 
 
 @contextmanager
