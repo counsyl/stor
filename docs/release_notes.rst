@@ -4,7 +4,7 @@ Release Notes
 v6.5.0
 ------
 
-* Added `FileSystemPath.walkfiles` method
+* Added ``FileSystemPath.walkfiles`` method
 
 v6.4.0
 ------
