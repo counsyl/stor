@@ -157,6 +157,11 @@ def update_settings(**settings):
     _clear_cached_auth_credentials()
 
 
+def get_progress_logger():
+    """Returns the swift progress logger"""
+    return progress_logger
+
+
 def _get_or_create_auth_credentials(tenant_name):
     try:
         return _cached_auth_token_map[tenant_name]
@@ -504,15 +509,18 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
 
 
 class SwiftUploadLogger(utils.BaseProgressLogger):
-    def __init__(self, total_upload_objects):
+    def __init__(self, total_upload_objects, upload_object_sizes):
         super(SwiftUploadLogger, self).__init__(progress_logger)
         self.total_upload_objects = total_upload_objects
+        self.upload_object_sizes = upload_object_sizes
         self.uploaded_bytes = 0
 
+    def update_progress(self, result):
+        self.uploaded_bytes += self.upload_object_sizes.get(result['path'], 0)
+
     def add_result(self, result):
-        if result.get('action', None) != 'upload_object':
-            return
-        super(SwiftUploadLogger, self).add_result(result)
+        if result.get('action', None) in ('upload_object', 'create_dir_marker'):
+            super(SwiftUploadLogger, self).add_result(result)
 
     def get_start_message(self):
         return 'starting upload of %s objects' % self.total_upload_objects
@@ -523,10 +531,14 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
     def get_progress_message(self):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
+        mb = self.uploaded_bytes / (1024 * 1024.0)
+        mb_s = mb / elapsed_time.total_seconds()
         return (
             'objects uploaded - %s/%s,'
-            ' time elapsed - %s'
-        ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time)
+            ' time elapsed - %s,'
+            ' MB downloaded - %0.2f,'
+            ' MB/s - %0.2f'
+        ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
 
 class SwiftFile(object):
@@ -1442,7 +1454,7 @@ class SwiftPath(Path):
             'skip_identical': skip_identical,
             'checksum': checksum
         }
-        with SwiftUploadLogger(len(swift_upload_objects)) as ul:
+        with SwiftUploadLogger(len(swift_upload_objects), all_files_to_upload) as ul:
             results = self._swift_service_call('upload',
                                                self.container,
                                                swift_upload_objects,
