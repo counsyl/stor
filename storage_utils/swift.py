@@ -1435,7 +1435,10 @@ class SwiftPath(Path):
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
-            self.upload([manifest_file_name])
+            manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)
+            manifest_obj = SwiftUploadObject(manifest_file_name, object_name=manifest_obj_name)
+            print 'manifest obj', manifest_obj.object_name
+            self._swift_service_call('upload', self.container, [manifest_obj])
 
             # Make a condition for validating the upload
             manifest_cond = partial(_validate_manifest_upload, object_names)

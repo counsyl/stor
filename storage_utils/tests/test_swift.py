@@ -1629,6 +1629,8 @@ class TestUpload(SwiftTestCase):
 
         # Upload is called twice, the first time for the manifest and the second
         # time for the objects
+        self.assertEquals(len(self.mock_swift.upload.call_args_list), 2)
+
         manifest_upload_args = self.mock_swift.upload.call_args_list[0][0]
         self.assertEquals(len(manifest_upload_args), 2)
         self.assertEquals(manifest_upload_args[0], 'container')
