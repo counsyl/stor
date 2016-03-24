@@ -489,6 +489,10 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
     def update_progress(self, result):
         self.downloaded_bytes += result.get('read_length', 0)
 
+    def add_result(self, result):
+        if result.get('action', None) == 'download_object':
+            super(SwiftDownloadLogger, self).add_result(result)
+
     def get_start_message(self):
         return 'starting download'
 
