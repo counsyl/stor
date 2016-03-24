@@ -487,9 +487,19 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
         self.downloaded_bytes = 0
 
     def update_progress(self, result):
+        """Tracks number of bytes downloaded.
+
+        The ``read_length`` property in swift download results contains the
+        total size of the object
+        """
         self.downloaded_bytes += result.get('read_length', 0)
 
     def add_result(self, result):
+        """Only add results to progress if they are ``download_object`` actions.
+
+        The ``download_object`` action encompasses creating an empty directory
+        marker
+        """
         if result.get('action', None) == 'download_object':
             super(SwiftDownloadLogger, self).add_result(result)
 
@@ -520,9 +530,12 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         self.uploaded_bytes = 0
 
     def update_progress(self, result):
+        """Keep track of total uploaded bytes by referencing the object sizes"""
         self.uploaded_bytes += self.upload_object_sizes.get(result['path'], 0)
 
     def add_result(self, result):
+        """Only add results if they are ``upload_object`` and ``create_dir_marker``
+        actions"""
         if result.get('action', None) in ('upload_object', 'create_dir_marker'):
             super(SwiftUploadLogger, self).add_result(result)
 
