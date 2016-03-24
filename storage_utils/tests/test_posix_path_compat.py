@@ -99,6 +99,9 @@ class TestBasics(unittest.TestCase):
         assert f.name == 'xyzzy.py'
         assert f.parent.name == p(nt='Lib', posix='lib')
 
+        # .namebase
+        assert f.namebase == 'xyzzy'
+
         # .ext
         assert f.ext == '.py'
         assert f.parent.ext == ''

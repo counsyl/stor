@@ -198,6 +198,17 @@ class TestOpen(unittest.TestCase):
             p.close()
 
 
+class TestGlob(unittest.TestCase):
+    def test_glob(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            open('file.txt', 'w').close()
+            open('file2.txt', 'w').close()
+            open('file3', 'w').close()
+
+            files = Path('.').glob('*.txt')
+            self.assertEquals(set(files), set(['./file.txt', './file2.txt']))
+
+
 class TestMisc(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(Path('/a/b')), "PosixPath('/a/b')")
