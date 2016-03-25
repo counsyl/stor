@@ -546,7 +546,7 @@ class FileSystemPath(Path):
                 for f in child.walkfiles(pattern, errors):
                     yield f
 
-    def fnmatch(self, pattern, normcase=None):
+    def fnmatch(self, pattern, normcase=None):  # pragma: no cover
         """ Return ``True`` if `self.name` matches the given `pattern`.
         `pattern` - A filename pattern with wildcards,
             for example ``'*.py'``. If the pattern contains a `normcase`
