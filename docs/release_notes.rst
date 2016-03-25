@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.6.0
+------
+
+* Added ``FileSystemPath.fnmatch`` method ported from path.py
+
 v6.5.0
 ------
 
