@@ -319,14 +319,14 @@ class BaseProgressLogger(object):
 
     def __enter__(self):
         start_msg = self.get_start_message()
-        if start_msg:
+        if start_msg:  # pragma: no cover
             self.logger.log(self.level, start_msg)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         if exc_type is None:
             finish_msg = self.get_finish_message()
-            if finish_msg:
+            if finish_msg:  # pragma: no cover
                 self.logger.log(self.level, finish_msg)
 
     def get_elapsed_time(self):
@@ -338,16 +338,16 @@ class BaseProgressLogger(object):
         minutes, seconds = divmod(remainder, 60)
         return '%d:%02d:%02d' % (hours, minutes, seconds)
 
-    def get_start_message(self):
+    def get_start_message(self):  # pragma: no cover
         return self.get_progress_message()
 
-    def get_finish_message(self):
+    def get_finish_message(self):  # pragma: no cover
         return self.get_progress_message()
 
     def get_progress_message(self):
         raise NotImplementedError
 
-    def update_progress(self, result):
+    def update_progress(self, result):  # pragma: no cover
         pass
 
     def add_result(self, result):
@@ -359,5 +359,5 @@ class BaseProgressLogger(object):
         self.update_progress(result)
         if self.num_results % self.result_interval == 0:
             progress_msg = self.get_progress_message()
-            if progress_msg:
+            if progress_msg:  # pragma: no cover
                 self.logger.log(self.level, progress_msg)
