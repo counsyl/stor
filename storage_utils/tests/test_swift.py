@@ -1,5 +1,6 @@
 import cStringIO
 import gzip
+import logging
 import ntpath
 import os
 from tempfile import NamedTemporaryFile
@@ -9,6 +10,7 @@ import freezegun
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
+from testfixtures import LogCapture
 
 import storage_utils
 from storage_utils import NamedTemporaryDirectory
@@ -1122,6 +1124,13 @@ class TestDownloadObjects(SwiftTestCase):
             ])
 
 
+class TestGetProgressLogger(unittest.TestCase):
+    def test_success(self):
+        l = swift.get_progress_logger()
+        expected = logging.getLogger('storage_utils.swift.progress')
+        self.assertEquals(l, expected)
+
+
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
     def test_download_tenant(self):
@@ -1143,6 +1152,27 @@ class TestDownload(SwiftTestCase):
                 'skip_identical': True,
                 'shuffle': False
             })
+
+    @freezegun.freeze_time('2016-4-5')
+    def test_progress_logging(self):
+        self.mock_swift.download.return_value = [
+            {
+                'action': 'download_object',
+                'read_length': 100
+            }
+            for i in range(20)
+        ]
+        self.mock_swift.download.return_value.append({'action': 'random_action'})
+
+        swift_p = SwiftPath('swift://tenant/container')
+        with LogCapture('storage_utils.swift.progress') as progress_log:
+            swift_p.download('output_dir')
+            progress_log.check(
+                ('storage_utils.swift.progress', 'INFO', 'starting download'),
+                ('storage_utils.swift.progress', 'INFO', 'objects downloaded\t10\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'objects downloaded\t20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'download complete - objects downloaded\t20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+            )
 
     def test_download_resource(self):
         self.mock_swift.download.return_value = []
@@ -1591,6 +1621,35 @@ class TestUpload(SwiftTestCase):
             'skip_identical': False,
             'checksum': True
         })
+
+    @freezegun.freeze_time('2016-4-5')
+    def test_progress_logging(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = {
+            'file%s' % i: 20
+            for i in range(20)
+        }
+        self.mock_swift.upload.return_value = [
+            {
+                'action': 'upload_object',
+                'path': 'file%s' % i
+            }
+            for i in range(20)
+        ]
+        self.mock_swift.upload.return_value.append({'action': 'random_action'})
+
+        swift_p = SwiftPath('swift://tenant/container')
+        with LogCapture('storage_utils.swift.progress') as progress_log:
+            swift_p.upload(['upload'],
+                           segment_size=1000,
+                           use_slo=True,
+                           leave_segments=True,
+                           changed=True)
+            progress_log.check(
+                ('storage_utils.swift.progress', 'INFO', 'starting upload of 20 objects'),
+                ('storage_utils.swift.progress', 'INFO', 'objects uploaded\t10/20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'objects uploaded\t20/20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'upload complete - objects uploaded\t20/20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+            )
 
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = {

@@ -310,7 +310,7 @@ class BaseProgressLogger(object):
 
     Any custom results can be printed when implementing ``get_progress_message``.
     """
-    def __init__(self, logger, level=logging.INFO, result_interval=1):
+    def __init__(self, logger, level=logging.INFO, result_interval=10):
         self.logger = logger
         self.level = level
         self.result_interval = result_interval
