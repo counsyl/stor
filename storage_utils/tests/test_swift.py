@@ -301,7 +301,7 @@ line4
         self.assertEquals(swift_p.open().readlines(),
                           [l + '\n' for l in data.split('\n')][:-1])
         for i, line in enumerate(swift_p.open(), 1):
-            self.assertEqual(line, 'line%d' % i)
+            self.assertEqual(line, 'line%d\n' % i)
 
         self.assertEqual(next(swift_p.open()), 'line1\n')
         self.assertEqual(swift_p.open().next(), 'line1\n')
