@@ -305,7 +305,7 @@ line4
 
         self.assertEqual(next(swift_p.open()), 'line1\n')
         self.assertEqual(swift_p.open().next(), 'line1\n')
-        self.assertEqual(iter(swift_p).next(), 'line1\n')
+        self.assertEqual(iter(swift_p.open()).next(), 'line1\n')
 
     @mock.patch('time.sleep', autospec=True)
     def test_read_success_on_second_try(self, mock_sleep):
