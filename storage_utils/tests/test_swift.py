@@ -1576,10 +1576,10 @@ class TestUpload(SwiftTestCase):
 
         self.assertEquals(len(upload_args), 2)
         self.assertEquals(upload_args[0], 'container')
-        self.assertEquals([o.source for o in upload_args[1]],
-                          ['file1', 'file2'])
-        self.assertEquals([o.object_name for o in upload_args[1]],
-                          ['file1', 'file2'])
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['file1', 'file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['file1', 'file2']))
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {

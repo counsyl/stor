@@ -515,10 +515,10 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
         mb = self.downloaded_bytes / (1024 * 1024.0)
         mb_s = mb / elapsed_time.total_seconds()
         return (
-            'objects downloaded - %s,'
-            ' time elapsed - %s,'
-            ' MB downloaded - %0.2f,'
-            ' MB/s - %0.2f'
+            'objects downloaded\t%s'
+            '\ttime elapsed\t%s'
+            '\tMB downloaded\t%0.2f'
+            '\tMB/s\t%0.2f'
         ) % (self.num_results, formatted_elapsed_time, mb, mb_s)
 
 
@@ -551,10 +551,10 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         mb = self.uploaded_bytes / (1024 * 1024.0)
         mb_s = mb / elapsed_time.total_seconds()
         return (
-            'objects uploaded - %s/%s,'
-            ' time elapsed - %s,'
-            ' MB downloaded - %0.2f,'
-            ' MB/s - %0.2f'
+            'objects uploaded\t%s/%s'
+            '\ttime elapsed\t%s'
+            '\tMB downloaded\t%0.2f'
+            '\tMB/s\t%0.2f'
         ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
 
@@ -829,7 +829,7 @@ class SwiftPath(Path):
     def _swift_service_call(self, method_name, *args, **kwargs):
         """Instantiates a ``SwiftService`` object and runs ``method_name``."""
         method_options = copy.copy(kwargs)
-        service_options = method_options.pop('_service_options', {})
+        service_options = copy.deepcopy(method_options.pop('_service_options', {}))
         service_progress_logger = method_options.pop('_progress_logger', None)
         service = self._get_swift_service(**service_options)
         method = getattr(service, method_name)
@@ -1454,7 +1454,6 @@ class SwiftPath(Path):
             _generate_and_save_data_manifest(to_upload[0], object_names)
             manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)
             manifest_obj = SwiftUploadObject(manifest_file_name, object_name=manifest_obj_name)
-            print 'manifest obj', manifest_obj.object_name
             self._swift_service_call('upload', self.container, [manifest_obj])
 
             # Make a condition for validating the upload

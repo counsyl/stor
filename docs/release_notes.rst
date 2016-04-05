@@ -1,16 +1,21 @@
 Release Notes
 =============
 
-v6.6.0
+v6.7.0
 ------
 
 * Added progress logging to `SwiftPath.upload` and `SwiftPath.download` 
 
-v6.5.1
+v6.6.1
 ------
 
 * Updated uploading to ensure manifest is committed first before starting upload
 * Fixed an issue where the manifest is uploaded multiple times on upload retries with ``use_manifest=True``
+
+v6.6.0
+------
+
+* Added ``FileSystemPath.fnmatch`` method ported from path.py
 
 v6.5.0
 ------
