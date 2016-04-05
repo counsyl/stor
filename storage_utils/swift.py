@@ -622,6 +622,11 @@ class SwiftFile(object):
     def __exit__(self, type, value, traceback):
         self.close()
 
+    def __iter__(self):
+        # ape file object behavior by returning self (and attempting *not* to
+        # give users access to underlying buffer)
+        return self
+
     @cached_property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
@@ -638,6 +643,10 @@ class SwiftFile(object):
     read = _delegate_to_buffer('read', valid_modes=_READ_MODES)
     readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
     readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
+    # In Python 3 it's __next__, in Python 2 it's next()
+    # __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)
+    # TODO: Only use in Python 2 context
+    next = _delegate_to_buffer('next', valid_modes=_READ_MODES)
 
     write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
     writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)

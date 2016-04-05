@@ -287,6 +287,26 @@ class TestSwiftFile(SwiftTestCase):
         swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), 'data')
 
+    def test_iterating_over_files(self):
+        data = '''\
+line1
+line2
+line3
+line4
+'''
+        self.mock_swift_conn.get_object.return_value = ('header', data)
+
+        swift_p = SwiftPath('swift://tenant/container/obj')
+        self.assertEquals(swift_p.open().read(), data)
+        self.assertEquals(swift_p.open().readlines(),
+                          [l + '\n' for l in data.split('\n')][:-1])
+        for i, line in enumerate(swift_p.open(), 1):
+            self.assertEqual(line, 'line%d\n' % i)
+
+        self.assertEqual(next(swift_p.open()), 'line1\n')
+        self.assertEqual(swift_p.open().next(), 'line1\n')
+        self.assertEqual(iter(swift_p.open()).next(), 'line1\n')
+
     @mock.patch('time.sleep', autospec=True)
     def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [

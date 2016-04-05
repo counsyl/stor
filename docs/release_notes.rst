@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.8.0
+------
+
+* Add file iterator methods
+
 v6.7.0
 ------
 
