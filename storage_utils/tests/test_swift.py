@@ -299,7 +299,7 @@ line4
         swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), data)
         self.assertEquals(swift_p.open().readlines(),
-                          [l + '\n' for l in data.split('\n')])
+                          [l + '\n' for l in data.split('\n')][:-1])
         for i, line in enumerate(swift_p.open(), 1):
             self.assertEqual(line, 'line%d' % i)
 
