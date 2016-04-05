@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v6.6.1
+------
+
+* Updated uploading to ensure manifest is committed first before starting upload
+* Fixed an issue where the manifest is uploaded multiple times on upload retries with ``use_manifest=True``
+
 v6.6.0
 ------
 
