@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import datetime
 import logging
 import os
 import shlex
@@ -204,7 +205,8 @@ def walk_files_and_dirs(files_and_dirs):
         files_and_dirs (List[str]): All file or directory names to walk.
 
     Returns:
-        List[str]: All files and empty directories under files_and_dirs.
+        dict: All files and empty directories under files_and_dirs keyed to
+            their size. Dictionaries have a size of 0
 
     Raises:
         ValueError: The provided upload name is not a file or a directory.
@@ -215,23 +217,23 @@ def walk_files_and_dirs(files_and_dirs):
         >>> print results
         ['file_name', 'dir_name/file1', 'dir_name/file2']
     """
-    walked_upload_names = []
+    walked_upload_names_and_sizes = {}
     for name in files_and_dirs:
         if os.path.isfile(name):
-            walked_upload_names.append(name)
+            walked_upload_names_and_sizes[name] = os.path.getsize(name)
         elif os.path.isdir(name):
-            for (_dir, _ds, _fs) in os.walk(name):
-                if not (_ds + _fs):
+            for (root_dir, dir_names, file_names) in os.walk(name):
+                if not (dir_names + file_names):
                     # Ensure that empty directories are uploaded as well
-                    walked_upload_names.append(_dir)
+                    walked_upload_names_and_sizes[root_dir] = 0
                 else:
-                    walked_upload_names.extend([
-                        os.path.join(_dir, _f) for _f in _fs
-                    ])
+                    for file_name in file_names:
+                        full_name = os.path.join(root_dir, file_name)
+                        walked_upload_names_and_sizes[full_name] = os.path.getsize(full_name)
         else:
             raise ValueError('file "%s" not found' % name)
 
-    return walked_upload_names
+    return walked_upload_names_and_sizes
 
 
 @contextmanager
@@ -277,3 +279,85 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
 class ClassProperty(property):
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
+
+
+class BaseProgressLogger(object):
+    """Base class and methods for logging progress.
+
+    Progress loggers that inherit this base class have the ability to
+    track information related to the progress of a group of results.
+
+    Users instantiate the logger as a context manager::
+
+        for MyProgressLogger() as l:
+            for r in results:
+                l.add_result(r)
+
+    When the progress logger is instantiated, the message returned
+    from ``get_start_message`` is logged. As results are added, logs
+    are printed at each result interval. For example, if the
+    ``result_interval`` is 3, progress will be logged for every third result
+    added.
+
+    When exiting the context manager, the log message from ``get_finish_message``
+    is returned.
+
+    To accumulate more results, implement the ``update_progress`` method. For
+    example, to track the amount of bytes tracked so far::
+
+        def update_progress(self, result):
+            self.total_bytes += result['bytes']
+
+    Any custom results can be printed when implementing ``get_progress_message``.
+    """
+    def __init__(self, logger, level=logging.INFO, result_interval=10):
+        self.logger = logger
+        self.level = level
+        self.result_interval = result_interval
+        self.num_results = 0
+        self.start_time = datetime.datetime.utcnow()
+
+    def __enter__(self):
+        start_msg = self.get_start_message()
+        if start_msg:  # pragma: no cover
+            self.logger.log(self.level, start_msg)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if exc_type is None:
+            finish_msg = self.get_finish_message()
+            if finish_msg:
+                self.logger.log(self.level, finish_msg)
+
+    def get_elapsed_time(self):
+        return datetime.datetime.utcnow() - self.start_time
+
+    def format_time(self, t):
+        time_elapsed = datetime.datetime.utcnow() - self.start_time
+        hours, remainder = divmod(time_elapsed.total_seconds(), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return '%d:%02d:%02d' % (hours, minutes, seconds)
+
+    def get_start_message(self):
+        return self.get_progress_message()
+
+    def get_finish_message(self):
+        return self.get_progress_message()
+
+    def get_progress_message(self):
+        raise NotImplementedError
+
+    def update_progress(self, result):
+        pass
+
+    def add_result(self, result):
+        """Adds a result to the progress logger and logs messages.
+
+        Messages are logged every time the ``result_interval`` is met.
+        """
+        self.num_results += 1
+        self.update_progress(result)
+        if self.num_results % self.result_interval == 0:
+            progress_msg = self.get_progress_message()
+            if progress_msg:  # pragma: no cover
+                self.logger.log(self.level, progress_msg)

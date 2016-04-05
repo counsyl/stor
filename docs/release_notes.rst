@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.7.0
+------
+
+* Added progress logging to `SwiftPath.upload` and `SwiftPath.download` 
+
 v6.6.1
 ------
 

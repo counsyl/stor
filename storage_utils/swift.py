@@ -54,6 +54,7 @@ from swiftclient.utils import generate_temp_url
 
 
 logger = logging.getLogger(__name__)
+progress_logger = logging.getLogger('%s.progress' % __name__)
 
 
 # Default module-level settings for swift authentication.
@@ -154,6 +155,11 @@ def update_settings(**settings):
         globals()[setting] = value
 
     _clear_cached_auth_credentials()
+
+
+def get_progress_logger():
+    """Returns the swift progress logger"""
+    return progress_logger
 
 
 def _get_or_create_auth_credentials(tenant_name):
@@ -475,6 +481,83 @@ def join_conditions(*conditions):
     return wrapper
 
 
+class SwiftDownloadLogger(utils.BaseProgressLogger):
+    def __init__(self):
+        super(SwiftDownloadLogger, self).__init__(progress_logger)
+        self.downloaded_bytes = 0
+
+    def update_progress(self, result):
+        """Tracks number of bytes downloaded.
+
+        The ``read_length`` property in swift download results contains the
+        total size of the object
+        """
+        self.downloaded_bytes += result.get('read_length', 0)
+
+    def add_result(self, result):
+        """Only add results to progress if they are ``download_object`` actions.
+
+        The ``download_object`` action encompasses creating an empty directory
+        marker
+        """
+        if result.get('action', None) == 'download_object':
+            super(SwiftDownloadLogger, self).add_result(result)
+
+    def get_start_message(self):
+        return 'starting download'
+
+    def get_finish_message(self):
+        return 'download complete - %s' % self.get_progress_message()
+
+    def get_progress_message(self):
+        elapsed_time = self.get_elapsed_time()
+        formatted_elapsed_time = self.format_time(elapsed_time)
+        mb = self.downloaded_bytes / (1024 * 1024.0)
+        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        return (
+            'objects downloaded\t%s'
+            '\ttime elapsed\t%s'
+            '\tMB downloaded\t%0.2f'
+            '\tMB/s\t%0.2f'
+        ) % (self.num_results, formatted_elapsed_time, mb, mb_s)
+
+
+class SwiftUploadLogger(utils.BaseProgressLogger):
+    def __init__(self, total_upload_objects, upload_object_sizes):
+        super(SwiftUploadLogger, self).__init__(progress_logger)
+        self.total_upload_objects = total_upload_objects
+        self.upload_object_sizes = upload_object_sizes
+        self.uploaded_bytes = 0
+
+    def update_progress(self, result):
+        """Keep track of total uploaded bytes by referencing the object sizes"""
+        self.uploaded_bytes += self.upload_object_sizes.get(result['path'], 0)
+
+    def add_result(self, result):
+        """Only add results if they are ``upload_object`` and ``create_dir_marker``
+        actions"""
+        if result.get('action', None) in ('upload_object', 'create_dir_marker'):
+            super(SwiftUploadLogger, self).add_result(result)
+
+    def get_start_message(self):
+        return 'starting upload of %s objects' % self.total_upload_objects
+
+    def get_finish_message(self):
+        return 'upload complete - %s' % self.get_progress_message()
+
+    def get_progress_message(self):
+        elapsed_time = self.get_elapsed_time()
+        formatted_elapsed_time = self.format_time(elapsed_time)
+        mb = self.uploaded_bytes / (1024 * 1024.0)
+        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        return (
+            'objects uploaded\t%s/%s'
+            '\ttime elapsed\t%s'
+            '\tMB downloaded\t%0.2f'
+            '\tMB/s\t%0.2f'
+        ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
+
+
 class SwiftFile(object):
     """Provides methods for reading and writing swift objects returned by
     `SwiftPath.open`.
@@ -745,18 +828,24 @@ class SwiftPath(Path):
     @_propagate_swift_exceptions
     def _swift_service_call(self, method_name, *args, **kwargs):
         """Instantiates a ``SwiftService`` object and runs ``method_name``."""
-        method_options = copy.deepcopy(kwargs)
-        service_options = method_options.pop('_service_options', {})
+        method_options = copy.copy(kwargs)
+        service_options = copy.deepcopy(method_options.pop('_service_options', {}))
+        service_progress_logger = method_options.pop('_progress_logger', None)
         service = self._get_swift_service(**service_options)
         method = getattr(service, method_name)
-        results = method(*args, **method_options)
+        results_iter = method(*args, **method_options)
 
-        results = [results] if isinstance(results, dict) else list(results)
-        for r in results:
+        results_iter = [results_iter] if isinstance(results_iter, dict) else results_iter
+
+        results = []
+        for r in results_iter:
             if 'error' in r:
                 http_status = getattr(r['error'], 'http_status', None)
                 if not http_status or http_status >= 400:
                     raise r['error']
+            results.append(r)
+            if service_progress_logger:
+                service_progress_logger.add_result(r)
 
         return results
 
@@ -1247,10 +1336,12 @@ class SwiftPath(Path):
             'skip_identical': skip_identical,
             'shuffle': shuffle
         }
-        results = self._swift_service_call('download',
-                                           self.container,
-                                           _service_options=service_options,
-                                           options=download_options)
+        with SwiftDownloadLogger() as dl:
+            results = self._swift_service_call('download',
+                                               self.container,
+                                               options=download_options,
+                                               _progress_logger=dl,
+                                               _service_options=service_options)
 
         _check_condition(condition, results)
         return results
@@ -1382,11 +1473,13 @@ class SwiftPath(Path):
             'skip_identical': skip_identical,
             'checksum': checksum
         }
-        results = self._swift_service_call('upload',
-                                           self.container,
-                                           swift_upload_objects,
-                                           _service_options=service_options,
-                                           options=upload_options)
+        with SwiftUploadLogger(len(swift_upload_objects), all_files_to_upload) as ul:
+            results = self._swift_service_call('upload',
+                                               self.container,
+                                               swift_upload_objects,
+                                               options=upload_options,
+                                               _progress_logger=ul,
+                                               _service_options=service_options)
 
         _check_condition(condition, results)
         return results

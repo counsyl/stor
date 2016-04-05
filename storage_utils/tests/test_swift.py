@@ -1,5 +1,6 @@
 import cStringIO
 import gzip
+import logging
 import ntpath
 import os
 from tempfile import NamedTemporaryFile
@@ -9,6 +10,7 @@ import freezegun
 import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
+from testfixtures import LogCapture
 
 import storage_utils
 from storage_utils import NamedTemporaryDirectory
@@ -1122,6 +1124,13 @@ class TestDownloadObjects(SwiftTestCase):
             ])
 
 
+class TestGetProgressLogger(unittest.TestCase):
+    def test_success(self):
+        l = swift.get_progress_logger()
+        expected = logging.getLogger('storage_utils.swift.progress')
+        self.assertEquals(l, expected)
+
+
 @mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
     def test_download_tenant(self):
@@ -1143,6 +1152,27 @@ class TestDownload(SwiftTestCase):
                 'skip_identical': True,
                 'shuffle': False
             })
+
+    @freezegun.freeze_time('2016-4-5')
+    def test_progress_logging(self):
+        self.mock_swift.download.return_value = [
+            {
+                'action': 'download_object',
+                'read_length': 100
+            }
+            for i in range(20)
+        ]
+        self.mock_swift.download.return_value.append({'action': 'random_action'})
+
+        swift_p = SwiftPath('swift://tenant/container')
+        with LogCapture('storage_utils.swift.progress') as progress_log:
+            swift_p.download('output_dir')
+            progress_log.check(
+                ('storage_utils.swift.progress', 'INFO', 'starting download'),
+                ('storage_utils.swift.progress', 'INFO', 'objects downloaded\t10\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'objects downloaded\t20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'download complete - objects downloaded\t20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+            )
 
     def test_download_resource(self):
         self.mock_swift.download.return_value = []
@@ -1351,7 +1381,9 @@ class TestFileNameToObjectName(SwiftTestCase):
 @mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
     def test_abs_path(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['/abs_path/file1']
+        mock_walk_files_and_dirs.return_value = {
+            '/abs_path/file1': 10
+        }
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/path')
@@ -1366,7 +1398,9 @@ class TestUpload(SwiftTestCase):
                           ['path/abs_path/file1'])
 
     def test_relative_path(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['./relative_path/file1']
+        mock_walk_files_and_dirs.return_value = {
+            './relative_path/file1': 10
+        }
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/path')
@@ -1382,7 +1416,9 @@ class TestUpload(SwiftTestCase):
 
     @mock.patch('os.path', ntpath)
     def test_relative_windows_path(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = [r'.\relative_path\file1']
+        mock_walk_files_and_dirs.return_value = {
+            r'.\relative_path\file1': 20
+        }
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/path')
@@ -1399,7 +1435,10 @@ class TestUpload(SwiftTestCase):
     @mock.patch('storage_utils.swift.num_retries', 5)
     @mock.patch('time.sleep', autospec=True)
     def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        mock_walk_files_and_dirs.return_value = {
+            'file1': 20,
+            'file2': 30
+        }
         self.mock_swift.upload.side_effect = ClientException(
             "put_object('HHGF5BCXX_160209_SN357_0342_A', "
             "'pileups/s_1_TAAAGGC/s_1_TAAAGGC.chr15-80450512.txt', ...) "
@@ -1412,7 +1451,10 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(len(self.mock_swift.upload.call_args_list), 6)
 
     def test_upload_to_dir(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        mock_walk_files_and_dirs.return_value = {
+            'file1': 20,
+            'file2': 30
+        }
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container/path')
@@ -1428,10 +1470,10 @@ class TestUpload(SwiftTestCase):
 
         self.assertEquals(len(upload_args), 2)
         self.assertEquals(upload_args[0], 'container')
-        self.assertEquals([o.source for o in upload_args[1]],
-                          ['file1', 'file2'])
-        self.assertEquals([o.object_name for o in upload_args[1]],
-                          ['path/file1', 'path/file2'])
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['file1', 'file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['path/file1', 'path/file2']))
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {
@@ -1447,23 +1489,31 @@ class TestUpload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     def test_upload_w_manifest(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.side_effect = [
-            ['./file1', './file2'],
-            ['./%s' % swift.DATA_MANIFEST_FILE_NAME]
+            {
+                './file1': 20,
+                './file2': 30
+            },
+            {
+                './%s' % swift.DATA_MANIFEST_FILE_NAME: 10
+            }
         ]
         self.mock_swift.upload.side_effect = [
             [{
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME
+                'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME,
+                'path': './%s' % swift.DATA_MANIFEST_FILE_NAME
             }],
             [{
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/file1'
+                'object': 'path/file1',
+                'path': './file1'
             }, {
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/file2'
+                'object': 'path/file2',
+                'path': './file2'
             }],
         ]
 
@@ -1490,10 +1540,10 @@ class TestUpload(SwiftTestCase):
         upload_kwargs = self.mock_swift.upload.call_args_list[1][1]
         self.assertEquals(len(upload_args), 2)
         self.assertEquals(upload_args[0], 'container')
-        self.assertEquals([o.source for o in upload_args[1]],
-                          ['./file1', './file2'])
-        self.assertEquals([o.object_name for o in upload_args[1]],
-                          ['path/file1', 'path/file2'])
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['./file1', './file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['path/file1', 'path/file2']))
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {
@@ -1508,15 +1558,20 @@ class TestUpload(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_upload_w_manifest_validation_err(self, mock_sleep, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        mock_walk_files_and_dirs.return_value = {
+            'file1': 20,
+            'file2': 10
+        }
         self.mock_swift.upload.return_value = [{
             'success': True,
             'action': 'upload_object',
-            'object': 'path/file1'
+            'object': 'path/file1',
+            'path': 'file1'
         }, {
             'success': False,  # Create an error in the upload results
             'action': 'upload_object',
-            'object': 'path/file2'
+            'object': 'path/file2',
+            'path': 'file2'
         }]
 
         with NamedTemporaryDirectory(change_dir=True):
@@ -1534,7 +1589,10 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(len(mock_sleep.call_args_list), 2)
 
     def test_upload_to_container(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        mock_walk_files_and_dirs.return_value = {
+            'file1': 20,
+            'file2': 20
+        }
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant/container')
@@ -1548,10 +1606,10 @@ class TestUpload(SwiftTestCase):
 
         self.assertEquals(len(upload_args), 2)
         self.assertEquals(upload_args[0], 'container')
-        self.assertEquals([o.source for o in upload_args[1]],
-                          ['file1', 'file2'])
-        self.assertEquals([o.object_name for o in upload_args[1]],
-                          ['file1', 'file2'])
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['file1', 'file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['file1', 'file2']))
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {
@@ -1564,8 +1622,40 @@ class TestUpload(SwiftTestCase):
             'checksum': True
         })
 
+    @freezegun.freeze_time('2016-4-5')
+    def test_progress_logging(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.return_value = {
+            'file%s' % i: 20
+            for i in range(20)
+        }
+        self.mock_swift.upload.return_value = [
+            {
+                'action': 'upload_object',
+                'path': 'file%s' % i
+            }
+            for i in range(20)
+        ]
+        self.mock_swift.upload.return_value.append({'action': 'random_action'})
+
+        swift_p = SwiftPath('swift://tenant/container')
+        with LogCapture('storage_utils.swift.progress') as progress_log:
+            swift_p.upload(['upload'],
+                           segment_size=1000,
+                           use_slo=True,
+                           leave_segments=True,
+                           changed=True)
+            progress_log.check(
+                ('storage_utils.swift.progress', 'INFO', 'starting upload of 20 objects'),
+                ('storage_utils.swift.progress', 'INFO', 'objects uploaded\t10/20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'objects uploaded\t20/20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'upload complete - objects uploaded\t20/20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+            )
+
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):
-        mock_walk_files_and_dirs.return_value = ['file1', 'file2']
+        mock_walk_files_and_dirs.return_value = {
+            'file1': 10,
+            'file2': 20
+        }
         self.mock_swift.upload.return_value = []
 
         swift_p = SwiftPath('swift://tenant')
@@ -1595,23 +1685,32 @@ class TestUpload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     def test_upload_w_condition_and_use_manifest(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.side_effect = [
-            ['./%s' % swift.DATA_MANIFEST_FILE_NAME, './file1', './file2'],
-            ['./%s' % swift.DATA_MANIFEST_FILE_NAME]
+            {
+                './%s' % swift.DATA_MANIFEST_FILE_NAME: 20,
+                './file1': 30,
+                './file2': 40
+            },
+            {
+                './%s' % swift.DATA_MANIFEST_FILE_NAME: 20
+            }
         ]
         self.mock_swift.upload.side_effect = [
             [{
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME
+                'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME,
+                'path': './%s' % swift.DATA_MANIFEST_FILE_NAME
             }],
             [{
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/file1'
+                'object': 'path/file1',
+                'path': './file1'
             }, {
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/file2'
+                'object': 'path/file2',
+                'path': './file2'
             }],
         ]
 
@@ -1634,19 +1733,19 @@ class TestUpload(SwiftTestCase):
         manifest_upload_args = self.mock_swift.upload.call_args_list[0][0]
         self.assertEquals(len(manifest_upload_args), 2)
         self.assertEquals(manifest_upload_args[0], 'container')
-        self.assertEquals([o.source for o in manifest_upload_args[1]],
-                          ['./%s' % swift.DATA_MANIFEST_FILE_NAME])
-        self.assertEquals([o.object_name for o in manifest_upload_args[1]],
-                          ['path/%s' % swift.DATA_MANIFEST_FILE_NAME])
+        self.assertEquals(set([o.source for o in manifest_upload_args[1]]),
+                          set(['./%s' % swift.DATA_MANIFEST_FILE_NAME]))
+        self.assertEquals(set([o.object_name for o in manifest_upload_args[1]]),
+                          set(['path/%s' % swift.DATA_MANIFEST_FILE_NAME]))
 
         upload_args = self.mock_swift.upload.call_args_list[1][0]
         upload_kwargs = self.mock_swift.upload.call_args_list[1][1]
         self.assertEquals(len(upload_args), 2)
         self.assertEquals(upload_args[0], 'container')
-        self.assertEquals([o.source for o in upload_args[1]],
-                          ['./file1', './file2'])
-        self.assertEquals([o.object_name for o in upload_args[1]],
-                          ['path/file1', 'path/file2'])
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['./file1', './file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['path/file1', 'path/file2']))
 
         self.assertEquals(len(upload_kwargs), 1)
         self.assertEquals(upload_kwargs['options'], {
