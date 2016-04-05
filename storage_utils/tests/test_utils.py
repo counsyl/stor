@@ -1,3 +1,4 @@
+import logging
 import mock
 import ntpath
 import storage_utils
@@ -5,7 +6,20 @@ from storage_utils.posix import PosixPath
 from storage_utils.swift import SwiftPath
 from storage_utils.windows import WindowsPath
 from storage_utils import utils
+from testfixtures import LogCapture
 import unittest
+
+
+class TestBaseProgressLogger(unittest.TestCase):
+    def test_empty_logger(self):
+        class EmptyLogger(utils.BaseProgressLogger):
+            def get_progress_message(self):
+                return ''
+
+        with LogCapture('') as progress_log:
+            with EmptyLogger(logging.getLogger('')) as l:
+                l.add_result({})
+            progress_log.check()
 
 
 class TestPath(unittest.TestCase):
