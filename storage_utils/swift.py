@@ -1367,7 +1367,8 @@ class SwiftPath(Path):
                skip_identical=False,
                checksum=True,
                condition=None,
-               use_manifest=False):
+               use_manifest=False,
+               object_headers=None):
         """Uploads a list of files and directories to swift.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1421,6 +1422,10 @@ class SwiftPath(Path):
                 conditions for upload without an understanding of the structure of the results.
             use_manifest (bool): Generate a data manifest and validate the upload results
                 are in the manifest.
+            object_headers (List[str]): A list of object headers to apply to every object. Note
+                that these are not applied if passing SwiftUploadObjects directly to upload.
+                Headers must be specified as a list of colon-delimited strings,
+                e.g. ['X-Delete-After:1000']
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1452,8 +1457,11 @@ class SwiftPath(Path):
         # since it will be uploaded individually
         manifest_file_name = Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME if use_manifest else None
         resource_base = _with_trailing_slash(self.resource) or PosixPath('')
+        upload_object_options = {'header': object_headers or []}
         swift_upload_objects.extend([
-            SwiftUploadObject(f, object_name=resource_base / file_name_to_object_name(f))
+            SwiftUploadObject(f,
+                              object_name=resource_base / file_name_to_object_name(f),
+                              options=upload_object_options)
             for f in all_files_to_upload if f != manifest_file_name
         ])
 
@@ -1462,7 +1470,9 @@ class SwiftPath(Path):
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
             manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)
-            manifest_obj = SwiftUploadObject(manifest_file_name, object_name=manifest_obj_name)
+            manifest_obj = SwiftUploadObject(manifest_file_name,
+                                             object_name=manifest_obj_name,
+                                             options=upload_object_options)
             self._swift_service_call('upload', self.container, [manifest_obj])
 
             # Make a condition for validating the upload
@@ -1613,6 +1623,21 @@ class SwiftPath(Path):
         For tenants, an example return dictionary is the following::
 
             {
+                'headers': {
+                    'content-length': u'0',
+                    'x-account-storage-policy-3xreplica-container-count': u'4655',
+                    'x-account-meta-temp-url-key': 'temp_url_key',
+                    'x-account-object-count': '428634',
+                    'x-timestamp': '1450732238.21562',
+                    'x-account-storage-policy-3xreplica-bytes-used': '175654877752',
+                    'x-trans-id': u'transaction_id',
+                    'date': u'Wed, 06 Apr 2016 18:30:28 GMT',
+                    'x-account-bytes-used': '175654877752',
+                    'x-account-container-count': '4655',
+                    'content-type': 'text/plain; charset=utf-8',
+                    'accept-ranges': 'bytes',
+                    'x-account-storage-policy-3xreplica-object-count': '428634'
+                },
                 'Account': 'AUTH_seq_upload_prod',
                 # The number of containers in the tenant
                 'Containers': 31,
@@ -1635,6 +1660,17 @@ class SwiftPath(Path):
         For containers, an example return dictionary is the following::
 
             {
+                'headers': {
+                    'content-length': '0',
+                    'x-container-object-count': '99',
+                    'accept-ranges': 'bytes',
+                    'x-storage-policy': '3xReplica',
+                    'date': 'Wed, 06 Apr 2016 18:32:47 GMT',
+                    'x-timestamp': '1457631707.95682',
+                    'x-trans-id': 'transaction_id',
+                    'x-container-bytes-used': '5389060',
+                    'content-type': 'text/plain; charset=utf-8'
+                },
                 'Account': 'AUTH_seq_upload_prod',
                 'Container': '2016-01',
                 # The number of objects in the container
@@ -1651,6 +1687,18 @@ class SwiftPath(Path):
         For objects, an example return dictionary is the following::
 
             {
+                'headers': {
+                    'content-length': '0',
+                    'x-delete-at': '1459967915',
+                    'accept-ranges': 'bytes',
+                    'last-modified': 'Wed, 06 Apr 2016 18:21:56 GMT',
+                    'etag': 'd41d8cd98f00b204e9800998ecf8427e',
+                    'x-timestamp': '1459966915.96956',
+                    'x-trans-id': 'transaction_id',
+                    'date': 'Wed, 06 Apr 2016 18:33:48 GMT',
+                    'content-type': 'text/plain',
+                    'x-object-meta-mtime': '1459965986.000000'
+                },
                 'Account': 'AUTH_seq_upload_prod',
                 'Container': '2016-01',
                 'Object': PosixPath('object.txt'),
@@ -1679,6 +1727,7 @@ class SwiftPath(Path):
             k.replace(' ', '-'): v
             for k, v in result['items']
         }
+        stat_values['headers'] = result['headers']
 
         if result['action'] == 'stat_account':
             # Load account ACLs
