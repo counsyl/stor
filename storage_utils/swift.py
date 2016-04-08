@@ -553,7 +553,7 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         return (
             'objects uploaded\t%s/%s'
             '\ttime elapsed\t%s'
-            '\tMB downloaded\t%0.2f'
+            '\tMB uploaded\t%0.2f'
             '\tMB/s\t%0.2f'
         ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
