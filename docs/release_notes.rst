@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.8.1
+------
+
+* Fixed output error in upload progress logger
+
 v6.8.0
 ------
 
