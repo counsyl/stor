@@ -7,6 +7,11 @@ v6.9.0
 * Added ``object_headers`` option to `SwiftPath.upload`
 * Headers are now returned in `SwiftPath.stat`
 
+v6.8.1
+------
+
+* Fixed output error in upload progress logger
+
 v6.8.0
 ------
 
