@@ -1,10 +1,15 @@
 Release Notes
 =============
 
-v6.8.2
+v6.8.3
 ------
 
 * Fixed `SwiftPath.temp_url` errors when object names have special URL characters
+
+v6.8.2
+------
+
+* Fixed swift method docs
 
 v6.8.1
 ------
