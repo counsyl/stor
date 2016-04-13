@@ -39,6 +39,7 @@ import os
 import posixpath
 import tempfile
 import threading
+import urllib
 import urlparse
 
 import storage_utils
@@ -900,8 +901,6 @@ class SwiftPath(Path):
                 'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
                 'or by setting the OS_AUTH_URL environment variable')
 
-        import urllib
-
         obj_path = '/v1/%s' % self[len(self.swift_drive):]
         # Generate the temp url using swifts helper. Note that this method is ONLY
         # useful for obtaining the temp_url_sig and the temp_url_expires parameters.
@@ -910,7 +909,6 @@ class SwiftPath(Path):
         query_begin = obj_url.rfind('temp_url_sig', 0, len(obj_url))
         obj_url_query = obj_url[query_begin:]
         obj_url_query = dict(urlparse.parse_qsl(obj_url_query))
-        print 'query', obj_url_query
 
         query = ['temp_url_sig=%s' % obj_url_query['temp_url_sig'],
                  'temp_url_expires=%s' % obj_url_query['temp_url_expires']]
@@ -920,9 +918,6 @@ class SwiftPath(Path):
             query.append('filename=%s' % urllib.quote(filename))
 
         auth_url_parts = urlparse.urlparse(auth_url)
-        print 'other path', obj_path
-        print 'auth url parts', auth_url_parts.params
-        print 'query', query
         return urlparse.urlunparse((auth_url_parts.scheme,
                                     auth_url_parts.netloc,
                                     urllib.quote(obj_path),
