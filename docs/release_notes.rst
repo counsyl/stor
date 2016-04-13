@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.8.2
+------
+
+* Fixed swift method docs
+
 v6.8.1
 ------
 
