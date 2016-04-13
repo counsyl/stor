@@ -64,7 +64,7 @@ SwiftPath
 
   .. automethod:: first(\**retry_args)
 
-  .. automethod:: list(starts_with=None, limit=None, condition=None, use_manfiest=False, \**retry_args)
+  .. automethod:: list(starts_with=None, limit=None, condition=None, use_manifest=False, \**retry_args)
 
   .. automethod:: post(options=None, \**retry_args)
 
