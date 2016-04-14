@@ -4,6 +4,7 @@ Release Notes
 v6.9.0
 ------
 
+* `SwiftPath.post` works on tenants and objects instead of just containers
 * Added ``headers`` option to `SwiftPath.upload`
 * Headers are now returned in `SwiftPath.stat`
 

@@ -2233,25 +2233,32 @@ class TestRmtree(SwiftTestCase):
 
 
 class TestPost(SwiftTestCase):
-    def test_path_error_only_tenant(self):
-        # Post() only works on a container path
+    def test_only_tenant(self):
+        self.mock_swift.post.return_value = {}
         swift_p = SwiftPath('swift://tenant')
-        with self.assertRaises(ValueError):
-            swift_p.post()
+        swift_p.post()
+        self.mock_swift.post.assert_called_once_with(container=None,
+                                                     objects=None,
+                                                     options=None)
 
-    def test_path_error_w_resource(self):
-        # Post() does not work with resource paths
+    def test_w_resource(self):
+        self.mock_swift.post.return_value = {}
         swift_p = SwiftPath('swift://tenant/container/r1')
-        with self.assertRaises(ValueError):
-            swift_p.post()
+        swift_p.post(options={'header': ['X-Delete-After:30']})
+        self.mock_swift.post.assert_called_once_with(container='container',
+                                                     objects=['r1'],
+                                                     options={
+                                                         'header': ['X-Delete-After:30']
+                                                     })
 
-    def test_success(self):
+    def test_only_container(self):
         self.mock_swift.post.return_value = {}
 
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.post()
 
         self.mock_swift.post.assert_called_once_with(container='container',
+                                                     objects=None,
                                                      options=None)
 
 

@@ -1769,8 +1769,10 @@ class SwiftPath(Path):
                 options are given below::
 
                     {
-                        'meta': [],
-                        'headers': [],
+                        'meta': [],   # Meta values will be prefixed with X-Object-Meta
+                                      # (or X-Container*  X-Account* depending on path type)
+                        'header': [], # Header values will not be manipulated like meta values
+                                      # when being posted.
                         'read_acl': None,   # For containers only
                         'write_acl': None,  # For containers only
                         'sync_to': None,    # For containers only
@@ -1780,11 +1782,9 @@ class SwiftPath(Path):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        if not self.container or self.resource:
-            raise ValueError('post only works on container paths')
-
         return self._swift_service_call('post',
                                         container=self.container,
+                                        objects=[self.resource] if self.resource else None,
                                         options=options)
 
     def _noop(attr_name):

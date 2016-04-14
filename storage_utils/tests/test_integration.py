@@ -437,3 +437,23 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
                 with gzip.open(local_gzip) as local_gzip_fp:
                     assert_same_data(remote_gzip_fp, local_gzip_fp)
+
+    def test_push_metadata(self):
+        obj = self.test_container / 'object.txt'
+        with obj.open('w') as fp:
+            fp.write('a\n')
+        obj.post({'header': ['X-Object-Meta-Custom:text']})
+        stat_data = obj.stat()
+        # TODO(jtratner): consider validating x-object-meta vs.
+        # x-container-meta (otherwise headers won't take)
+        self.assertIn('x-object-meta-custom', stat_data['headers'])
+        self.assertEqual(stat_data['headers']['x-object-meta-custom'], 'text')
+        self.test_container.post({'header': ['X-Container-Meta-Exciting:value'],
+                                  'read_acl': '.r:*'})
+        stat_data = self.test_container.stat()
+        self.assertEqual(stat_data['Read-ACL'], '.r:*')
+        self.assertIn('x-container-meta-exciting', stat_data['headers'])
+        self.assertEqual(stat_data['headers']['x-container-meta-exciting'], 'value')
+        self.test_container.post({'read_acl': '.r:example.com'})
+        self.assertEqual(self.test_container.stat()['Read-ACL'],
+                         '.r:example.com')
