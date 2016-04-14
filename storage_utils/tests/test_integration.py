@@ -265,7 +265,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 '.',
                 self.test_container,
                 swift_upload_options={
-                    'object_headers': ['X-Delete-After:1000']
+                    'headers': ['X-Delete-After:1000']
                 })
 
         obj = storage_utils.join(self.test_container, 'test_obj')

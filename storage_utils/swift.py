@@ -1368,7 +1368,7 @@ class SwiftPath(Path):
                checksum=True,
                condition=None,
                use_manifest=False,
-               object_headers=None):
+               headers=None):
         """Uploads a list of files and directories to swift.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1422,7 +1422,7 @@ class SwiftPath(Path):
                 conditions for upload without an understanding of the structure of the results.
             use_manifest (bool): Generate a data manifest and validate the upload results
                 are in the manifest.
-            object_headers (List[str]): A list of object headers to apply to every object. Note
+            headers (List[str]): A list of object headers to apply to every object. Note
                 that these are not applied if passing SwiftUploadObjects directly to upload.
                 Headers must be specified as a list of colon-delimited strings,
                 e.g. ['X-Delete-After:1000']
@@ -1457,7 +1457,7 @@ class SwiftPath(Path):
         # since it will be uploaded individually
         manifest_file_name = Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME if use_manifest else None
         resource_base = _with_trailing_slash(self.resource) or PosixPath('')
-        upload_object_options = {'header': object_headers or []}
+        upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
             SwiftUploadObject(f,
                               object_name=resource_base / file_name_to_object_name(f),
