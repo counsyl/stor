@@ -452,7 +452,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                                   'read_acl': '.r:*'})
         stat_data = self.test_container.stat()
         self.assertEqual(stat_data['Read-ACL'], '.r:*')
-        self.assertIn('x-object-meta-exciting', stat_data['headers'])
+        self.assertIn('x-container-meta-exciting', stat_data['headers'])
         self.assertEqual(stat_data['headers']['x-container-meta-exciting'], 'value')
         self.test_container.post({'read_acl': '.r:example.com'})
         self.assertEqual(self.test_container.stat()['Read-ACL'],
