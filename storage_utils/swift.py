@@ -1770,7 +1770,7 @@ class SwiftPath(Path):
 
                     {
                         'meta': [],
-                        'headers': [],
+                        'header': [],
                         'read_acl': None,   # For containers only
                         'write_acl': None,  # For containers only
                         'sync_to': None,    # For containers only
@@ -1780,11 +1780,9 @@ class SwiftPath(Path):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        if not self.container or self.resource:
-            raise ValueError('post only works on container paths')
-
         return self._swift_service_call('post',
                                         container=self.container,
+                                        objects=[self.resource] if self.resource else None,
                                         options=options)
 
     def _noop(attr_name):

@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v6.10.0
+-------
+
+* `SwiftPath.post` works on tenants and objects instead of just containers
+
 v6.9.0
 ------
 
