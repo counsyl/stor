@@ -7,6 +7,16 @@ v6.9.0
 * Added ``object_headers`` option to `SwiftPath.upload`
 * Headers are now returned in `SwiftPath.stat`
 
+v6.8.3
+------
+
+* Fixed `SwiftPath.temp_url` errors when object names have special URL characters
+
+v6.8.2
+------
+
+* Fixed swift method docs
+
 v6.8.1
 ------
 

@@ -5,7 +5,7 @@ import unittest
 import uuid
 
 import mock
-
+import requests
 from six.moves import builtins
 
 import storage_utils
@@ -184,6 +184,39 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             self.assertTrue(Path('test/.hidden_dir/nested').isdir())
             self.assertTrue(Path('test/.hidden_dir/nested/file1').isfile())
             self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
+
+    def test_temp_url(self):
+        basic_file = 'test.txt'
+        complex_file = 'my test?file=special_chars.txt'
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            nested_tmp_dir = storage_utils.join(tmp_d, 'tmp')
+            os.mkdir(nested_tmp_dir)
+            basic_file_p = storage_utils.join(nested_tmp_dir, basic_file)
+            complex_file_p = storage_utils.join(nested_tmp_dir, 'my test?file=special_chars.txt')
+
+            with storage_utils.open(basic_file_p, 'w') as f:
+                f.write('basic test')
+            with storage_utils.open(complex_file_p, 'w') as f:
+                f.write('complex test')
+
+            self.test_container.upload(['.'])
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            basic_obj = storage_utils.Path(
+                storage_utils.join(self.test_container, 'tmp', basic_file))
+            basic_temp_url = basic_obj.temp_url(inline=False, filename=basic_file)
+            r = requests.get(basic_temp_url)
+            self.assertEquals(r.content, 'basic test')
+            self.assertEquals(r.headers['Content-Disposition'],
+                              'attachment; filename="test.txt"; filename*=UTF-8\'\'test.txt')
+
+            complex_obj = storage_utils.Path(
+                storage_utils.join(self.test_container, 'tmp', complex_file))
+            complex_temp_url = complex_obj.temp_url(inline=False, filename=complex_file)
+            r = requests.get(complex_temp_url)
+            self.assertEquals(r.content, 'complex test')
+            self.assertEquals(r.headers['Content-Disposition'],
+                              'attachment; filename="my test%3Ffile%3Dspecial_chars.txt"; filename*=UTF-8\'\'my%20test%3Ffile%3Dspecial_chars.txt')  # nopep8
 
     def test_condition_failures(self):
         num_test_objs = 20
