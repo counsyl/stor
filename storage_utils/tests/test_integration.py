@@ -291,6 +291,20 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 obj_path = Path('test') / which_obj
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
+    def test_copytree_w_headers(self):
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            open(tmp_d / 'test_obj', 'w').close()
+            storage_utils.copytree(
+                '.',
+                self.test_container,
+                swift_upload_options={
+                    'headers': ['X-Delete-After:1000']
+                })
+
+        obj = storage_utils.join(self.test_container, 'test_obj')
+        stat_results = obj.stat()
+        self.assertTrue('x-delete-at' in stat_results['headers'])
+
     def test_rmtree(self):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             # Make a couple empty test files and nested files
