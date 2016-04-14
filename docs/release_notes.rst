@@ -4,7 +4,7 @@ Release Notes
 v6.9.0
 ------
 
-* Added ``object_headers`` option to `SwiftPath.upload`
+* Added ``headers`` option to `SwiftPath.upload`
 * Headers are now returned in `SwiftPath.stat`
 
 v6.8.3
