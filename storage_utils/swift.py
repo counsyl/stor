@@ -1769,8 +1769,10 @@ class SwiftPath(Path):
                 options are given below::
 
                     {
-                        'meta': [],
-                        'header': [],
+                        'meta': [],   # Meta values will be prefixed with X-Object-Meta
+                                      # (or X-Container*  X-Account* depending on path type)
+                        'header': [], # Header values will not be manipulated like meta values
+                                      # when being posted.
                         'read_acl': None,   # For containers only
                         'write_acl': None,  # For containers only
                         'sync_to': None,    # For containers only
