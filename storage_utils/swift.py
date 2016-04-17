@@ -242,6 +242,14 @@ class ConflictError(SwiftError):
     pass
 
 
+class InconsistentDownloadError(SwiftError):
+    """Thrown when an etag or content length does not match.
+
+    Currently, we experience this during periods when the cluster is under
+    heavy load, potentially because of unexpectedly quick terminations"""
+    pass
+
+
 class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
@@ -343,6 +351,13 @@ def _propagate_swift_exceptions(func):
                 # provide more information
                 logger.warning('auth error in swift operation - %s', str(e))
                 raise AuthenticationError(str(e), e)
+            elif 'md5sum != etag' in str(e) or 'read_length != content_length' in str(e):
+                # We encounter this error when cluster is under heavy
+                # replication load (at least that's the theory). So retry and
+                # ensure we track consistency errors
+                logger.error('Hit consistency issue. Likely related to'
+                             ' cluster load: %s', str(e))
+                raise InconsistentDownloadError(str(e), e)
             else:
                 logger.error('unexpected swift error - %s', str(e))
                 raise SwiftError(str(e), e)
@@ -859,7 +874,8 @@ class SwiftPath(Path):
 
         return results
 
-    @_swift_retry(exceptions=(NotFoundError, UnavailableError))
+    @_swift_retry(exceptions=(NotFoundError, UnavailableError,
+                              InconsistentDownloadError))
     def _read_object(self):
         """Reads an individual object.
 
@@ -1145,7 +1161,7 @@ class SwiftPath(Path):
         except NotFoundError:
             return False
 
-    @_swift_retry(exceptions=(UnavailableError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
     def _download_object(self, out_file):
         """Downloads a single object to an output file.
 
@@ -1168,7 +1184,7 @@ class SwiftPath(Path):
                                  objects=[self.resource],
                                  options={'out_file': out_file})
 
-    @_swift_retry(exceptions=(UnavailableError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
     def download_objects(self,
                          dest,
                          objects,
@@ -1278,7 +1294,8 @@ class SwiftPath(Path):
         # Return results mapped back to their input name
         return {obj: results[objs_to_download[obj]] for obj in objects}
 
-    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError,
+                              InconsistentDownloadError))
     def download(self,
                  dest,
                  object_threads=10,
