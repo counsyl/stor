@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v7.0.0
+------
+
+* Change default for ``leave_segments`` to be ``True`` to avoid head requests.
+
 v6.10.0
 -------
 
