@@ -242,6 +242,14 @@ class ConflictError(SwiftError):
     pass
 
 
+class InconsistentDownloadError(SwiftError):
+    """Thrown when an etag or content length does not match.
+
+    Currently, we experience this during periods when the cluster is under
+    heavy load, potentially because of unexpectedly quick terminations"""
+    pass
+
+
 class ConfigurationError(SwiftError):
     """Thrown when swift is not configured properly.
 
@@ -302,6 +310,52 @@ def _swift_retry(exceptions=None):
     return decorated
 
 
+def _swiftclient_error_to_descriptive_exception(exc):
+    """Converts swiftclient errors to more descriptive exceptions"""
+    # SwiftErrors catch Client exceptions and store them in the
+    # 'exception' attribute. Try to get the client exception
+    # here if there is one so that its http status can be
+    # examined to throw specific exceptions.
+    client_exception = getattr(exc, 'exception', exc)
+
+    http_status = getattr(client_exception, 'http_status', None)
+    if http_status == 403:
+        logger.error('unauthorized error in swift operation - %s', str(exc))
+        return UnauthorizedError(str(exc), exc)
+    elif http_status == 404:
+        return NotFoundError(str(exc), exc)
+    elif http_status == 409:
+        return ConflictError(str(exc), exc)
+    elif http_status == 503:
+        logger.error('unavailable error in swift operation - %s', str(exc))
+        return UnavailableError(str(exc), exc)
+    elif 'reset contents for reupload' in str(exc):
+        # When experiencing HA issues, we sometimes encounter a
+        # ClientException from swiftclient during upload. The exception
+        # is thrown here -
+        # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
+        # Treat this as a FailedUploadError
+        logger.error('upload error in swift put_object operation - %s', str(exc))
+        raise FailedUploadError(str(exc), exc)
+    elif 'Unauthorized.' in str(exc):
+        # Swiftclient catches keystone auth errors at
+        # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
+        # Parse the message since they don't bubble the exception or
+        # provide more information
+        logger.warning('auth error in swift operation - %s', str(exc))
+        raise AuthenticationError(str(exc), exc)
+    elif 'md5sum != etag' in str(exc) or 'read_length != content_length' in str(exc):
+        # We encounter this error when cluster is under heavy
+        # replication load (at least that's the theory). So retry and
+        # ensure we track consistency errors
+        logger.error('Hit consistency issue. Likely related to'
+                     ' cluster load: %s', str(exc))
+        return InconsistentDownloadError(str(exc), exc)
+    else:
+        logger.error('unexpected swift error - %s', str(exc))
+        return SwiftError(str(exc), exc)
+
+
 def _propagate_swift_exceptions(func):
     """Bubbles all swift exceptions as `SwiftError` classes
     """
@@ -311,42 +365,7 @@ def _propagate_swift_exceptions(func):
             return func(*args, **kwargs)
         except (swift_service.SwiftError,
                 swift_exceptions.ClientException) as e:
-            # SwiftErrors catch Client exceptions and store them in the
-            # 'exception' attribute. Try to get the client exception
-            # here if there is one so that its http status can be
-            # examined to throw specific exceptions.
-            client_exception = getattr(e, 'exception', e)
-
-            http_status = getattr(client_exception, 'http_status', None)
-            if http_status == 403:
-                logger.error('unauthorized error in swift operation - %s', str(e))
-                raise UnauthorizedError(str(e), e)
-            elif http_status == 404:
-                raise NotFoundError(str(e), e)
-            elif http_status == 409:
-                raise ConflictError(str(e), e)
-            elif http_status == 503:
-                logger.error('unavailable error in swift operation - %s', str(e))
-                raise UnavailableError(str(e), e)
-            elif 'reset contents for reupload' in str(e):
-                # When experiencing HA issues, we sometimes encounter a
-                # ClientException from swiftclient during upload. The exception
-                # is thrown here -
-                # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
-                # Treat this as a FailedUploadError
-                logger.error('upload error in swift put_object operation - %s', str(e))
-                raise FailedUploadError(str(e), e)
-            elif 'Unauthorized.' in str(e):
-                # Swiftclient catches keystone auth errors at
-                # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
-                # Parse the message since they don't bubble the exception or
-                # provide more information
-                logger.warning('auth error in swift operation - %s', str(e))
-                raise AuthenticationError(str(e), e)
-            else:
-                logger.error('unexpected swift error - %s', str(e))
-                raise SwiftError(str(e), e)
-
+            raise _swiftclient_error_to_descriptive_exception(e)
     return wrapper
 
 
@@ -859,7 +878,8 @@ class SwiftPath(Path):
 
         return results
 
-    @_swift_retry(exceptions=(NotFoundError, UnavailableError))
+    @_swift_retry(exceptions=(NotFoundError, UnavailableError,
+                              InconsistentDownloadError))
     def _read_object(self):
         """Reads an individual object.
 
@@ -1145,7 +1165,7 @@ class SwiftPath(Path):
         except NotFoundError:
             return False
 
-    @_swift_retry(exceptions=(UnavailableError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
     def _download_object(self, out_file):
         """Downloads a single object to an output file.
 
@@ -1168,7 +1188,7 @@ class SwiftPath(Path):
                                  objects=[self.resource],
                                  options={'out_file': out_file})
 
-    @_swift_retry(exceptions=(UnavailableError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
     def download_objects(self,
                          dest,
                          objects,
@@ -1278,7 +1298,8 @@ class SwiftPath(Path):
         # Return results mapped back to their input name
         return {obj: results[objs_to_download[obj]] for obj in objects}
 
-    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError,
+                              InconsistentDownloadError))
     def download(self,
                  dest,
                  object_threads=10,

@@ -1065,6 +1065,16 @@ class TestDownloadObject(SwiftTestCase):
         self.assertEquals(download_kwargs['objects'], ['d'])
         self.assertEquals(download_kwargs['options'], {'out_file': 'file.txt'})
 
+    @mock.patch('storage_utils.swift.num_retries', 0)
+    def test_raises_inconsistent_error(self):
+        self.mock_swift.download.side_effect = SwiftError(
+            'Error downloading /s_2_2110.bcl: '
+            'md5sum != etag, b7a3d2ab6051e9390124f4df6040d9f5 != 15e3051e5558749f434acaeef2d5526d'
+        )
+        with self.assertRaises(swift.InconsistentDownloadError):
+            swift_p = SwiftPath('swift://tenant/container/d')
+            swift_p._download_object('file.txt')
+
 
 class TestDownloadObjects(SwiftTestCase):
     def test_tenant(self):
@@ -1138,6 +1148,19 @@ class TestDownloadObjects(SwiftTestCase):
     def test_absolute_paths_not_child_of_download_path(self):
         swift_p = SwiftPath('swift://tenant/container/d')
         with self.assertRaisesRegexp(ValueError, 'child'):
+            swift_p.download_objects('output_dir', [
+                'swift://tenant/container/bad/e/f.txt',
+                'swift://tenant/container/bad/e/f/g.txt'
+            ])
+
+    @mock.patch('storage_utils.swift.num_retries', 0)
+    def test_raises_inconsistent_error(self):
+        self.mock_swift.download.side_effect = SwiftError(
+            'Error downloading /s_2_2110.bcl: '
+            'read_length != content_length, 20 != 10'
+        )
+        with self.assertRaises(swift.InconsistentDownloadError):
+            swift_p = SwiftPath('swift://tenant/container/bad')
             swift_p.download_objects('output_dir', [
                 'swift://tenant/container/bad/e/f.txt',
                 'swift://tenant/container/bad/e/f/g.txt'
