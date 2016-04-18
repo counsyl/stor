@@ -1391,7 +1391,7 @@ class SwiftPath(Path):
                object_threads=10,
                segment_threads=10,
                use_slo=True,
-               leave_segments=False,
+               leave_segments=True,
                changed=False,
                skip_identical=False,
                checksum=True,
