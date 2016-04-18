@@ -1456,6 +1456,16 @@ class TestUpload(SwiftTestCase):
                           ['./relative_path/file1'])
         self.assertEquals([o.object_name for o in upload_args[1]],
                           ['path/relative_path/file1'])
+        options = self.mock_swift.upload.call_args_list[0][1]['options']
+        self.assertEquals(options, {
+            'segment_size': swift.DEFAULT_SEGMENT_SIZE,
+            'leave_segments': True,
+            'skip_identical': False,
+            'changed': False,
+            'segment_container': '.segments_container',
+            'checksum': True,
+            'use_slo': True,
+        })
 
     @mock.patch('os.path', ntpath)
     def test_relative_windows_path(self, mock_walk_files_and_dirs):
