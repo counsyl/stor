@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v6.10.0
+-------
+
+* Add InconsistentDownloadError to track when swift downloader hits
+  inconsistent md5sum or content-length.
+
 v6.9.0
 ------
 
