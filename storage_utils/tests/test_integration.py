@@ -393,11 +393,8 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         container = self.test_container
         file_with_prefix = storage_utils.join(container, 'analysis.txt')
 
-        # ensure container is crated but empty
-        sentinel = storage_utils.join(container, 'sentinel')
-        with storage_utils.open(sentinel, 'w') as fp:
-            fp.write('blah')
-        storage_utils.remove(sentinel)
+        # ensure container is created but empty
+        container.post()
         self.assertTrue(storage_utils.isdir(container))
         self.assertFalse(storage_utils.isfile(container))
         self.assertTrue(storage_utils.exists(container))
