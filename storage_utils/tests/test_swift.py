@@ -1,4 +1,5 @@
 import cStringIO
+import imp
 import gzip
 import logging
 import ntpath
@@ -2270,12 +2271,13 @@ class TestInitialSettings(unittest.TestCase):
     @mock.patch.dict(os.environ, {'OS_PASSWORD': 'test_password'})
     @mock.patch.dict(os.environ, {'OS_NUM_RETRIES': '2'})
     @mock.patch.dict(os.environ, {'OS_AUTH_URL': 'http://test_auth_url.com'})
-    def test_env_vars_are_loaded(self):
-        reload(swift)
-        self.assertEquals(swift.username, 'test_username')
-        self.assertEquals(swift.password, 'test_password')
-        self.assertEquals(swift.num_retries, 2)
-        self.assertEquals(swift.auth_url, 'http://test_auth_url.com')
+    def test_env_vars_are_loaded_during_import(self):
+        reimported_swift = imp.load_module('reimported_swift',
+                                           *imp.find_module('swift', ['storage_utils']))
+        self.assertEquals(reimported_swift.username, 'test_username')
+        self.assertEquals(reimported_swift.password, 'test_password')
+        self.assertEquals(reimported_swift.num_retries, 2)
+        self.assertEquals(reimported_swift.auth_url, 'http://test_auth_url.com')
 
 
 class TestPost(SwiftTestCase):
