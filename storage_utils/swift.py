@@ -103,7 +103,7 @@ DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 initial_retry_sleep = 1
 """The time to sleep before the first retry"""
 
-num_retries = os.environ.get('OS_NUM_RETRIES', 0)
+num_retries = int(os.environ.get('OS_NUM_RETRIES', 0))
 """The number of times to retry
 
 Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0

@@ -2265,6 +2265,19 @@ class TestRmtree(SwiftTestCase):
         ])
 
 
+class TestInitialSettings(unittest.TestCase):
+    @mock.patch.dict(os.environ, {'OS_USERNAME': 'test_username'})
+    @mock.patch.dict(os.environ, {'OS_PASSWORD': 'test_password'})
+    @mock.patch.dict(os.environ, {'OS_NUM_RETRIES': '2'})
+    @mock.patch.dict(os.environ, {'OS_AUTH_URL': 'http://test_auth_url.com'})
+    def test_env_vars_are_loaded(self):
+        reload(swift)
+        self.assertEquals(swift.username, 'test_username')
+        self.assertEquals(swift.password, 'test_password')
+        self.assertEquals(swift.num_retries, 2)
+        self.assertEquals(swift.auth_url, 'http://test_auth_url.com')
+
+
 class TestPost(SwiftTestCase):
     def test_only_tenant(self):
         self.mock_swift.post.return_value = {}

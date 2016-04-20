@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v7.0.1
+------
+
+* Fixed error in loading ``num_retries`` setting from ``OS_NUM_RETRIES`` env var
+
 v7.0.0
 ------
 
