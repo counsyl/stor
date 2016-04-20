@@ -1,6 +1,7 @@
 import gzip
 import logging
 import os
+import time
 import unittest
 import uuid
 
@@ -333,8 +334,13 @@ class SwiftIntegrationTest(BaseIntegrationTest):
 
             self.test_container.rmtree()
 
+            # TODO figure out a better way to test that the container no longer exists.
             with self.assertRaises(swift.NotFoundError):
-                self.test_container.list()
+                # Replication may have not happened yet for container deletion. Keep
+                # listing in intervals until a NotFoundError is thrown
+                for i in (0, 1, 3):
+                    time.sleep(i)
+                    self.test_container.list()
 
     def test_copytree_to_from_container_w_manifest(self):
         num_test_objs = 10
