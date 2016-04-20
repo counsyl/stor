@@ -1,6 +1,7 @@
 import gzip
 import logging
 import os
+import time
 import unittest
 import uuid
 
@@ -333,8 +334,13 @@ class SwiftIntegrationTest(BaseIntegrationTest):
 
             self.test_container.rmtree()
 
+            # TODO figure out a better way to test that the container no longer exists.
             with self.assertRaises(swift.NotFoundError):
-                self.test_container.list()
+                # Replication may have not happened yet for container deletion. Keep
+                # listing in intervals until a NotFoundError is thrown
+                for i in (0, 1, 3):
+                    time.sleep(i)
+                    self.test_container.list()
 
     def test_copytree_to_from_container_w_manifest(self):
         num_test_objs = 10
@@ -387,11 +393,8 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         container = self.test_container
         file_with_prefix = storage_utils.join(container, 'analysis.txt')
 
-        # ensure container is crated but empty
-        sentinel = storage_utils.join(container, 'sentinel')
-        with storage_utils.open(sentinel, 'w') as fp:
-            fp.write('blah')
-        storage_utils.remove(sentinel)
+        # ensure container is created but empty
+        container.post()
         self.assertTrue(storage_utils.isdir(container))
         self.assertFalse(storage_utils.isfile(container))
         self.assertTrue(storage_utils.exists(container))
