@@ -1213,9 +1213,9 @@ class TestDownload(SwiftTestCase):
             swift_p.download('output_dir')
             progress_log.check(
                 ('storage_utils.swift.progress', 'INFO', 'starting download'),
-                ('storage_utils.swift.progress', 'INFO', 'objects downloaded\t10\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', 'objects downloaded\t20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', 'download complete - objects downloaded\t20\ttime elapsed\t0:00:00\tMB downloaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
     def test_download_resource(self):
@@ -1700,9 +1700,9 @@ class TestUpload(SwiftTestCase):
                            changed=True)
             progress_log.check(
                 ('storage_utils.swift.progress', 'INFO', 'starting upload of 20 objects'),
-                ('storage_utils.swift.progress', 'INFO', 'objects uploaded\t10/20\ttime elapsed\t0:00:00\tMB uploaded\t0.00\tMB/s\t0.00'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', 'objects uploaded\t20/20\ttime elapsed\t0:00:00\tMB uploaded\t0.00\tMB/s\t0.00'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', 'upload complete - objects uploaded\t20/20\ttime elapsed\t0:00:00\tMB uploaded\t0.00\tMB/s\t0.00'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('storage_utils.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):

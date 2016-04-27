@@ -571,7 +571,7 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         mb = self.uploaded_bytes / (1024 * 1024.0)
         mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
         return (
-            '%s/%s objects uploaded\t'
+            '%s/%s\t'
             '%s\t'
             '%0.2f MB\t'
             '%0.2f MB/s'
