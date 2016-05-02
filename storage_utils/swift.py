@@ -535,10 +535,10 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
         mb = self.downloaded_bytes / (1024 * 1024.0)
         mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
         return (
-            'objects downloaded\t%s'
-            '\ttime elapsed\t%s'
-            '\tMB downloaded\t%0.2f'
-            '\tMB/s\t%0.2f'
+            '%s\t'
+            '%s\t'
+            '%0.2f MB\t'
+            '%0.2f MB/s'
         ) % (self.num_results, formatted_elapsed_time, mb, mb_s)
 
 
@@ -571,10 +571,10 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         mb = self.uploaded_bytes / (1024 * 1024.0)
         mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
         return (
-            'objects uploaded\t%s/%s'
-            '\ttime elapsed\t%s'
-            '\tMB uploaded\t%0.2f'
-            '\tMB/s\t%0.2f'
+            '%s/%s\t'
+            '%s\t'
+            '%0.2f MB\t'
+            '%0.2f MB/s'
         ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
 
