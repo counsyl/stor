@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v7.0.2
+------
+
+* Updated progress logging format to be more concise.
+
 v7.0.1
 ------
 
