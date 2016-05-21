@@ -33,6 +33,7 @@ Windows, and Posix-based filesystems.  In particular, the following methods:
 * ``rmtree``: Removes a directory and all resources it contains.
 * ``copy``: Copies the path to a destination.
 * ``copytree``: Copies a directory to a destination.
+* ``walkfiles``: Recursively walks files and matches an optional pattern.
 
 .. NOTE::
    ``Path`` fully implements the above methods, but ``SwiftPath`` may only

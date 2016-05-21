@@ -155,14 +155,18 @@ class Path(text_type):
         return self.expandvars().expanduser().normpath()
 
     def fnmatch(self, pattern, normcase=None):
-        """ Return ``True`` if `self.name` matches the given `pattern`.
-        `pattern` - A filename pattern with wildcards,
-            for example ``'*.py'``. If the pattern contains a `normcase`
-            attribute, it is applied to the name and path prior to comparison.
-        `normcase` - (optional) A function used to normalize the pattern and
-            filename before matching. Defaults to :meth:`self.module`, which defaults
-            to :meth:`os.path.normcase`.
+        """Return ``True`` if `name` matches the given ``pattern``.
+
         .. seealso:: :func:`fnmatch.fnmatch`
+
+        Args:
+            pattern (str): A filename pattern with wildcards,
+                for example ``'*.py'``. If the pattern contains a `normcase`
+                attribute, it is applied to the name and path prior to comparison.
+            normcase (func, optional): A function used to normalize the pattern and
+                filename before matching. Defaults to :meth:`self.module`, which defaults
+                to :meth:`os.path.normcase`.
+
         """
         default_normcase = getattr(pattern, 'normcase', self.path_module.normcase)
         normcase = normcase or default_normcase
@@ -317,10 +321,14 @@ class Path(text_type):
     def walkfiles(self, pattern=None):
         """Iterate over files recursively.
 
-        The optional argument `pattern` limits the results to files
-        with names that match the pattern.  For example,
-        ``mydir.walkfiles('*.tmp')`` yields only files with the ``.tmp``
-        extension.
+        Args:
+            pattern (str, optional): Limits the results to files
+                with names that match the pattern.  For example,
+                ``mydir.walkfiles('*.tmp')`` yields only files with the ``.tmp``
+                extension.
+
+        Returns:
+            Iter[Path]: Files recursively under the path
         """
         raise NotImplementedError
 
