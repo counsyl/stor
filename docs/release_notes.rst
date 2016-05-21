@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v7.1.0
+
+* Addition of ``walkfiles`` top-level function
+
 v7.0.2
 ------
 

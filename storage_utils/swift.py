@@ -98,6 +98,9 @@ DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 # for upload/download
 DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 
+# Content types that are assigned to empty directories
+DIR_MARKER_TYPES = ('text/directory', 'application/directory')
+
 # These variables are used to configure retry logic for swift.
 # These variables can also be passed to the methods themselves
 initial_retry_sleep = 1
@@ -996,7 +999,8 @@ class SwiftPath(Path):
              use_manifest=False,
              # intentionally not documented
              list_as_dir=False,
-             ignore_segment_containers=True):
+             ignore_segment_containers=True,
+             ignore_dir_markers=False):
         """List contents using the resource of the path as a prefix.
 
         This method retries `num_retries` times if swift is unavailable
@@ -1063,10 +1067,14 @@ class SwiftPath(Path):
             results = self._swift_connection_call('get_account',
                                                   **list_kwargs)
 
+        result_objs = results[1]
+        if ignore_dir_markers:
+            result_objs = [r for r in result_objs if r.get('content_type') not in DIR_MARKER_TYPES]
+
         path_pre = SwiftPath('%s%s' % (self.swift_drive, tenant)) / (self.container or '')
         paths = list({
             path_pre / (r.get('name') or r['subdir'].rstrip('/'))
-            for r in results[1]
+            for r in result_objs
         })
 
         if ignore_segment_containers:
@@ -1855,3 +1863,18 @@ class SwiftPath(Path):
 
     def ismount(self):
         return True
+
+    @_swift_retry(exceptions=UnavailableError)
+    def walkfiles(self, pattern=None):
+        """Recursively iterates over files that match an optional pattern.
+
+        Args:
+            pattern (str, optional): Only return files that match this pattern
+
+        Returns:
+            Iter[SwiftPath]: All files that match the optional pattern. Swift directory
+                markers are not returned.
+        """
+        for f in self.list(num_retries=0, ignore_dir_markers=True):
+            if pattern is None or f.fnmatch(pattern):
+                yield f

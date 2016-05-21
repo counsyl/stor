@@ -273,6 +273,31 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             test_dir.glob('1*', condition=lambda results: len(results) == len(expected_glob)))
         self.assertEquals(globbed_objs, expected_glob)
 
+    def test_walkfiles(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            # Make a dataset with files that will match a particular pattern (*.sh)
+            # and also empty directories that should be ignored when calling walkfiles
+            open('a.sh', 'w').close()
+            open('f', 'w').close()
+            os.mkdir('b')
+            open('b/c.sh', 'w').close()
+            os.mkdir('empty')
+            open('b/d', 'w').close()
+            Path('.').copytree(self.test_container)
+
+        unfiltered_files = list(self.test_container.walkfiles())
+        self.assertEquals(set(unfiltered_files), set([
+            storage_utils.join(self.test_container, 'a.sh'),
+            storage_utils.join(self.test_container, 'f'),
+            storage_utils.join(self.test_container, 'b/c.sh'),
+            storage_utils.join(self.test_container, 'b/d'),
+        ]))
+        filtered_files = list(self.test_container.walkfiles('*.sh'))
+        self.assertEquals(set(filtered_files), set([
+            storage_utils.join(self.test_container, 'a.sh'),
+            storage_utils.join(self.test_container, 'b/c.sh'),
+        ]))
+
     def test_copytree_to_from_container(self):
         num_test_objs = 10
         test_obj_size = 100

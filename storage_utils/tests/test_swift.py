@@ -897,6 +897,58 @@ class TestList(SwiftTestCase):
             swift_p.list(use_manifest=True)
 
 
+class TestWalkFiles(SwiftTestCase):
+    def test_no_pattern_w_dir_markers(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'my/obj1',
+            'content_type': 'application/directory'
+        }, {
+            'name': 'my/obj2',
+            'content_type': 'text/directory'
+        }, {
+            'name': 'my/obj3',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/obj4',
+            'content_type': 'application/octet-stream'
+        }])
+
+        f = list(SwiftPath('swift://tenant/container').walkfiles())
+        self.assertEquals(set(f), set([
+            SwiftPath('swift://tenant/container/my/obj3'),
+            SwiftPath('swift://tenant/container/my/obj4')
+        ]))
+
+    def test_w_pattern_w_dir_markers(self):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.return_value = ({}, [{
+            'name': 'my/obj1',
+            'content_type': 'application/directory'
+        }, {
+            'name': 'my/obj2',
+            'content_type': 'text/directory'
+        }, {
+            'name': 'my/obj3',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/obj4.sh',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/other/obj5.sh',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/dirwithpattern.sh/obj6',
+            'content_type': 'application/octet-stream'
+        }])
+
+        f = list(SwiftPath('swift://tenant/container').walkfiles('*.sh'))
+        self.assertEquals(set(f), set([
+            SwiftPath('swift://tenant/container/my/obj4.sh'),
+            SwiftPath('swift://tenant/container/my/other/obj5.sh')
+        ]))
+
+
 @mock.patch.object(SwiftPath, 'list', autospec=True)
 class TestGlob(SwiftTestCase):
     def test_valid_pattern(self, mock_list):

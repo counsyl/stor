@@ -154,6 +154,22 @@ class Path(text_type):
         """
         return self.expandvars().expanduser().normpath()
 
+    def fnmatch(self, pattern, normcase=None):
+        """ Return ``True`` if `self.name` matches the given `pattern`.
+        `pattern` - A filename pattern with wildcards,
+            for example ``'*.py'``. If the pattern contains a `normcase`
+            attribute, it is applied to the name and path prior to comparison.
+        `normcase` - (optional) A function used to normalize the pattern and
+            filename before matching. Defaults to :meth:`self.module`, which defaults
+            to :meth:`os.path.normcase`.
+        .. seealso:: :func:`fnmatch.fnmatch`
+        """
+        default_normcase = getattr(pattern, 'normcase', self.path_module.normcase)
+        normcase = normcase or default_normcase
+        name = normcase(self.name)
+        pattern = normcase(pattern)
+        return fnmatch.fnmatchcase(name, pattern)
+
     @property
     def parent(self):
         return self.dirname()
@@ -296,6 +312,16 @@ class Path(text_type):
         """Delete entire directory (or all paths starting with prefix).
 
         See shutil.rmtree"""
+        raise NotImplementedError
+
+    def walkfiles(self, pattern=None):
+        """Iterate over files recursively.
+
+        The optional argument `pattern` limits the results to files
+        with names that match the pattern.  For example,
+        ``mydir.walkfiles('*.tmp')`` yields only files with the ``.tmp``
+        extension.
+        """
         raise NotImplementedError
 
 
@@ -545,19 +571,3 @@ class FileSystemPath(Path):
             elif isdir:
                 for f in child.walkfiles(pattern, errors):
                     yield f
-
-    def fnmatch(self, pattern, normcase=None):  # pragma: no cover
-        """ Return ``True`` if `self.name` matches the given `pattern`.
-        `pattern` - A filename pattern with wildcards,
-            for example ``'*.py'``. If the pattern contains a `normcase`
-            attribute, it is applied to the name and path prior to comparison.
-        `normcase` - (optional) A function used to normalize the pattern and
-            filename before matching. Defaults to :meth:`self.module`, which defaults
-            to :meth:`os.path.normcase`.
-        .. seealso:: :func:`fnmatch.fnmatch`
-        """
-        default_normcase = getattr(pattern, 'normcase', self.path_module.normcase)
-        normcase = normcase or default_normcase
-        name = normcase(self.name)
-        pattern = normcase(pattern)
-        return fnmatch.fnmatchcase(name, pattern)
