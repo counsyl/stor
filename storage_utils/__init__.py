@@ -63,6 +63,7 @@ ismount = _delegate_to_path('ismount')
 getsize = _delegate_to_path('getsize')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
+walkfiles = _delegate_to_path('walkfiles')
 
 
 def path(pth):
@@ -102,6 +103,7 @@ __all__ = [
     'copytree',
     'remove',
     'rmtree',
+    'walkfiles',
     'is_filesystem_path',
     'is_swift_path',
     'NamedTemporaryDirectory',

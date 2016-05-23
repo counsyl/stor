@@ -273,6 +273,44 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             test_dir.glob('1*', condition=lambda results: len(results) == len(expected_glob)))
         self.assertEquals(globbed_objs, expected_glob)
 
+    def test_walkfiles(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            # Make a dataset with files that will match a particular pattern (*.sh)
+            # and also empty directories that should be ignored when calling walkfiles
+            open('aabc.sh', 'w').close()
+            open('aabc', 'w').close()
+            os.mkdir('b')
+            open('b/c.sh', 'w').close()
+            os.mkdir('empty')
+            open('b/d', 'w').close()
+            open('b/abbbc', 'w').close()
+            Path('.').copytree(self.test_container)
+
+        unfiltered_files = list(self.test_container.walkfiles())
+        self.assertEquals(set(unfiltered_files), set([
+            storage_utils.join(self.test_container, 'aabc.sh'),
+            storage_utils.join(self.test_container, 'aabc'),
+            storage_utils.join(self.test_container, 'b/c.sh'),
+            storage_utils.join(self.test_container, 'b/d'),
+            storage_utils.join(self.test_container, 'b/abbbc'),
+        ]))
+        prefix_files = list(self.test_container.walkfiles('*.sh'))
+        self.assertEquals(set(prefix_files), set([
+            storage_utils.join(self.test_container, 'aabc.sh'),
+            storage_utils.join(self.test_container, 'b/c.sh'),
+        ]))
+        double_infix_files = list(self.test_container.walkfiles('a*b*c'))
+        self.assertEquals(set(double_infix_files), set([
+            storage_utils.join(self.test_container, 'aabc'),
+            storage_utils.join(self.test_container, 'b/abbbc'),
+        ]))
+        suffix_files = list(self.test_container.walkfiles('a*'))
+        self.assertEquals(set(suffix_files), set([
+            storage_utils.join(self.test_container, 'aabc.sh'),
+            storage_utils.join(self.test_container, 'aabc'),
+            storage_utils.join(self.test_container, 'b/abbbc'),
+        ]))
+
     def test_copytree_to_from_container(self):
         num_test_objs = 10
         test_obj_size = 100
