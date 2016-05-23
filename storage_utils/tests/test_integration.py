@@ -277,25 +277,38 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         with NamedTemporaryDirectory(change_dir=True):
             # Make a dataset with files that will match a particular pattern (*.sh)
             # and also empty directories that should be ignored when calling walkfiles
-            open('a.sh', 'w').close()
-            open('f', 'w').close()
+            open('aabc.sh', 'w').close()
+            open('aabc', 'w').close()
             os.mkdir('b')
             open('b/c.sh', 'w').close()
             os.mkdir('empty')
             open('b/d', 'w').close()
+            open('b/abbbc', 'w').close()
             Path('.').copytree(self.test_container)
 
         unfiltered_files = list(self.test_container.walkfiles())
         self.assertEquals(set(unfiltered_files), set([
-            storage_utils.join(self.test_container, 'a.sh'),
-            storage_utils.join(self.test_container, 'f'),
+            storage_utils.join(self.test_container, 'aabc.sh'),
+            storage_utils.join(self.test_container, 'aabc'),
             storage_utils.join(self.test_container, 'b/c.sh'),
             storage_utils.join(self.test_container, 'b/d'),
+            storage_utils.join(self.test_container, 'b/abbbc'),
         ]))
-        filtered_files = list(self.test_container.walkfiles('*.sh'))
-        self.assertEquals(set(filtered_files), set([
-            storage_utils.join(self.test_container, 'a.sh'),
+        prefix_files = list(self.test_container.walkfiles('*.sh'))
+        self.assertEquals(set(prefix_files), set([
+            storage_utils.join(self.test_container, 'aabc.sh'),
             storage_utils.join(self.test_container, 'b/c.sh'),
+        ]))
+        double_infix_files = list(self.test_container.walkfiles('a*b*c'))
+        self.assertEquals(set(double_infix_files), set([
+            storage_utils.join(self.test_container, 'aabc'),
+            storage_utils.join(self.test_container, 'b/abbbc'),
+        ]))
+        suffix_files = list(self.test_container.walkfiles('a*'))
+        self.assertEquals(set(suffix_files), set([
+            storage_utils.join(self.test_container, 'aabc.sh'),
+            storage_utils.join(self.test_container, 'aabc'),
+            storage_utils.join(self.test_container, 'b/abbbc'),
         ]))
 
     def test_copytree_to_from_container(self):
