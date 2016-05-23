@@ -1878,7 +1878,7 @@ class SwiftPath(Path):
 
     @_swift_retry(exceptions=UnavailableError)
     def walkfiles(self, pattern=None):
-        """Recursively iterates over files that match an optional pattern.
+        """Iterates over listed files that match an optional pattern.
 
         Args:
             pattern (str, optional): Only return files that match this pattern
