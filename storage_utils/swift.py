@@ -851,7 +851,15 @@ class SwiftPath(Path):
     @_retry_on_cached_auth_err
     @_propagate_swift_exceptions
     def _swift_connection_call(self, method_name, *args, **kwargs):
-        """Instantiates a ``Connection`` object and runs ``method_name``."""
+        """Instantiates a ``Connection`` object and runs ``method_name``.
+
+        Note that obtaining the connection and doing the call in one method
+        is intentional (instead of allowing the user to get a connection and
+        then call a method on it directly). This is because sometimes a cached
+        auth token can expire, causing a method to fail. If a method is retried,
+        we want it to always get the swift connection again so that it will also
+        re-auth in the case of an expired or invalid auth token.
+        """
         connection = self._get_swift_connection()
         method = getattr(connection, method_name)
         return method(*args, **kwargs)
@@ -859,7 +867,11 @@ class SwiftPath(Path):
     @_retry_on_cached_auth_err
     @_propagate_swift_exceptions
     def _swift_service_call(self, method_name, *args, **kwargs):
-        """Instantiates a ``SwiftService`` object and runs ``method_name``."""
+        """Instantiates a ``SwiftService`` object and runs ``method_name``.
+
+        Note that getting the swift service and doing the call in the same method
+        is done for the same reasons explained in ``_swift_connection_call``.
+        """
         method_options = copy.copy(kwargs)
         service_options = copy.deepcopy(method_options.pop('_service_options', {}))
         service_progress_logger = method_options.pop('_progress_logger', None)
