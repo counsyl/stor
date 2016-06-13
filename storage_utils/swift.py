@@ -47,6 +47,7 @@ from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils import utils
 from storage_utils.posix import PosixPath
+from storage_utils import settings
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -1322,12 +1323,9 @@ class SwiftPath(Path):
                               InconsistentDownloadError))
     def download(self,
                  dest,
-                 object_threads=10,
-                 container_threads=10,
-                 skip_identical=False,
-                 shuffle=True,
                  condition=None,
-                 use_manifest=False):
+                 use_manifest=False,
+                 alt_settings=None):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1383,17 +1381,18 @@ class SwiftPath(Path):
             manifest_cond = partial(_validate_manifest_download, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
-        service_options = {
-            'object_dd_threads': object_threads,
-            'container_threads': container_threads
-        }
-        download_options = {
-            'prefix': _with_trailing_slash(self.resource),
-            'out_directory': dest,
-            'remove_prefix': True,
-            'skip_identical': skip_identical,
-            'shuffle': shuffle
-        }
+        with settings.use(alt_settings) as options:
+            service_options = {
+                'object_dd_threads': options['swift']['download']['object_threads'],
+                'container_threads': options['swift']['download']['container_threads']
+            }
+            download_options = {
+                'prefix': _with_trailing_slash(self.resource),
+                'out_directory': dest,
+                'remove_prefix': True,
+                'skip_identical': options['swift']['download']['skip_identical'],
+                'shuffle': options['swift']['download']['shuffle']
+            }
         with SwiftDownloadLogger() as dl:
             results = self._swift_service_call('download',
                                                self.container,
@@ -1407,17 +1406,10 @@ class SwiftPath(Path):
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def upload(self,
                to_upload,
-               segment_size=DEFAULT_SEGMENT_SIZE,
-               object_threads=10,
-               segment_threads=10,
-               use_slo=True,
-               leave_segments=True,
-               changed=False,
-               skip_identical=False,
-               checksum=True,
                condition=None,
                use_manifest=False,
-               headers=None):
+               headers=None,
+               alt_settings=None):
         """Uploads a list of files and directories to swift.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1528,19 +1520,20 @@ class SwiftPath(Path):
             manifest_cond = partial(_validate_manifest_upload, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
-        service_options = {
-            'object_uu_threads': object_threads,
-            'segment_threads': segment_threads
-        }
-        upload_options = {
-            'segment_size': segment_size,
-            'use_slo': use_slo,
-            'segment_container': '.segments_%s' % self.container,
-            'leave_segments': leave_segments,
-            'changed': changed,
-            'skip_identical': skip_identical,
-            'checksum': checksum
-        }
+        with settings.use(alt_settings) as options:
+            service_options = {
+                'object_uu_threads': options['swift']['upload']['object_threads'],
+                'segment_threads': options['swift']['upload']['segment_threads']
+            }
+            upload_options = {
+                'segment_size': options['swift']['upload']['segment_size'],
+                'use_slo': options['swift']['upload']['use_slo'],
+                'segment_container': '.segments_%s' % self.container,
+                'leave_segments': options['swift']['upload']['leave_segments'],
+                'changed': options['swift']['upload']['changed'],
+                'skip_identical': options['swift']['upload']['skip_identical'],
+                'checksum': options['swift']['upload']['checksum']
+            }
         with SwiftUploadLogger(len(swift_upload_objects), all_files_to_upload) as ul:
             results = self._swift_service_call('upload',
                                                self.container,

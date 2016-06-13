@@ -5,6 +5,7 @@ import os
 import shlex
 import shutil
 from subprocess import check_call
+from storage_utils import settings
 from swiftclient.service import SwiftUploadObject
 import tempfile
 
@@ -104,8 +105,8 @@ def copy(source, dest, swift_retry_options=None):
                                 **swift_retry_options)
 
 
-def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
-             swift_download_options=None):
+def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
+             alt_settings=None, **retry_args):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
@@ -172,8 +173,6 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
 
     source = Path(source)
     dest = Path(dest)
-    swift_upload_options = swift_upload_options or {}
-    swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
     from storage_utils.windows import WindowsPath
@@ -183,7 +182,8 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
     if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
-            source.download(dest, **swift_download_options)
+            with settings.use(alt_settings):
+                source.download(dest, use_manifest=use_manifest, **retry_args)
         else:
             if copy_cmd:
                 copy_cmd = shlex.split(copy_cmd)
@@ -194,8 +194,9 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
             else:
                 shutil.copytree(source, dest)
     else:
-        with source:
-            dest.upload(['.'], **swift_upload_options)
+        with source, settings.use(alt_settings):
+            dest.upload(['.'], use_manifest=use_manifest, headers=headers,
+                        **retry_args)
 
 
 def walk_files_and_dirs(files_and_dirs):

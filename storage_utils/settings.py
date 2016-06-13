@@ -1,6 +1,8 @@
 import ast
+import copy
 from ConfigParser import SafeConfigParser
 from contextlib import contextmanager
+import os
 import storage_utils
 
 CONFIG_FILE = 'default.cfg'
@@ -8,14 +10,23 @@ DELIMITER = '.'
 BASE_NAME = 'stor'
 
 
-def initialize():
+def initialize(filename=None):
     """
     Initialize settings from configuration file.
 
-    TODO: Look in specific locations for user-specified files.
+    Defaults to reading from the default configuration file ``default.cfg``.
+
+    Args:
+        filename (str): File to read initial configuration settings from.
+
+    Returns:
+        dict: The configuration settings.
     """
     parser = SafeConfigParser()
-    parser.readfp(open(CONFIG_FILE))
+    if filename:
+        parser.readfp(open(filename))
+    else:
+        parser.readfp(open(os.path.join(os.path.dirname(__file__), CONFIG_FILE)))
 
     settings = {}
 
@@ -60,25 +71,20 @@ def get():
     Returns a deep copy of global settings as a dictionary.
 
     This function should always be used rather than accessing
-    global_settings directly.
-
-    TODO: Allow specification of just a specific subset?
-    (eg. get('swift')  or get('swift.upload') or get('swift', 'upload'))
+    ``global_settings`` directly.
     """
-    return storage_utils.global_settings
+    return copy.deepcopy(storage_utils.global_settings)
 
 
 def update(settings=None):
     """
-    Updates global settings permanently.
+    Updates global settings permanently (in place).
 
-    Input should be a dictionary with keys and values corresponding to different
-    options.
+    Arguments:
+        settings (dict): A nested dictionary of settings options.
 
-    TODO:
-    - Support inputting updated options as keyword arguments or in a more
-      friendly format?
-    - Do some sort of error checking when updating settings.
+    Returns:
+        None
     """
     if settings:
         _update(storage_utils.global_settings, settings)

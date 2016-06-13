@@ -11,5 +11,6 @@ Table of Contents
    posix
    windows
    testing
+   settings
    contributing
    release_notes

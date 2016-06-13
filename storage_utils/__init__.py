@@ -27,6 +27,10 @@ from storage_utils.utils import is_filesystem_path
 from storage_utils.utils import is_swift_path
 from storage_utils.utils import NamedTemporaryDirectory
 from storage_utils.base import Path
+from storage_utils import settings
+
+
+global_settings = settings.initialize()
 
 
 def _delegate_to_path(name):
