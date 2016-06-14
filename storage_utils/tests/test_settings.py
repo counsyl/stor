@@ -1,6 +1,6 @@
+import copy
 import mock
 import os
-import storage_utils
 from storage_utils import settings
 import unittest
 
@@ -26,7 +26,7 @@ test_settings = {
 }
 
 
-@mock.patch('storage_utils.global_settings', test_settings)
+@mock.patch.dict('storage_utils.settings._global_settings', test_settings, clear=True)
 class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
@@ -49,7 +49,8 @@ class TestSettings(unittest.TestCase):
                 }
             }
         }
-        self.assertEquals(settings.initialize(), expected_settings)
+        settings.initialize()
+        self.assertEquals(settings._global_settings, expected_settings)
 
     def test_initialize_file(self):
         expected_settings = {
@@ -79,11 +80,14 @@ class TestSettings(unittest.TestCase):
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
-        self.assertEquals(settings.initialize(filename), expected_settings)
+        settings.initialize(filename)
+        self.assertEquals(settings._global_settings, expected_settings)
 
     def test_get(self):
         self.assertEquals(settings.get(), test_settings)
 
+    @mock.patch.dict('storage_utils.settings._global_settings',
+                     copy.deepcopy(test_settings), clear=True)
     def test_update_w_settings(self):
         update_settings = {
             'swift': {
@@ -117,11 +121,11 @@ class TestSettings(unittest.TestCase):
             }
         }
         settings.update(settings=update_settings)
-        self.assertEquals(storage_utils.global_settings, expected_settings)
+        self.assertEquals(settings._global_settings, expected_settings)
 
     def test_update_wo_settings(self):
         settings.update()
-        self.assertEquals(storage_utils.global_settings, test_settings)
+        self.assertEquals(settings._global_settings, test_settings)
 
     def test_use_w_settings(self):
         update_settings = {
@@ -156,15 +160,43 @@ class TestSettings(unittest.TestCase):
             }
         }
 
-        self.assertEquals(storage_utils.global_settings, test_settings)
-        with settings.use(update_settings) as my_settings:
-            self.assertEquals(storage_utils.global_settings, test_settings)
-            self.assertEquals(my_settings, test_settings)
-        self.assertEquals(storage_utils.global_settings, expected_settings)
+        self.assertEquals(settings._global_settings, test_settings)
+        with settings.Use(update_settings) as my_settings:
+            self.assertEquals(settings._global_settings, test_settings)
+            self.assertEquals(my_settings, expected_settings)
+            self.assertEquals(settings.get(), expected_settings)
+        self.assertEquals(settings._global_settings, test_settings)
+        self.assertEquals(settings.get(), test_settings)
 
     def test_use_wo_settings(self):
-        self.assertEquals(storage_utils.global_settings, test_settings)
-        with settings.use() as my_settings:
-            self.assertEquals(storage_utils.global_settings, test_settings)
+        self.assertEquals(settings._global_settings, test_settings)
+        with settings.Use() as my_settings:
+            self.assertEquals(settings._global_settings, test_settings)
             self.assertEquals(my_settings, test_settings)
-        self.assertEquals(storage_utils.global_settings, test_settings)
+        self.assertEquals(settings._global_settings, test_settings)
+
+    @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
+    def test_use_nested_w_update(self):
+        expected1 = {'foo': 0}
+        expected2 = {'foo': 1}
+        expected3 = {'foo': 2}
+        expected4 = {'foo': 3}
+
+        settings.update({'foo': 0})
+        self.assertEquals(settings.get(), expected1)
+        with settings.Use({'foo': 1}) as my_settings:
+            self.assertEquals(settings.get(), expected2)
+            self.assertEquals(my_settings, expected2)
+            with settings.Use({'foo': 2}) as more_settings:
+                self.assertEquals(settings.get(), expected3)
+                self.assertEquals(more_settings, expected3)
+            self.assertEquals(settings.get(), expected2)
+        self.assertEquals(settings.get(), expected1)
+        settings.update({'foo': 3})
+        self.assertEquals(settings.get(), expected4)
+
+    @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
+    def test_use_update_w_error(self):
+        with settings.Use({'foo': 1}):
+            with self.assertRaises(RuntimeError):
+                settings.update({'foo': 3})

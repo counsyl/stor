@@ -1,18 +1,20 @@
 import ast
 import copy
 from ConfigParser import SafeConfigParser
-from contextlib import contextmanager
 import os
-import storage_utils
+import threading
 
 CONFIG_FILE = 'default.cfg'
 DELIMITER = '.'
 BASE_NAME = 'stor'
 
+_global_settings = {}
+thread_local = threading.local()
+
 
 def initialize(filename=None):
     """
-    Initialize settings from configuration file.
+    Initialize global settings from configuration file.
 
     Defaults to reading from the default configuration file ``default.cfg``.
 
@@ -20,8 +22,11 @@ def initialize(filename=None):
         filename (str): File to read initial configuration settings from.
 
     Returns:
-        dict: The configuration settings.
+        None
     """
+    global _global_settings
+    _global_settings.clear()
+
     parser = SafeConfigParser()
     if filename:
         parser.readfp(open(filename))
@@ -33,7 +38,7 @@ def initialize(filename=None):
     for section in parser.sections():
         _build(settings, section, parser.items(section))
 
-    return settings
+    _global_settings.update(settings)
 
 
 def _build(settings, section, items):
@@ -41,6 +46,7 @@ def _build(settings, section, items):
     new_dict = dict(items)
 
     for key, val in new_dict.iteritems():
+        # Parse ConfigParser's string values into Python values
         try:
             new_dict[key] = ast.literal_eval(val)
         except (SyntaxError, ValueError):
@@ -73,7 +79,10 @@ def get():
     This function should always be used rather than accessing
     ``global_settings`` directly.
     """
-    return copy.deepcopy(storage_utils.global_settings)
+    try:
+        return copy.deepcopy(thread_local.settings)
+    except AttributeError:
+        return copy.deepcopy(_global_settings)
 
 
 def update(settings=None):
@@ -86,31 +95,30 @@ def update(settings=None):
     Returns:
         None
     """
+    if hasattr(thread_local, 'settings'):
+        raise RuntimeError('update() cannot be called from within a settings context manager')
     if settings:
-        _update(storage_utils.global_settings, settings)
+        _update(_global_settings, settings)
 
 
-@contextmanager
-def use(settings=None):
+class Use(object):
     """
     Context manager for temporarily modifying settings.
-
-    Arguments:
-        settings (dict): A nested dictionary of settings options. If specified, the global
-            settings will be updated with the specified settings. Otherwise,
-            the global settings will be used.
-
-    Yields:
-        dict: A copy of the new settings
-
-    Examples:
-        >>> from storage_utils import settings
-        >>> with settings.use({'swift': {'upload': {'object_threads': 5}}) as my_settings:
-        >>>     # Do operations that use settings (eg. swift.upload() or swift.download())
-        >>>     # Can also access settings values at my_settings,
-        >>>     # eg. my_settings['swift']['upload']['object_threads']
     """
-    copy_settings = get()
-    update(settings=settings)
-    yield get()
-    update(settings=copy_settings)
+    def __init__(self, settings={}):
+        if hasattr(thread_local, 'settings'):
+            self.old_settings = get()
+        else:
+            self.old_settings = None
+        self.temp_settings = get()
+        _update(self.temp_settings, settings)
+        thread_local.settings = self.temp_settings
+
+    def __enter__(self):
+        return copy.deepcopy(self.temp_settings)
+
+    def __exit__(self, type, value, traceback):
+        if self.old_settings:
+            thread_local.settings = self.old_settings
+        else:
+            del thread_local.settings
