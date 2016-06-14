@@ -36,7 +36,7 @@ Examples:
 Default Settings
 ----------------
 
-.. literalinclude:: ../default.cfg
+.. literalinclude:: ../storage_utils/default.cfg
 
 Settings API
 ------------

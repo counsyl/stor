@@ -106,7 +106,7 @@ def copy(source, dest, swift_retry_options=None):
 
 
 def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
-             alt_settings=None, **retry_args):
+             condition=None, alt_settings=None, **retry_args):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
@@ -160,10 +160,9 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
             its a posix directory
         copy_cmd (str): If copying to / from posix or windows, this command is
             used instead of shutil.copytree
-        swift_upload_options (dict): When the destination is a swift path,
-            pass these options as keyword arguments to `SwiftPath.upload`.
-        swift_download_options (dict): When the source is a swift path,
-            pass these options as keyword arguments to `SwiftPath.download`.
+        use_manifest (bool, default False): See `SwiftPath.upload` and
+            `SwiftPath.download`.
+        headers (List[str]): See `SwiftPath.upload`.
 
     Raises:
         ValueError: if two swift paths specified
@@ -183,7 +182,8 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
             with settings.use(alt_settings):
-                source.download(dest, use_manifest=use_manifest, **retry_args)
+                source.download(dest, use_manifest=use_manifest,
+                                condition=condition, **retry_args)
         else:
             if copy_cmd:
                 copy_cmd = shlex.split(copy_cmd)
@@ -196,7 +196,7 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
     else:
         with source, settings.use(alt_settings):
             dest.upload(['.'], use_manifest=use_manifest, headers=headers,
-                        **retry_args)
+                        condition=condition, **retry_args)
 
 
 def walk_files_and_dirs(files_and_dirs):

@@ -1340,17 +1340,6 @@ class SwiftPath(Path):
         Args:
             dest (str): The destination directory to download results to.
                 The directory will be created if it doesn't exist.
-            object_threads (int): The amount of threads to use for downloading
-                objects.
-            container_threads (int): The amount of threads to use for
-                downloading containers.
-            skip_identical (bool, default False): Skip downloading files that are identical
-                on both sides. Note this incurs reading the contents of all pre-existing local
-                files.
-            shuffle (bool, default True): When downloading a complete container,
-                download order is randomised in order to reduce the load on individual drives
-                when doing threaded downloads. Disable this option to submit download jobs to
-                the thread pool in the order they are listed in the object store.
             condition (function(results) -> bool): The method will only return
                 when the results of download matches the condition. In the event of the
                 condition never matching after retries, partially downloaded
@@ -1435,27 +1424,6 @@ class SwiftPath(Path):
         Args:
             to_upload (list): A list of file names, directory names, or
                 `SwiftUploadObject` objects to upload.
-            object_threads (int, default 10): The number of threads to use when uploading
-                full objects.
-            segment_threads (int, default 10): The number of threads to use when uploading
-                object segments.
-            segment_size (int|str, default 1GB): Upload files in segments no larger than
-                <segment_size> (in bytes) and then create a "manifest" file
-                that will download all the segments as if it were the original
-                file. Sizes may also be expressed as bytes with the B suffix,
-                kilobytes with the K suffix, megabytes with the M suffix or
-                gigabytes with the G suffix.'
-            use_slo (bool, default True): When used in conjunction with segment_size, it
-                will create a Static Large Object instead of the default
-                Dynamic Large Object.
-            leave_segments (bool, default False): Indicates that you want the older segments
-                of manifest objects left alone (in the case of overwrites).
-            changed (bool, default False): Upload only files that have changed since last
-                upload.
-            skip_identical (bool, default False): Skip uploading files that are identical
-                on both sides. Note this incurs reading the contents of all pre-existing local
-                files.
-            checksum (bool, default True): Peform checksum validation of upload.
             condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition. In the event of the
                 condition never matching after retries, partially uploaded
