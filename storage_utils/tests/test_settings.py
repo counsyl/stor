@@ -33,6 +33,9 @@ class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
             'swift': {
+                'delete': {
+                    'object_threads': 10
+                },
                 'download': {
                     'container_threads': 10,
                     'object_threads': 10,

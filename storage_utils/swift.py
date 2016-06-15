@@ -1520,7 +1520,7 @@ class SwiftPath(Path):
                                         [self.resource])
 
     @_swift_retry(exceptions=(UnavailableError, ConflictError, ConditionNotMetError))
-    def rmtree(self, object_threads=10):
+    def rmtree(self):
         """Removes a resource and all of its contents.
 
         This method retries `num_retries` times if swift is unavailable.
@@ -1536,10 +1536,6 @@ class SwiftPath(Path):
         Note:
             Calling rmtree on a directory marker will delete everything under the
             directory marker but not the marker itself.
-
-        Args:
-            object_threads (int, default 10): The number of threads to use when deleting
-                objects
 
         Raises:
             SwiftError: A swift client error occurred.
@@ -1561,8 +1557,10 @@ class SwiftPath(Path):
                            'when their associated objects or containers are '
                            'deleted.', self.container)
 
+        options = settings.get()
+
         service_options = {
-            'object_dd_threads': object_threads
+            'object_dd_threads': options['swift']['delete']['object_threads']
         }
 
         def _ignore_not_found(service_call):

@@ -2316,7 +2316,8 @@ class TestRmtree(SwiftTestCase):
     def test_w_only_container_and_threads(self):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.rmtree(object_threads=20)
+        with settings.Use({'swift': {'delete': {'object_threads': 20}}}):
+            swift_p.rmtree()
 
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container'),
@@ -2351,7 +2352,8 @@ class TestRmtree(SwiftTestCase):
     def test_thread_options_passed_through(self):
         self.disable_get_swift_service_mock()
         swift_p = SwiftPath('swift://tenant/container')
-        swift_p.rmtree(object_threads=20)
+        with settings.Use({'swift': {'delete': {'object_threads': 20}}}):
+            swift_p.rmtree()
 
         options_passed = self.mock_swift_service.call_args[0][0]
         self.assertEquals(options_passed['object_dd_threads'], 20)

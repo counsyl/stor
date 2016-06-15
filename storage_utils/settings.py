@@ -5,7 +5,7 @@ import os
 import threading
 
 CONFIG_FILE = 'default.cfg'
-DELIMITER = '.'
+DELIMITER = ':'
 BASE_NAME = 'stor'
 
 _global_settings = {}
