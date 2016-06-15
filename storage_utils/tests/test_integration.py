@@ -12,6 +12,7 @@ from six.moves import builtins
 import storage_utils
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
+from storage_utils import settings
 from storage_utils import swift
 from storage_utils.tests.shared import assert_same_data
 
@@ -142,9 +143,9 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             self.create_dataset(tmp_d, 1, obj_size)
             obj_path = storage_utils.join(tmp_d,
                                           self.get_dataset_obj_names(1)[0])
-            obj_path.copy(self.test_container / 'large_object.txt', swift_retry_options={
-                'segment_size': segment_size
-            })
+            options = {'swift:upload': {'segment_size': segment_size}}
+            with settings.use(options):
+                obj_path.copy(self.test_container / 'large_object.txt')
 
             # Verify there is a segment container and that it can be ignored when listing a dir
             segment_container = Path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
@@ -176,9 +177,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             Path('.').copytree(test_swift_dir)
 
         with NamedTemporaryDirectory(change_dir=True):
-            test_swift_dir.copytree('test', swift_download_options={
-                'condition': lambda results: len(results) == 4
-            })
+            test_swift_dir.copytree('test', condition=lambda results: len(results) == 4)
             self.assertTrue(Path('test/.hidden_file').isfile())
             self.assertTrue(Path('test/symlink').isfile())
             self.assertTrue(Path('test/.hidden_dir').isdir())
@@ -321,9 +320,9 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 storage_utils.join(self.test_container, 'test'))
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            Path(self.test_container / 'test').copytree('test', swift_download_options={
-                'condition': lambda results: len(results) == num_test_objs
-            })
+            Path(self.test_container / 'test').copytree(
+                'test',
+                condition=lambda results: len(results) == num_test_objs)
 
             # Verify contents of all downloaded test objects
             for which_obj in self.get_dataset_obj_names(num_test_objs):
@@ -336,9 +335,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             storage_utils.copytree(
                 '.',
                 self.test_container,
-                swift_upload_options={
-                    'headers': ['X-Delete-After:1000']
-                })
+                headers=['X-Delete-After:1000'])
 
         obj = storage_utils.join(self.test_container, 'test_obj')
         stat_results = obj.stat()
@@ -357,9 +354,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             storage_utils.copytree(
                 '.',
                 self.test_container,
-                swift_upload_options={
-                    'use_manifest': True
-                })
+                use_manifest=True)
 
             swift_dir = self.test_container / 'my_dir'
             self.assertEquals(len(swift_dir.list()), 2)
@@ -395,9 +390,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             storage_utils.copytree(
                 '.',
                 swift_dir,
-                swift_upload_options={
-                    'use_manifest': True
-                })
+                use_manifest=True)
 
             # Validate the contents of the manifest file
             manifest_contents = swift._get_data_manifest_contents(swift_dir)
@@ -411,9 +404,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             # Download the results successfully
             Path(self.test_container / 'test').copytree(
                 'test',
-                swift_download_options={
-                    'use_manifest': True
-                })
+                use_manifest=True)
 
             # Now delete one of the objects from swift. A second download
             # will fail with a condition error
@@ -421,10 +412,8 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             with self.assertRaises(swift.ConditionNotMetError):
                 Path(self.test_container / 'test').copytree(
                     'test',
-                    swift_download_options={
-                        'use_manifest': True,
-                        'num_retries': 0
-                    })
+                    use_manifest=True,
+                    num_retries=0)
 
     def test_is_methods(self):
         container = self.test_container

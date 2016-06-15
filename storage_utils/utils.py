@@ -104,8 +104,8 @@ def copy(source, dest, swift_retry_options=None):
                                 **swift_retry_options)
 
 
-def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
-             swift_download_options=None):
+def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
+             condition=None, **retry_args):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
@@ -159,10 +159,9 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
             its a posix directory
         copy_cmd (str): If copying to / from posix or windows, this command is
             used instead of shutil.copytree
-        swift_upload_options (dict): When the destination is a swift path,
-            pass these options as keyword arguments to `SwiftPath.upload`.
-        swift_download_options (dict): When the source is a swift path,
-            pass these options as keyword arguments to `SwiftPath.download`.
+        use_manifest (bool, default False): See `SwiftPath.upload` and
+            `SwiftPath.download`.
+        headers (List[str]): See `SwiftPath.upload`.
 
     Raises:
         ValueError: if two swift paths specified
@@ -172,8 +171,6 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
 
     source = Path(source)
     dest = Path(dest)
-    swift_upload_options = swift_upload_options or {}
-    swift_download_options = swift_download_options or {}
     if is_swift_path(source) and is_swift_path(dest):
         raise ValueError('cannot copy one swift path to another swift path')
     from storage_utils.windows import WindowsPath
@@ -183,7 +180,8 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
     if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
         if is_swift_path(source):
-            source.download(dest, **swift_download_options)
+            source.download(dest, use_manifest=use_manifest,
+                            condition=condition, **retry_args)
         else:
             if copy_cmd:
                 copy_cmd = shlex.split(copy_cmd)
@@ -195,7 +193,8 @@ def copytree(source, dest, copy_cmd=None, swift_upload_options=None,
                 shutil.copytree(source, dest)
     else:
         with source:
-            dest.upload(['.'], **swift_upload_options)
+            dest.upload(['.'], use_manifest=use_manifest, headers=headers,
+                        condition=condition, **retry_args)
 
 
 def walk_files_and_dirs(files_and_dirs):

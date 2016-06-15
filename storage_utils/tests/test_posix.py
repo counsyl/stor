@@ -5,6 +5,7 @@ from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import Path
 from storage_utils import posix
+from storage_utils import settings
 from storage_utils import swift
 from storage_utils import utils
 from storage_utils import windows
@@ -164,15 +165,21 @@ class TestCopytree(unittest.TestCase):
     def test_swift_destination(self, mock_upload):
         source = '.'
         dest = storage_utils.path('swift://tenant/container')
-        utils.copytree(source, dest, swift_upload_options={
-            'object_threads': 30,
-            'segment_threads': 40
-        })
+        options = {
+            'swift:upload': {
+                'object_threads': 30,
+                'segment_threads': 40
+            }
+        }
+
+        with settings.use(options):
+            utils.copytree(source, dest)
         mock_upload.assert_called_once_with(
             dest,
             ['.'],
-            object_threads=30,
-            segment_threads=40)
+            condition=None,
+            use_manifest=False,
+            headers=None)
 
 
 class TestOpen(unittest.TestCase):
