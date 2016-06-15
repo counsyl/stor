@@ -10,9 +10,17 @@ _global_settings = {}
 thread_local = threading.local()
 
 
-def initialize(filename=None):
+def _parse_config_val(value):
+    try:
+        return ast.literal_eval(value)
+    except (SyntaxError, ValueError):
+        return value
+
+
+def _initialize(filename=None):
     """
-    Initialize global settings from configuration file.
+    Initialize global settings from configuration file. The configuration file
+    **must** define all required settings, otherwise `storage_utils` will not work.
     Every time this function is called it overwrites existing ``_global_settings``.
     When trying to update or change ``_global_settings``, `update` or `use` should
     be called instead.
@@ -34,17 +42,13 @@ def initialize(filename=None):
     with open(filename) as fp:
         parser.readfp(fp)
 
-    settings = {}
-
-    for section in parser.sections():
-        if parser.items(section):
-            settings[section] = {}
-            for item in parser.items(section):
-                # Parse Python value from string
-                try:
-                    settings[section][item[0]] = ast.literal_eval(item[1])
-                except (SyntaxError, ValueError):
-                    settings[section][item[0]] = item[1]
+    settings = {
+        section: {
+            item[0]: _parse_config_val(item[1])
+            for item in parser.items(section)
+        }
+        for section in parser.sections()
+    }
 
     _global_settings.update(settings)
 

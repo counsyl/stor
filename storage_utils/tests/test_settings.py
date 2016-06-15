@@ -26,10 +26,13 @@ test_settings = {
 }
 
 
-@mock.patch.dict('storage_utils.settings._global_settings', test_settings, clear=True)
+@mock.patch.dict('storage_utils.settings._global_settings', copy.deepcopy(test_settings),
+                 clear=True)
 class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
+            'stor': {},
+            'swift': {},
             'swift:delete': {
                 'object_threads': 10
             },
@@ -53,7 +56,7 @@ class TestSettings(unittest.TestCase):
                 'use_slo': True
             }
         }
-        settings.initialize()
+        settings._initialize()
         self.assertEquals(settings._global_settings, expected_settings)
 
     def test_initialize_file(self):
@@ -86,7 +89,7 @@ class TestSettings(unittest.TestCase):
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
-        settings.initialize(filename)
+        settings._initialize(filename)
         self.assertEquals(settings._global_settings, expected_settings)
 
     def test_get(self):
