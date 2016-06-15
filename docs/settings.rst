@@ -5,7 +5,7 @@ Provides global settings and options for methods such as `SwiftPath.upload`
 and `SwiftPath.download`.
 
 Settings are stored internally as nested dictionaries. When using `update` or
-`use`, this dictionary structure should be followed.
+`Use`, this dictionary structure should be followed.
 
 Examples:
 

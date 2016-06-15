@@ -1324,8 +1324,7 @@ class SwiftPath(Path):
     def download(self,
                  dest,
                  condition=None,
-                 use_manifest=False,
-                 alt_settings=None):
+                 use_manifest=False):
         """Downloads a directory to a destination.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1370,18 +1369,18 @@ class SwiftPath(Path):
             manifest_cond = partial(_validate_manifest_download, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
-        with settings.use(alt_settings) as options:
-            service_options = {
-                'object_dd_threads': options['swift']['download']['object_threads'],
-                'container_threads': options['swift']['download']['container_threads']
-            }
-            download_options = {
-                'prefix': _with_trailing_slash(self.resource),
-                'out_directory': dest,
-                'remove_prefix': True,
-                'skip_identical': options['swift']['download']['skip_identical'],
-                'shuffle': options['swift']['download']['shuffle']
-            }
+        options = settings.get()
+        service_options = {
+            'object_dd_threads': options['swift']['download']['object_threads'],
+            'container_threads': options['swift']['download']['container_threads']
+        }
+        download_options = {
+            'prefix': _with_trailing_slash(self.resource),
+            'out_directory': dest,
+            'remove_prefix': True,
+            'skip_identical': options['swift']['download']['skip_identical'],
+            'shuffle': options['swift']['download']['shuffle']
+        }
         with SwiftDownloadLogger() as dl:
             results = self._swift_service_call('download',
                                                self.container,
@@ -1397,8 +1396,7 @@ class SwiftPath(Path):
                to_upload,
                condition=None,
                use_manifest=False,
-               headers=None,
-               alt_settings=None):
+               headers=None):
         """Uploads a list of files and directories to swift.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -1488,20 +1486,20 @@ class SwiftPath(Path):
             manifest_cond = partial(_validate_manifest_upload, object_names)
             condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
 
-        with settings.use(alt_settings) as options:
-            service_options = {
-                'object_uu_threads': options['swift']['upload']['object_threads'],
-                'segment_threads': options['swift']['upload']['segment_threads']
-            }
-            upload_options = {
-                'segment_size': options['swift']['upload']['segment_size'],
-                'use_slo': options['swift']['upload']['use_slo'],
-                'segment_container': '.segments_%s' % self.container,
-                'leave_segments': options['swift']['upload']['leave_segments'],
-                'changed': options['swift']['upload']['changed'],
-                'skip_identical': options['swift']['upload']['skip_identical'],
-                'checksum': options['swift']['upload']['checksum']
-            }
+        options = settings.get()
+        service_options = {
+            'object_uu_threads': options['swift']['upload']['object_threads'],
+            'segment_threads': options['swift']['upload']['segment_threads']
+        }
+        upload_options = {
+            'segment_size': options['swift']['upload']['segment_size'],
+            'use_slo': options['swift']['upload']['use_slo'],
+            'segment_container': '.segments_%s' % self.container,
+            'leave_segments': options['swift']['upload']['leave_segments'],
+            'changed': options['swift']['upload']['changed'],
+            'skip_identical': options['swift']['upload']['skip_identical'],
+            'checksum': options['swift']['upload']['checksum']
+        }
         with SwiftUploadLogger(len(swift_upload_objects), all_files_to_upload) as ul:
             results = self._swift_service_call('upload',
                                                self.container,

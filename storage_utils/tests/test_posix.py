@@ -174,31 +174,12 @@ class TestCopytree(unittest.TestCase):
             }
         }
 
-        with settings.use(options):
+        with settings.Use(options):
             utils.copytree(source, dest)
         mock_upload.assert_called_once_with(
             dest,
             ['.'],
-            use_manifest=False,
-            headers=None)
-
-    @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
-    def test_swift_destination_w_alt_settings(self, mock_upload):
-        source = '.'
-        dest = storage_utils.path('swift://tenant/container')
-        options = {
-            'swift': {
-                'upload': {
-                    'object_threads': 30,
-                    'segment_threads': 40
-                }
-            }
-        }
-
-        utils.copytree(source, dest, alt_settings=options)
-        mock_upload.assert_called_once_with(
-            dest,
-            ['.'],
+            condition=None,
             use_manifest=False,
             headers=None)
 

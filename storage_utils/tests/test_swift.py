@@ -1247,7 +1247,7 @@ class TestDownload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container')
-        with settings.use(download_settings):
+        with settings.Use(download_settings):
             swift_p.download('output_dir')
         self.mock_swift.download.assert_called_once_with(
             'container',
@@ -1353,7 +1353,7 @@ class TestDownload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with settings.use(download_settings):
+        with settings.Use(download_settings):
             swift_p.download('output_dir')
 
         options_passed = self.mock_swift_service.call_args[0][0]
@@ -1452,24 +1452,6 @@ class TestDownload(SwiftTestCase):
                           [mock.call(mock.ANY, use_manifest=True),
                            mock.call(mock.ANY, use_manifest=True),
                            mock.call(mock.ANY, use_manifest=True)])
-
-    def test_download_w_alt_settings(self):
-        self.disable_get_swift_service_mock()
-        download_settings = {
-            'swift': {
-                'download': {
-                    'object_threads': 20,
-                    'container_threads': 30
-                }
-            }
-        }
-
-        swift_p = SwiftPath('swift://tenant/container/path')
-        swift_p.download('output_dir', alt_settings=download_settings)
-
-        options_passed = self.mock_swift_service.call_args[0][0]
-        self.assertEquals(options_passed['object_dd_threads'], 20)
-        self.assertEquals(options_passed['container_threads'], 30)
 
 
 class TestFileNameToObjectName(SwiftTestCase):
@@ -1614,7 +1596,7 @@ class TestUpload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with settings.use(upload_settings):
+        with settings.Use(upload_settings):
             swift_p.upload(['upload'])
         upload_args = self.mock_swift.upload.call_args_list[0][0]
         upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
@@ -1680,7 +1662,7 @@ class TestUpload(SwiftTestCase):
             }
         }
 
-        with NamedTemporaryDirectory(change_dir=True), settings.use(upload_settings):
+        with NamedTemporaryDirectory(change_dir=True), settings.Use(upload_settings):
             swift_p = SwiftPath('swift://tenant/container/path')
             swift_p.upload(['.'], use_manifest=True)
 
@@ -1744,7 +1726,7 @@ class TestUpload(SwiftTestCase):
 
         with NamedTemporaryDirectory(change_dir=True):
             swift_p = SwiftPath('swift://tenant/container/path')
-            with self.assertRaises(swift.ConditionNotMetError), settings.use(upload_settings):
+            with self.assertRaises(swift.ConditionNotMetError), settings.Use(upload_settings):
                 swift_p.upload(['.'], use_manifest=True, num_retries=2)
         self.assertEquals(len(mock_sleep.call_args_list), 2)
 
@@ -1766,7 +1748,7 @@ class TestUpload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container')
-        with settings.use(upload_settings):
+        with settings.Use(upload_settings):
             swift_p.upload(['upload'])
         upload_args = self.mock_swift.upload.call_args_list[0][0]
         upload_kwargs = self.mock_swift.upload.call_args_list[0][1]
@@ -1816,7 +1798,7 @@ class TestUpload(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant/container')
         with LogCapture('storage_utils.swift.progress') as progress_log:
-            with settings.use(upload_settings):
+            with settings.Use(upload_settings):
                 swift_p.upload(['upload'])
             progress_log.check(
                 ('storage_utils.swift.progress', 'INFO', 'starting upload of 20 objects'),
@@ -1844,7 +1826,7 @@ class TestUpload(SwiftTestCase):
 
         swift_p = SwiftPath('swift://tenant')
         with self.assertRaisesRegexp(ValueError, 'must specify container'):
-            with settings.use(upload_settings):
+            with settings.Use(upload_settings):
                 swift_p.upload(['upload'])
 
     def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
@@ -1863,7 +1845,7 @@ class TestUpload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with settings.use(upload_settings):
+        with settings.Use(upload_settings):
             swift_p.upload([])
 
         options_passed = self.mock_swift_service.call_args[0][0]
@@ -1914,7 +1896,7 @@ class TestUpload(SwiftTestCase):
             }
         }
 
-        with NamedTemporaryDirectory(change_dir=True), settings.use(upload_settings):
+        with NamedTemporaryDirectory(change_dir=True), settings.Use(upload_settings):
             swift_p = SwiftPath('swift://tenant/container/path')
             swift_p.upload(['.'],
                            use_manifest=True,
@@ -1962,28 +1944,6 @@ class TestUpload(SwiftTestCase):
             SwiftPath('swift://tenant/container/path').upload(['file'],
                                                               use_manifest=True)
 
-    def test_upload_w_alt_settings(self, mock_walk_files_and_dirs):
-        self.disable_get_swift_service_mock()
-        upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True,
-                    'object_threads': 20,
-                    'segment_threads': 30
-                }
-            }
-        }
-
-        swift_p = SwiftPath('swift://tenant/container/path')
-        swift_p.upload([], alt_settings=upload_settings)
-
-        options_passed = self.mock_swift_service.call_args[0][0]
-        self.assertEquals(options_passed['object_uu_threads'], 20)
-        self.assertEquals(options_passed['segment_threads'], 30)
-
 
 class TestCopy(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
@@ -2016,28 +1976,12 @@ class TestCopytree(SwiftTestCase):
             }
         }
         p = SwiftPath('swift://tenant/container')
-        with settings.use(options):
+        with settings.Use(options):
             p.copytree('path', num_retries=1)
         mock_download.assert_called_once_with(
             p,
             path(u'path'),
-            use_manifest=False,
-            num_retries=1)
-
-    @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
-    def test_copytree_posix_destination_w_alt_settings(self, mock_download):
-        options = {
-            'swift': {
-                'download': {
-                    'object_threads': 100
-                }
-            }
-        }
-        p = SwiftPath('swift://tenant/container')
-        p.copytree('path', num_retries=1, alt_settings=options)
-        mock_download.assert_called_once_with(
-            p,
-            path(u'path'),
+            condition=None,
             use_manifest=False,
             num_retries=1)
 

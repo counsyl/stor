@@ -2,6 +2,8 @@ import copy
 import mock
 import os
 from storage_utils import settings
+import threading
+import time
 import unittest
 
 test_settings = {
@@ -200,3 +202,20 @@ class TestSettings(unittest.TestCase):
         with settings.Use({'foo': 1}):
             with self.assertRaises(RuntimeError):
                 settings.update({'foo': 3})
+
+    def _use_contextmanager(self, value):
+        with settings.Use({'foo': value}):
+            time.sleep(.01)
+            self.assertEquals(settings.get(), {'foo': value})
+            time.sleep(.01)
+
+    @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
+    def test_use_multithreaded(self):
+        threads = []
+        for i in range(30):
+            thread = threading.Thread(target=self._use_contextmanager, args=(i,))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
