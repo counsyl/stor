@@ -1160,7 +1160,7 @@ class TestDownloadObjects(SwiftTestCase):
             'prefix': 'd/',
             'out_directory': 'output_dir',
             'remove_prefix': True,
-            'skip_identical': False,
+            'skip_identical': True,
             'shuffle': True
         })
 
@@ -1172,15 +1172,23 @@ class TestDownloadObjects(SwiftTestCase):
             'object': 'd/e/f/g.txt',
             'path': 'output_dir/e/f/g.txt'
         }]
+        download_settings = {
+            'swift': {
+                'download': {
+                    'skip_identical': True,
+                    'shuffle': False
+                }
+            }
+        }
+
         swift_p = SwiftPath('swift://tenant/container/d')
-        r = swift_p.download_objects(
-            'output_dir',
-            [
-                'swift://tenant/container/d/e/f.txt',
-                'swift://tenant/container/d/e/f/g.txt'
-            ],
-            skip_identical=True,
-            shuffle=False)
+        with settings.Use(download_settings):
+            r = swift_p.download_objects(
+                'output_dir',
+                [
+                    'swift://tenant/container/d/e/f.txt',
+                    'swift://tenant/container/d/e/f/g.txt'
+                ])
         self.assertEquals(r, {
             'swift://tenant/container/d/e/f.txt': 'output_dir/e/f.txt',
             'swift://tenant/container/d/e/f/g.txt': 'output_dir/e/f/g.txt'
