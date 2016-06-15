@@ -1,7 +1,15 @@
 Release Notes
 =============
 
+v8.0.0
+------
+
+* Added a settings API
+* Move all swift upload/download settings into ``default.cfg`` and a ``_global_settings`` dictionary
+* Changed ``swift:download:skip_identical`` default setting to ``True``
+
 v7.1.0
+------
 
 * Addition of ``walkfiles`` top-level function
 
