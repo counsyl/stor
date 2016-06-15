@@ -166,11 +166,9 @@ class TestCopytree(unittest.TestCase):
         source = '.'
         dest = storage_utils.path('swift://tenant/container')
         options = {
-            'swift': {
-                'upload': {
-                    'object_threads': 30,
-                    'segment_threads': 40
-                }
+            'swift:upload': {
+                'object_threads': 30,
+                'segment_threads': 40
             }
         }
 

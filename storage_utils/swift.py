@@ -1286,15 +1286,15 @@ class SwiftPath(Path):
         options = settings.get()
 
         service_options = {
-            'object_dd_threads': options['swift']['download']['object_threads'],
-            'container_threads': options['swift']['download']['container_threads']
+            'object_dd_threads': options['swift:download']['object_threads'],
+            'container_threads': options['swift:download']['container_threads']
         }
         download_options = {
             'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True,
-            'skip_identical': options['swift']['download']['skip_identical'],
-            'shuffle': options['swift']['download']['shuffle']
+            'skip_identical': options['swift:download']['skip_identical'],
+            'shuffle': options['swift:download']['shuffle']
         }
         results = self._swift_service_call('download',
                                            _service_options=service_options,
@@ -1358,15 +1358,15 @@ class SwiftPath(Path):
 
         options = settings.get()
         service_options = {
-            'object_dd_threads': options['swift']['download']['object_threads'],
-            'container_threads': options['swift']['download']['container_threads']
+            'object_dd_threads': options['swift:download']['object_threads'],
+            'container_threads': options['swift:download']['container_threads']
         }
         download_options = {
             'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True,
-            'skip_identical': options['swift']['download']['skip_identical'],
-            'shuffle': options['swift']['download']['shuffle']
+            'skip_identical': options['swift:download']['skip_identical'],
+            'shuffle': options['swift:download']['shuffle']
         }
         with SwiftDownloadLogger() as dl:
             results = self._swift_service_call('download',
@@ -1475,17 +1475,17 @@ class SwiftPath(Path):
 
         options = settings.get()
         service_options = {
-            'object_uu_threads': options['swift']['upload']['object_threads'],
-            'segment_threads': options['swift']['upload']['segment_threads']
+            'object_uu_threads': options['swift:upload']['object_threads'],
+            'segment_threads': options['swift:upload']['segment_threads']
         }
         upload_options = {
-            'segment_size': options['swift']['upload']['segment_size'],
-            'use_slo': options['swift']['upload']['use_slo'],
+            'segment_size': options['swift:upload']['segment_size'],
+            'use_slo': options['swift:upload']['use_slo'],
             'segment_container': '.segments_%s' % self.container,
-            'leave_segments': options['swift']['upload']['leave_segments'],
-            'changed': options['swift']['upload']['changed'],
-            'skip_identical': options['swift']['upload']['skip_identical'],
-            'checksum': options['swift']['upload']['checksum']
+            'leave_segments': options['swift:upload']['leave_segments'],
+            'changed': options['swift:upload']['changed'],
+            'skip_identical': options['swift:upload']['skip_identical'],
+            'checksum': options['swift:upload']['checksum']
         }
         with SwiftUploadLogger(len(swift_upload_objects), all_files_to_upload) as ul:
             results = self._swift_service_call('upload',
@@ -1560,7 +1560,7 @@ class SwiftPath(Path):
         options = settings.get()
 
         service_options = {
-            'object_dd_threads': options['swift']['delete']['object_threads']
+            'object_dd_threads': options['swift:delete']['object_threads']
         }
 
         def _ignore_not_found(service_call):

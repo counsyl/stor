@@ -1173,11 +1173,9 @@ class TestDownloadObjects(SwiftTestCase):
             'path': 'output_dir/e/f/g.txt'
         }]
         download_settings = {
-            'swift': {
-                'download': {
-                    'skip_identical': True,
-                    'shuffle': False
-                }
+            'swift:download': {
+                'skip_identical': True,
+                'shuffle': False
             }
         }
 
@@ -1246,11 +1244,9 @@ class TestDownload(SwiftTestCase):
     def test_download_container(self):
         self.mock_swift.download.return_value = []
         download_settings = {
-            'swift': {
-                'download': {
-                    'skip_identical': True,
-                    'shuffle': False
-                }
+            'swift:download': {
+                'skip_identical': True,
+                'shuffle': False
             }
         }
 
@@ -1352,11 +1348,9 @@ class TestDownload(SwiftTestCase):
     def test_download_correct_thread_options(self):
         self.disable_get_swift_service_mock()
         download_settings = {
-            'swift': {
-                'download': {
-                    'object_threads': 20,
-                    'container_threads': 30
-                }
+            'swift:download': {
+                'object_threads': 20,
+                'container_threads': 30
             }
         }
 
@@ -1519,7 +1513,7 @@ class TestUpload(SwiftTestCase):
                           ['path/abs_path/file1'])
 
     def test_relative_path(self, mock_walk_files_and_dirs):
-        segment_size = settings.get()['swift']['upload']['segment_size']
+        segment_size = settings.get()['swift:upload']['segment_size']
 
         mock_walk_files_and_dirs.return_value = {
             './relative_path/file1': 10
@@ -1591,15 +1585,13 @@ class TestUpload(SwiftTestCase):
         self.mock_swift.upload.return_value = []
 
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True,
-                    'checksum': False,
-                    'skip_identical': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'checksum': False,
+                'skip_identical': True
             }
         }
 
@@ -1658,15 +1650,13 @@ class TestUpload(SwiftTestCase):
             }],
         ]
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True,
-                    'checksum': False,
-                    'skip_identical': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'checksum': False,
+                'skip_identical': True
             }
         }
 
@@ -1745,13 +1735,11 @@ class TestUpload(SwiftTestCase):
         }
         self.mock_swift.upload.return_value = []
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True
             }
         }
 
@@ -1794,13 +1782,11 @@ class TestUpload(SwiftTestCase):
         ]
         self.mock_swift.upload.return_value.append({'action': 'random_action'})
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True
             }
         }
 
@@ -1822,13 +1808,11 @@ class TestUpload(SwiftTestCase):
         }
         self.mock_swift.upload.return_value = []
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True
             }
         }
 
@@ -1840,15 +1824,13 @@ class TestUpload(SwiftTestCase):
     def test_upload_thread_options_correct(self, mock_walk_files_and_dirs):
         self.disable_get_swift_service_mock()
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True,
-                    'object_threads': 20,
-                    'segment_threads': 30
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'object_threads': 20,
+                'segment_threads': 30
             }
         }
 
@@ -1892,15 +1874,13 @@ class TestUpload(SwiftTestCase):
             }],
         ]
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True,
-                    'checksum': False,
-                    'skip_identical': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'checksum': False,
+                'skip_identical': True
             }
         }
 
@@ -1976,15 +1956,8 @@ class TestCopy(SwiftTestCase):
 class TestCopytree(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
     def test_copytree_posix_destination(self, mock_download):
-        options = {
-            'swift': {
-                'download': {
-                    'object_threads': 100
-                }
-            }
-        }
         p = SwiftPath('swift://tenant/container')
-        with settings.Use(options):
+        with settings.Use({'swift:download': {'object_threads': 100}}):
             p.copytree('path', num_retries=1)
         mock_download.assert_called_once_with(
             p,
@@ -2316,7 +2289,7 @@ class TestRmtree(SwiftTestCase):
     def test_w_only_container_and_threads(self):
         self.mock_swift.delete.return_value = {}
         swift_p = SwiftPath('swift://tenant/container')
-        with settings.Use({'swift': {'delete': {'object_threads': 20}}}):
+        with settings.Use({'swift:delete': {'object_threads': 20}}):
             swift_p.rmtree()
 
         self.assertEquals(self.mock_swift.delete.call_args_list,
@@ -2352,7 +2325,7 @@ class TestRmtree(SwiftTestCase):
     def test_thread_options_passed_through(self):
         self.disable_get_swift_service_mock()
         swift_p = SwiftPath('swift://tenant/container')
-        with settings.Use({'swift': {'delete': {'object_threads': 20}}}):
+        with settings.Use({'swift:delete': {'object_threads': 20}}):
             swift_p.rmtree()
 
         options_passed = self.mock_swift_service.call_args[0][0]

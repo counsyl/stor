@@ -5,8 +5,6 @@ import os
 import threading
 
 CONFIG_FILE = 'default.cfg'
-DELIMITER = ':'
-BASE_NAME = 'stor'
 
 _global_settings = {}
 thread_local = threading.local()
@@ -36,29 +34,16 @@ def initialize(filename=None):
     settings = {}
 
     for section in parser.sections():
-        _build(settings, section, parser.items(section))
+        if parser.items(section):
+            settings[section] = {}
+            for item in parser.items(section):
+                # Parse Python value from string
+                try:
+                    settings[section][item[0]] = ast.literal_eval(item[1])
+                except (SyntaxError, ValueError):
+                    settings[section][item[0]] = item[1]
 
     _global_settings.update(settings)
-
-
-def _build(settings, section, items):
-    """Helper function for building a nested dictionary of settings"""
-    new_dict = dict(items)
-
-    for key, val in new_dict.iteritems():
-        # Parse ConfigParser's string values into Python values
-        try:
-            new_dict[key] = ast.literal_eval(val)
-        except (SyntaxError, ValueError):
-            continue
-
-    layers = section.split(DELIMITER)
-    layers.reverse()
-    if BASE_NAME in layers:
-        layers.remove(BASE_NAME)
-    for layer in layers:
-        new_dict = {layer: new_dict}
-    _update(settings, new_dict)
 
 
 def _update(d, updates):

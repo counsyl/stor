@@ -7,23 +7,21 @@ import time
 import unittest
 
 test_settings = {
-    'swift': {
-        'download': {
-            'container_threads': 10,
-            'object_threads': 10,
-            'shuffle': True,
-            'skip_identical': True
-        },
-        'upload': {
-            'changed': False,
-            'checksum': True,
-            'leave_segments': True,
-            'object_threads': 10,
-            'segment_size': 1073741824,
-            'segment_threads': 10,
-            'skip_identical': False,
-            'use_slo': True
-        }
+    'swift:download': {
+        'container_threads': 10,
+        'object_threads': 10,
+        'shuffle': True,
+        'skip_identical': True
+    },
+    'swift:upload': {
+        'changed': False,
+        'checksum': True,
+        'leave_segments': True,
+        'object_threads': 10,
+        'segment_size': 1073741824,
+        'segment_threads': 10,
+        'skip_identical': False,
+        'use_slo': True
     }
 }
 
@@ -32,26 +30,24 @@ test_settings = {
 class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
-            'swift': {
-                'delete': {
-                    'object_threads': 10
-                },
-                'download': {
-                    'container_threads': 10,
-                    'object_threads': 10,
-                    'shuffle': True,
-                    'skip_identical': True
-                },
-                'upload': {
-                    'changed': False,
-                    'checksum': True,
-                    'leave_segments': True,
-                    'object_threads': 10,
-                    'segment_size': 1073741824,
-                    'segment_threads': 10,
-                    'skip_identical': False,
-                    'use_slo': True
-                }
+            'swift:delete': {
+                'object_threads': 10
+            },
+            'swift:download': {
+                'container_threads': 10,
+                'object_threads': 10,
+                'shuffle': True,
+                'skip_identical': True
+            },
+            'swift:upload': {
+                'changed': False,
+                'checksum': True,
+                'leave_segments': True,
+                'object_threads': 10,
+                'segment_size': 1073741824,
+                'segment_threads': 10,
+                'skip_identical': False,
+                'use_slo': True
             }
         }
         settings.initialize()
@@ -59,29 +55,31 @@ class TestSettings(unittest.TestCase):
 
     def test_initialize_file(self):
         expected_settings = {
-            'str_val': 'this is a string',
+            'stor': {
+                'str_val': 'this is a string'
+            },
             'something': {
                 'just': 'another value'
             },
             'swift': {
                 'num_retries': 5,
-                'fake_secret_key': '7jsdf0983j""SP{}?//',
-                'download': {
-                    'container_threads': 10,
-                    'object_threads': 10,
-                    'shuffle': True,
-                    'skip_identical': True
-                },
-                'upload': {
-                    'changed': False,
-                    'checksum': True,
-                    'leave_segments': True,
-                    'object_threads': 10,
-                    'segment_size': 1073741824,
-                    'segment_threads': 10,
-                    'skip_identical': False,
-                    'use_slo': True
-                }
+                'fake_secret_key': '7jsdf0983j""SP{}?//'
+            },
+            'swift:download': {
+                'container_threads': 10,
+                'object_threads': 10,
+                'shuffle': True,
+                'skip_identical': True
+            },
+            'swift:upload': {
+                'changed': False,
+                'checksum': True,
+                'leave_segments': True,
+                'object_threads': 10,
+                'segment_size': 1073741824,
+                'segment_threads': 10,
+                'skip_identical': False,
+                'use_slo': True
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
@@ -95,34 +93,30 @@ class TestSettings(unittest.TestCase):
                      copy.deepcopy(test_settings), clear=True)
     def test_update_w_settings(self):
         update_settings = {
-            'swift': {
-                'upload': {
-                    'skip_identical': True,
-                    'object_threads': 30
-                },
-                'download': {
-                    'object_threads': 20
-                }
+            'swift:upload': {
+                'skip_identical': True,
+                'object_threads': 30
+            },
+            'swift:download': {
+                'object_threads': 20
             }
         }
         expected_settings = {
-            'swift': {
-                'download': {
-                    'container_threads': 10,
-                    'object_threads': 20,
-                    'shuffle': True,
-                    'skip_identical': True
-                },
-                'upload': {
-                    'changed': False,
-                    'checksum': True,
-                    'leave_segments': True,
-                    'object_threads': 30,
-                    'segment_size': 1073741824,
-                    'segment_threads': 10,
-                    'skip_identical': True,
-                    'use_slo': True
-                }
+            'swift:download': {
+                'container_threads': 10,
+                'object_threads': 20,
+                'shuffle': True,
+                'skip_identical': True
+            },
+            'swift:upload': {
+                'changed': False,
+                'checksum': True,
+                'leave_segments': True,
+                'object_threads': 30,
+                'segment_size': 1073741824,
+                'segment_threads': 10,
+                'skip_identical': True,
+                'use_slo': True
             }
         }
         settings.update(settings=update_settings)
@@ -134,34 +128,30 @@ class TestSettings(unittest.TestCase):
 
     def test_use_w_settings(self):
         update_settings = {
-            'swift': {
-                'upload': {
-                    'skip_identical': True,
-                    'object_threads': 30
-                },
-                'download': {
-                    'object_threads': 20
-                }
+            'swift:upload': {
+                'skip_identical': True,
+                'object_threads': 30
+            },
+            'swift:download': {
+                'object_threads': 20
             }
         }
         expected_settings = {
-            'swift': {
-                'download': {
-                    'container_threads': 10,
-                    'object_threads': 20,
-                    'shuffle': True,
-                    'skip_identical': True
-                },
-                'upload': {
-                    'changed': False,
-                    'checksum': True,
-                    'leave_segments': True,
-                    'object_threads': 30,
-                    'segment_size': 1073741824,
-                    'segment_threads': 10,
-                    'skip_identical': True,
-                    'use_slo': True
-                }
+            'swift:download': {
+                'container_threads': 10,
+                'object_threads': 20,
+                'shuffle': True,
+                'skip_identical': True
+            },
+            'swift:upload': {
+                'changed': False,
+                'checksum': True,
+                'leave_segments': True,
+                'object_threads': 30,
+                'segment_size': 1073741824,
+                'segment_threads': 10,
+                'skip_identical': True,
+                'use_slo': True
             }
         }
 
