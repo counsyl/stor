@@ -13,11 +13,14 @@ thread_local = threading.local()
 def initialize(filename=None):
     """
     Initialize global settings from configuration file.
+    Every time this function is called it overwrites existing ``_global_settings``.
+    When trying to update or change ``_global_settings``, `update` or `use` should
+    be called instead.
 
     Defaults to reading from the default configuration file ``default.cfg``.
 
     Args:
-        filename (str): File to read initial configuration settings from.
+        filename (str): File to read initial default configuration settings from.
 
     Returns:
         None
@@ -26,10 +29,10 @@ def initialize(filename=None):
     _global_settings.clear()
 
     parser = SafeConfigParser()
-    if filename:
-        parser.readfp(open(filename))
-    else:
-        parser.readfp(open(os.path.join(os.path.dirname(__file__), CONFIG_FILE)))
+    filename = filename or os.path.join(os.path.dirname(__file__), CONFIG_FILE)
+
+    with open(filename) as fp:
+        parser.readfp(fp)
 
     settings = {}
 
@@ -86,11 +89,13 @@ def update(settings=None):
         _update(_global_settings, settings)
 
 
-class Use(object):
+class _Use(object):
     """
     Context manager for temporarily modifying settings.
     """
-    def __init__(self, settings={}):
+    def __init__(self, settings=None):
+        settings = settings or {}
+
         if hasattr(thread_local, 'settings'):
             self.old_settings = get()
         else:
@@ -100,10 +105,21 @@ class Use(object):
         thread_local.settings = self.temp_settings
 
     def __enter__(self):
-        return copy.deepcopy(self.temp_settings)
+        pass
 
     def __exit__(self, type, value, traceback):
         if self.old_settings:
             thread_local.settings = self.old_settings
         else:
             del thread_local.settings
+
+#: Context manager for temporarily modifying settings.
+#:
+#: Arguments:
+#:   settings (dict): A nested dictionary of settings options.
+#:
+#: Example:
+#:      >>> from storage_utils import settings
+#:      >>> with settings.use({'swift:upload': {'object_threads': 20}}):
+#:      >>>     # do something here
+use = _Use

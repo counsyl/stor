@@ -44,6 +44,9 @@ class TestSettings(unittest.TestCase):
                 'checksum': True,
                 'leave_segments': True,
                 'object_threads': 10,
+
+
+
                 'segment_size': 1073741824,
                 'segment_threads': 10,
                 'skip_identical': False,
@@ -156,48 +159,43 @@ class TestSettings(unittest.TestCase):
         }
 
         self.assertEquals(settings._global_settings, test_settings)
-        with settings.Use(update_settings) as my_settings:
+        with settings.use(update_settings):
             self.assertEquals(settings._global_settings, test_settings)
-            self.assertEquals(my_settings, expected_settings)
             self.assertEquals(settings.get(), expected_settings)
         self.assertEquals(settings._global_settings, test_settings)
         self.assertEquals(settings.get(), test_settings)
 
     def test_use_wo_settings(self):
         self.assertEquals(settings._global_settings, test_settings)
-        with settings.Use() as my_settings:
+        with settings.use():
             self.assertEquals(settings._global_settings, test_settings)
-            self.assertEquals(my_settings, test_settings)
         self.assertEquals(settings._global_settings, test_settings)
 
     @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
     def test_use_nested_w_update(self):
-        expected1 = {'foo': 0}
-        expected2 = {'foo': 1}
-        expected3 = {'foo': 2}
-        expected4 = {'foo': 3}
-
         settings.update({'foo': 0})
-        self.assertEquals(settings.get(), expected1)
-        with settings.Use({'foo': 1}) as my_settings:
-            self.assertEquals(settings.get(), expected2)
-            self.assertEquals(my_settings, expected2)
-            with settings.Use({'foo': 2}) as more_settings:
-                self.assertEquals(settings.get(), expected3)
-                self.assertEquals(more_settings, expected3)
-            self.assertEquals(settings.get(), expected2)
-        self.assertEquals(settings.get(), expected1)
+        self.assertEquals(settings.get(), {'foo': 0})
+        with settings.use({'foo': 1}):
+            self.assertEquals(settings.get(), {'foo': 1})
+            self.assertEquals(settings._global_settings, {'foo': 0})
+            with settings.use({'foo': 2}):
+                self.assertEquals(settings.get(), {'foo': 2})
+                self.assertEquals(settings._global_settings, {'foo': 0})
+            self.assertEquals(settings.get(), {'foo': 1})
+            self.assertEquals(settings._global_settings, {'foo': 0})
+        self.assertEquals(settings.get(), {'foo': 0})
+        self.assertFalse(hasattr(settings.thread_local, 'settings'))
         settings.update({'foo': 3})
-        self.assertEquals(settings.get(), expected4)
+        self.assertEquals(settings.get(), {'foo': 3})
 
     @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
     def test_use_update_w_error(self):
-        with settings.Use({'foo': 1}):
+        with settings.use({'foo': 1}):
             with self.assertRaises(RuntimeError):
                 settings.update({'foo': 3})
 
     def _use_contextmanager(self, value):
-        with settings.Use({'foo': value}):
+        with settings.use({'foo': value}):
             time.sleep(.01)
             self.assertEquals(settings.get(), {'foo': value})
             time.sleep(.01)

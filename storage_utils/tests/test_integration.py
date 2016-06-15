@@ -144,7 +144,7 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             obj_path = storage_utils.join(tmp_d,
                                           self.get_dataset_obj_names(1)[0])
             options = {'swift:upload': {'segment_size': segment_size}}
-            with settings.Use(options):
+            with settings.use(options):
                 obj_path.copy(self.test_container / 'large_object.txt')
 
             # Verify there is a segment container and that it can be ignored when listing a dir

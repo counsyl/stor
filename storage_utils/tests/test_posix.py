@@ -172,7 +172,7 @@ class TestCopytree(unittest.TestCase):
             }
         }
 
-        with settings.Use(options):
+        with settings.use(options):
             utils.copytree(source, dest)
         mock_upload.assert_called_once_with(
             dest,
