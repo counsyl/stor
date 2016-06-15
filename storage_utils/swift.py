@@ -1212,11 +1212,7 @@ class SwiftPath(Path):
     @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
     def download_objects(self,
                          dest,
-                         objects,
-                         object_threads=10,
-                         container_threads=10,
-                         skip_identical=False,
-                         shuffle=True):
+                         objects):
         """Downloads a list of objects to a destination folder.
 
         Note that this method takes a list of complete relative or absolute
@@ -1235,17 +1231,6 @@ class SwiftPath(Path):
                 download. The objects can paths relative to the download path
                 or absolute swift paths. Any absolute swift path must be
                 children of the download path
-            object_threads (int, default 10): The amount of threads to use for downloading
-                objects.
-            container_threads (int, default 10): The amount of threads to use for
-                downloading containers.
-            skip_identical (bool, default False): Skip downloading files that are identical
-                on both sides. Note this incurs reading the contents of all pre-existing local
-                files.
-            shuffle (bool, default True): When downloading a complete container,
-                download order is randomised in order to reduce the load on individual drives
-                when doing threaded downloads. Disable this option to submit download jobs to
-                the thread pool in the order they are listed in the object store.
 
         Returns:
             dict: A mapping of all requested ``objs`` to their location on
@@ -1298,16 +1283,18 @@ class SwiftPath(Path):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
+        options = settings.get()
+
         service_options = {
-            'object_dd_threads': object_threads,
-            'container_threads': container_threads
+            'object_dd_threads': options['swift']['download']['object_threads'],
+            'container_threads': options['swift']['download']['container_threads']
         }
         download_options = {
             'prefix': _with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True,
-            'skip_identical': skip_identical,
-            'shuffle': shuffle
+            'skip_identical': options['swift']['download']['skip_identical'],
+            'shuffle': options['swift']['download']['shuffle']
         }
         results = self._swift_service_call('download',
                                            _service_options=service_options,
