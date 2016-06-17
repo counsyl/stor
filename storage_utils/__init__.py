@@ -24,6 +24,7 @@ See `storage_utils.swift` for more information on Swift-specific functionality.
 from storage_utils.utils import copy
 from storage_utils.utils import copytree
 from storage_utils.utils import is_filesystem_path
+from storage_utils.utils import is_s3_path
 from storage_utils.utils import is_swift_path
 from storage_utils.utils import NamedTemporaryDirectory
 from storage_utils.base import Path
@@ -109,6 +110,7 @@ __all__ = [
     'rmtree',
     'walkfiles',
     'is_filesystem_path',
+    'is_s3_path',
     'is_swift_path',
     'NamedTemporaryDirectory',
 ]

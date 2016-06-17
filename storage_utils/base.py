@@ -36,6 +36,8 @@ class Path(text_type):
         PosixPath('/some/path')
         >>> Path('swift://AUTH_something/cont/blah')
         SwiftPath('swift://AUTH_something/cont/blah')
+        >>> Path('s3://')
+        S3Path('s3://')
     """
 
     def __new__(cls, path):
@@ -46,6 +48,10 @@ class Path(text_type):
                 from storage_utils.swift import SwiftPath
 
                 cls = SwiftPath
+            elif utils.is_s3_path(path):
+                from storage_utils.s3 import S3Path
+
+                cls = S3Path
             elif os.path == ntpath:
                 from storage_utils.windows import WindowsPath
 

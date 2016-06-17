@@ -5,6 +5,7 @@ from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import Path
 from storage_utils import posix
+from storage_utils import s3
 from storage_utils import settings
 from storage_utils import swift
 from storage_utils import utils
@@ -34,6 +35,13 @@ class TestDiv(unittest.TestCase):
                                              swift.SwiftPath('swift://t/c/name').name),
                           p)
 
+    def test_w_s3_component(self):
+        p = posix.PosixPath('my/path') / s3.S3Path('s3://b/name').name
+        self.assertEquals(p, posix.PosixPath('my/path/name'))
+        self.assertEquals(storage_utils.join('my/path',
+                                             s3.S3Path('s3://b/name').name),
+                          p)
+
 
 class TestAdd(unittest.TestCase):
     def test_success(self):
@@ -46,6 +54,10 @@ class TestAdd(unittest.TestCase):
 
     def test_w_swift_component(self):
         p = posix.PosixPath('my/path') + swift.SwiftPath('swift://t/c/name').name
+        self.assertEquals(p, posix.PosixPath('my/pathname'))
+
+    def test_w_s3_component(self):
+        p = posix.PosixPath('my/path') + s3.S3Path('s3://b/name').name
         self.assertEquals(p, posix.PosixPath('my/pathname'))
 
     def test_invalid_radd(self):

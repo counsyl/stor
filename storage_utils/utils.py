@@ -36,7 +36,22 @@ def is_filesystem_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return not is_swift_path(p)
+    return not (is_swift_path(p) or is_s3_path(p))
+
+
+def is_s3_path(p):
+    """Determines if the path is a S3 path.
+
+    All S3 paths start with ``s3://``
+
+    Args:
+        p (str): The path string
+
+    Returns
+        bool: True if p is a S3 path, False otherwise.
+    """
+    from storage_utils.s3 import S3Path
+    return p.startswith(S3Path.s3_drive)
 
 
 def copy(source, dest, swift_retry_options=None):
