@@ -1,4 +1,5 @@
 import mock
+from storage_utils.s3 import S3Path
 from storage_utils.swift import SwiftPath
 import unittest
 
@@ -113,8 +114,59 @@ class SwiftTestMixin(object):
         self.assertEquals(sorted(r1), sorted(r2))
 
 
+class S3TestMixin(object):
+    """A mixin with helpers for mocking out S3.
+
+    S3TestMixin should be used to create base test classes for anything
+    that accesses S3.
+    """
+    def disable_get_s3_client_mock(self):
+        """Disables the mock for getting the S3 client."""
+        try:
+            self._get_s3_patcher.stop()
+        except RuntimeError:
+            # If the user disables the mock, the mock will try
+            # to be stopped on test cleanup. Disable errors from that
+            pass
+
+    def setup_s3_mocks(self):
+        """Sets all of the relevant mocks for S3 communication.
+
+        If you are testing outside of this library, you should either mock
+        S3 client methods or you should focus on manipulating return value
+        of mock_s3.
+
+        The following variables are set up when calling this:
+
+        - mock_s3_client: A mock of the Client instance returned by boto3.client
+
+        - mock_s3: A mock of the Client instance returned by _get_s3_client in S3Path.
+
+        - mock_get_s3_client: A mock of the _get_s3_client method in S3Path.
+        """
+        # Ensure that the S3 client will never be instantiated in tests
+        s3_client_patcher = mock.patch('boto3.client', autospec=True)
+        self.addCleanup(s3_client_patcher.stop)
+        self.mock_s3_client = s3_client_patcher.start()
+
+        # This is the mock returned by _get_s3_client.
+        # User can mock s3 methods on this mock.
+        self.mock_s3 = mock.Mock()
+        self._get_s3_patcher = mock.patch.object(S3Path, '_get_s3_client', autospec=True)
+        self.addCleanup(self.disable_get_s3_client_mock)
+        self.mock_get_s3_client = self._get_s3_patcher.start()
+        self.mock_get_s3_client.return_value = self.mock_s3
+
+
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
     """A TestCase class that sets up swift mocks and provides additional assertions"""
     def setUp(self):
         super(SwiftTestCase, self).setUp()
         self.setup_swift_mocks()
+
+
+class S3TestCase(unittest.TestCase, S3TestMixin):
+    """A TestCase class that sets up S3 mocks"""
+    def setUp(self):
+        super(S3TestCase, self).setUp()
+        self.setup_s3_mocks()

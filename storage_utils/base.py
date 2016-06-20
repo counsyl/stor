@@ -161,7 +161,7 @@ class Path(text_type):
         return self.expandvars().expanduser().normpath()
 
     def fnmatch(self, pattern, normcase=None):
-        """Return ``True`` if `name` matches the given ``pattern``.
+        """Return ``True`` if :attr:`name` matches the given ``pattern``.
 
         .. seealso:: :func:`fnmatch.fnmatch`
 
@@ -190,7 +190,7 @@ class Path(text_type):
 
     @property
     def namebase(self):
-        """ The same as `name`, but with one file extension stripped off.
+        """ The same as :attr:`name`, but with one file extension stripped off.
 
         For example,
         ``Path('/home/guido/python.tar.gz').name == 'python.tar.gz'``,
