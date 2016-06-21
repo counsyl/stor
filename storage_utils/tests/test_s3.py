@@ -253,3 +253,70 @@ class TestList(S3TestCase):
             mock.call(Bucket='test-bucket', Prefix='', ContinuationToken='token1'),
             mock.call(Bucket='test-bucket', Prefix='', ContinuationToken='token2')
         ])
+
+    def test_listdir(self):
+        mock_list = self.mock_s3.list_objects_v2
+        mock_list.return_value = {
+            'Contents': [
+                {'Key': 'prefix1/prefix/key1'},
+                {'Key': 'prefix1/prefix/key2'},
+                {'Key': 'prefix1/prefix/key3'}
+            ],
+            'CommonPrefixes': [
+                {'Prefix': 'prefix1/prefix/p2/'},
+                {'Prefix': 'prefix1/prefix/p3/'}
+            ],
+            'IsTruncated': False
+        }
+
+        s3_p = S3Path('s3://test-bucket/prefix1/prefix')
+        results = s3_p.listdir()
+        self.assertEquals(results, [
+            's3://test-bucket/prefix1/prefix/key1',
+            's3://test-bucket/prefix1/prefix/key2',
+            's3://test-bucket/prefix1/prefix/key3',
+            's3://test-bucket/prefix1/prefix/p2/',
+            's3://test-bucket/prefix1/prefix/p3/'
+        ])
+
+    def test_listdir_on_bucket(self):
+        mock_list = self.mock_s3.list_objects_v2
+        mock_list.return_value = {
+            'Contents': [
+                {'Key': 'key1'},
+                {'Key': 'key2'},
+                {'Key': 'key3'}
+            ],
+            'CommonPrefixes': [
+                {'Prefix': 'prefix1/'},
+                {'Prefix': 'prefix2/'}
+            ],
+            'IsTruncated': False
+        }
+
+        s3_p = S3Path('s3://test-bucket/')
+        results = s3_p.listdir()
+        self.assertEquals(results, [
+            's3://test-bucket/key1',
+            's3://test-bucket/key2',
+            's3://test-bucket/key3',
+            's3://test-bucket/prefix1/',
+            's3://test-bucket/prefix2/'
+        ])
+
+    def test_listdir_no_content(self):
+        mock_list = self.mock_s3.list_objects_v2
+        mock_list.return_value = {
+            'CommonPrefixes': [
+                {'Prefix': 'p/prefix1/'},
+                {'Prefix': 'p/prefix2/'}
+            ],
+            'IsTruncated': False
+        }
+
+        s3_p = S3Path('s3://test-bucket/p/')
+        results = s3_p.listdir()
+        self.assertEquals(results, [
+            's3://test-bucket/p/prefix1/',
+            's3://test-bucket/p/prefix2/'
+        ])

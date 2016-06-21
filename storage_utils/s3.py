@@ -104,7 +104,7 @@ class S3Path(Path):
         except s3_exceptions.ClientError as e:
             raise _parse_s3_error(e)
 
-    def list(self, starts_with=None, limit=None):
+    def list(self, starts_with=None, limit=None, list_as_dir=False):
         """
         List contents using the resource of the path as a prefix.
 
@@ -138,16 +138,27 @@ class S3Path(Path):
         if limit:
             list_kwargs['MaxKeys'] = limit
 
+        if list_as_dir:
+            # Ensure the the prefix has a trailing slash if there is a prefix
+            list_kwargs['Prefix'] = prefix / '' if prefix else ''
+            list_kwargs['Delimiter'] = '/'
+
         path_prefix = S3Path('%s%s' % (self.s3_drive, bucket))
 
         results = self._s3_client_call('list_objects_v2', **list_kwargs)
         if 'Contents' not in results:
-            return []
+            list_results = []
+        else:
+            list_results = [
+                path_prefix / result['Key']
+                for result in results['Contents']
+            ]
 
-        list_results = [
-            path_prefix / result['Key']
-            for result in results['Contents']
-        ]
+        if list_as_dir and 'CommonPrefixes' in results:
+            list_results.extend([
+                path_prefix / result['Prefix']
+                for result in results['CommonPrefixes']
+            ])
 
         while results['IsTruncated'] and (not limit or limit > MAX_LIMIT):
             if limit:
@@ -164,3 +175,7 @@ class S3Path(Path):
             ])
 
         return list_results
+
+    def listdir(self):
+        """List the path as a dir, returning top-level directories and files."""
+        return self.list(list_as_dir=True)
