@@ -1,10 +1,26 @@
 import posixpath
 import boto3
+from botocore import exceptions as s3_exceptions
 from storage_utils.base import Path
+from storage_utils import exceptions
 from storage_utils.posix import PosixPath
 
 # boto3 defined limit to number of returned objects
 MAX_LIMIT = 1000
+
+
+def _parse_s3_error(exc):
+    """
+    Parses botocore.exception.ClientError exceptions to throw a more
+    informative exception.
+    """
+    http_status = exc.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
+    msg = exc.response['Error'].get('Message', 'Unknown')
+
+    if http_status == 404:
+        return exceptions.NotFoundError(msg)
+
+    return exceptions.RemoteError(msg)
 
 
 class S3Path(Path):
@@ -83,7 +99,10 @@ class S3Path(Path):
         """
         s3_client = self._get_s3_client()
         method = getattr(s3_client, method_name)
-        return method(*args, **kwargs)
+        try:
+            return method(*args, **kwargs)
+        except s3_exceptions.ClientError as e:
+            raise _parse_s3_error(e)
 
     def list(self, starts_with=None, limit=None):
         """
@@ -122,6 +141,9 @@ class S3Path(Path):
         path_prefix = S3Path('%s%s' % (self.s3_drive, bucket))
 
         results = self._s3_client_call('list_objects_v2', **list_kwargs)
+        if 'Contents' not in results:
+            return []
+
         list_results = [
             path_prefix / result['Key']
             for result in results['Contents']

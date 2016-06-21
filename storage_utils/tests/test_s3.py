@@ -1,6 +1,9 @@
-import mock
 import unittest
 
+from botocore.exceptions import ClientError
+import mock
+
+from storage_utils import exceptions
 from storage_utils import Path
 from storage_utils.s3 import S3Path
 from storage_utils.test import S3TestCase
@@ -99,53 +102,30 @@ class TestGetS3Client(S3TestCase):
 
 
 class TestList(S3TestCase):
-    def test_list_over_1000_no_limit(self):
+    def test_list_no_bucket_error(self):
         mock_list = self.mock_s3.list_objects_v2
-        mock_list.side_effect = [{
-            'Contents': [{'Key': str(i) + '.txt'} for i in range(1000)],
-            'IsTruncated': True,
-            'KeyCount': 1000,
-            'NextContinuationToken': 'token1'
-        }, {
-            'Contents': [{'Key': str(i + 1000) + '.txt'} for i in range(1000)],
-            'IsTruncated': True,
-            'KeyCount': 1000,
-            'NextContinuationToken': 'token2'
-        }, {
-            'Contents': [{'Key': str(i + 2000) + '.txt'} for i in range(234)],
-            'IsTruncated': False,
-            'KeyCount': 234
-        }]
-        s3_p = S3Path('s3://test-bucket')
-        results = s3_p.list()
-        self.assertEquals(len(results), 2234)
-        mock_list.assert_has_calls([
-            mock.call(Bucket='test-bucket', Prefix=''),
-            mock.call(Bucket='test-bucket', Prefix='', ContinuationToken='token1'),
-            mock.call(Bucket='test-bucket', Prefix='', ContinuationToken='token2')
-        ])
+        mock_list.side_effect = ClientError(
+            {
+                'ResponseMetadata': {'HTTPStatusCode': 404},
+                'Error': {'Message': 'The specified bucket does not exist'}
+            },
+            'list_objects_v2')
 
-    def test_list_over_1000_limit(self):
+        s3_p = S3Path('s3://bucket/key')
+        with self.assertRaises(exceptions.NotFoundError):
+            s3_p.list()
+
+    def test_list_unknown_error(self):
         mock_list = self.mock_s3.list_objects_v2
-        mock_list.side_effect = [{
-            'Contents': [{'Key': str(i) + '.txt'} for i in range(1000)],
-            'IsTruncated': True,
-            'KeyCount': 1000,
-            'MaxKeys': 1234,
-            'NextContinuationToken': 'token1'
-        }, {
-            'Contents': [{'Key': str(i + 1000) + '.txt'} for i in range(234)],
-            'IsTruncated': True,
-            'KeyCount': 234,
-            'MaxKeys': 234
-        }]
-        s3_p = S3Path('s3://test-bucket')
-        results = s3_p.list(limit=1234)
-        self.assertEquals(len(results), 1234)
-        mock_list.assert_has_calls([
-            mock.call(Bucket='test-bucket', MaxKeys=1234, Prefix=''),
-            mock.call(Bucket='test-bucket', ContinuationToken='token1', MaxKeys=234, Prefix='')
-        ])
+        mock_list.side_effect = ClientError(
+            {
+                'Error': {'Message': 'Unspecified error'}
+            },
+            'list_objects_v2')
+
+        s3_p = S3Path('s3://bucket/key')
+        with self.assertRaises(exceptions.RemoteError):
+            s3_p.list()
 
     def test_list_bucket(self):
         mock_list = self.mock_s3.list_objects_v2
@@ -162,6 +142,17 @@ class TestList(S3TestCase):
             's3://test-bucket/prefix/key3'
         ])
         mock_list.assert_called_once_with(Bucket='test-bucket', Prefix='')
+
+    def test_list_no_content(self):
+        mock_list = self.mock_s3.list_objects_v2
+        mock_list.return_value = {
+            'IsTruncated': False,
+            'KeyCount': 0
+        }
+        s3_p = S3Path('s3://test-bucket/key')
+        results = s3_p.list()
+
+        self.assertEquals(results, [])
 
     def test_list_prefix(self):
         mock_list = self.mock_s3.list_objects_v2
@@ -214,3 +205,51 @@ class TestList(S3TestCase):
             's3://test-bucket/prefix1/prefix/key3'
         ])
         mock_list.assert_called_once_with(Bucket='test-bucket', Prefix='prefix1/prefix')
+
+    def test_list_over_1000_limit(self):
+        mock_list = self.mock_s3.list_objects_v2
+        mock_list.side_effect = [{
+            'Contents': [{'Key': str(i) + '.txt'} for i in range(1000)],
+            'IsTruncated': True,
+            'KeyCount': 1000,
+            'MaxKeys': 1234,
+            'NextContinuationToken': 'token1'
+        }, {
+            'Contents': [{'Key': str(i + 1000) + '.txt'} for i in range(234)],
+            'IsTruncated': True,
+            'KeyCount': 234,
+            'MaxKeys': 234
+        }]
+        s3_p = S3Path('s3://test-bucket')
+        results = s3_p.list(limit=1234)
+        self.assertEquals(len(results), 1234)
+        mock_list.assert_has_calls([
+            mock.call(Bucket='test-bucket', MaxKeys=1234, Prefix=''),
+            mock.call(Bucket='test-bucket', ContinuationToken='token1', MaxKeys=234, Prefix='')
+        ])
+
+    def test_list_over_1000_no_limit(self):
+        mock_list = self.mock_s3.list_objects_v2
+        mock_list.side_effect = [{
+            'Contents': [{'Key': str(i) + '.txt'} for i in range(1000)],
+            'IsTruncated': True,
+            'KeyCount': 1000,
+            'NextContinuationToken': 'token1'
+        }, {
+            'Contents': [{'Key': str(i + 1000) + '.txt'} for i in range(1000)],
+            'IsTruncated': True,
+            'KeyCount': 1000,
+            'NextContinuationToken': 'token2'
+        }, {
+            'Contents': [{'Key': str(i + 2000) + '.txt'} for i in range(234)],
+            'IsTruncated': False,
+            'KeyCount': 234
+        }]
+        s3_p = S3Path('s3://test-bucket')
+        results = s3_p.list()
+        self.assertEquals(len(results), 2234)
+        mock_list.assert_has_calls([
+            mock.call(Bucket='test-bucket', Prefix=''),
+            mock.call(Bucket='test-bucket', Prefix='', ContinuationToken='token1'),
+            mock.call(Bucket='test-bucket', Prefix='', ContinuationToken='token2')
+        ])
