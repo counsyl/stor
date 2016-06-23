@@ -22,3 +22,13 @@ class RemoteError(Exception):
 class NotFoundError(RemoteError):
     """Thrown when a 404 response is returned."""
     pass
+
+
+class UnauthorizedError(RemoteError):
+    """Thrown when a 403 response is returned."""
+    pass
+
+
+class UnavailableError(RemoteError):
+    """Thrown when a 503 response is returned."""
+    pass

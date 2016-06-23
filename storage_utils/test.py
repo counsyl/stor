@@ -123,10 +123,17 @@ class S3TestMixin(object):
     def disable_get_s3_client_mock(self):
         """Disables the mock for getting the S3 client."""
         try:
-            self._get_s3_patcher.stop()
+            self._get_s3_client_patcher.stop()
         except RuntimeError:
             # If the user disables the mock, the mock will try
             # to be stopped on test cleanup. Disable errors from that
+            pass
+
+    def disable_get_s3_iterator_mock(self):
+        """Disables the mock for getting the S3 iterator."""
+        try:
+            self._get_s3_iterator_patcher.stop()
+        except RuntimeError:
             pass
 
     def setup_s3_mocks(self):
@@ -143,6 +150,10 @@ class S3TestMixin(object):
         - mock_s3: A mock of the Client instance returned by _get_s3_client in S3Path.
 
         - mock_get_s3_client: A mock of the _get_s3_client method in S3Path.
+
+        - mock_get_s3_iterator: A mock of the _get_s3_iterator method in S3Path.
+
+        - mock_s3_iterator: A mock of the iterable object returned by _get_s3_iterator in S3Path.
         """
         # Ensure that the S3 client will never be instantiated in tests
         s3_client_patcher = mock.patch('boto3.client', autospec=True)
@@ -152,10 +163,19 @@ class S3TestMixin(object):
         # This is the mock returned by _get_s3_client.
         # User can mock s3 methods on this mock.
         self.mock_s3 = mock.Mock()
-        self._get_s3_patcher = mock.patch.object(S3Path, '_get_s3_client', autospec=True)
+        self._get_s3_client_patcher = mock.patch('storage_utils.s3._get_s3_client', autospec=True)
         self.addCleanup(self.disable_get_s3_client_mock)
-        self.mock_get_s3_client = self._get_s3_patcher.start()
+        self.mock_get_s3_client = self._get_s3_client_patcher.start()
         self.mock_get_s3_client.return_value = self.mock_s3
+
+        # This is the mock returned by _get_s3_iterator.
+        # User should modify the __iter__.return_value property to specify return values.
+        self.mock_s3_iterator = mock.MagicMock()
+        self._get_s3_iterator_patcher = mock.patch.object(S3Path, '_get_s3_iterator',
+                                                          autospec=True)
+        self.addCleanup(self.disable_get_s3_iterator_mock)
+        self.mock_get_s3_iterator = self._get_s3_iterator_patcher.start()
+        self.mock_get_s3_iterator.return_value = self.mock_s3_iterator
 
 
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):

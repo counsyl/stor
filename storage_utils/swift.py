@@ -43,6 +43,7 @@ import urllib
 import urlparse
 
 import storage_utils
+from storage_utils import exceptions as stor_exceptions
 from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils import utils
@@ -112,6 +113,10 @@ num_retries = int(os.environ.get('OS_NUM_RETRIES', 0))
 
 Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0
 """
+
+# Make new Exceptions structure backwards compatible
+SwiftError = stor_exceptions.RemoteError
+NotFoundError = stor_exceptions.NotFoundError
 
 
 def _default_retry_sleep_function(t, attempt):
@@ -191,25 +196,6 @@ def _get_or_create_auth_credentials(tenant_name):
 def _clear_cached_auth_credentials():
     with _singleton_lock:
         _cached_auth_token_map.clear()
-
-
-class SwiftError(Exception):
-    """The top-level exception thrown for any swift errors
-
-    The 'caught_exception' attribute of the exception must
-    be examined in order to inspect the swift exception that
-    happened. A swift exception can either be a
-    ``SwiftError`` (thrown by ``swiftclient.service``) or a
-    ``ClientError`` (thrown by ``swiftclient.client``)
-    """
-    def __init__(self, message, caught_exception=None):
-        super(SwiftError, self).__init__(message)
-        self.caught_exception = caught_exception
-
-
-class NotFoundError(SwiftError):
-    """Thrown when a 404 response is returned from swift"""
-    pass
 
 
 class UnavailableError(SwiftError):

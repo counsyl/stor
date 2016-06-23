@@ -1,12 +1,18 @@
 import posixpath
+import threading
+
 import boto3
 from botocore import exceptions as s3_exceptions
-from storage_utils.base import Path
+
 from storage_utils import exceptions
+from storage_utils.base import Path
 from storage_utils.posix import PosixPath
 
 # boto3 defined limit to number of returned objects
 MAX_LIMIT = 1000
+
+# Thread-local variable used to cache the client
+thread_local = threading.local()
 
 
 def _parse_s3_error(exc):
@@ -17,10 +23,25 @@ def _parse_s3_error(exc):
     http_status = exc.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
     msg = exc.response['Error'].get('Message', 'Unknown')
 
-    if http_status == 404:
-        return exceptions.NotFoundError(msg)
+    if http_status == 403:
+        return exceptions.UnauthorizedError(msg, exc)
+    elif http_status == 404:
+        return exceptions.NotFoundError(msg, exc)
+    elif http_status == 503:
+        return exceptions.UnavailableError(msg, exc)
 
-    return exceptions.RemoteError(msg)
+    return exceptions.RemoteError(msg, exc)
+
+
+def _get_s3_client():
+    """Returns the boto3 client and initializes one if it doesn't already exist.
+
+    Returns:
+        boto3.Client: An instance of the S3 client.
+    """
+    if not hasattr(thread_local, 's3_client'):
+        thread_local.s3_client = boto3.client('s3')
+    return thread_local.s3_client
 
 
 class S3Path(Path):
@@ -32,18 +53,18 @@ class S3Path(Path):
     path_module = posixpath
     parts_class = PosixPath
 
-    def __init__(self, s3):
+    def __init__(self, pth):
         """
         Validates S3 path is in the proper format.
 
         Args:
-            s3 (str): A path that matches the format of
+            pth (str): A path that matches the format of
                 ``s3://{bucket_name}/{rest_of_path}``
                 The ``s3://`` prefix is required in the path.
         """
-        if not hasattr(s3, 'startswith') or not s3.startswith(self.s3_drive):
-            raise ValueError('path must have %s (got %r)' % (self.s3_drive, s3))
-        return super(S3Path, self).__init__(s3)
+        if not hasattr(pth, 'startswith') or not pth.startswith(self.s3_drive):
+            raise ValueError('path must have %s (got %r)' % (self.s3_drive, pth))
+        return super(S3Path, self).__init__(pth)
 
     def __repr__(self):
         return '%s("%s")' % (type(self).__name__, self)
@@ -85,24 +106,28 @@ class S3Path(Path):
 
         return self.parts_class(joined_resource) if joined_resource else None
 
-    def _get_s3_client(self):
-        """Initialize a boto3 S3 client.
-
-        Returns:
-            boto3.Client: An instance of the S3 client.
-        """
-        return boto3.client('s3')
-
     def _s3_client_call(self, method_name, *args, **kwargs):
         """
         Creates a boto3 S3 ``Client`` object and runs ``method_name``.
         """
-        s3_client = self._get_s3_client()
+        s3_client = _get_s3_client()
         method = getattr(s3_client, method_name)
         try:
             return method(*args, **kwargs)
         except s3_exceptions.ClientError as e:
             raise _parse_s3_error(e)
+
+    def _get_s3_iterator(self, method_name, *args, **kwargs):
+        """
+        Creates a boto3 ``S3.Paginator`` object and returns an iterator
+        that runs over results from ``method_name``.
+        """
+        s3_client = _get_s3_client()
+        paginator = s3_client.get_paginator(method_name)
+        return paginator.paginate(**kwargs)
+
+    def open(self, **kwargs):
+        raise NotImplementedError
 
     def list(self, starts_with=None, limit=None, list_as_dir=False):
         """
@@ -132,11 +157,12 @@ class S3Path(Path):
 
         list_kwargs = {
             'Bucket': bucket,
-            'Prefix': prefix
+            'Prefix': prefix,
+            'PaginationConfig': {}
         }
 
         if limit:
-            list_kwargs['MaxKeys'] = limit
+            list_kwargs['PaginationConfig']['MaxItems'] = limit
 
         if list_as_dir:
             # Ensure the the prefix has a trailing slash if there is a prefix
@@ -145,37 +171,82 @@ class S3Path(Path):
 
         path_prefix = S3Path('%s%s' % (self.s3_drive, bucket))
 
-        results = self._s3_client_call('list_objects_v2', **list_kwargs)
-        if 'Contents' not in results:
-            list_results = []
-        else:
-            list_results = [
-                path_prefix / result['Key']
-                for result in results['Contents']
-            ]
-
-        if list_as_dir and 'CommonPrefixes' in results:
-            list_results.extend([
-                path_prefix / result['Prefix']
-                for result in results['CommonPrefixes']
-            ])
-
-        while results['IsTruncated'] and (not limit or limit > MAX_LIMIT):
-            if limit:
-                limit = limit - MAX_LIMIT
-                list_kwargs['MaxKeys'] = limit
-
-            next_token = results['NextContinuationToken']
-            list_kwargs['ContinuationToken'] = next_token
-
-            results = self._s3_client_call('list_objects_v2', **list_kwargs)
-            list_results.extend([
-                path_prefix / result['Key']
-                for result in results['Contents']
-            ])
+        results = self._get_s3_iterator('list_objects_v2', **list_kwargs)
+        list_results = []
+        try:
+            for page in results:
+                if 'Contents' in page:
+                    list_results.extend([
+                        path_prefix / result['Key']
+                        for result in page['Contents']
+                    ])
+                if list_as_dir and 'CommonPrefixes' in page:
+                    list_results.extend([
+                        path_prefix / result['Prefix']
+                        for result in page['CommonPrefixes']
+                    ])
+        except s3_exceptions.ClientError as e:
+            raise _parse_s3_error(e)
 
         return list_results
 
     def listdir(self):
         """List the path as a dir, returning top-level directories and files."""
         return self.list(list_as_dir=True)
+
+    def exists(self):
+        """
+        Checks existence of the path.
+
+        Returns:
+            bool: True if the path exists, False otherwise.
+        """
+        raise NotImplementedError
+
+    def isabs(self):
+        return True
+
+    def isdir(self):
+        raise NotImplementedError
+
+    def isfile(self):
+        raise NotImplementedError
+
+    def islink(self):
+        return False
+
+    def ismount(self):
+        return True
+
+    def getsize(self):
+        raise NotImplementedError
+
+    def remove(self):
+        raise NotImplementedError
+
+    def rmtree(self):
+        raise NotImplementedError
+
+    def stat(self):
+        """
+        Performs a stat on the path.
+
+        ``stat`` only works on paths that are buckets or objects.
+        Using ``stat`` on a directory of objects will produce a `NotFoundError`.
+        """
+        raise NotImplementedError
+
+    def walkfiles(self, pattern=None):
+        """
+        Iterate over listed files whose filenames match an optional pattern.
+
+        Args:
+            pattern (str, optional): Only return files that match this pattern.
+
+        Returns:
+            Iter[S3Path]: All files that match the optional pattern. Directories
+                are not returned.
+        """
+        for f in self.list():
+            if pattern is None or f.fnmatch(pattern):
+                yield f
