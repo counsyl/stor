@@ -1,18 +1,18 @@
+"""
+An experimental implementation of S3 in storage-utils.
+"""
 import posixpath
 import threading
 
 import boto3
-from botocore import exceptions as s3_exceptions
+from botocore import exceptions as boto_s3_exceptions
 
 from storage_utils import exceptions
 from storage_utils.base import Path
 from storage_utils.posix import PosixPath
 
-# boto3 defined limit to number of returned objects
-MAX_LIMIT = 1000
-
 # Thread-local variable used to cache the client
-thread_local = threading.local()
+_thread_local = threading.local()
 
 
 def _parse_s3_error(exc):
@@ -36,20 +36,26 @@ def _parse_s3_error(exc):
 def _get_s3_client():
     """Returns the boto3 client and initializes one if it doesn't already exist.
 
+    We use a different boto3 client for each thread/process because boto3 clients
+    are not thread-safe.
+
     Returns:
         boto3.Client: An instance of the S3 client.
     """
-    if not hasattr(thread_local, 's3_client'):
-        thread_local.s3_client = boto3.client('s3')
-    return thread_local.s3_client
+    if not hasattr(_thread_local, 's3_client'):
+        _thread_local.s3_client = boto3.client('s3')
+    return _thread_local.s3_client
 
 
 class S3Path(Path):
     """
-    Provides the ability to manipulate and access resources on Amazon S3
+    Provides the ability to manipulate and access S3 resources
     with a similar interface to the path library.
+
+    Right now, the client defaults to Amazon S3 endpoints, but in the
+    near-future, users should be able to custom configure the S3 client.
     """
-    s3_drive = 's3://'
+    drive = 's3://'
     path_module = posixpath
     parts_class = PosixPath
 
@@ -62,8 +68,8 @@ class S3Path(Path):
                 ``s3://{bucket_name}/{rest_of_path}``
                 The ``s3://`` prefix is required in the path.
         """
-        if not hasattr(pth, 'startswith') or not pth.startswith(self.s3_drive):
-            raise ValueError('path must have %s (got %r)' % (self.s3_drive, pth))
+        if not hasattr(pth, 'startswith') or not pth.startswith(self.drive):
+            raise ValueError('path must have %s (got %r)' % (self.drive, pth))
         return super(S3Path, self).__init__(pth)
 
     def __repr__(self):
@@ -71,8 +77,8 @@ class S3Path(Path):
 
     def _get_parts(self):
         """Returns the path parts (excluding s3://) as a list of strings."""
-        if len(self) > len(self.s3_drive):
-            return self[len(self.s3_drive):].split('/')
+        if len(self) > len(self.drive):
+            return self[len(self.drive):].split('/')
         else:
             return []
 
@@ -114,7 +120,7 @@ class S3Path(Path):
         method = getattr(s3_client, method_name)
         try:
             return method(*args, **kwargs)
-        except s3_exceptions.ClientError as e:
+        except boto_s3_exceptions.ClientError as e:
             raise _parse_s3_error(e)
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
@@ -169,7 +175,7 @@ class S3Path(Path):
             list_kwargs['Prefix'] = prefix / '' if prefix else ''
             list_kwargs['Delimiter'] = '/'
 
-        path_prefix = S3Path('%s%s' % (self.s3_drive, bucket))
+        path_prefix = S3Path('%s%s' % (self.drive, bucket))
 
         results = self._get_s3_iterator('list_objects_v2', **list_kwargs)
         list_results = []
@@ -185,7 +191,7 @@ class S3Path(Path):
                         path_prefix / result['Prefix']
                         for result in page['CommonPrefixes']
                     ])
-        except s3_exceptions.ClientError as e:
+        except boto_s3_exceptions.ClientError as e:
             raise _parse_s3_error(e)
 
         return list_results

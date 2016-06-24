@@ -51,7 +51,7 @@ def is_s3_path(p):
         bool: True if p is a S3 path, False otherwise.
     """
     from storage_utils.s3 import S3Path
-    return p.startswith(S3Path.s3_drive)
+    return p.startswith(S3Path.drive)
 
 
 def copy(source, dest, swift_retry_options=None):

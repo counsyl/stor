@@ -28,7 +28,7 @@ class TestBasicPathMethods(unittest.TestCase):
         self.assertEquals(p.basename(), 'resource')
 
 
-class TestNew(unittest.TestCase):
+class TestValidation(unittest.TestCase):
     def test_new_failed(self):
         with self.assertRaises(ValueError):
             S3Path('bad/s3/path')
