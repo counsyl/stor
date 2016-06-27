@@ -147,11 +147,6 @@ class S3Path(Path):
 
         Returns:
             List[S3Path]: Every path in the listing
-
-        TODO:
-        - Currently errors just returned as a ClientError with helpful
-        text. Want to be able to parse the error.
-        - Handle errors, such as bucket does not exist
         """
         bucket = self.bucket
         prefix = self.resource
@@ -206,17 +201,29 @@ class S3Path(Path):
 
         Returns:
             bool: True if the path exists, False otherwise.
+
+        Raises:
+            RemoteError: A non-404 error occurred.
         """
-        raise NotImplementedError
+        try:
+            return bool(self.list(limit=1))
+        except exceptions.NotFoundError:
+            return False
 
     def isabs(self):
         return True
 
     def isdir(self):
-        raise NotImplementedError
+        if not self.resource:
+            return self.exists()
+        return self.exists() and not self.isfile()
 
     def isfile(self):
-        raise NotImplementedError
+        try:
+            contents = self.list(limit=1)
+        except exceptions.NotFoundError:
+            return False
+        return len(contents) > 0 and contents[0] == self
 
     def islink(self):
         return False
@@ -225,7 +232,25 @@ class S3Path(Path):
         return True
 
     def getsize(self):
-        raise NotImplementedError
+        """
+        Returns the content length of an object in S3.
+
+        Directories and buckets have no length and will return 0.
+        """
+        bucket = self.bucket
+        if not self.resource:
+            # check for existence of bucket
+            self._s3_client_call('head_bucket', Bucket=bucket)
+        else:
+            try:
+                return self._s3_client_call('head_object',
+                                            Bucket=bucket,
+                                            Key=self.resource).get('ContentLength', 0)
+            except exceptions.NotFoundError:
+                if not self.exists():
+                    raise
+
+        return 0
 
     def remove(self):
         raise NotImplementedError

@@ -299,6 +299,8 @@ class TestList(S3TestCase):
         results = s3_p.list()
         self.assertEquals(len(results), 2234)
 
+
+class TestListdir(S3TestCase):
     def test_listdir(self):
         mock_list = self.mock_s3_iterator
         mock_list.__iter__.return_value = [{
@@ -412,12 +414,145 @@ class TestWalkFiles(S3TestCase):
         ])
 
 
-class TestIsMethods(S3TestCase):
-    def test_isabs(self):
+@mock.patch.object(S3Path, 'list')
+class TestExists(S3TestCase):
+    def test_exists_true(self, mock_list):
+        mock_list.return_value = [S3Path('s3://test/b/val')]
+        s3_p = S3Path('s3://test/b/')
+        self.assertTrue(s3_p.exists())
+
+    def test_exists_bucket_false(self, mock_list):
+        mock_list.side_effect = exceptions.NotFoundError('not found')
+        s3_p = S3Path('s3://bucket')
+        self.assertFalse(s3_p.exists())
+
+    def test_exists_dir_or_obj_false(self, mock_list):
+        mock_list.return_value = []
+        s3_p = S3Path('s3://a/b/c/')
+        self.assertFalse(s3_p.exists())
+
+    def test_exists_any_error(self, mock_list):
+        mock_list.side_effect = exceptions.RemoteError('some error')
+        s3_p = S3Path('s3://a/b/c')
+        with self.assertRaises(exceptions.RemoteError):
+            s3_p.exists()
+
+
+class TestGetsize(S3TestCase):
+    def test_getsize_bucket(self):
+        mock_bucket = self.mock_s3.head_bucket
+        mock_bucket.return_value = {
+            'ResponseMetadata': {
+                'HTTPStatusCode': 200,
+                'HostId': 'somestring',
+                'RequestId': 'somestring'
+            }
+        }
+        s3_p = S3Path('s3://bucket')
+        self.assertEquals(s3_p.getsize(), 0)
+
+    def test_getsize_file(self):
+        mock_object = self.mock_s3.head_object
+        mock_object.return_value = {
+            'AcceptRanges': 'bytes',
+            'ContentLength': 15,
+            'ContentType': 'text/plain'
+        }
+        s3_p = S3Path('s3://bucket/obj')
+        self.assertEquals(s3_p.getsize(), 15)
+
+    @mock.patch.object(S3Path, 'exists')
+    def test_getsize_dir(self, mock_exists):
+        mock_exists.return_value = True
+        mock_object = self.mock_s3.head_object
+        mock_object.side_effect = ClientError(
+            {
+                'ResponseMetadata': {'HTTPStatusCode': 404},
+                'Error': {'Message': 'Not found'}
+            },
+            'head_object')
+        s3_p = S3Path('s3://bucket/dir')
+        self.assertEquals(s3_p.getsize(), 0)
+
+    @mock.patch.object(S3Path, 'exists')
+    def test_getsize_error(self, mock_exists):
+        mock_exists.return_value = False
+        mock_object = self.mock_s3.head_object
+        mock_object.side_effect = ClientError(
+            {
+                'ResponseMetadata': {'HTTPStatusCode': 404},
+                'Error': {'Message': 'Not found'}
+            },
+            'head_object')
+        s3_p = S3Path('s3://bucket/key')
+        with self.assertRaises(exceptions.NotFoundError):
+            s3_p.getsize()
+
+
+class TestBasicIsMethods(S3TestCase):
+    def test_isabs_always_true(self):
         self.assertTrue(S3Path('s3://a/b/c').isabs())
 
-    def test_islink(self):
+    def test_islink_always_false(self):
         self.assertFalse(S3Path('s3://a/b/c').islink())
 
-    def test_ismount(self):
+    def test_ismount_always_true(self):
         self.assertTrue(S3Path('s3://a/b/c').ismount())
+
+
+@mock.patch.object(S3Path, 'exists')
+@mock.patch.object(S3Path, 'isfile')
+class TestIsdir(S3TestCase):
+    def test_isdir_true_bucket(self, mock_isfile, mock_exists):
+        mock_exists.return_value = True
+        s3_p = S3Path('s3://bucket/')
+        self.assertTrue(s3_p.isdir())
+
+    def test_isdir_true_prefix(self, mock_isfile, mock_exists):
+        mock_exists.return_value = True
+        mock_isfile.return_value = False
+        s3_p = S3Path('s3://bucket/pre/fix')
+        self.assertTrue(s3_p.isdir())
+
+    def test_isdir_false_bucket(self, mock_isfile, mock_exists):
+        mock_exists.return_value = False
+        s3_p = S3Path('s3://bucket')
+        self.assertFalse(s3_p.isdir())
+
+    def test_isdir_false_file(self, mock_isfile, mock_exists):
+        mock_exists.return_value = True
+        mock_isfile.return_value = True
+        s3_p = S3Path('s3://bucket/pre/fix.txt')
+        self.assertFalse(s3_p.isdir())
+
+
+@mock.patch.object(S3Path, 'list')
+class TestIsfile(S3TestCase):
+    def test_isfile_true(self, mock_list):
+        mock_list.return_value = [S3Path('s3://bucket/a_file.txt')]
+        s3_p = S3Path('s3://bucket/a_file.txt')
+        self.assertTrue(s3_p.isfile())
+
+    def test_isfile_false_directory(self, mock_list):
+        mock_list.return_value = [
+            S3Path('s3://bucket/a/b.txt'),
+            S3Path('s3://bucket/a/c.txt')
+        ]
+        s3_p = S3Path('s3://bucket/a')
+        self.assertFalse(s3_p.isfile())
+
+    def test_isfile_false_emptylist(self, mock_list):
+        mock_list.return_value = []
+        s3_p = S3Path('s3://bucket/a')
+        self.assertFalse(s3_p.isfile())
+
+    def test_isfile_false_error(self, mock_list):
+        mock_list.side_effect = exceptions.NotFoundError('not found')
+        s3_p = S3Path('s3://bucket/a')
+        self.assertFalse(s3_p.isfile())
+
+    def test_isfile_any_error(self, mock_list):
+        mock_list.side_effect = exceptions.RemoteError('some error')
+        s3_p = S3Path('s3://bucket/a')
+        with self.assertRaises(exceptions.RemoteError):
+            s3_p.isfile()
