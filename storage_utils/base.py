@@ -49,7 +49,7 @@ class Path(text_type):
 
                 cls = SwiftPath
             elif utils.is_s3_path(path):
-                from storage_utils.s3 import S3Path
+                from storage_utils.experimental.s3 import S3Path
 
                 cls = S3Path
             elif os.path == ntpath:

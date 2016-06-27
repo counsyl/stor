@@ -3,7 +3,7 @@ import mock
 import ntpath
 import storage_utils
 from storage_utils.posix import PosixPath
-from storage_utils.s3 import S3Path
+from storage_utils.experimental.s3 import S3Path
 from storage_utils.swift import SwiftPath
 from storage_utils.windows import WindowsPath
 from storage_utils import utils
@@ -62,11 +62,11 @@ class TestIsFilesystemPath(unittest.TestCase):
 
 class TestIsS3Path(unittest.TestCase):
     def test_true(self):
-        self.assertTrue(storage_utils.is_s3_path('s3://my/s3/path'))
+        self.assertTrue(storage_utils.utils.is_s3_path('s3://my/s3/path'))
 
     def test_false(self):
-        self.assertFalse(storage_utils.is_s3_path('swift://my/swift/path'))
-        self.assertFalse(storage_utils.is_s3_path('my/posix/path'))
+        self.assertFalse(storage_utils.utils.is_s3_path('swift://my/swift/path'))
+        self.assertFalse(storage_utils.utils.is_s3_path('my/posix/path'))
 
 
 class TestWalkFilesAndDirs(unittest.TestCase):

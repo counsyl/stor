@@ -1,5 +1,5 @@
 import mock
-from storage_utils.s3 import S3Path
+from storage_utils.experimental.s3 import S3Path
 from storage_utils.swift import SwiftPath
 import unittest
 
@@ -143,6 +143,10 @@ class S3TestMixin(object):
         S3 client methods or you should focus on manipulating return value
         of mock_s3.
 
+        Tests of methods that directly make API calls via _s3_client_call should
+        mock the return values of the API calls on mock_s3. Tests of methods that
+        do not directly make the API calls should mock any S3Path methods being called.
+
         The following variables are set up when calling this:
 
         - mock_s3_client: A mock of the Client instance returned by boto3.client
@@ -163,7 +167,8 @@ class S3TestMixin(object):
         # This is the mock returned by _get_s3_client.
         # User can mock s3 methods on this mock.
         self.mock_s3 = mock.Mock()
-        self._get_s3_client_patcher = mock.patch('storage_utils.s3._get_s3_client', autospec=True)
+        self._get_s3_client_patcher = mock.patch('storage_utils.experimental.s3._get_s3_client',
+                                                 autospec=True)
         self.addCleanup(self.disable_get_s3_client_mock)
         self.mock_get_s3_client = self._get_s3_client_patcher.start()
         self.mock_get_s3_client.return_value = self.mock_s3

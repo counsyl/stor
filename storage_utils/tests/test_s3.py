@@ -5,8 +5,8 @@ import mock
 
 from storage_utils import exceptions
 from storage_utils import Path
-from storage_utils import s3
-from storage_utils.s3 import S3Path
+from storage_utils.experimental import s3
+from storage_utils.experimental.s3 import S3Path
 from storage_utils.test import S3TestCase
 
 
@@ -94,13 +94,14 @@ class TestResource(unittest.TestCase):
         self.assertEquals(s3_p.resource, 'nested/dir/')
 
 
+@mock.patch('storage_utils.experimental.s3._thread_local', mock.Mock())
 class TestGetS3Client(S3TestCase):
-    @mock.patch('storage_utils.s3.thread_local')
-    def test_get_s3_client_exists(self, mock_thread):
-        mock_thread.s3_client = 'client'
+    def test_get_s3_client_exists(self):
+        s3._thread_local.s3_client = 'client'
         self.disable_get_s3_client_mock()
         client = s3._get_s3_client()
         self.assertEquals(client, 'client')
+        del s3._thread_local.s3_client
 
     def test_get_s3_client_none(self):
         self.disable_get_s3_client_mock()

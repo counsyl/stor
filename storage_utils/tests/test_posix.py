@@ -5,7 +5,7 @@ from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import Path
 from storage_utils import posix
-from storage_utils import s3
+from storage_utils.experimental import s3
 from storage_utils import settings
 from storage_utils import swift
 from storage_utils import utils

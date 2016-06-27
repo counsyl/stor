@@ -24,9 +24,6 @@ class S3IntegrationTest(unittest.TestCase):
 
         self.test_bucket = Path('s3://stor-test-bucket')
 
-    def tearDown(self):
-        super(S3IntegrationTest, self).tearDown()
-
     def test_list_methods(self):
         over_1000_files = self.test_bucket / 'lots_of_files'
         self.assertEquals(1234, len(over_1000_files.list()))
