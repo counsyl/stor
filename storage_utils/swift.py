@@ -1393,7 +1393,7 @@ class SwiftPath(Path):
               to a segment container named .segments_${container_name}
 
         Args:
-            to_upload (list): A list of file names, directory names, or
+            to_upload (List): A list of file names, directory names, or
                 `SwiftUploadObject` objects to upload.
             condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition. In the event of the

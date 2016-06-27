@@ -8,6 +8,7 @@ Table of Contents
    installation
    main_interface
    swift
+   s3
    posix
    windows
    testing
