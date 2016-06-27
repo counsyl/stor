@@ -36,6 +36,8 @@ class Path(text_type):
         PosixPath('/some/path')
         >>> Path('swift://AUTH_something/cont/blah')
         SwiftPath('swift://AUTH_something/cont/blah')
+        >>> Path('s3://bucket/prefix/key')
+        S3Path('s3://bucket/prefix/key')
     """
 
     def __new__(cls, path):
@@ -46,6 +48,10 @@ class Path(text_type):
                 from storage_utils.swift import SwiftPath
 
                 cls = SwiftPath
+            elif utils.is_s3_path(path):
+                from storage_utils.experimental.s3 import S3Path
+
+                cls = S3Path
             elif os.path == ntpath:
                 from storage_utils.windows import WindowsPath
 
@@ -155,7 +161,7 @@ class Path(text_type):
         return self.expandvars().expanduser().normpath()
 
     def fnmatch(self, pattern, normcase=None):
-        """Return ``True`` if `name` matches the given ``pattern``.
+        """Return ``True`` if :attr:`name` matches the given ``pattern``.
 
         .. seealso:: :func:`fnmatch.fnmatch`
 
@@ -184,7 +190,7 @@ class Path(text_type):
 
     @property
     def namebase(self):
-        """ The same as `name`, but with one file extension stripped off.
+        """ The same as :attr:`name`, but with one file extension stripped off.
 
         For example,
         ``Path('/home/guido/python.tar.gz').name == 'python.tar.gz'``,

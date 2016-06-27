@@ -1,4 +1,5 @@
 from storage_utils import posix
+from storage_utils.experimental import s3
 from storage_utils import swift
 from storage_utils import windows
 import unittest
@@ -17,6 +18,10 @@ class TestDiv(unittest.TestCase):
         with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             windows.WindowsPath(r'my\path') / swift.SwiftPath('swift://t/c/name').name
 
+    def test_w_s3_component(self):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
+            windows.WindowsPath(r'my\path') / s3.S3Path('s3://b/name').name
+
 
 class TestAdd(unittest.TestCase):
     def test_success(self):
@@ -30,3 +35,7 @@ class TestAdd(unittest.TestCase):
     def test_w_swift_component(self):
         with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
             windows.WindowsPath(r'my\path') + swift.SwiftPath('swift://t/c/name').name
+
+    def test_w_s3_component(self):
+        with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
+            windows.WindowsPath(r'my\path') + s3.S3Path('s3://b/name').name
