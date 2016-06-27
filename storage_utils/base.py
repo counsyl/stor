@@ -36,8 +36,8 @@ class Path(text_type):
         PosixPath('/some/path')
         >>> Path('swift://AUTH_something/cont/blah')
         SwiftPath('swift://AUTH_something/cont/blah')
-        >>> Path('s3://')
-        S3Path('s3://')
+        >>> Path('s3://bucket/prefix/key')
+        S3Path('s3://bucket/prefix/key')
     """
 
     def __new__(cls, path):
