@@ -1,6 +1,8 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
+import errno
+import os
 import posixpath
 import threading
 
@@ -10,6 +12,7 @@ from botocore import exceptions as boto_s3_exceptions
 from storage_utils import exceptions
 from storage_utils.base import Path
 from storage_utils.posix import PosixPath
+from storage_utils import utils
 
 # Thread-local variable used to cache the client
 _thread_local = threading.local()
@@ -42,9 +45,61 @@ def _get_s3_client():
     Returns:
         boto3.Client: An instance of the S3 client.
     """
+    client_kwargs = {
+
+    }
     if not hasattr(_thread_local, 's3_client'):
-        _thread_local.s3_client = boto3.client('s3')
+        _thread_local.s3_client = boto3.client('s3', **client_kwargs)
     return _thread_local.s3_client
+
+
+def _make_dest_dir(dest):
+    """Make directories if they do not already exist.
+
+    Raises:
+        OSError: An error occurred while creating the directories.
+            A specific exception is if a directory that is being created already exists as a file.
+    """
+    dest = os.path.abspath(dest)
+    if not os.path.isdir(dest):
+        try:
+            os.makedirs(dest)
+        except OSError as exc:
+            if exc.errno == errno.ENOTDIR:
+                raise OSError(20, 'a parent directory of \'%s\' already exists as a file' % dest)
+            else:
+                raise
+
+
+def _file_name_to_object_name(p):
+    """Given a file path, construct its object name.
+
+    Any relative or absolute directory markers at the beginning of
+    the path will be stripped, for example::
+
+        ../../my_file -> my_file
+        ./my_dir -> my_dir
+        .hidden_dir/file -> .hidden_dir/file
+        /absolute_dir -> absolute_dir
+
+    Note that windows paths will have their back slashes changed to
+    forward slashes::
+
+        C:\\my\\windows\\file -> my/windows/file
+
+    Args:
+        p (str): The input path
+
+    Returns:
+        PosixPath: The object name. An empty path will be returned in
+            the case of the input path only consisting of absolute
+            or relative directory markers (i.e. '/' -> '', './' -> '')
+    """
+    os_sep = os.path.sep
+    p_parts = Path(p).expand().splitdrive()[1].split(os_sep)
+    obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
+    parts_class = S3Path.parts_class
+    return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
 
 
 class S3Path(Path):
@@ -132,7 +187,23 @@ class S3Path(Path):
         paginator = s3_client.get_paginator(method_name)
         return paginator.paginate(**kwargs)
 
-    def open(self, **kwargs):
+    def open(self, mode='r'):
+        """
+        Opens a S3File that can be read or written to.
+
+        For examples of reading and writing opened objects, view
+        S3File.
+
+        Args:
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
+
+        Returns:
+            S3File: The s3 object.
+
+        Raises:
+            RemoteError: A s3 client error occurred.
+        """
         raise NotImplementedError
 
     def list(self, starts_with=None, limit=None, list_as_dir=False):
@@ -253,19 +324,88 @@ class S3Path(Path):
         return 0
 
     def remove(self):
-        raise NotImplementedError
+        """
+        Removes a single object.
+
+        Raises:
+            ValueError: The path is invalid.
+            RemoteError: An s3 client error occurred.
+        """
+        resource = self.resource
+        if not resource:
+            raise ValueError('cannot remove a bucket')
+        self._s3_client_call('delete_object', Bucket=self.bucket, Key=resource)
 
     def rmtree(self):
-        raise NotImplementedError
+        """
+        Removes a resource and all of its contents. The path should point to a directory.
+
+        If the specified resource is an object, nothing will happen.
+        """
+        # Ensure there is a trailing slash (path is a dir)
+        delete_path = self / ''
+        delete_list = delete_path.list()
+
+        while len(delete_list) > 0:
+            # boto3 only allows deletion of up to 1000 objects at a time
+            len_range = min(len(delete_list), 1000)
+            print len_range
+            objects = {
+                'Objects': [
+                    {'Key': delete_list.pop(0).resource}
+                    for i in range(len_range)
+                ]
+            }
+            response = self._s3_client_call('delete_objects', Bucket=self.bucket, Delete=objects)
+
+            if 'Errors' in response:
+                raise exceptions.RemoteError('an error occurred while using rmtree',
+                                             response['Errors'])
 
     def stat(self):
         """
         Performs a stat on the path.
 
-        ``stat`` only works on paths that are buckets or objects.
+        ``stat`` only works on paths that are objects.
         Using ``stat`` on a directory of objects will produce a `NotFoundError`.
+
+        An example return dictionary is the following::
+
+            {
+                'DeleteMarker': True|False,
+                'AcceptRanges': 'string',
+                'Expiration': 'string',
+                'Restore': 'string',
+                'LastModified': datetime(2015, 1, 1),
+                'ContentLength': 123,
+                'ETag': 'string',
+                'MissingMeta': 123,
+                'VersionId': 'string',
+                'CacheControl': 'string',
+                'ContentDisposition': 'string',
+                'ContentEncoding': 'string',
+                'ContentLanguage': 'string',
+                'ContentType': 'string',
+                'Expires': datetime(2015, 1, 1),
+                'WebsiteRedirectLocation': 'string',
+                'ServerSideEncryption': 'AES256'|'aws:kms',
+                'Metadata': {
+                    'string': 'string'
+                },
+                'SSECustomerAlgorithm': 'string',
+                'SSECustomerKeyMD5': 'string',
+                'SSEKMSKeyId': 'string',
+                'StorageClass': 'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA',
+                'RequestCharged': 'requester',
+                'ReplicationStatus': 'COMPLETE'|'PENDING'|'FAILED'|'REPLICA'
+            }
         """
-        raise NotImplementedError
+        if not self.resource:
+            raise ValueError('stat cannot be called on a bucket')
+
+        response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
+        del response['ResponseMetadata']
+        return response
 
     def walkfiles(self, pattern=None):
         """
@@ -281,3 +421,72 @@ class S3Path(Path):
         for f in self.list():
             if pattern is None or f.fnmatch(pattern):
                 yield f
+
+    def download(self, dest):
+        """Downloads a file or directory from S3 to a destination file or directory.
+
+        If downloading a file to a directory, the destination path must include a trailing slash.
+
+        Args:
+            dest (str): The destination path to download file to. If downloading to a directory,
+                there must be a trailing slash. The directory will be created if it doesn't exist.
+
+        Notes:
+
+            - The destination directory will be created automatically if it doesn't exist.
+
+            - This method downloads to paths relative to the current
+              directory.
+
+        """
+        if self.isfile():
+            dl_kwargs = {
+                'Bucket': self.bucket,
+                'Key': self.resource,
+            }
+            if dest[-1] == '/':
+                dl_kwargs['Filename'] = dest / self.name
+                _make_dest_dir(dest)
+            else:
+                dl_kwargs['Filename'] = dest
+                _make_dest_dir(self.parts_class(dest).parent)
+            self._s3_client_call('download_file', **dl_kwargs)
+        else:
+            source = self / ''
+            files_to_download = source.list()
+            for f in files_to_download:
+                name = self.parts_class(f[len(source):])
+                ul_kwargs = {
+                    'Bucket': self.bucket,
+                    'Key': f.resource,
+                    'Filename': dest / name,
+                }
+                _make_dest_dir(ul_kwargs['Filename'].parent)
+                self._s3_client_call('download_file', **ul_kwargs)
+
+    def upload(self, source):
+        """Uploads a list of files and directories to s3.
+
+        Note that the S3Path is treated as a directory.
+
+        Args:
+            source (str): The source file to upload to S3.
+
+        Notes:
+
+            - This method uploads to paths relative to the current
+              directory.
+
+        """
+        files_to_upload = utils.walk_files_and_dirs([
+            name for name in source
+        ])
+
+        for f in files_to_upload:
+            object_name = _file_name_to_object_name(f)
+            ul_kwargs = {
+                'Bucket': self.bucket,
+                'Key': self.resource / object_name if self.resource else object_name,
+                'Filename': f
+            }
+            self._s3_client_call('upload_file', **ul_kwargs)
