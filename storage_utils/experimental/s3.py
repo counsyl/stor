@@ -10,7 +10,6 @@ import boto3
 from botocore import exceptions as boto_s3_exceptions
 
 from storage_utils import exceptions
-from storage_utils.base import file_name_to_object_name
 from storage_utils.base import Path
 from storage_utils.posix import PosixPath
 from storage_utils import utils
@@ -455,7 +454,7 @@ class S3Path(Path):
             # Skip empty directories for now
             if Path(f).isdir():
                 continue
-            object_name = file_name_to_object_name(f)
+            object_name = utils.file_name_to_object_name(f)
             ul_kwargs = {
                 'Bucket': self.bucket,
                 'Key': self.resource / object_name if self.resource else object_name,

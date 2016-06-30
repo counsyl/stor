@@ -44,7 +44,6 @@ import urlparse
 
 import storage_utils
 from storage_utils import exceptions as stor_exceptions
-from storage_utils.base import file_name_to_object_name
 from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils import utils
@@ -459,6 +458,9 @@ def join_conditions(*conditions):
     def wrapper(results):
         return all(f(results) for f in conditions)
     return wrapper
+
+
+file_name_to_object_name = utils.file_name_to_object_name
 
 
 class SwiftDownloadLogger(utils.BaseProgressLogger):
