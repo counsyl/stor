@@ -44,6 +44,7 @@ import urlparse
 
 import storage_utils
 from storage_utils import exceptions as stor_exceptions
+from storage_utils.base import file_name_to_object_name
 from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils import utils
@@ -392,37 +393,6 @@ def _with_trailing_slash(p):
     if not p:
         return p
     return type(p)(p.rstrip('/') + '/')
-
-
-def file_name_to_object_name(p):
-    """Given a file path, consruct its object name.
-
-    Any relative or absolute directory markers at the beginning of
-    the path will be stripped, for example::
-
-        ../../my_file -> my_file
-        ./my_dir -> my_dir
-        .hidden_dir/file -> .hidden_dir/file
-        /absolute_dir -> absolute_dir
-
-    Note that windows paths will have their back slashes changed to
-    forward slashes::
-
-        C:\\my\\windows\\file -> my/windows/file
-
-    Args:
-        p (str): The input path
-
-    Returns:
-        PosixPath: The object name. An empty path will be returned in
-            the case of the input path only consisting of absolute
-            or relative directory markers (i.e. '/' -> '', './' -> '')
-    """
-    os_sep = os.path.sep
-    p_parts = Path(p).expand().splitdrive()[1].split(os_sep)
-    obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    parts_class = SwiftPath.parts_class
-    return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
 
 
 def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):

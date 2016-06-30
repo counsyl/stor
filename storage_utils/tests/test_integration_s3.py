@@ -2,11 +2,15 @@ import logging
 import os
 import unittest
 
+from six.moves import builtins
+
 from storage_utils import exceptions
+from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
+from storage_utils.tests.shared import BaseIntegrationTest
 
 
-class S3IntegrationTest(unittest.TestCase):
+class S3IntegrationTest(BaseIntegrationTest):
     """
     Integration tests for S3. Note that for now, while upload/download/remove
     methods are not implemented, tests will use the existing stor-test-bucket
@@ -30,84 +34,102 @@ class S3IntegrationTest(unittest.TestCase):
         logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
         self.test_bucket = Path('s3://stor-test-bucket')
+        self.test_dir = self.test_bucket / 'test'
+
+    def tearDown(self):
+        super(S3IntegrationTest, self).tearDown()
+        self.test_dir.rmtree()
+
+    @unittest.skip("test takes a long time. run manually if you want to test.")
+    def test_over_1000_files(self):
+        num_test_objs = 1234
+        min_obj_size = 0
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, min_obj_size)
+            self.test_dir.upload(['.'])
+
+        self.assertEquals(1234, len(self.test_dir.list()))
+        self.assertEquals(1200, len(self.test_dir.list(limit=1200)))
+        self.assertTrue(self.test_dir.isdir())
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.test_dir.download('./')
+            self.assertEquals(1234, len(os.listdir(tmp_d)))
 
     def test_list_methods(self):
-        over_1000_files = self.test_bucket / 'lots_of_files'
-        self.assertEquals(1234, len(over_1000_files.list()))
-        self.assertEquals(10, len(over_1000_files.list(limit=10)))
-        self.assertEquals(1200, len(over_1000_files.list(limit=1200)))
-
         fake_bucket = Path('s3://stor-test-bucket2')
         with self.assertRaises(exceptions.NotFoundError):
             fake_bucket.list()
         fake_folder = self.test_bucket / 'not_a_dir'
         self.assertEquals([], fake_folder.list())
 
-        small_file_set = self.test_bucket / 'small_test'
-        small_file_set_list = small_file_set.list()
-        starts_with_list = self.test_bucket.list(starts_with='small_test')
-        self.assertEquals(set(small_file_set_list), set(starts_with_list))
-        self.assertEquals(set(small_file_set_list), set([
-            small_file_set / 'aaabbbab',
-            small_file_set / 'aba/babba.txt',
-            small_file_set / 'aba/bc',
-            small_file_set / 'abaac.txt',
-            small_file_set / 'nested_dir/abababa',
-            small_file_set / 'nested_dir/file01.txt',
-            small_file_set / 'nested_dir/file02.txt',
-            small_file_set / 'nested_dir/file03.txt'
+        with NamedTemporaryDirectory(change_dir=True):
+            builtins.open('file1.txt', 'w').close()
+            builtins.open('file2.txt', 'w').close()
+            os.mkdir('nested_dir')
+            os.mkdir('nested_dir/dir')
+            builtins.open('nested_dir/dir/file3.txt', 'w').close()
+            self.test_dir.upload(['.'])
+
+        file_list = self.test_dir.list()
+        starts_with_list = self.test_bucket.list(starts_with='test')
+        self.assertEquals(set(file_list), set(starts_with_list))
+        self.assertEquals(set(file_list), set([
+            self.test_dir / 'file1.txt',
+            self.test_dir / 'file2.txt',
+            self.test_dir / 'nested_dir/dir/file3.txt'
         ]))
 
-        bucket_dirlist = self.test_bucket.listdir()
-        self.assertEquals(set(bucket_dirlist), set([
-            self.test_bucket / 'counsyl-storage-utils/',
-            self.test_bucket / 'lots_of_files/',
-            self.test_bucket / 'small_test/',
-            self.test_bucket / 'a.txt',
-            self.test_bucket / 'b.txt',
-            self.test_bucket / 'counsyl-storage-utils'
+        dir_list = self.test_dir.listdir()
+        self.assertEquals(set(dir_list), set([
+            self.test_dir / 'file1.txt',
+            self.test_dir / 'file2.txt',
+            self.test_dir / 'nested_dir/'
         ]))
 
-        test_dir = self.test_bucket / 'counsyl-storage-utils'
-        self.assertTrue(test_dir.listdir() == (test_dir + '/').listdir())
+        self.assertTrue(self.test_dir.listdir() == (self.test_dir + '/').listdir())
 
     def test_walkfiles(self):
-        test_dir = self.test_bucket / 'small_test'
-        all_files = list(test_dir.walkfiles())
+        with NamedTemporaryDirectory(change_dir=True):
+            open('aabc.sh', 'w').close()
+            open('aabc', 'w').close()
+            os.mkdir('b')
+            open('b/c.sh', 'w').close()
+            os.mkdir('empty')
+            open('b/d', 'w').close()
+            open('b/abbbc', 'w').close()
+            self.test_dir.upload(['.'])
+
+        all_files = list(self.test_dir.walkfiles())
         self.assertEquals(set(all_files), set([
-            test_dir / 'aaabbbab',
-            test_dir / 'aba/babba.txt',
-            test_dir / 'aba/bc',
-            test_dir / 'abaac.txt',
-            test_dir / 'nested_dir/abababa',
-            test_dir / 'nested_dir/file01.txt',
-            test_dir / 'nested_dir/file02.txt',
-            test_dir / 'nested_dir/file03.txt'
+            self.test_dir / 'aabc.sh',
+            self.test_dir / 'aabc',
+            self.test_dir / 'b/c.sh',
+            self.test_dir / 'b/d',
+            self.test_dir / 'b/abbbc',
         ]))
-        prefix_files = list(test_dir.walkfiles('*.txt'))
+        prefix_files = list(self.test_dir.walkfiles('*.sh'))
         self.assertEquals(set(prefix_files), set([
-            test_dir / 'aba/babba.txt',
-            test_dir / 'abaac.txt',
-            test_dir / 'nested_dir/file01.txt',
-            test_dir / 'nested_dir/file02.txt',
-            test_dir / 'nested_dir/file03.txt'
+            self.test_dir / 'aabc.sh',
+            self.test_dir / 'b/c.sh'
         ]))
-        infix_files = list(test_dir.walkfiles('a*b'))
+        infix_files = list(self.test_dir.walkfiles('a*b*c'))
         self.assertEquals(set(infix_files), set([
-            test_dir / 'aaabbbab'
+            self.test_dir / 'aabc',
+            self.test_dir / 'b/abbbc'
         ]))
-        suffix_files = list(test_dir.walkfiles('a*'))
+        suffix_files = list(self.test_dir.walkfiles('a*'))
         self.assertEquals(set(suffix_files), set([
-            test_dir / 'aaabbbab',
-            test_dir / 'abaac.txt',
-            test_dir / 'nested_dir/abababa'
+            self.test_dir / 'aabc.sh',
+            self.test_dir / 'aabc',
+            self.test_dir / 'b/abbbc'
         ]))
-        more_files = list(test_dir.walkfiles('*ab*'))
+        more_files = list(self.test_dir.walkfiles('*ab*'))
         self.assertEquals(set(more_files), set([
-            test_dir / 'aaabbbab',
-            test_dir / 'aba/babba.txt',
-            test_dir / 'abaac.txt',
-            test_dir / 'nested_dir/abababa'
+            self.test_dir / 'aabc.sh',
+            self.test_dir / 'aabc',
+            self.test_dir / 'b/abbbc'
         ]))
 
     def test_is_methods(self):
@@ -122,24 +144,28 @@ class S3IntegrationTest(unittest.TestCase):
         self.assertFalse(self.test_bucket.isfile())
         self.assertEquals(self.test_bucket.getsize(), 0)
 
-        test_dir = self.test_bucket / 'lots_of_files'
-        self.assertTrue(test_dir.exists())
-        self.assertTrue(test_dir.isdir())
-        self.assertFalse(test_dir.isfile())
-        self.assertEquals(test_dir.getsize(), 0)
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, 1, 10)
+            self.test_dir.upload(['.'])
+            correct_size = os.path.getsize('0')
 
-        test_file = test_dir / 'file0.txt'
+        self.assertTrue(self.test_dir.exists())
+        self.assertTrue(self.test_dir.isdir())
+        self.assertFalse(self.test_dir.isfile())
+        self.assertEquals(self.test_dir.getsize(), 0)
+
+        test_file = self.test_dir / '0'
         self.assertTrue(test_file.exists())
         self.assertFalse(test_file.isdir())
         self.assertTrue(test_file.isfile())
-        self.assertEquals(test_file.getsize(), 14)
+        self.assertEquals(test_file.getsize(), correct_size)
 
-        fake_obj = self.test_bucket / 'nope'
-        self.assertFalse(fake_obj.exists())
-        self.assertFalse(fake_obj.isdir())
-        self.assertFalse(fake_obj.isfile())
+        test_file.remove()
+        self.assertFalse(test_file.exists())
+        self.assertFalse(test_file.isdir())
+        self.assertFalse(test_file.isfile())
         with self.assertRaises(exceptions.NotFoundError):
-            fake_obj.getsize()
+            test_file.getsize()
 
         fake_bucket = self.test_bucket + '2'
         self.assertFalse(fake_bucket.exists())
@@ -147,3 +173,36 @@ class S3IntegrationTest(unittest.TestCase):
         self.assertFalse(fake_bucket.isfile())
         with self.assertRaises(exceptions.NotFoundError):
             fake_bucket.getsize()
+
+    def test_upload_download_remove(self):
+        num_test_objs = 10
+        min_obj_size = 50
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, min_obj_size)
+            self.test_dir.upload(['.'])
+
+        for which_obj in self.get_dataset_obj_names(num_test_objs):
+            print(which_obj)
+            self.assertTrue((self.test_dir / which_obj).exists())
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.test_dir.download(tmp_d)
+            for which_obj in self.get_dataset_obj_names(num_test_objs):
+                self.assertCorrectObjectContents(which_obj, which_obj, min_obj_size)
+                (self.test_dir / which_obj).remove()
+                self.assertFalse((self.test_dir / which_obj).exists())
+
+    def test_download(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            os.mkdir('dir')
+            os.mkdir('dir/a')
+            open('dir/a/a.txt', 'w').close()
+            self.test_dir.upload(['.'])
+
+        with NamedTemporaryDirectory(change_dir=True):
+            open('dir', 'w').close()
+            open('a', 'w').close()
+            with self.assertRaises(OSError):
+                self.test_dir.download('.')
+            with self.assertRaises(OSError):
+                (self.test_dir / 'dir').download('.')

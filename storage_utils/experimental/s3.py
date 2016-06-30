@@ -10,6 +10,7 @@ import boto3
 from botocore import exceptions as boto_s3_exceptions
 
 from storage_utils import exceptions
+from storage_utils.base import file_name_to_object_name
 from storage_utils.base import Path
 from storage_utils.posix import PosixPath
 from storage_utils import utils
@@ -45,9 +46,7 @@ def _get_s3_client():
     Returns:
         boto3.Client: An instance of the S3 client.
     """
-    client_kwargs = {
-
-    }
+    client_kwargs = {}
     if not hasattr(_thread_local, 's3_client'):
         _thread_local.s3_client = boto3.client('s3', **client_kwargs)
     return _thread_local.s3_client
@@ -69,37 +68,6 @@ def _make_dest_dir(dest):
                 raise OSError(20, 'a parent directory of \'%s\' already exists as a file' % dest)
             else:
                 raise
-
-
-def _file_name_to_object_name(p):
-    """Given a file path, construct its object name.
-
-    Any relative or absolute directory markers at the beginning of
-    the path will be stripped, for example::
-
-        ../../my_file -> my_file
-        ./my_dir -> my_dir
-        .hidden_dir/file -> .hidden_dir/file
-        /absolute_dir -> absolute_dir
-
-    Note that windows paths will have their back slashes changed to
-    forward slashes::
-
-        C:\\my\\windows\\file -> my/windows/file
-
-    Args:
-        p (str): The input path
-
-    Returns:
-        PosixPath: The object name. An empty path will be returned in
-            the case of the input path only consisting of absolute
-            or relative directory markers (i.e. '/' -> '', './' -> '')
-    """
-    os_sep = os.path.sep
-    p_parts = Path(p).expand().splitdrive()[1].split(os_sep)
-    obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    parts_class = S3Path.parts_class
-    return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
 
 
 class S3Path(Path):
@@ -349,7 +317,6 @@ class S3Path(Path):
         while len(delete_list) > 0:
             # boto3 only allows deletion of up to 1000 objects at a time
             len_range = min(len(delete_list), 1000)
-            print len_range
             objects = {
                 'Objects': [
                     {'Key': delete_list.pop(0).resource}
@@ -477,13 +444,18 @@ class S3Path(Path):
             - This method uploads to paths relative to the current
               directory.
 
+        Todo:
+        - Decide on how to handle empty directories
+
         """
         files_to_upload = utils.walk_files_and_dirs([
             name for name in source
         ])
-
         for f in files_to_upload:
-            object_name = _file_name_to_object_name(f)
+            # Skip empty directories for now
+            if Path(f).isdir():
+                continue
+            object_name = file_name_to_object_name(f)
             ul_kwargs = {
                 'Bucket': self.bucket,
                 'Key': self.resource / object_name if self.resource else object_name,
