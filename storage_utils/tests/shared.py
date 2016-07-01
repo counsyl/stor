@@ -15,11 +15,11 @@ def assert_same_data(fp1, fp2):
 class BaseIntegrationTest(unittest.TestCase):
     def get_dataset_obj_names(self, num_test_files):
         """Returns the name of objects in a test dataset generated with create_dataset"""
-        return ['%s' % name for name in range(num_test_files)]
+        return [str(name) for name in range(num_test_files)]
 
     def get_dataset_obj_contents(self, which_test_file, min_object_size):
         """Returns the object contents from a test file generated with create_dataset"""
-        return '%s' % str(which_test_file) * min_object_size
+        return str(which_test_file) * min_object_size
 
     def create_dataset(self, directory, num_objects, min_object_size):
         """Creates a test dataset with predicatable names and contents

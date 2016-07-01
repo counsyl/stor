@@ -2,8 +2,6 @@ import logging
 import os
 import unittest
 
-from six.moves import builtins
-
 from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
@@ -65,11 +63,11 @@ class S3IntegrationTest(BaseIntegrationTest):
         self.assertEquals([], fake_folder.list())
 
         with NamedTemporaryDirectory(change_dir=True):
-            builtins.open('file1.txt', 'w').close()
-            builtins.open('file2.txt', 'w').close()
+            open('file1.txt', 'w').close()
+            open('file2.txt', 'w').close()
             os.mkdir('nested_dir')
             os.mkdir('nested_dir/dir')
-            builtins.open('nested_dir/dir/file3.txt', 'w').close()
+            open('nested_dir/dir/file3.txt', 'w').close()
             self.test_dir.upload(['.'])
 
         file_list = self.test_dir.list()
@@ -182,7 +180,6 @@ class S3IntegrationTest(BaseIntegrationTest):
             self.test_dir.upload(['.'])
 
         for which_obj in self.get_dataset_obj_names(num_test_objs):
-            print(which_obj)
             self.assertTrue((self.test_dir / which_obj).exists())
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:

@@ -1,8 +1,6 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
-import errno
-import os
 import posixpath
 import threading
 
@@ -49,24 +47,6 @@ def _get_s3_client():
     if not hasattr(_thread_local, 's3_client'):
         _thread_local.s3_client = boto3.client('s3', **client_kwargs)
     return _thread_local.s3_client
-
-
-def _make_dest_dir(dest):
-    """Make directories if they do not already exist.
-
-    Raises:
-        OSError: An error occurred while creating the directories.
-            A specific exception is if a directory that is being created already exists as a file.
-    """
-    dest = os.path.abspath(dest)
-    if not os.path.isdir(dest):
-        try:
-            os.makedirs(dest)
-        except OSError as exc:
-            if exc.errno == errno.ENOTDIR:
-                raise OSError(20, 'a parent directory of \'%s\' already exists as a file' % dest)
-            else:
-                raise
 
 
 class S3Path(Path):
@@ -205,7 +185,7 @@ class S3Path(Path):
 
         if list_as_dir:
             # Ensure the the prefix has a trailing slash if there is a prefix
-            list_kwargs['Prefix'] = prefix / '' if prefix else ''
+            list_kwargs['Prefix'] = utils.with_trailing_slash(prefix) if prefix else ''
             list_kwargs['Delimiter'] = '/'
 
         path_prefix = S3Path('%s%s' % (self.drive, bucket))
@@ -252,9 +232,13 @@ class S3Path(Path):
         return True
 
     def isdir(self):
-        if not self.resource:
-            return self.exists()
-        return self.exists() and not self.isfile()
+        """
+        TODO: Check for directory markers (once implemented)
+        """
+        try:
+            return self.list(limit=1)[0] != self
+        except (exceptions.NotFoundError, IndexError):
+            return False
 
     def isfile(self):
         try:
@@ -285,6 +269,7 @@ class S3Path(Path):
                                             Bucket=bucket,
                                             Key=self.resource).get('ContentLength', 0)
             except exceptions.NotFoundError:
+                # Check if path is a directory
                 if not self.exists():
                     raise
 
@@ -301,7 +286,7 @@ class S3Path(Path):
         resource = self.resource
         if not resource:
             raise ValueError('cannot remove a bucket')
-        self._s3_client_call('delete_object', Bucket=self.bucket, Key=resource)
+        return self._s3_client_call('delete_object', Bucket=self.bucket, Key=resource)
 
     def rmtree(self):
         """
@@ -310,7 +295,7 @@ class S3Path(Path):
         If the specified resource is an object, nothing will happen.
         """
         # Ensure there is a trailing slash (path is a dir)
-        delete_path = self / ''
+        delete_path = utils.with_trailing_slash(self)
         delete_list = delete_path.list()
 
         while len(delete_list) > 0:
@@ -388,47 +373,52 @@ class S3Path(Path):
             if pattern is None or f.fnmatch(pattern):
                 yield f
 
-    def download(self, dest):
-        """Downloads a file or directory from S3 to a destination file or directory.
+    def download_object(self, dest):
+        """
+        Downloads a file from S3 to a destination file.
 
-        If downloading a file to a directory, the destination path must include a trailing slash.
+        Args:
+            dest (str): The destination path to download file to.
+
+        Notes:
+            - The destination directory will be created automatically if it doesn't exist.
+
+            - This method downloads to paths relative to the current
+              directory.
+        """
+        dl_kwargs = {
+            'Bucket': self.bucket,
+            'Key': self.resource
+        }
+        dl_kwargs['Filename'] = dest
+        utils.make_dest_dir(self.parts_class(dest).parent)
+        self._s3_client_call('download_file', **dl_kwargs)
+
+    def download(self, dest):
+        """Downloads a directory from S3 to a destination directory.
 
         Args:
             dest (str): The destination path to download file to. If downloading to a directory,
                 there must be a trailing slash. The directory will be created if it doesn't exist.
 
         Notes:
-
             - The destination directory will be created automatically if it doesn't exist.
 
             - This method downloads to paths relative to the current
               directory.
 
         """
-        if self.isfile():
-            dl_kwargs = {
+        source = utils.with_trailing_slash(self)
+        files_to_download = source.list()
+        for f in files_to_download:
+            name = self.parts_class(f[len(source):])
+            ul_kwargs = {
                 'Bucket': self.bucket,
-                'Key': self.resource,
+                'Key': f.resource,
+                'Filename': dest / name
             }
-            if dest[-1] == '/':
-                dl_kwargs['Filename'] = dest / self.name
-                _make_dest_dir(dest)
-            else:
-                dl_kwargs['Filename'] = dest
-                _make_dest_dir(self.parts_class(dest).parent)
-            self._s3_client_call('download_file', **dl_kwargs)
-        else:
-            source = self / ''
-            files_to_download = source.list()
-            for f in files_to_download:
-                name = self.parts_class(f[len(source):])
-                ul_kwargs = {
-                    'Bucket': self.bucket,
-                    'Key': f.resource,
-                    'Filename': dest / name,
-                }
-                _make_dest_dir(ul_kwargs['Filename'].parent)
-                self._s3_client_call('download_file', **ul_kwargs)
+            utils.make_dest_dir(ul_kwargs['Filename'].parent)
+            self._s3_client_call('download_file', **ul_kwargs)
 
     def upload(self, source):
         """Uploads a list of files and directories to s3.
@@ -436,15 +426,16 @@ class S3Path(Path):
         Note that the S3Path is treated as a directory.
 
         Args:
-            source (str): The source file to upload to S3.
+            source (List[str]): A list of source files and directories to upload to S3.
 
         Notes:
 
-            - This method uploads to paths relative to the current
-              directory.
+        - This method uploads to paths relative to the current
+          directory.
 
-        Todo:
-        - Decide on how to handle empty directories
+        TODO:
+
+        - Update once directory markers are implemented
 
         """
         files_to_upload = utils.walk_files_and_dirs([

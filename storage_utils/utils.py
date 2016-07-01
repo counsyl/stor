@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import datetime
+import errno
 import logging
 import os
 import shlex
@@ -44,6 +45,31 @@ def file_name_to_object_name(p):
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
     parts_class = PosixPath.parts_class
     return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
+
+
+def make_dest_dir(dest):
+    """Make directories if they do not already exist.
+
+    Raises:
+        OSError: An error occurred while creating the directories.
+            A specific exception is if a directory that is being created already exists as a file.
+    """
+    dest = os.path.abspath(dest)
+    if not os.path.isdir(dest):
+        try:
+            os.makedirs(dest)
+        except OSError as exc:
+            if exc.errno == errno.ENOTDIR:
+                raise OSError(20, 'a parent directory of \'%s\' already exists as a file' % dest)
+            else:
+                raise
+
+
+def with_trailing_slash(p):
+    """Returns a path with a single trailing slash or None if not a path"""
+    if not p:
+        return p
+    return type(p)(p.rstrip('/') + '/')
 
 
 def is_swift_path(p):

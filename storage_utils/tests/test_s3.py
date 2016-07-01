@@ -415,7 +415,7 @@ class TestWalkFiles(S3TestCase):
         ])
 
 
-@mock.patch.object(S3Path, 'list')
+@mock.patch.object(S3Path, 'list', autospec=True)
 class TestExists(S3TestCase):
     def test_exists_true(self, mock_list):
         mock_list.return_value = [S3Path('s3://test/b/val')]
@@ -462,7 +462,7 @@ class TestGetsize(S3TestCase):
         s3_p = S3Path('s3://bucket/obj')
         self.assertEquals(s3_p.getsize(), 15)
 
-    @mock.patch.object(S3Path, 'exists')
+    @mock.patch.object(S3Path, 'exists', autospec=True)
     def test_getsize_dir(self, mock_exists):
         mock_exists.return_value = True
         mock_object = self.mock_s3.head_object
@@ -475,7 +475,7 @@ class TestGetsize(S3TestCase):
         s3_p = S3Path('s3://bucket/dir')
         self.assertEquals(s3_p.getsize(), 0)
 
-    @mock.patch.object(S3Path, 'exists')
+    @mock.patch.object(S3Path, 'exists', autospec=True)
     def test_getsize_error(self, mock_exists):
         mock_exists.return_value = False
         mock_object = self.mock_s3.head_object
@@ -501,8 +501,8 @@ class TestBasicIsMethods(S3TestCase):
         self.assertTrue(S3Path('s3://a/b/c').ismount())
 
 
-@mock.patch.object(S3Path, 'exists')
-@mock.patch.object(S3Path, 'isfile')
+@mock.patch.object(S3Path, 'exists', autospec=True)
+@mock.patch.object(S3Path, 'isfile', autospec=True)
 class TestIsdir(S3TestCase):
     def test_isdir_true_bucket(self, mock_isfile, mock_exists):
         mock_exists.return_value = True
@@ -527,7 +527,7 @@ class TestIsdir(S3TestCase):
         self.assertFalse(s3_p.isdir())
 
 
-@mock.patch.object(S3Path, 'list')
+@mock.patch.object(S3Path, 'list', autospec=True)
 class TestIsfile(S3TestCase):
     def test_isfile_true(self, mock_list):
         mock_list.return_value = [S3Path('s3://bucket/a_file.txt')]
@@ -584,7 +584,7 @@ class TestRemove(S3TestCase):
         mock_delete_object.assert_called_once_with(Bucket='a', Key='b/c.txt')
 
 
-@mock.patch.object(S3Path, 'list')
+@mock.patch.object(S3Path, 'list', autospec=True)
 class TestRmtree(S3TestCase):
     def test_rmtree_obj(self, mock_list):
         mock_delete_objects = self.mock_s3.delete_objects
@@ -755,7 +755,7 @@ class TestUpload(S3TestCase):
 
 @mock.patch('storage_utils.experimental.s3._make_dest_dir', autospec=True)
 class TestDownload(S3TestCase):
-    @mock.patch.object(S3Path, 'isfile', return_value=True)
+    @mock.patch.object(S3Path, 'isfile', return_value=True, autospec=True)
     def test_download_file_to_dir(self, mock_isfile, mock_make_dest):
         s3_p = S3Path('s3://a/b/c.txt')
         s3_p.download('test/')
@@ -764,7 +764,7 @@ class TestDownload(S3TestCase):
                                                            Filename='test/c.txt')
         mock_make_dest.assert_called_once_with('test/')
 
-    @mock.patch.object(S3Path, 'isfile', return_value=True)
+    @mock.patch.object(S3Path, 'isfile', return_value=True, autospec=True)
     def test_download_file_to_file(self, mock_isfile, mock_make_dest):
         s3_p = S3Path('s3://a/b/c.txt')
         s3_p.download('test/d.txt')
@@ -773,7 +773,7 @@ class TestDownload(S3TestCase):
                                                            Filename='test/d.txt')
         mock_make_dest.assert_called_once_with('test')
 
-    @mock.patch.object(S3Path, 'list')
+    @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_dir(self, mock_list, mock_make_dest):
         mock_list.return_value = [
             S3Path('s3://bucket/file1'),

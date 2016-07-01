@@ -44,6 +44,7 @@ import urlparse
 
 import storage_utils
 from storage_utils import exceptions as stor_exceptions
+from storage_utils.utils import file_name_to_object_name
 from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils import utils
@@ -387,13 +388,6 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
-def _with_trailing_slash(p):
-    "Returns a path with a single trailing slash or None if not a path"
-    if not p:
-        return p
-    return type(p)(p.rstrip('/') + '/')
-
-
 def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
     """Generates a data manifest for a given directory and saves it.
 
@@ -458,9 +452,6 @@ def join_conditions(*conditions):
     def wrapper(results):
         return all(f(results) for f in conditions)
     return wrapper
-
-
-file_name_to_object_name = utils.file_name_to_object_name
 
 
 class SwiftDownloadLogger(utils.BaseProgressLogger):
@@ -1028,7 +1019,7 @@ class SwiftPath(Path):
             list_kwargs['delimiter'] = '/'
 
             # Ensure that the prefix has a '/' at the end of it for listdir
-            list_kwargs['prefix'] = _with_trailing_slash(list_kwargs['prefix'])
+            list_kwargs['prefix'] = utils.with_trailing_slash(list_kwargs['prefix'])
 
         if self.container:
             results = self._swift_connection_call('get_container',
@@ -1140,7 +1131,7 @@ class SwiftPath(Path):
         try:
             # otherwise we could be a directory, so try to grab first
             # file/subfolder
-            return bool(_with_trailing_slash(self).first(num_retries=0))
+            return bool(utils.with_trailing_slash(self).first(num_retries=0))
         except NotFoundError:
             return False
 
@@ -1237,7 +1228,7 @@ class SwiftPath(Path):
         }
 
         for obj in objs_to_download:
-            if is_swift_path(obj) and not obj.startswith(_with_trailing_slash(self)):
+            if is_swift_path(obj) and not obj.startswith(utils.with_trailing_slash(self)):
                 raise ValueError(
                     '"%s" must be child of download path "%s"' % (obj, self))
 
@@ -1248,7 +1239,7 @@ class SwiftPath(Path):
             'container_threads': options['container_threads']
         }
         download_options = {
-            'prefix': _with_trailing_slash(self.resource),
+            'prefix': utils.with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True,
             'skip_identical': options['skip_identical'],
@@ -1320,7 +1311,7 @@ class SwiftPath(Path):
             'container_threads': options['container_threads']
         }
         download_options = {
-            'prefix': _with_trailing_slash(self.resource),
+            'prefix': utils.with_trailing_slash(self.resource),
             'out_directory': dest,
             'remove_prefix': True,
             'skip_identical': options['skip_identical'],
@@ -1408,7 +1399,7 @@ class SwiftPath(Path):
         # resource directory to uploaded results. Ignore the manifest file in the case of
         # since it will be uploaded individually
         manifest_file_name = Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME if use_manifest else None
-        resource_base = _with_trailing_slash(self.resource) or PosixPath('')
+        resource_base = utils.with_trailing_slash(self.resource) or PosixPath('')
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
             SwiftUploadObject(f,
@@ -1504,7 +1495,7 @@ class SwiftPath(Path):
             raise ValueError('swift path must include container for rmtree')
 
         # Ensure that we treat this path as a dir
-        to_delete = _with_trailing_slash(self)
+        to_delete = utils.with_trailing_slash(self)
 
         deleting_segments = 'segments' in self.container
         if deleting_segments:
@@ -1754,7 +1745,7 @@ class SwiftPath(Path):
         if not self.resource:
             return self.exists()
         try:
-            if _with_trailing_slash(self).first():
+            if utils.with_trailing_slash(self).first():
                 return True
         except NotFoundError:
             pass
