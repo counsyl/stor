@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import datetime
+import errno
 import logging
 import os
 import shlex
@@ -10,6 +11,64 @@ import tempfile
 
 
 logger = logging.getLogger(__name__)
+
+
+def file_name_to_object_name(p):
+    """Given a file path, construct its object name.
+
+    Any relative or absolute directory markers at the beginning of
+    the path will be stripped, for example::
+
+        ../../my_file -> my_file
+        ./my_dir -> my_dir
+        .hidden_dir/file -> .hidden_dir/file
+        /absolute_dir -> absolute_dir
+
+    Note that windows paths will have their back slashes changed to
+    forward slashes::
+
+        C:\\my\\windows\\file -> my/windows/file
+
+    Args:
+        p (str): The input path
+
+    Returns:
+        PosixPath: The object name. An empty path will be returned in
+            the case of the input path only consisting of absolute
+            or relative directory markers (i.e. '/' -> '', './' -> '')
+    """
+    from storage_utils import Path
+    from storage_utils.posix import PosixPath
+
+    p_parts = Path(p).expand().splitdrive()[1].split(os.path.sep)
+    obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
+    return PosixPath.parts_class('/'.join(p_parts[obj_start:]) if obj_start is not None else '')
+
+
+def make_dest_dir(dest):
+    """Make directories if they do not already exist.
+
+    Raises:
+        OSError: An error occurred while creating the directories.
+            A specific exception is if a directory that is being created already exists as a file.
+    """
+    dest = os.path.abspath(dest)
+    if not os.path.isdir(dest):
+        try:
+            os.makedirs(dest)
+        except OSError as exc:
+            if exc.errno == errno.ENOTDIR:
+                raise OSError(errno.ENOTDIR,
+                              'a parent directory of \'%s\' already exists as a file' % dest)
+            else:
+                raise
+
+
+def with_trailing_slash(p):
+    """Returns a path with a single trailing slash or None if not a path"""
+    if not p:
+        return p
+    return type(p)(p.rstrip('/') + '/')
 
 
 def is_swift_path(p):

@@ -1,6 +1,9 @@
+import errno
 import logging
 import mock
 import ntpath
+import os
+import shutil
 import storage_utils
 from storage_utils.posix import PosixPath
 from storage_utils.experimental.s3 import S3Path
@@ -145,3 +148,36 @@ class TestPathFunction(unittest.TestCase):
     def test_path_function_back_compat(self):
         pth = storage_utils.path('/blah')
         self.assertIsInstance(pth, storage_utils.Path)
+
+
+class TestMakeDestDir(unittest.TestCase):
+    def setUp(self):
+        super(TestMakeDestDir, self).setUp()
+        os.mkdir('test')
+
+    def tearDown(self):
+        super(TestMakeDestDir, self).tearDown()
+        shutil.rmtree('test')
+
+    def test_make_dest_dir_w_oserror(self):
+        open('test/test', 'w').close()
+        with self.assertRaises(OSError):
+            utils.make_dest_dir('test/test')
+        self.assertFalse(os.path.isdir('test/test'))
+
+    def test_make_dest_dir_w_enotdir_error(self):
+        open('test/test', 'w').close()
+        with self.assertRaises(OSError) as exc:
+            utils.make_dest_dir('test/test/test')
+        self.assertEquals(exc.exception.errno, errno.ENOTDIR)
+        self.assertFalse(os.path.isdir('test/test/test'))
+
+    def test_make_dest_dir_success(self):
+        utils.make_dest_dir('test/test')
+        self.assertTrue(os.path.isdir('test/test'))
+
+    @mock.patch('os.makedirs', autospec=True)
+    def test_make_dest_dir_existing(self, mock_makedirs):
+        os.mkdir('test/test')
+        utils.make_dest_dir('test/test')
+        self.assertEquals(mock_makedirs.call_count, 0)

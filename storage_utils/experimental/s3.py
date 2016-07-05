@@ -10,6 +10,7 @@ from botocore import exceptions as boto_s3_exceptions
 from storage_utils import exceptions
 from storage_utils.base import Path
 from storage_utils.posix import PosixPath
+from storage_utils import utils
 
 # Thread-local variable used to cache the client
 _thread_local = threading.local()
@@ -132,7 +133,23 @@ class S3Path(Path):
         paginator = s3_client.get_paginator(method_name)
         return paginator.paginate(**kwargs)
 
-    def open(self, **kwargs):
+    def open(self, mode='r'):
+        """
+        Opens a S3File that can be read or written to.
+
+        For examples of reading and writing opened objects, view
+        S3File.
+
+        Args:
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
+
+        Returns:
+            S3File: The s3 object.
+
+        Raises:
+            RemoteError: A s3 client error occurred.
+        """
         raise NotImplementedError
 
     def list(self, starts_with=None, limit=None, list_as_dir=False):
@@ -147,11 +164,6 @@ class S3Path(Path):
 
         Returns:
             List[S3Path]: Every path in the listing
-
-        TODO:
-        - Currently errors just returned as a ClientError with helpful
-        text. Want to be able to parse the error.
-        - Handle errors, such as bucket does not exist
         """
         bucket = self.bucket
         prefix = self.resource
@@ -172,7 +184,7 @@ class S3Path(Path):
 
         if list_as_dir:
             # Ensure the the prefix has a trailing slash if there is a prefix
-            list_kwargs['Prefix'] = prefix / '' if prefix else ''
+            list_kwargs['Prefix'] = utils.with_trailing_slash(prefix) if prefix else ''
             list_kwargs['Delimiter'] = '/'
 
         path_prefix = S3Path('%s%s' % (self.drive, bucket))
@@ -206,17 +218,47 @@ class S3Path(Path):
 
         Returns:
             bool: True if the path exists, False otherwise.
+
+        Raises:
+            RemoteError: A non-404 error occurred.
         """
-        raise NotImplementedError
+        if not self.resource:
+            try:
+                return bool(self._s3_client_call('head_bucket', Bucket=self.bucket))
+            except exceptions.NotFoundError:
+                return False
+        try:
+            return bool(self.stat())
+        except exceptions.NotFoundError:
+            pass
+        try:
+            return bool(utils.with_trailing_slash(self).list(limit=1))
+        except exceptions.NotFoundError:
+            return False
 
     def isabs(self):
         return True
 
     def isdir(self):
-        raise NotImplementedError
+        """
+        TODO: Check for directory markers (once implemented)
+        """
+        # Handle buckets separately (in case the bucket is empty)
+        if not self.resource:
+            try:
+                return bool(self._s3_client_call('head_bucket', Bucket=self.bucket))
+            except exceptions.NotFoundError:
+                return False
+        try:
+            return bool(utils.with_trailing_slash(self).list(limit=1))
+        except exceptions.NotFoundError:
+            return False
 
     def isfile(self):
-        raise NotImplementedError
+        try:
+            return bool(self.stat())
+        except (exceptions.NotFoundError, ValueError):
+            return False
 
     def islink(self):
         return False
@@ -225,22 +267,109 @@ class S3Path(Path):
         return True
 
     def getsize(self):
-        raise NotImplementedError
+        """
+        Returns the content length of an object in S3.
+
+        Directories and buckets have no length and will return 0.
+        """
+        bucket = self.bucket
+        if not self.resource:
+            # check for existence of bucket
+            self._s3_client_call('head_bucket', Bucket=bucket)
+        else:
+            try:
+                return self._s3_client_call('head_object',
+                                            Bucket=bucket,
+                                            Key=self.resource).get('ContentLength', 0)
+            except exceptions.NotFoundError:
+                # Check if path is a directory
+                if not self.exists():
+                    raise
+
+        return 0
 
     def remove(self):
-        raise NotImplementedError
+        """
+        Removes a single object.
+
+        Raises:
+            ValueError: The path is invalid.
+            RemoteError: An s3 client error occurred.
+        """
+        resource = self.resource
+        if not resource:
+            raise ValueError('cannot remove a bucket')
+        return self._s3_client_call('delete_object', Bucket=self.bucket, Key=resource)
 
     def rmtree(self):
-        raise NotImplementedError
+        """
+        Removes a resource and all of its contents. The path should point to a directory.
+
+        If the specified resource is an object, nothing will happen.
+        """
+        # Ensure there is a trailing slash (path is a dir)
+        delete_path = utils.with_trailing_slash(self)
+        delete_list = delete_path.list()
+
+        while len(delete_list) > 0:
+            # boto3 only allows deletion of up to 1000 objects at a time
+            len_range = min(len(delete_list), 1000)
+            objects = {
+                'Objects': [
+                    {'Key': delete_list.pop(0).resource}
+                    for i in range(len_range)
+                ]
+            }
+            response = self._s3_client_call('delete_objects', Bucket=self.bucket, Delete=objects)
+
+            if 'Errors' in response:
+                raise exceptions.RemoteError('an error occurred while using rmtree',
+                                             response['Errors'])
 
     def stat(self):
         """
         Performs a stat on the path.
 
-        ``stat`` only works on paths that are buckets or objects.
+        ``stat`` only works on paths that are objects.
         Using ``stat`` on a directory of objects will produce a `NotFoundError`.
+
+        An example return dictionary is the following::
+
+            {
+                'DeleteMarker': True|False,
+                'AcceptRanges': 'string',
+                'Expiration': 'string',
+                'Restore': 'string',
+                'LastModified': datetime(2015, 1, 1),
+                'ContentLength': 123,
+                'ETag': 'string',
+                'MissingMeta': 123,
+                'VersionId': 'string',
+                'CacheControl': 'string',
+                'ContentDisposition': 'string',
+                'ContentEncoding': 'string',
+                'ContentLanguage': 'string',
+                'ContentType': 'string',
+                'Expires': datetime(2015, 1, 1),
+                'WebsiteRedirectLocation': 'string',
+                'ServerSideEncryption': 'AES256'|'aws:kms',
+                'Metadata': {
+                    'string': 'string'
+                },
+                'SSECustomerAlgorithm': 'string',
+                'SSECustomerKeyMD5': 'string',
+                'SSEKMSKeyId': 'string',
+                'StorageClass': 'STANDARD'|'REDUCED_REDUNDANCY'|'STANDARD_IA',
+                'RequestCharged': 'requester',
+                'ReplicationStatus': 'COMPLETE'|'PENDING'|'FAILED'|'REPLICA'
+            }
         """
-        raise NotImplementedError
+        if not self.resource:
+            raise ValueError('stat cannot be called on a bucket')
+
+        response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
+        del response['ResponseMetadata']
+        return response
 
     def walkfiles(self, pattern=None):
         """
@@ -256,3 +385,77 @@ class S3Path(Path):
         for f in self.list():
             if pattern is None or f.fnmatch(pattern):
                 yield f
+
+    def download_object(self, dest):
+        """
+        Downloads a file from S3 to a destination file.
+
+        Args:
+            dest (str): The destination path to download file to.
+
+        Notes:
+            - The destination directory will be created automatically if it doesn't exist.
+
+            - This method downloads to paths relative to the current
+              directory.
+        """
+        dl_kwargs = {
+            'Bucket': self.bucket,
+            'Key': self.resource,
+            'Filename': dest
+        }
+        utils.make_dest_dir(self.parts_class(dest).parent)
+        self._s3_client_call('download_file', **dl_kwargs)
+
+    def download(self, dest):
+        """Downloads a directory from S3 to a destination directory.
+
+        Args:
+            dest (str): The destination path to download file to. If downloading to a directory,
+                there must be a trailing slash. The directory will be created if it doesn't exist.
+
+        Notes:
+            - The destination directory will be created automatically if it doesn't exist.
+
+            - This method downloads to paths relative to the current
+              directory.
+
+        """
+        source = utils.with_trailing_slash(self)
+        files_to_download = source.list()
+        for f in files_to_download:
+            name = self.parts_class(f[len(source):])
+            f.download_object(dest / name)
+
+    def upload(self, source):
+        """Uploads a list of files and directories to s3.
+
+        Note that the S3Path is treated as a directory.
+
+        Args:
+            source (List[str]): A list of source files and directories to upload to S3.
+
+        Notes:
+
+        - This method uploads to paths relative to the current
+          directory.
+
+        TODO:
+
+        - Update once directory markers are implemented
+
+        """
+        files_to_upload = utils.walk_files_and_dirs([
+            name for name in source
+        ])
+        for f in files_to_upload:
+            # Skip empty directories for now
+            if Path(f).isdir():  # pragma: no cover
+                continue
+            object_name = utils.file_name_to_object_name(f)
+            ul_kwargs = {
+                'Bucket': self.bucket,
+                'Key': self.resource / object_name if self.resource else object_name,
+                'Filename': f
+            }
+            self._s3_client_call('upload_file', **ul_kwargs)
