@@ -60,7 +60,8 @@ def make_dest_dir(dest):
             os.makedirs(dest)
         except OSError as exc:
             if exc.errno == errno.ENOTDIR:
-                raise OSError(20, 'a parent directory of \'%s\' already exists as a file' % dest)
+                raise OSError(errno.ENOTDIR,
+                              'a parent directory of \'%s\' already exists as a file' % dest)
             else:
                 raise
 

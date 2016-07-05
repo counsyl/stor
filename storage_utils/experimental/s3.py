@@ -443,7 +443,7 @@ class S3Path(Path):
         ])
         for f in files_to_upload:
             # Skip empty directories for now
-            if Path(f).isdir():
+            if Path(f).isdir():  # pragma: no cover
                 continue
             object_name = utils.file_name_to_object_name(f)
             ul_kwargs = {
