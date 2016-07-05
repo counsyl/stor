@@ -43,9 +43,8 @@ def _get_s3_client():
     Returns:
         boto3.Client: An instance of the S3 client.
     """
-    client_kwargs = {}
     if not hasattr(_thread_local, 's3_client'):
-        _thread_local.s3_client = boto3.client('s3', **client_kwargs)
+        _thread_local.s3_client = boto3.client('s3')
     return _thread_local.s3_client
 
 
@@ -223,8 +222,13 @@ class S3Path(Path):
         Raises:
             RemoteError: A non-404 error occurred.
         """
+        if not self.resource:
+            try:
+                return bool(self._s3_client_call('head_bucket', Bucket=self.bucket))
+            except exceptions.NotFoundError:
+                return False
         try:
-            return bool(self.list(limit=1))
+            return bool(utils.with_trailing_slash(self).list(limit=1)) or bool(self.stat())
         except exceptions.NotFoundError:
             return False
 
@@ -235,17 +239,22 @@ class S3Path(Path):
         """
         TODO: Check for directory markers (once implemented)
         """
+        # Handle buckets separately (in case the bucket is empty)
+        if not self.resource:
+            try:
+                return bool(self._s3_client_call('head_bucket', Bucket=self.bucket))
+            except exceptions.NotFoundError:
+                return False
         try:
-            return self.list(limit=1)[0] != self
-        except (exceptions.NotFoundError, IndexError):
+            return bool(utils.with_trailing_slash(self).list(limit=1))
+        except exceptions.NotFoundError:
             return False
 
     def isfile(self):
         try:
-            contents = self.list(limit=1)
-        except exceptions.NotFoundError:
+            return bool(self.stat())
+        except (exceptions.NotFoundError, ValueError):
             return False
-        return len(contents) > 0 and contents[0] == self
 
     def islink(self):
         return False
@@ -388,9 +397,9 @@ class S3Path(Path):
         """
         dl_kwargs = {
             'Bucket': self.bucket,
-            'Key': self.resource
+            'Key': self.resource,
+            'Filename': dest
         }
-        dl_kwargs['Filename'] = dest
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
 
@@ -412,13 +421,7 @@ class S3Path(Path):
         files_to_download = source.list()
         for f in files_to_download:
             name = self.parts_class(f[len(source):])
-            ul_kwargs = {
-                'Bucket': self.bucket,
-                'Key': f.resource,
-                'Filename': dest / name
-            }
-            utils.make_dest_dir(ul_kwargs['Filename'].parent)
-            self._s3_client_call('download_file', **ul_kwargs)
+            f.download_object(dest / name)
 
     def upload(self, source):
         """Uploads a list of files and directories to s3.

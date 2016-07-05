@@ -40,11 +40,9 @@ def file_name_to_object_name(p):
     from storage_utils import Path
     from storage_utils.posix import PosixPath
 
-    os_sep = os.path.sep
-    p_parts = Path(p).expand().splitdrive()[1].split(os_sep)
+    p_parts = Path(p).expand().splitdrive()[1].split(os.path.sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
-    parts_class = PosixPath.parts_class
-    return parts_class('') if obj_start is None else parts_class('/'.join(p_parts[obj_start:]))
+    return PosixPath.parts_class('/'.join(p_parts[obj_start:]) if obj_start is not None else '')
 
 
 def make_dest_dir(dest):
