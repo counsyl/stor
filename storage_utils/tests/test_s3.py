@@ -423,8 +423,8 @@ class TestExists(S3TestCase):
         mock_stat.return_value = {'key': 'val'}
         s3_p = S3Path('s3://test/b/c.txt')
         self.assertTrue(s3_p.exists())
-        mock_list.assert_called_once_with(S3Path('s3://test/b/c.txt/'), limit=1)
         mock_stat.assert_called_once_with(S3Path('s3://test/b/c.txt'))
+        self.assertEquals(mock_list.call_count, 0)
 
     @mock.patch.object(S3Path, 'stat', autospec=True)
     @mock.patch.object(S3Path, 'list', autospec=True)
@@ -433,8 +433,8 @@ class TestExists(S3TestCase):
         mock_stat.side_effect = exceptions.NotFoundError('not found')
         s3_p = S3Path('s3://test/b')
         self.assertTrue(s3_p.exists())
+        mock_stat.assert_called_once_with(S3Path('s3://test/b'))
         mock_list.assert_called_once_with(S3Path('s3://test/b/'), limit=1)
-        self.assertEquals(mock_stat.call_count, 0)
 
     def test_exists_bucket_true(self):
         mock_head_bucket = self.mock_s3.head_bucket
@@ -463,8 +463,18 @@ class TestExists(S3TestCase):
 
     @mock.patch.object(S3Path, 'stat', autospec=True)
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_exists_dir_or_obj_false(self, mock_list, mock_stat):
+    def test_exists_false_empty_list(self, mock_list, mock_stat):
         mock_list.return_value = []
+        mock_stat.side_effect = exceptions.NotFoundError('not found')
+        s3_p = S3Path('s3://a/b/c/')
+        self.assertFalse(s3_p.exists())
+        mock_list.assert_called_once_with(S3Path('s3://a/b/c/'), limit=1)
+        mock_stat.assert_called_once_with(S3Path('s3://a/b/c/'))
+
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    def test_exists_false_404_error(self, mock_list, mock_stat):
+        mock_list.side_effect = exceptions.NotFoundError('not found')
         mock_stat.side_effect = exceptions.NotFoundError('not found')
         s3_p = S3Path('s3://a/b/c/')
         self.assertFalse(s3_p.exists())
@@ -475,11 +485,12 @@ class TestExists(S3TestCase):
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_exists_any_error(self, mock_list, mock_stat):
         mock_list.side_effect = exceptions.RemoteError('some error')
+        mock_stat.side_effect = exceptions.RemoteError('some error')
         s3_p = S3Path('s3://a/b/c')
         with self.assertRaises(exceptions.RemoteError):
             s3_p.exists()
-        mock_list.assert_called_once_with(S3Path('s3://a/b/c/'), limit=1)
-        self.assertEquals(mock_stat.call_count, 0)
+        mock_stat.assert_called_once_with(S3Path('s3://a/b/c'))
+        self.assertEquals(mock_list.call_count, 0)
 
 
 class TestGetsize(S3TestCase):

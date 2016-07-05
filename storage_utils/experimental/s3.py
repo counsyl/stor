@@ -228,7 +228,11 @@ class S3Path(Path):
             except exceptions.NotFoundError:
                 return False
         try:
-            return bool(utils.with_trailing_slash(self).list(limit=1)) or bool(self.stat())
+            return bool(self.stat())
+        except exceptions.NotFoundError:
+            pass
+        try:
+            return bool(utils.with_trailing_slash(self).list(limit=1))
         except exceptions.NotFoundError:
             return False
 
