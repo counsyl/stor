@@ -501,28 +501,25 @@ class TestBasicIsMethods(S3TestCase):
         self.assertTrue(S3Path('s3://a/b/c').ismount())
 
 
-@mock.patch.object(S3Path, 'exists', autospec=True)
-@mock.patch.object(S3Path, 'isfile', autospec=True)
+@mock.patch.object(S3Path, 'list', autospec=True)
 class TestIsdir(S3TestCase):
-    def test_isdir_true_bucket(self, mock_isfile, mock_exists):
-        mock_exists.return_value = True
+    def test_isdir_true_bucket(self, mock_list):
+        mock_list.return_value = [S3Path('s3://bucket/key')]
         s3_p = S3Path('s3://bucket/')
         self.assertTrue(s3_p.isdir())
 
-    def test_isdir_true_prefix(self, mock_isfile, mock_exists):
-        mock_exists.return_value = True
-        mock_isfile.return_value = False
+    def test_isdir_true_prefix(self, mock_list):
+        mock_list.return_value = [S3Path('s3://bucket/pre/fix/key')]
         s3_p = S3Path('s3://bucket/pre/fix')
         self.assertTrue(s3_p.isdir())
 
-    def test_isdir_false_bucket(self, mock_isfile, mock_exists):
-        mock_exists.return_value = False
+    def test_isdir_false_bucket(self, mock_list):
+        mock_list.side_effect = exceptions.NotFoundError('not found')
         s3_p = S3Path('s3://bucket')
         self.assertFalse(s3_p.isdir())
 
-    def test_isdir_false_file(self, mock_isfile, mock_exists):
-        mock_exists.return_value = True
-        mock_isfile.return_value = True
+    def test_isdir_false_file(self, mock_list):
+        mock_list.return_value = [S3Path('s3://bucket/pre/fix.txt')]
         s3_p = S3Path('s3://bucket/pre/fix.txt')
         self.assertFalse(s3_p.isdir())
 
@@ -753,21 +750,12 @@ class TestUpload(S3TestCase):
                                                          Filename='/path/to/file1')
 
 
-@mock.patch('storage_utils.experimental.s3._make_dest_dir', autospec=True)
+@mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
 class TestDownload(S3TestCase):
-    @mock.patch.object(S3Path, 'isfile', return_value=True, autospec=True)
-    def test_download_file_to_dir(self, mock_isfile, mock_make_dest):
-        s3_p = S3Path('s3://a/b/c.txt')
-        s3_p.download('test/')
-        self.mock_s3.download_file.assert_called_once_with(Bucket='a',
-                                                           Key='b/c.txt',
-                                                           Filename='test/c.txt')
-        mock_make_dest.assert_called_once_with('test/')
-
     @mock.patch.object(S3Path, 'isfile', return_value=True, autospec=True)
     def test_download_file_to_file(self, mock_isfile, mock_make_dest):
         s3_p = S3Path('s3://a/b/c.txt')
-        s3_p.download('test/d.txt')
+        s3_p.download_object('test/d.txt')
         self.mock_s3.download_file.assert_called_once_with(Bucket='a',
                                                            Key='b/c.txt',
                                                            Filename='test/d.txt')
