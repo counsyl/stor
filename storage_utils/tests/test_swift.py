@@ -396,7 +396,7 @@ line4
         gzip_path = storage_utils.join(storage_utils.dirname(__file__),
                                        'file_data', 's_3_2126.bcl.gz')
         text = storage_utils.open(gzip_path).read()
-        with mock.patch.object(SwiftPath, '_read_object', autospec=True) as read_mock:
+        with mock.patch.object(SwiftPath, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
             swift_file = storage_utils.open('swift://A/C/s_3_2126.bcl.gz')
 
@@ -1106,12 +1106,12 @@ class TestDownloadObject(SwiftTestCase):
     def test_container(self):
         swift_p = SwiftPath('swift://tenant/container')
         with self.assertRaisesRegexp(ValueError, 'path'):
-            swift_p._download_object('file')
+            swift_p.download_object('file')
 
     def test_success(self):
         self.mock_swift.download.return_value = [{}]
         swift_p = SwiftPath('swift://tenant/container/d')
-        swift_p._download_object('file.txt')
+        swift_p.download_object('file.txt')
 
         download_kwargs = self.mock_swift.download.call_args_list[0][1]
         self.assertEquals(len(download_kwargs), 3)
@@ -1127,7 +1127,7 @@ class TestDownloadObject(SwiftTestCase):
         )
         with self.assertRaises(swift.InconsistentDownloadError):
             swift_p = SwiftPath('swift://tenant/container/d')
-            swift_p._download_object('file.txt')
+            swift_p.download_object('file.txt')
 
 
 class TestDownloadObjects(SwiftTestCase):
@@ -1934,18 +1934,18 @@ class TestUpload(SwiftTestCase):
 
 
 class TestCopy(SwiftTestCase):
-    @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
-    def test_copy_posix_file_destination(self, mock_download_object):
+    @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
+    def test_copy_posix_file_destination(self, mockdownload_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
         p.copy('file_dest.txt')
-        mock_download_object.assert_called_once_with(p, path(u'file_dest.txt'))
+        mockdownload_object.assert_called_once_with(p, path(u'file_dest.txt'))
 
-    @mock.patch.object(swift.SwiftPath, '_download_object', autospec=True)
-    def test_copy_posix_dir_destination(self, mock_download_object):
+    @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
+    def test_copy_posix_dir_destination(self, mockdownload_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
         with NamedTemporaryDirectory() as tmp_d:
             p.copy(tmp_d)
-            mock_download_object.assert_called_once_with(p, path(tmp_d) / 'file_source.txt')
+            mockdownload_object.assert_called_once_with(p, path(tmp_d) / 'file_source.txt')
 
     def test_copy_swift_destination(self):
         p = SwiftPath('swift://tenant/container/file_source')

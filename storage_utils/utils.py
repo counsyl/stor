@@ -83,7 +83,7 @@ def is_swift_path(p):
         bool: True if p is a Swift path, False otherwise.
     """
     from storage_utils.swift import SwiftPath
-    return p.startswith(SwiftPath.swift_drive)
+    return p.startswith(SwiftPath.drive)
 
 
 def is_filesystem_path(p):
@@ -163,7 +163,7 @@ def copy(source, dest, swift_retry_options=None):
     if is_filesystem_path(dest):
         if is_swift_path(source):
             dest_file = dest if not dest.isdir() else dest / source.name
-            source._download_object(dest_file, **swift_retry_options)
+            source.download_object(dest_file, **swift_retry_options)
         else:
             shutil.copy(source, dest)
     else:

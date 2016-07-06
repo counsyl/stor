@@ -28,15 +28,12 @@ More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
 from backoff.backoff import with_backoff
-from cached_property import cached_property
-import cStringIO
 import copy
 from functools import partial
 from functools import wraps
 import json
 import logging
 import os
-import posixpath
 import tempfile
 import threading
 import urllib
@@ -47,6 +44,8 @@ from storage_utils import exceptions as stor_exceptions
 from storage_utils.utils import file_name_to_object_name
 from storage_utils import is_swift_path
 from storage_utils.base import Path
+from storage_utils.remote import RemoteFile
+from storage_utils.remote import RemotePath
 from storage_utils import utils
 from storage_utils.posix import PosixPath
 from storage_utils import settings
@@ -373,21 +372,6 @@ def _retry_on_cached_auth_err(func):
     return wrapper
 
 
-def _delegate_to_buffer(attr_name, valid_modes=None):
-    "Factory function that delegates file-like properties to underlying buffer"
-    def wrapper(self, *args, **kwargs):
-        if self.closed:
-            raise ValueError('I/O operation on closed file')
-        if valid_modes and self.mode not in valid_modes:
-            raise TypeError('SwiftFile must be in modes %s to %r' %
-                            (valid_modes, attr_name))
-        func = getattr(self._buffer, attr_name)
-        return func(*args, **kwargs)
-    wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(cStringIO.StringIO(), attr_name).__doc__
-    return wrapper
-
-
 def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
     """Generates a data manifest for a given directory and saves it.
 
@@ -531,145 +515,15 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
 
-class SwiftFile(object):
-    """Provides methods for reading and writing swift objects returned by
-    `SwiftPath.open`.
-
-    Objects are retrieved from `SwiftPath.open`. For example::
-
-        obj = path('swift://tenant/container/object').open(mode='r')
-        contents = obj.read()
-
-    The above opens an object and reads its contents. To write to an
-    object::
-
-        obj = path('swift://tenant/container/object').open(mode='w')
-        obj.write('hello ')
-        obj.write('world')
-        obj.close()
-
-    Note that the writes will not be commited until the object has been
-    closed. It is recommended to use `SwiftPath.open` as a context manager
-    to avoid forgetting to close the resource::
-
-        with path('swift://tenant/container/object').open(mode='r') as obj:
-            obj.write('Hello world!')
-
-    One can modify which parameters are use for swift upload when writing
-    by passing them to ``open`` like so::
-
-        with path('..').open(mode='r', swift_upload_options={'use_slo': True}) as obj:
-            obj.write('Hello world!')
-
-    In the above, `SwiftPath.upload` will be passed ``use_slo=False`` when
-    the upload happens
-    """
-    closed = False
-    _READ_MODES = ('r', 'rb')
-    _WRITE_MODES = ('w', 'wb')
-    _VALID_MODES = _READ_MODES + _WRITE_MODES
-
-    def __init__(self, swift_path, mode='r', **swift_upload_kwargs):
-        """Initializes a swift object
-
-        Args:
-            swift_path (SwiftPath): The path that represents an individual
-                object
-            mode (str): The mode of the resource. Can be "r" and "rb" for
-                reading the resource and "w" and "wb" for writing the
-                resource.
-            **swift_upload_kwargs: The arguments that will be passed to
-                `SwiftPath.upload` if writes occur on the object
-        """
-        if mode not in self._VALID_MODES:
-            raise ValueError('invalid mode for swift file: %r' % mode)
-        self._swift_path = swift_path
-        self.mode = mode
-        self._swift_upload_kwargs = swift_upload_kwargs
-
-    def __enter__(self):
-        if self.closed:
-            raise ValueError('I/O operation on closed file.')
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.close()
-
-    def __iter__(self):
-        # ape file object behavior by returning self (and attempting *not* to
-        # give users access to underlying buffer)
-        return self
-
-    @cached_property
-    def _buffer(self):
-        "Cached buffer of data read from or to be written to Object Storage"
-        if self.mode in ('r', 'rb'):
-            return cStringIO.StringIO(self._swift_path._read_object())
-        elif self.mode in ('w', 'wb'):
-            return cStringIO.StringIO()
-        else:
-            raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
-
-    seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
-    tell = _delegate_to_buffer('tell', valid_modes=_VALID_MODES)
-
-    read = _delegate_to_buffer('read', valid_modes=_READ_MODES)
-    readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
-    readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
-    # In Python 3 it's __next__, in Python 2 it's next()
-    # __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)
-    # TODO: Only use in Python 2 context
-    next = _delegate_to_buffer('next', valid_modes=_READ_MODES)
-
-    write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
-    writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)
-    truncate = _delegate_to_buffer('truncate', valid_modes=_WRITE_MODES)
-
-    @property
-    def name(self):
-        return self._swift_path
-
-    def close(self):
-        if self.mode in self._WRITE_MODES:
-            self.flush()
-        self._buffer.close()
-        self.closed = True
-        del self.__dict__['_buffer']
-
-    def flush(self):
-        """Flushes the write buffer to swift (if it exists)"""
-        if self.mode not in self._WRITE_MODES:
-            raise TypeError("SwiftFile must be in modes %s to 'flush'" %
-                            (self._WRITE_MODES,))
-        if self._buffer.tell():
-            self._swift_path.write_object(self._buffer.getvalue(),
-                                          **self._swift_upload_kwargs)
+SwiftFile = RemoteFile
 
 
-class SwiftPath(Path):
+class SwiftPath(RemotePath):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
     """
-    swift_drive = 'swift://'
-    path_module = posixpath
-    # Parts of a swift path are returned using this class
-    parts_class = PosixPath
-
-    def __init__(self, swift):
-        """Validates swift path is in the proper format.
-
-        Args:
-            swift (str): A path that matches the format of
-                "swift://{tenant_name}/{container_name}/{rest_of_path}".
-                The "swift://" prefix is required in the path.
-        """
-        if not hasattr(swift, 'startswith') or not swift.startswith(self.swift_drive):
-            raise ValueError('path must have %s (got %r)' % (self.swift_drive, swift))
-        return super(SwiftPath, self).__init__(swift)
-
-    def __repr__(self):
-        return '%s("%s")' % (type(self).__name__, self)
+    drive = 'swift://'
 
     def is_ambiguous(self):
         """Returns true if it cannot be determined if the path is a
@@ -684,23 +538,6 @@ class SwiftPath(Path):
             return container.startswith('.segments_') or container.endswith('_segments')
         else:
             return False
-
-    @property
-    def name(self):
-        """The name of the path, mimicking path.py's name property"""
-        return self.parts_class(super(SwiftPath, self).name)
-
-    @property
-    def parent(self):
-        """The parent of the path, mimicking path.py's parent property"""
-        return self.path_class(super(SwiftPath, self).parent)
-
-    def _get_parts(self):
-        """Returns the path parts (excluding swift://) as a list of strings."""
-        if len(self) > len(self.swift_drive):
-            return self[len(self.swift_drive):].split('/')
-        else:
-            return []
 
     @property
     def tenant(self):
@@ -845,7 +682,7 @@ class SwiftPath(Path):
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError,
                               InconsistentDownloadError))
-    def _read_object(self):
+    def read_object(self):
         """Reads an individual object.
 
         This method retries `num_retries` times if swift is unavailable or if
@@ -886,7 +723,7 @@ class SwiftPath(Path):
                 'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
                 'or by setting the OS_AUTH_URL environment variable')
 
-        obj_path = '/v1/%s' % self[len(self.swift_drive):]
+        obj_path = '/v1/%s' % self[len(self.drive):]
         # Generate the temp url using swifts helper. Note that this method is ONLY
         # useful for obtaining the temp_url_sig and the temp_url_expires parameters.
         # These parameters will be used to construct a properly-escaped temp url
@@ -1033,7 +870,7 @@ class SwiftPath(Path):
         if ignore_dir_markers:
             result_objs = [r for r in result_objs if r.get('content_type') not in DIR_MARKER_TYPES]
 
-        path_pre = SwiftPath('%s%s' % (self.swift_drive, tenant)) / (self.container or '')
+        path_pre = SwiftPath('%s%s' % (self.drive, tenant)) / (self.container or '')
         paths = list({
             path_pre / (r.get('name') or r['subdir'].rstrip('/'))
             for r in result_objs
@@ -1136,7 +973,7 @@ class SwiftPath(Path):
             return False
 
     @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
-    def _download_object(self, out_file):
+    def download_object(self, out_file):
         """Downloads a single object to an output file.
 
         This method retries ``num_retries`` times if swift is unavailable.
@@ -1729,17 +1566,8 @@ class SwiftPath(Path):
         return wrapper
 
     abspath = _noop('abspath')
-
-    def normpath(self):
-        "Normalize path following linux conventions (keeps swift:// prefix)"
-        normed = posixpath.normpath('/' + str(self)[len(self.swift_drive):])[1:]
-        return self.path_class(self.swift_drive + normed)
-
     realpath = _noop('realpath')
     expanduser = _noop('expanduser')
-
-    def isabs(self):
-        return True
 
     def isdir(self):
         if not self.resource:
@@ -1762,12 +1590,6 @@ class SwiftPath(Path):
             return self.resource and 'directory' not in self.stat().get('Content-Type', '')
         except NotFoundError:
             return False
-
-    def islink(self):
-        return False
-
-    def ismount(self):
-        return True
 
     @_swift_retry(exceptions=UnavailableError)
     def walkfiles(self, pattern=None):
