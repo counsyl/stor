@@ -1,6 +1,7 @@
 import cStringIO
 import datetime
 import gzip
+import ntpath
 from tempfile import NamedTemporaryFile
 import unittest
 
@@ -9,10 +10,12 @@ import mock
 
 import storage_utils
 from storage_utils import exceptions
+from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
-from storage_utils import remote
+from storage_utils import obs
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
+from storage_utils.experimental.s3 import S3UploadObject
 from storage_utils.test import S3TestCase
 from storage_utils.tests.shared import assert_same_data
 
@@ -832,6 +835,13 @@ class TestUpload(S3TestCase):
                                                          Key='b/path/to/file1',
                                                          Filename='/path/to/file1')
 
+    def test_upload_object_invalid(self, mock_files):
+        s3_p = S3Path('s3://a/b')
+        with self.assertRaisesRegexp(ValueError, 'source'):
+            s3_p.upload([S3UploadObject(['not valid'], 'dest')])
+        with self.assertRaisesRegexp(ValueError, 'destination'):
+            s3_p.upload([S3UploadObject('source', ['invalid dest'])])
+
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
 class TestDownload(S3TestCase):
@@ -863,6 +873,54 @@ class TestDownload(S3TestCase):
             mock.call('test'),
             mock.call('test/dir')
         ])
+
+
+class TestCopy(S3TestCase):
+    @mock.patch.object(S3Path, 'download_object', autospec=True)
+    def test_copy_posix_file_destination(self, mockdownload_object):
+        p = S3Path('s3://bucket/key/file_source.txt')
+        p.copy('file_dest.txt')
+        mockdownload_object.assert_called_once_with(p, Path(u'file_dest.txt'))
+
+    @mock.patch.object(S3Path, 'download_object', autospec=True)
+    def test_copy_posix_dir_destination(self, mockdownload_object):
+        p = S3Path('s3://bucket/key/file_source.txt')
+        with NamedTemporaryDirectory() as tmp_d:
+            p.copy(tmp_d)
+            mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
+
+    def test_copy_swift_destination(self):
+        p = S3Path('s3://bucket/key/file_source')
+        with self.assertRaisesRegexp(ValueError, 'OBS path'):
+            p.copy('swift://tenant/container/file_dest')
+
+    def test_copy_s3_destination(self):
+        p = S3Path('s3://bucket/key/file_source')
+        with self.assertRaisesRegexp(ValueError, 'OBS path'):
+            p.copy('s3://bucket/key/file_dest')
+
+
+class TestCopytree(S3TestCase):
+    @mock.patch.object(S3Path, 'download', autospec=True)
+    def test_copytree_posix_destination(self, mock_download):
+        p = S3Path('s3://bucket/key')
+        p.copytree('path')
+        mock_download.assert_called_once_with(
+            p,
+            Path(u'path'),
+            condition=None,
+            use_manifest=False)
+
+    def test_copytree_swift_destination(self):
+        p = S3Path('s3://bucket/key')
+        with self.assertRaises(ValueError):
+            p.copytree('s3://s3/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_copytree_windows_destination(self):
+        p = S3Path('s3://bucket/key')
+        with self.assertRaisesRegexp(ValueError, 'not supported'):
+            p.copytree(r'windows\path')
 
 
 class TestS3File(S3TestCase):
@@ -909,7 +967,7 @@ class TestS3File(S3TestCase):
             class MyFile(object):
                 closed = False
                 _buffer = cStringIO.StringIO()
-                invalid = remote._delegate_to_buffer('invalid')
+                invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_read_on_closed_file(self, mock_stream):

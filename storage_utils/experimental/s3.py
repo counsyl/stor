@@ -3,20 +3,21 @@ An experimental implementation of S3 in storage-utils.
 """
 import tempfile
 import threading
+import types
 
 import boto3
 from botocore import exceptions as boto_s3_exceptions
 
 from storage_utils import exceptions
 from storage_utils.base import Path
-from storage_utils.remote import RemoteFile
-from storage_utils.remote import RemotePath
+from storage_utils.obs import OBSFile
+from storage_utils.obs import OBSPath
 from storage_utils import utils
 
 # Thread-local variable used to cache the client
 _thread_local = threading.local()
 
-S3File = RemoteFile
+S3File = OBSFile
 
 
 def _parse_s3_error(exc):
@@ -51,7 +52,28 @@ def _get_s3_client():
     return _thread_local.s3_client
 
 
-class S3Path(RemotePath):
+class S3UploadObject(object):
+    """
+    An upload object similar to swiftclient's SwiftUploadObject that allows the user
+    to specify a destination file name (full s3 key).
+    """
+    def __init__(self, source, dest):
+        """
+        An S3UploadObject must be initialized with a source and destination path.
+
+        Args:
+            source (str): A path that specifies a source file.
+            dest (str): A path that specifies a destination file name (full s3 key)
+        """
+        if not isinstance(source, types.StringTypes):
+            raise ValueError('S3UploadObject source must be a string')
+        if not isinstance(dest, types.StringTypes):
+            raise ValueError('S3UploadObject destination must be a string')
+        self.source = source
+        self.dest = dest
+
+
+class S3Path(OBSPath):
     """
     Provides the ability to manipulate and access S3 resources
     with a similar interface to the path library.
@@ -344,14 +366,9 @@ class S3Path(RemotePath):
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(content)
             fp.flush()
-            ul_kwargs = {
-                'Bucket': self.bucket,
-                'Key': self.resource,
-                'Filename': fp.name
-            }
-            self._s3_client_call('upload_file', **ul_kwargs)
+            self.upload([S3UploadObject(fp.name, self.resource)])
 
-    def download_object(self, dest):
+    def download_object(self, dest, **kwargs):
         """
         Downloads a file from S3 to a destination file.
 
@@ -372,7 +389,7 @@ class S3Path(RemotePath):
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
 
-    def download(self, dest):
+    def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
 
         Args:
@@ -384,7 +401,6 @@ class S3Path(RemotePath):
 
             - This method downloads to paths relative to the current
               directory.
-
         """
         source = utils.with_trailing_slash(self)
         files_to_download = source.list()
@@ -392,7 +408,7 @@ class S3Path(RemotePath):
             name = self.parts_class(f[len(source):])
             f.download_object(dest / name)
 
-    def upload(self, source):
+    def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
 
         Note that the S3Path is treated as a directory.
@@ -409,17 +425,25 @@ class S3Path(RemotePath):
         - Update once directory markers are implemented
 
         """
-        files_to_upload = utils.walk_files_and_dirs([
-            name for name in source
+        files_to_convert = utils.walk_files_and_dirs([
+            name for name in source if not isinstance(name, S3UploadObject)
         ])
+        files_to_upload = [
+            obj for obj in source if isinstance(obj, S3UploadObject)
+        ]
+        files_to_upload.extend([
+            S3UploadObject(name,
+                           (self.resource or Path('')) / utils.file_name_to_object_name(name))
+            for name in files_to_convert
+        ])
+
         for f in files_to_upload:
             # Skip empty directories for now
-            if Path(f).isdir():  # pragma: no cover
+            if Path(f.source).isdir():  # pragma: no cover
                 continue
-            object_name = utils.file_name_to_object_name(f)
             ul_kwargs = {
                 'Bucket': self.bucket,
-                'Key': self.resource / object_name if self.resource else object_name,
-                'Filename': f
+                'Key': f.dest,
+                'Filename': f.source
             }
             self._s3_client_call('upload_file', **ul_kwargs)

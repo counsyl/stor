@@ -44,8 +44,8 @@ from storage_utils import exceptions as stor_exceptions
 from storage_utils.utils import file_name_to_object_name
 from storage_utils import is_swift_path
 from storage_utils.base import Path
-from storage_utils.remote import RemoteFile
-from storage_utils.remote import RemotePath
+from storage_utils.obs import OBSFile
+from storage_utils.obs import OBSPath
 from storage_utils import utils
 from storage_utils.posix import PosixPath
 from storage_utils import settings
@@ -515,21 +515,15 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
 
-SwiftFile = RemoteFile
+SwiftFile = OBSFile
 
 
-class SwiftPath(RemotePath):
+class SwiftPath(OBSPath):
     """
     Provides the ability to manipulate and access resources on swift
     with a similar interface to the path library.
     """
     drive = 'swift://'
-
-    def is_ambiguous(self):
-        """Returns true if it cannot be determined if the path is a
-        file or directory
-        """
-        return not self.endswith('/') and not self.ext
 
     def is_segment_container(self):
         """True if this path is a segment container"""
@@ -1246,7 +1240,7 @@ class SwiftPath(RemotePath):
         ])
 
         if use_manifest:
-            # Generate the data manifest and save it remotely
+            # Generate the data manifest and save it obsly
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
             manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)

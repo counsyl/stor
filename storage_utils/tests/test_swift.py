@@ -1949,7 +1949,7 @@ class TestCopy(SwiftTestCase):
 
     def test_copy_swift_destination(self):
         p = SwiftPath('swift://tenant/container/file_source')
-        with self.assertRaisesRegexp(ValueError, 'swift path'):
+        with self.assertRaisesRegexp(ValueError, 'OBS path'):
             p.copy('swift://tenant/container/file_dest')
 
 

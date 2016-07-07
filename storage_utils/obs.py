@@ -23,7 +23,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
-class RemotePath(Path):
+class OBSPath(Path):
     """
     A base class that defines all methods available from Path objects that
     interface with remote services, such as Swift and S3.
@@ -42,13 +42,19 @@ class RemotePath(Path):
         """
         if not hasattr(pth, 'startswith') or not pth.startswith(self.drive):
             raise ValueError('path must have %s (got %r)' % (self.drive, pth))
-        return super(RemotePath, self).__init__(pth)
+        return super(OBSPath, self).__init__(pth)
 
     copy = utils.copy
     copytree = utils.copytree
 
     def __repr__(self):
         return '%s("%s")' % (type(self).__name__, self)
+
+    def is_ambiguous(self):
+        """Returns true if it cannot be determined if the path is a
+        file or directory
+        """
+        return not self.endswith('/') and not self.ext
 
     def _get_parts(self):
         """Returns the path parts (excluding the drive) as a list of strings."""
@@ -60,12 +66,12 @@ class RemotePath(Path):
     @property
     def name(self):
         """The name of the path, mimicking path.py's name property"""
-        return self.parts_class(super(RemotePath, self).name)
+        return self.parts_class(super(OBSPath, self).name)
 
     @property
     def parent(self):
         """The parent of the path, mimicking path.py's parent property"""
-        return self.path_class(super(RemotePath, self).parent)
+        return self.path_class(super(OBSPath, self).parent)
 
     @property
     def resource(self):
@@ -94,10 +100,10 @@ class RemotePath(Path):
 
     def open(self, mode='r'):
         """
-        Opens a RemoteFile that can be read or written to and is uploaded to
+        Opens a OBSFile that can be read or written to and is uploaded to
         the remote service.
         """
-        return RemoteFile(self, mode=mode)  # pragma: no cover
+        return OBSFile(self, mode=mode)  # pragma: no cover
 
     def list(self):
         """List contents using the resource of the path as a prefix."""
@@ -138,12 +144,12 @@ class RemotePath(Path):
     def getsize(self):
         """Returns size, in bytes of path.
 
-        For Swift containers and tenants, will return 0. For POSIX directories,
-        returns an undefined value.
+        For Swift containers and tenants, and S3 buckets and directories,
+        will return 0. For POSIX directories, returns an undefined value.
 
         Raises:
             os.error: if file does not exist or is inaccessible
-            NotFoundError/UnauthorizedError: from swift
+            NotFoundError/UnauthorizedError: from swift and s3
         """
         raise NotImplementedError
 
@@ -180,16 +186,16 @@ class RemotePath(Path):
         """Download a single path or object to file."""
         raise NotImplementedError
 
-    def download(self):
+    def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Download a directory."""
         raise NotImplementedError
 
-    def upload(self):
+    def upload(self, source, condition=None, use_manifest=False, headers=None):
         """Upload a list of files and directories to a directory."""
         raise NotImplementedError
 
 
-class RemoteFile(object):
+class OBSFile(object):
     """TODO: UPDATE
 
     Provides methods for reading and writing swift objects returned by

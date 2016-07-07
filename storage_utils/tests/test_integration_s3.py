@@ -2,6 +2,7 @@ import logging
 import os
 import unittest
 
+import storage_utils
 from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
@@ -228,3 +229,52 @@ class S3IntegrationTest(BaseIntegrationTest):
         copy_contents = copy_file.open(mode='rb').read()
         self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
         self.assertEquals(test_contents, copy_contents)
+
+    def test_copy_to_from_container(self):
+        num_test_objs = 5
+        min_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, min_obj_size)
+            for which_obj in self.get_dataset_obj_names(num_test_objs):
+                obj_path = storage_utils.join(self.test_dir, '%s.txt' % which_obj)
+                storage_utils.copy(which_obj, obj_path)
+                storage_utils.copy(obj_path, 'copied_file')
+                self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
+
+    def test_copytree_to_from_container(self):
+        num_test_objs = 10
+        test_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            storage_utils.copytree(
+                '.',
+                self.test_dir)
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.test_dir.copytree(
+                'test',
+                condition=lambda results: len(results) == num_test_objs)
+
+            # Verify contents of all downloaded test objects
+            for which_obj in self.get_dataset_obj_names(num_test_objs):
+                obj_path = Path('test') / which_obj
+                self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
+
+    def test_hidden_file_nested_dir_copytree(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            open('.hidden_file', 'w').close()
+            os.symlink('.hidden_file', 'symlink')
+            os.mkdir('.hidden_dir')
+            os.mkdir('.hidden_dir/nested')
+            open('.hidden_dir/nested/file1', 'w').close()
+            open('.hidden_dir/nested/file2', 'w').close()
+            Path('.').copytree(self.test_dir)
+
+        with NamedTemporaryDirectory(change_dir=True):
+            self.test_dir.copytree('test', condition=lambda results: len(results) == 4)
+            self.assertTrue(Path('test/.hidden_file').isfile())
+            self.assertTrue(Path('test/symlink').isfile())
+            self.assertTrue(Path('test/.hidden_dir').isdir())
+            self.assertTrue(Path('test/.hidden_dir/nested').isdir())
+            self.assertTrue(Path('test/.hidden_dir/nested/file1').isfile())
+            self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
