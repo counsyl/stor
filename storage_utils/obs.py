@@ -33,12 +33,13 @@ class OBSPath(Path):
 
     def __init__(self, pth):
         """
-        Validates S3 path is in the proper format.
+        Validates OBS path is in the proper format.
 
         Args:
             pth (str): A path that matches the format of
-                ``s3://{bucket_name}/{rest_of_path}``
-                The ``s3://`` prefix is required in the path.
+                ``(drive)://{bucket_name}/{rest_of_path}`` where (drive)
+                can be any of s3 or swift.
+                The ``(drive)://`` prefix is required in the path.
         """
         if not hasattr(pth, 'startswith') or not pth.startswith(self.drive):
             raise ValueError('path must have %s (got %r)' % (self.drive, pth))
