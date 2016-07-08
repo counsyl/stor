@@ -161,28 +161,3 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 self.test_dir.download('.')
             with self.assertRaises(OSError):
                 (self.test_dir / 'dir').download('.')
-
-    def test_file_read_write(self):
-        test_file = self.test_dir / 'test_file.txt'
-        copy_file = self.test_dir / 'copy_file.txt'
-
-        with test_file.open(mode='wb') as obj:
-            obj.write('this is a test\n')
-            obj.write('this is another line.\n')
-
-        self.assertTrue(test_file.exists())
-        self.assertTrue(test_file.isfile())
-        self.assertFalse(test_file.isdir())
-
-        with test_file.open(mode='rb') as obj:
-            with copy_file.open(mode='wb') as copy_obj:
-                copy_obj.write(obj.read())
-
-        self.assertTrue(copy_file.exists())
-        self.assertTrue(copy_file.isfile())
-        self.assertFalse(copy_file.isdir())
-
-        test_contents = test_file.open(mode='rb').read()
-        copy_contents = copy_file.open(mode='rb').read()
-        self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
-        self.assertEquals(test_contents, copy_contents)
