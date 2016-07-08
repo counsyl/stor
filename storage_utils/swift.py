@@ -1187,7 +1187,7 @@ class SwiftPath(OBSPath):
 
         Args:
             to_upload (List): A list of file names, directory names, or
-                `OBSUploadObject` objects to upload.
+                OBSUploadObject objects to upload.
             condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition. In the event of the
                 condition never matching after retries, partially uploaded
