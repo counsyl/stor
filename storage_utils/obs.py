@@ -104,7 +104,7 @@ class OBSPath(Path):
         Opens a OBSFile that can be read or written to and is uploaded to
         the remote service.
         """
-        return OBSFile(self, mode=mode)  # pragma: no cover
+        raise NotImplementedError
 
     def list(self):
         """List contents using the resource of the path as a prefix."""
@@ -143,15 +143,7 @@ class OBSPath(Path):
         return True
 
     def getsize(self):
-        """Returns size, in bytes of path.
-
-        For Swift containers and tenants, and S3 buckets and directories,
-        will return 0. For POSIX directories, returns an undefined value.
-
-        Raises:
-            os.error: if file does not exist or is inaccessible
-            NotFoundError/UnauthorizedError: from swift and s3
-        """
+        """Returns size, in bytes of path."""
         raise NotImplementedError
 
     def remove(self):
@@ -183,7 +175,7 @@ class OBSPath(Path):
             if pattern is None or f.fnmatch(pattern):
                 yield f
 
-    def download_object(self):
+    def download_object(self, dest):
         """Download a single path or object to file."""
         raise NotImplementedError
 
@@ -197,39 +189,29 @@ class OBSPath(Path):
 
 
 class OBSFile(object):
-    """TODO: UPDATE
+    """
+    Provides methods for reading and writing OBS objects returned by
+    `OBSPath.open`.
 
-    Provides methods for reading and writing swift objects returned by
-    `SwiftPath.open`.
+    Objects are retrieved from `OBSPath.open`. For example::
 
-    Objects are retrieved from `SwiftPath.open`. For example::
-
-        obj = path('swift://tenant/container/object').open(mode='r')
+        obj = Path('swift://tenant/container/object').open(mode='r')
         contents = obj.read()
 
     The above opens an object and reads its contents. To write to an
     object::
 
-        obj = path('swift://tenant/container/object').open(mode='w')
+        obj = Path('s3://bucket/object').open(mode='w')
         obj.write('hello ')
         obj.write('world')
         obj.close()
 
     Note that the writes will not be commited until the object has been
-    closed. It is recommended to use `SwiftPath.open` as a context manager
+    closed. It is recommended to use `OBSPath.open` as a context manager
     to avoid forgetting to close the resource::
 
-        with path('swift://tenant/container/object').open(mode='r') as obj:
+        with Path('swift://tenant/container/object').open(mode='r') as obj:
             obj.write('Hello world!')
-
-    One can modify which parameters are use for swift upload when writing
-    by passing them to ``open`` like so::
-
-        with path('..').open(mode='r', swift_upload_options={'use_slo': True}) as obj:
-            obj.write('Hello world!')
-
-    In the above, `SwiftPath.upload` will be passed ``use_slo=False`` when
-    the upload happens
     """
     closed = False
     _READ_MODES = ('r', 'rb')
@@ -245,8 +227,6 @@ class OBSFile(object):
             mode (str): The mode of the resource. Can be "r" and "rb" for
                 reading the resource and "w" and "wb" for writing the
                 resource.
-            **swift_upload_kwargs: The arguments that will be passed to
-                `SwiftPath.upload` if writes occur on the object
         """
         if mode not in self._VALID_MODES:
             raise ValueError('invalid mode for file: %r' % mode)
@@ -304,7 +284,7 @@ class OBSFile(object):
         del self.__dict__['_buffer']
 
     def flush(self):
-        """Flushes the write buffer to swift (if it exists)"""
+        """Flushes the write buffer to the OBS path (if it exists)"""
         if self.mode not in self._WRITE_MODES:
             raise TypeError("File must be in modes %s to 'flush'" %
                             (self._WRITE_MODES,))

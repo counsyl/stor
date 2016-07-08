@@ -1240,7 +1240,7 @@ class SwiftPath(OBSPath):
         ])
 
         if use_manifest:
-            # Generate the data manifest and save it obsly
+            # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
             manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)

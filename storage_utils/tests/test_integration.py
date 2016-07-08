@@ -11,6 +11,9 @@ from storage_utils.tests.shared import assert_same_data
 
 
 class BaseIntegrationTest:
+    """A wrapper class for common test cases so they aren't executed on their
+    own as part of the base test class.
+    """
     class BaseTestCases(unittest.TestCase):
         def get_dataset_obj_names(self, num_test_files):
             """Returns the name of objects in a test dataset generated with create_dataset"""
@@ -140,3 +143,28 @@ class BaseIntegrationTest:
                 with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
                     with gzip.open(local_gzip) as local_gzip_fp:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
+
+    def test_file_read_write(self):
+        test_file = self.test_dir / 'test_file.txt'
+        copy_file = self.test_dir / 'copy_file.txt'
+
+        with test_file.open(mode='wb') as obj:
+            obj.write('this is a test\n')
+            obj.write('this is another line.\n')
+
+        self.assertTrue(test_file.exists())
+        self.assertTrue(test_file.isfile())
+        self.assertFalse(test_file.isdir())
+
+        with test_file.open(mode='rb') as obj:
+            with copy_file.open(mode='wb') as copy_obj:
+                copy_obj.write(obj.read())
+
+        self.assertTrue(copy_file.exists())
+        self.assertTrue(copy_file.isfile())
+        self.assertFalse(copy_file.isdir())
+
+        test_contents = test_file.open(mode='rb').read()
+        copy_contents = copy_file.open(mode='rb').read()
+        self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
+        self.assertEquals(test_contents, copy_contents)

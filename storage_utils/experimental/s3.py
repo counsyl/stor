@@ -360,8 +360,6 @@ class S3Path(OBSPath):
 
         Args:
             content (str): The content of the object
-            **swift_upload_args: Keyword arguments to pass to
-                `SwiftPath.upload`
         """
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(content)
