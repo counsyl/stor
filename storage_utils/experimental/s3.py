@@ -3,7 +3,6 @@ An experimental implementation of S3 in storage-utils.
 """
 import tempfile
 import threading
-import types
 
 import boto3
 from botocore import exceptions as boto_s3_exceptions
@@ -12,6 +11,7 @@ from storage_utils import exceptions
 from storage_utils.base import Path
 from storage_utils.obs import OBSFile
 from storage_utils.obs import OBSPath
+from storage_utils.obs import OBSUploadObject
 from storage_utils import utils
 
 # Thread-local variable used to cache the client
@@ -50,27 +50,6 @@ def _get_s3_client():
     if not hasattr(_thread_local, 's3_client'):
         _thread_local.s3_client = boto3.client('s3')
     return _thread_local.s3_client
-
-
-class S3UploadObject(object):
-    """
-    An upload object similar to swiftclient's SwiftUploadObject that allows the user
-    to specify a destination file name (full s3 key).
-    """
-    def __init__(self, source, dest):
-        """
-        An S3UploadObject must be initialized with a source and destination path.
-
-        Args:
-            source (str): A path that specifies a source file.
-            dest (str): A path that specifies a destination file name (full s3 key)
-        """
-        if not isinstance(source, types.StringTypes):
-            raise ValueError('S3UploadObject source must be a string')
-        if not isinstance(dest, types.StringTypes):
-            raise ValueError('S3UploadObject destination must be a string')
-        self.source = source
-        self.dest = dest
 
 
 class S3Path(OBSPath):
@@ -364,7 +343,7 @@ class S3Path(OBSPath):
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(content)
             fp.flush()
-            self.upload([S3UploadObject(fp.name, self.resource)])
+            self.upload([OBSUploadObject(fp.name, self.resource)])
 
     def download_object(self, dest, **kwargs):
         """
@@ -412,7 +391,8 @@ class S3Path(OBSPath):
         Note that the S3Path is treated as a directory.
 
         Args:
-            source (List[str]): A list of source files and directories to upload to S3.
+            source (List[str|OBSUploadObject]): A list of source files, directories, and
+                OBSUploadObjects to upload to S3.
 
         Notes:
 
@@ -424,14 +404,14 @@ class S3Path(OBSPath):
 
         """
         files_to_convert = utils.walk_files_and_dirs([
-            name for name in source if not isinstance(name, S3UploadObject)
+            name for name in source if not isinstance(name, OBSUploadObject)
         ])
         files_to_upload = [
-            obj for obj in source if isinstance(obj, S3UploadObject)
+            obj for obj in source if isinstance(obj, OBSUploadObject)
         ]
         files_to_upload.extend([
-            S3UploadObject(name,
-                           (self.resource or Path('')) / utils.file_name_to_object_name(name))
+            OBSUploadObject(name,
+                            (self.resource or Path('')) / utils.file_name_to_object_name(name))
             for name in files_to_convert
         ])
 
@@ -441,7 +421,7 @@ class S3Path(OBSPath):
                 continue
             ul_kwargs = {
                 'Bucket': self.bucket,
-                'Key': f.dest,
+                'Key': f.object_name,
                 'Filename': f.source
             }
             self._s3_client_call('upload_file', **ul_kwargs)

@@ -11,11 +11,11 @@ import mock
 import storage_utils
 from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
+from storage_utils.obs import OBSUploadObject
 from storage_utils import Path
 from storage_utils import obs
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
-from storage_utils.experimental.s3 import S3UploadObject
 from storage_utils.test import S3TestCase
 from storage_utils.tests.shared import assert_same_data
 
@@ -837,10 +837,10 @@ class TestUpload(S3TestCase):
 
     def test_upload_object_invalid(self, mock_files):
         s3_p = S3Path('s3://a/b')
-        with self.assertRaisesRegexp(ValueError, 'source'):
-            s3_p.upload([S3UploadObject(['not valid'], 'dest')])
-        with self.assertRaisesRegexp(ValueError, 'destination'):
-            s3_p.upload([S3UploadObject('source', ['invalid dest'])])
+        with self.assertRaisesRegexp(ValueError, 'empty strings'):
+            s3_p.upload([OBSUploadObject('', '')])
+        with self.assertRaisesRegexp(ValueError, 'OBSUploadObject'):
+            s3_p.upload([OBSUploadObject(1234, 'dest')])
 
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)

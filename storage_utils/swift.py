@@ -46,13 +46,13 @@ from storage_utils import is_swift_path
 from storage_utils.base import Path
 from storage_utils.obs import OBSFile
 from storage_utils.obs import OBSPath
+from storage_utils.obs import OBSUploadObject
 from storage_utils import utils
 from storage_utils.posix import PosixPath
 from storage_utils import settings
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
-from swiftclient.service import SwiftUploadObject
 from swiftclient.utils import generate_temp_url
 
 
@@ -117,6 +117,7 @@ Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0
 # Make new Exceptions structure backwards compatible
 SwiftError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
+SwiftFile = OBSFile
 
 
 def _default_retry_sleep_function(t, attempt):
@@ -515,9 +516,6 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
         ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
 
 
-SwiftFile = OBSFile
-
-
 class SwiftPath(OBSPath):
     """
     Provides the ability to manipulate and access resources on swift
@@ -759,7 +757,7 @@ class SwiftPath(OBSPath):
         with tempfile.NamedTemporaryFile() as fp:
             fp.write(content)
             fp.flush()
-            suo = SwiftUploadObject(fp.name, object_name=self.resource)
+            suo = OBSUploadObject(fp.name, object_name=self.resource)
             return self.upload([suo], **swift_upload_args)
 
     def open(self, mode='r', swift_upload_options=None):
@@ -1188,7 +1186,7 @@ class SwiftPath(OBSPath):
 
         Args:
             to_upload (List): A list of file names, directory names, or
-                `SwiftUploadObject` objects to upload.
+                `OBSUploadObject` objects to upload.
             condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition. In the event of the
                 condition never matching after retries, partially uploaded
@@ -1197,7 +1195,7 @@ class SwiftPath(OBSPath):
             use_manifest (bool): Generate a data manifest and validate the upload results
                 are in the manifest.
             headers (List[str]): A list of object headers to apply to every object. Note
-                that these are not applied if passing SwiftUploadObjects directly to upload.
+                that these are not applied if passing OBSUploadObjects directly to upload.
                 Headers must be specified as a list of colon-delimited strings,
                 e.g. ['X-Delete-After:1000']
 
@@ -1219,11 +1217,11 @@ class SwiftPath(OBSPath):
 
         swift_upload_objects = [
             name for name in to_upload
-            if isinstance(name, SwiftUploadObject)
+            if isinstance(name, OBSUploadObject)
         ]
         all_files_to_upload = utils.walk_files_and_dirs([
             name for name in to_upload
-            if not isinstance(name, SwiftUploadObject)
+            if not isinstance(name, OBSUploadObject)
         ])
 
         # Convert everything to swift upload objects and prepend the relative
@@ -1233,9 +1231,9 @@ class SwiftPath(OBSPath):
         resource_base = utils.with_trailing_slash(self.resource) or PosixPath('')
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
-            SwiftUploadObject(f,
-                              object_name=resource_base / file_name_to_object_name(f),
-                              options=upload_object_options)
+            OBSUploadObject(f,
+                            object_name=resource_base / file_name_to_object_name(f),
+                            options=upload_object_options)
             for f in all_files_to_upload if f != manifest_file_name
         ])
 
@@ -1244,9 +1242,9 @@ class SwiftPath(OBSPath):
             object_names = [o.object_name for o in swift_upload_objects]
             _generate_and_save_data_manifest(to_upload[0], object_names)
             manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)
-            manifest_obj = SwiftUploadObject(manifest_file_name,
-                                             object_name=manifest_obj_name,
-                                             options=upload_object_options)
+            manifest_obj = OBSUploadObject(manifest_file_name,
+                                           object_name=manifest_obj_name,
+                                           options=upload_object_options)
             self._swift_service_call('upload', self.container, [manifest_obj])
 
             # Make a condition for validating the upload

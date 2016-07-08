@@ -141,7 +141,7 @@ class TestCopy(unittest.TestCase):
             upload_args = mock_upload.call_args_list[0][0]
             self.assertEquals(upload_args[0], dest.parent)
             self.assertEquals(upload_args[1][0].source, tmp_f.name)
-            self.assertEquals(upload_args[1][0].dest, 'key/file.txt')
+            self.assertEquals(upload_args[1][0].object_name, 'key/file.txt')
 
 
 class TestCopytree(unittest.TestCase):

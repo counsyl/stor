@@ -6,9 +6,7 @@ import os
 import shlex
 import shutil
 from subprocess import check_call
-from swiftclient.service import SwiftUploadObject
 import tempfile
-
 
 logger = logging.getLogger(__name__)
 
@@ -163,7 +161,7 @@ def copy(source, dest, swift_retry_options=None):
             ValueError: OBS destination must be file with extension or directory with slash
     """
     from storage_utils import Path
-    from storage_utils.experimental.s3 import S3UploadObject
+    from storage_utils.obs import OBSUploadObject
 
     source = Path(source)
     dest = Path(dest)
@@ -187,10 +185,7 @@ def copy(source, dest, swift_retry_options=None):
                 '"%s"' % (dest_file.parent, dest_file.name)
             ))
         dest_obj_name = Path(dest_file.parent.resource or '') / dest_file.name
-        if is_swift_path(dest):
-            upload_obj = SwiftUploadObject(source, object_name=dest_obj_name)
-        else:
-            upload_obj = S3UploadObject(source, dest_obj_name)
+        upload_obj = OBSUploadObject(source, dest_obj_name)
         dest_file.parent.upload([upload_obj],
                                 **swift_retry_options)
 

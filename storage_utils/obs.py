@@ -2,6 +2,8 @@ import cStringIO
 import posixpath
 
 from cached_property import cached_property
+from swiftclient.service import SwiftError
+from swiftclient.service import SwiftUploadObject
 
 from storage_utils.base import Path
 from storage_utils.posix import PosixPath
@@ -21,6 +23,29 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     wrapper.__name__ = attr_name
     wrapper.__doc__ = getattr(cStringIO.StringIO(), attr_name).__doc__
     return wrapper
+
+
+class OBSUploadObject(SwiftUploadObject):
+    """
+    An upload object similar to swiftclient's SwiftUploadObject that allows the user
+    to specify a destination file name (full key) and upload options.
+    """
+    def __init__(self, source, object_name, options=None):
+        """
+        An OBSUploadObject must be initialized with a source and destination path.
+
+        Args:
+            source (str): A path that specifies a source file.
+            dest (str): A path that specifies a destination file name (full key)
+        """
+        try:
+            super(OBSUploadObject, self).__init__(source, object_name=object_name, options=options)
+        except SwiftError as exc:
+            if 'SwiftUploadObject' in exc.value:
+                msg = exc.value.replace('SwiftUploadObject', 'OBSUploadObject', 1)
+            else:
+                msg = exc.value
+            raise ValueError(msg)
 
 
 class OBSPath(Path):
