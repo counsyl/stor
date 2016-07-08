@@ -118,6 +118,7 @@ Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0
 SwiftError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
 SwiftFile = OBSFile
+SwiftUploadObject = OBSUploadObject
 
 
 def _default_retry_sleep_function(t, attempt):

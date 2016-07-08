@@ -104,10 +104,10 @@ SwiftFile
   :members:
 
 
-OBSUploadObject
+SwiftUploadObject
 -----------------
 
-.. autoclass:: OBSUploadObject
+.. autoclass:: SwiftUploadObject
   :members:
 
 

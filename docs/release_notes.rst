@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+v8.1.0
+------
+
+* Added S3 compatibility, including ``S3Path`` and associated methods.
+* Consolidated common code: created base ``OBSPath`` and ``OBSFile`` classes
+* Created ``OBSUploadObject`` that wraps around ``SwiftUploadObject`` to make it cloud-agnostic
+
+
 v8.0.0
 ------
 
