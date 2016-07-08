@@ -5,10 +5,10 @@ import unittest
 from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
-from storage_utils.tests.shared import BaseIntegrationTest
+from storage_utils.tests.test_integration import BaseIntegrationTest
 
 
-class S3IntegrationTest(BaseIntegrationTest):
+class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
     """
     Integration tests for S3. Note that for now, while upload/download/remove
     methods are not implemented, tests will use the existing stor-test-bucket
@@ -87,48 +87,6 @@ class S3IntegrationTest(BaseIntegrationTest):
         ]))
 
         self.assertTrue(self.test_dir.listdir() == (self.test_dir + '/').listdir())
-
-    def test_walkfiles(self):
-        with NamedTemporaryDirectory(change_dir=True):
-            open('aabc.sh', 'w').close()
-            open('aabc', 'w').close()
-            os.mkdir('b')
-            open('b/c.sh', 'w').close()
-            os.mkdir('empty')
-            open('b/d', 'w').close()
-            open('b/abbbc', 'w').close()
-            self.test_dir.upload(['.'])
-
-        all_files = list(self.test_dir.walkfiles())
-        self.assertEquals(set(all_files), set([
-            self.test_dir / 'aabc.sh',
-            self.test_dir / 'aabc',
-            self.test_dir / 'b/c.sh',
-            self.test_dir / 'b/d',
-            self.test_dir / 'b/abbbc',
-        ]))
-        prefix_files = list(self.test_dir.walkfiles('*.sh'))
-        self.assertEquals(set(prefix_files), set([
-            self.test_dir / 'aabc.sh',
-            self.test_dir / 'b/c.sh'
-        ]))
-        infix_files = list(self.test_dir.walkfiles('a*b*c'))
-        self.assertEquals(set(infix_files), set([
-            self.test_dir / 'aabc',
-            self.test_dir / 'b/abbbc'
-        ]))
-        suffix_files = list(self.test_dir.walkfiles('a*'))
-        self.assertEquals(set(suffix_files), set([
-            self.test_dir / 'aabc.sh',
-            self.test_dir / 'aabc',
-            self.test_dir / 'b/abbbc'
-        ]))
-        more_files = list(self.test_dir.walkfiles('*ab*'))
-        self.assertEquals(set(more_files), set([
-            self.test_dir / 'aabc.sh',
-            self.test_dir / 'aabc',
-            self.test_dir / 'b/abbbc'
-        ]))
 
     def test_is_methods(self):
         """

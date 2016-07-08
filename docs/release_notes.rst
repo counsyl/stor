@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+v8.1.0
+------
+
+* Added S3 compatibility, including ``S3Path`` and associated methods.
+* Consolidated common code: created base ``OBSPath`` and ``OBSFile`` classes
+* Created ``OBSUploadObject`` that wraps around ``SwiftUploadObject`` to make it cloud-agnostic
+
+
 v8.0.0
 ------
 
@@ -90,7 +98,7 @@ v6.4.0
 v6.3.1
 ------
 
-* Add `SwiftFile.tell` method to enable `SwiftFile` to work with `gzip.GzipFile` objects transparently.
+* Add ``SwiftFile.tell`` method to enable `SwiftFile` to work with `gzip.GzipFile` objects transparently.
 * Make `SwiftFile` delegated methods show up in docs.
 
 v6.3.0

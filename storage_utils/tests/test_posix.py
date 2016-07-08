@@ -99,7 +99,7 @@ class TestCopy(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = 'swift://tenant/container/ambiguous-resource'
-            with self.assertRaisesRegexp(ValueError, 'swift destination'):
+            with self.assertRaisesRegexp(ValueError, 'OBS destination'):
                 utils.copy(source, dest)
 
     def test_ambigious_swift_container_destination(self):
@@ -109,7 +109,7 @@ class TestCopy(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = 'swift://tenant/ambiguous-container'
-            with self.assertRaisesRegexp(ValueError, 'swift destination'):
+            with self.assertRaisesRegexp(ValueError, 'OBS destination'):
                 utils.copy(source, dest)
 
     def test_tenant_swift_destination(self):
@@ -132,6 +132,16 @@ class TestCopy(unittest.TestCase):
             self.assertEquals(upload_args[0], dest.parent)
             self.assertEquals(upload_args[1][0].source, tmp_f.name)
             self.assertEquals(upload_args[1][0].object_name, 'file.txt')
+
+    @mock.patch.object(s3.S3Path, 'upload', autospec=True)
+    def test_s3_destination(self, mock_upload):
+        dest = Path('s3://bucket/key/file.txt')
+        with tempfile.NamedTemporaryFile() as tmp_f:
+            Path(tmp_f.name).copy(dest)
+            upload_args = mock_upload.call_args_list[0][0]
+            self.assertEquals(upload_args[0], dest.parent)
+            self.assertEquals(upload_args[1][0].source, tmp_f.name)
+            self.assertEquals(upload_args[1][0].object_name, 'key/file.txt')
 
 
 class TestCopytree(unittest.TestCase):

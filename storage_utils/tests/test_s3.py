@@ -1,14 +1,23 @@
+import cStringIO
 import datetime
+import gzip
+import ntpath
+from tempfile import NamedTemporaryFile
 import unittest
 
 from botocore.exceptions import ClientError
 import mock
 
+import storage_utils
 from storage_utils import exceptions
+from storage_utils import NamedTemporaryDirectory
+from storage_utils.obs import OBSUploadObject
 from storage_utils import Path
+from storage_utils import obs
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.test import S3TestCase
+from storage_utils.tests.shared import assert_same_data
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -25,7 +34,7 @@ class TestBasicPathMethods(unittest.TestCase):
         self.assertEquals(p.dirname(), 's3://bucket/path/to')
 
     def test_basename(self):
-        p = Path('swift://bucket/path/to/resource')
+        p = Path('s3://bucket/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
 
 
@@ -826,6 +835,13 @@ class TestUpload(S3TestCase):
                                                          Key='b/path/to/file1',
                                                          Filename='/path/to/file1')
 
+    def test_upload_object_invalid(self, mock_files):
+        s3_p = S3Path('s3://a/b')
+        with self.assertRaisesRegexp(ValueError, 'empty strings'):
+            s3_p.upload([OBSUploadObject('', '')])
+        with self.assertRaisesRegexp(ValueError, 'OBSUploadObject'):
+            s3_p.upload([OBSUploadObject(1234, 'dest')])
+
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
 class TestDownload(S3TestCase):
@@ -857,3 +873,219 @@ class TestDownload(S3TestCase):
             mock.call('test'),
             mock.call('test/dir')
         ])
+
+
+class TestCopy(S3TestCase):
+    @mock.patch.object(S3Path, 'download_object', autospec=True)
+    def test_copy_posix_file_destination(self, mockdownload_object):
+        p = S3Path('s3://bucket/key/file_source.txt')
+        p.copy('file_dest.txt')
+        mockdownload_object.assert_called_once_with(p, Path(u'file_dest.txt'))
+
+    @mock.patch.object(S3Path, 'download_object', autospec=True)
+    def test_copy_posix_dir_destination(self, mockdownload_object):
+        p = S3Path('s3://bucket/key/file_source.txt')
+        with NamedTemporaryDirectory() as tmp_d:
+            p.copy(tmp_d)
+            mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
+
+    def test_copy_swift_destination(self):
+        p = S3Path('s3://bucket/key/file_source')
+        with self.assertRaisesRegexp(ValueError, 'OBS path'):
+            p.copy('swift://tenant/container/file_dest')
+
+    def test_copy_s3_destination(self):
+        p = S3Path('s3://bucket/key/file_source')
+        with self.assertRaisesRegexp(ValueError, 'OBS path'):
+            p.copy('s3://bucket/key/file_dest')
+
+
+class TestCopytree(S3TestCase):
+    @mock.patch.object(S3Path, 'download', autospec=True)
+    def test_copytree_posix_destination(self, mock_download):
+        p = S3Path('s3://bucket/key')
+        p.copytree('path')
+        mock_download.assert_called_once_with(
+            p,
+            Path(u'path'),
+            condition=None,
+            use_manifest=False)
+
+    def test_copytree_swift_destination(self):
+        p = S3Path('s3://bucket/key')
+        with self.assertRaises(ValueError):
+            p.copytree('s3://s3/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_copytree_windows_destination(self):
+        p = S3Path('s3://bucket/key')
+        with self.assertRaisesRegexp(ValueError, 'not supported'):
+            p.copytree(r'windows\path')
+
+
+class TestS3File(S3TestCase):
+    def test_invalid_buffer_mode(self):
+        s3_f = S3Path('s3://bucket/key/obj').open()
+        s3_f.mode = 'invalid'
+        with self.assertRaisesRegexp(ValueError, 'buffer'):
+            s3_f._buffer
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_invalid_flush_mode(self, mock_stream):
+        mock_stream.read.return_value = 'data'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        s3_p = S3Path('s3://bucket/key/obj')
+        obj = s3_p.open()
+        with self.assertRaisesRegexp(TypeError, 'flush'):
+            obj.flush()
+
+    def test_name(self):
+        s3_p = S3Path('s3://bucket/key/obj')
+        obj = s3_p.open()
+        self.assertEquals(obj.name, s3_p)
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_context_manager_on_closed_file(self, mock_stream):
+        mock_stream.read.return_value = 'data'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        s3_p = S3Path('s3://bucket/key/obj')
+        obj = s3_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            with obj:
+                pass  # pragma: no cover
+
+    def test_invalid_mode(self):
+        s3_p = S3Path('s3://bucket/key/obj')
+        with self.assertRaisesRegexp(ValueError, 'invalid mode'):
+            s3_p.open(mode='invalid')
+
+    def test_invalid_io_op(self):
+        # now invalid delegates are considered invalid on instantiation
+        with self.assertRaisesRegexp(AttributeError, 'no attribute'):
+            class MyFile(object):
+                closed = False
+                _buffer = cStringIO.StringIO()
+                invalid = obs._delegate_to_buffer('invalid')
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_read_on_closed_file(self, mock_stream):
+        mock_stream.read.return_value = 'data'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        s3_p = S3Path('s3://bucket/key/obj')
+        obj = s3_p.open()
+        obj.close()
+
+        with self.assertRaisesRegexp(ValueError, 'closed file'):
+            obj.read()
+
+    def test_read_invalid_mode(self):
+        s3_p = S3Path('s3://bucket/key/obj')
+        with self.assertRaisesRegexp(TypeError, 'mode.*read'):
+            s3_p.open(mode='wb').read()
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_read_success(self, mock_stream):
+        mock_stream.read.return_value = 'data'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+
+        s3_p = S3Path('s3://bucket/key/obj')
+        self.assertEquals(s3_p.open().read(), 'data')
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_iterating_over_files(self, mock_stream):
+        data = '''\
+line1
+line2
+line3
+line4
+'''
+        mock_stream.read.return_value = data
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+
+        s3_p = S3Path('s3://bucket/key/obj')
+        self.assertEquals(s3_p.open().read(), data)
+        self.assertEquals(s3_p.open().readlines(),
+                          [l + '\n' for l in data.split('\n')][:-1])
+        for i, line in enumerate(s3_p.open(), 1):
+            self.assertEqual(line, 'line%d\n' % i)
+
+        self.assertEqual(next(s3_p.open()), 'line1\n')
+        self.assertEqual(s3_p.open().next(), 'line1\n')
+        self.assertEqual(iter(s3_p.open()).next(), 'line1\n')
+
+    def test_write_invalid_args(self):
+        s3_p = S3Path('s3://bucket/key/obj')
+        obj = s3_p.open(mode='r')
+        with self.assertRaisesRegexp(TypeError, 'mode.*write'):
+            obj.write('hello')
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_write_multiple_w_context_manager(self, mock_sleep):
+        mock_upload = self.mock_s3.upload_file
+        s3_p = S3Path('s3://bucket/key/obj')
+        with s3_p.open(mode='wb') as obj:
+            obj.write('hello')
+            obj.write(' world')
+        upload_call, = mock_upload.call_args_list
+        self.assertTrue(upload_call[1]['Bucket'] == s3_p.bucket)
+        self.assertTrue(upload_call[1]['Key'] == s3_p.resource)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_write_multiple_flush_multiple_upload(self, mock_sleep):
+        mock_upload = self.mock_s3.upload_file
+        s3_p = S3Path('s3://bucket/key/obj')
+        with NamedTemporaryFile(delete=False) as ntf1,\
+                NamedTemporaryFile(delete=False) as ntf2,\
+                NamedTemporaryFile(delete=False) as ntf3:
+            with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
+                ntf.side_effect = [ntf1, ntf2, ntf3]
+                with s3_p.open(mode='wb') as obj:
+                    obj.write('hello')
+                    obj.flush()
+                    obj.write(' world')
+                    obj.flush()
+                u1, u2, u3 = mock_upload.call_args_list
+                self.assertTrue(u1[1]['Bucket'] == s3_p.bucket)
+                self.assertTrue(u2[1]['Bucket'] == s3_p.bucket)
+                self.assertTrue(u3[1]['Bucket'] == s3_p.bucket)
+                self.assertTrue(u1[1]['Filename'] == ntf1.name)
+                self.assertTrue(u2[1]['Filename'] == ntf2.name)
+                self.assertTrue(u3[1]['Filename'] == ntf3.name)
+                self.assertTrue(u1[1]['Key'] == s3_p.resource)
+                self.assertTrue(u2[1]['Key'] == s3_p.resource)
+                self.assertTrue(u3[1]['Key'] == s3_p.resource)
+                self.assertEqual(open(ntf1.name).read(), 'hello')
+                self.assertEqual(open(ntf2.name).read(), 'hello world')
+                # third call happens because we don't care about checking for
+                # additional file change
+                self.assertEqual(open(ntf3.name).read(), 'hello world')
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_close_no_writes(self, mock_sleep):
+        mock_upload = self.mock_s3.upload_file
+        s3_p = S3Path('s3://bucket/key/obj')
+        obj = s3_p.open(mode='wb')
+        obj.close()
+
+        self.assertFalse(mock_upload.called)
+
+    def test_works_with_gzip(self):
+        gzip_path = storage_utils.join(storage_utils.dirname(__file__),
+                                       'file_data', 's_3_2126.bcl.gz')
+        text = storage_utils.open(gzip_path).read()
+        with mock.patch.object(S3Path, 'read_object', autospec=True) as read_mock:
+            read_mock.return_value = text
+            s3_file = storage_utils.open('s3://A/C/s_3_2126.bcl.gz')
+
+            with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
+                with gzip.open(gzip_path) as gzip_fp:
+                    assert_same_data(s3_file_fp, gzip_fp)
+            s3_file = storage_utils.open('s3://A/C/s_3_2126.bcl.gz')
+            with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
+                with gzip.open(gzip_path) as gzip_fp:
+                    # after seeking should still be same
+                    s3_file_fp.seek(3)
+                    gzip_fp.seek(3)
+                    assert_same_data(s3_file_fp, gzip_fp)

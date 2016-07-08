@@ -1,7 +1,7 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
-import posixpath
+import tempfile
 import threading
 
 import boto3
@@ -9,11 +9,15 @@ from botocore import exceptions as boto_s3_exceptions
 
 from storage_utils import exceptions
 from storage_utils.base import Path
-from storage_utils.posix import PosixPath
+from storage_utils.obs import OBSFile
+from storage_utils.obs import OBSPath
+from storage_utils.obs import OBSUploadObject
 from storage_utils import utils
 
 # Thread-local variable used to cache the client
 _thread_local = threading.local()
+
+S3File = OBSFile
 
 
 def _parse_s3_error(exc):
@@ -48,7 +52,7 @@ def _get_s3_client():
     return _thread_local.s3_client
 
 
-class S3Path(Path):
+class S3Path(OBSPath):
     """
     Provides the ability to manipulate and access S3 resources
     with a similar interface to the path library.
@@ -57,61 +61,12 @@ class S3Path(Path):
     near-future, users should be able to custom configure the S3 client.
     """
     drive = 's3://'
-    path_module = posixpath
-    parts_class = PosixPath
-
-    def __init__(self, pth):
-        """
-        Validates S3 path is in the proper format.
-
-        Args:
-            pth (str): A path that matches the format of
-                ``s3://{bucket_name}/{rest_of_path}``
-                The ``s3://`` prefix is required in the path.
-        """
-        if not hasattr(pth, 'startswith') or not pth.startswith(self.drive):
-            raise ValueError('path must have %s (got %r)' % (self.drive, pth))
-        return super(S3Path, self).__init__(pth)
-
-    def __repr__(self):
-        return '%s("%s")' % (type(self).__name__, self)
-
-    def _get_parts(self):
-        """Returns the path parts (excluding s3://) as a list of strings."""
-        if len(self) > len(self.drive):
-            return self[len(self.drive):].split('/')
-        else:
-            return []
-
-    @property
-    def name(self):
-        """The name of the path, mimicking path.py's name property"""
-        return self.parts_class(super(S3Path, self).name)
-
-    @property
-    def parent(self):
-        """The parent of the path, mimicking path.py's parent property"""
-        return self.path_class(super(S3Path, self).parent)
 
     @property
     def bucket(self):
         """Returns the bucket name from the path or None"""
         parts = self._get_parts()
         return parts[0] if len(parts) > 0 and parts[0] else None
-
-    @property
-    def resource(self):
-        """
-        Returns the resource as a ``PosixPath`` object or None.
-
-        A resource can be a single object or a prefix to objects.
-        Note that it's important to keep the trailing slash in a resource
-        name for prefix queries.
-        """
-        parts = self._get_parts()
-        joined_resource = '/'.join(parts[1:]) if len(parts) > 1 else None
-
-        return self.parts_class(joined_resource) if joined_resource else None
 
     def _s3_client_call(self, method_name, *args, **kwargs):
         """
@@ -150,7 +105,7 @@ class S3Path(Path):
         Raises:
             RemoteError: A s3 client error occurred.
         """
-        raise NotImplementedError
+        return S3File(self, mode=mode)
 
     def list(self, starts_with=None, limit=None, list_as_dir=False):
         """
@@ -371,22 +326,26 @@ class S3Path(Path):
         del response['ResponseMetadata']
         return response
 
-    def walkfiles(self, pattern=None):
-        """
-        Iterate over listed files whose filenames match an optional pattern.
+    def read_object(self):
+        """"Reads an individual object."""
+        body = self._s3_client_call('get_object', Bucket=self.bucket, Key=self.resource)['Body']
+        return body.read()
+
+    def write_object(self, content):
+        """Writes an individual object.
+
+        Note that this method writes the provided content to a temporary
+        file before uploading.
 
         Args:
-            pattern (str, optional): Only return files that match this pattern.
-
-        Returns:
-            Iter[S3Path]: All files that match the optional pattern. Directories
-                are not returned.
+            content (str): The content of the object
         """
-        for f in self.list():
-            if pattern is None or f.fnmatch(pattern):
-                yield f
+        with tempfile.NamedTemporaryFile() as fp:
+            fp.write(content)
+            fp.flush()
+            self.upload([OBSUploadObject(fp.name, self.resource)])
 
-    def download_object(self, dest):
+    def download_object(self, dest, **kwargs):
         """
         Downloads a file from S3 to a destination file.
 
@@ -407,7 +366,7 @@ class S3Path(Path):
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
 
-    def download(self, dest):
+    def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
 
         Args:
@@ -419,7 +378,6 @@ class S3Path(Path):
 
             - This method downloads to paths relative to the current
               directory.
-
         """
         source = utils.with_trailing_slash(self)
         files_to_download = source.list()
@@ -427,13 +385,14 @@ class S3Path(Path):
             name = self.parts_class(f[len(source):])
             f.download_object(dest / name)
 
-    def upload(self, source):
+    def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
 
         Note that the S3Path is treated as a directory.
 
         Args:
-            source (List[str]): A list of source files and directories to upload to S3.
+            source (List[str|OBSUploadObject]): A list of source files, directories, and
+                OBSUploadObjects to upload to S3.
 
         Notes:
 
@@ -441,21 +400,28 @@ class S3Path(Path):
           directory.
 
         TODO:
-
         - Update once directory markers are implemented
 
         """
-        files_to_upload = utils.walk_files_and_dirs([
-            name for name in source
+        files_to_convert = utils.walk_files_and_dirs([
+            name for name in source if not isinstance(name, OBSUploadObject)
         ])
+        files_to_upload = [
+            obj for obj in source if isinstance(obj, OBSUploadObject)
+        ]
+        files_to_upload.extend([
+            OBSUploadObject(name,
+                            (self.resource or Path('')) / utils.file_name_to_object_name(name))
+            for name in files_to_convert
+        ])
+
         for f in files_to_upload:
             # Skip empty directories for now
-            if Path(f).isdir():  # pragma: no cover
+            if Path(f.source).isdir():  # pragma: no cover
                 continue
-            object_name = utils.file_name_to_object_name(f)
             ul_kwargs = {
                 'Bucket': self.bucket,
-                'Key': self.resource / object_name if self.resource else object_name,
-                'Filename': f
+                'Key': f.object_name,
+                'Filename': f.source
             }
             self._s3_client_call('upload_file', **ul_kwargs)

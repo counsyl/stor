@@ -6,9 +6,7 @@ import os
 import shlex
 import shutil
 from subprocess import check_call
-from swiftclient.service import SwiftUploadObject
 import tempfile
-
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +81,7 @@ def is_swift_path(p):
         bool: True if p is a Swift path, False otherwise.
     """
     from storage_utils.swift import SwiftPath
-    return p.startswith(SwiftPath.swift_drive)
+    return p.startswith(SwiftPath.drive)
 
 
 def is_filesystem_path(p):
@@ -113,10 +111,22 @@ def is_s3_path(p):
     return p.startswith(S3Path.drive)
 
 
+def is_obs_path(p):
+    """Determines if the path is an OBS path (an S3 or Swift path).
+
+    Args:
+        p (str): The path string
+
+    Returns
+        bool: True if p is an OBS path, False otherwise.
+    """
+    return is_s3_path(p) or is_swift_path(p)
+
+
 def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
-    Note that this utility can be called from either swift, posix, or
+    Note that this utility can be called from either OBS, posix, or
     windows paths created with ``storage_utils.Path``.
 
     Args:
@@ -148,33 +158,35 @@ def copy(source, dest, swift_retry_options=None):
             >>> local_p.copy('swift://tenant/container/dir')
             Traceback (most recent call last):
             ...
-            ValueError: swift destination must be file with extension or directory with slash
+            ValueError: OBS destination must be file with extension or directory with slash
     """
     from storage_utils import Path
+    from storage_utils.obs import OBSUploadObject
 
     source = Path(source)
     dest = Path(dest)
     swift_retry_options = swift_retry_options or {}
-    if is_swift_path(source) and is_swift_path(dest):
-        raise ValueError('cannot copy one swift path to another swift path')
-    if is_swift_path(dest) and dest.is_ambiguous():
-        raise ValueError('swift destination must be file with extension or directory with slash')
+    if is_obs_path(source) and is_obs_path(dest):
+        raise ValueError('cannot copy one OBS path to another OBS path')
+    if is_obs_path(dest) and dest.is_ambiguous():
+        raise ValueError('OBS destination must be file with extension or directory with slash')
 
     if is_filesystem_path(dest):
-        if is_swift_path(source):
+        if is_obs_path(source):
             dest_file = dest if not dest.isdir() else dest / source.name
-            source._download_object(dest_file, **swift_retry_options)
+            source.download_object(dest_file, **swift_retry_options)
         else:
             shutil.copy(source, dest)
     else:
         dest_file = dest if not dest.endswith('/') else dest / source.name
-        if not dest_file.parent.container:
+        if is_swift_path(dest) and not dest_file.parent.container:
             raise ValueError((
                 'cannot copy to tenant "%s" and file '
                 '"%s"' % (dest_file.parent, dest_file.name)
             ))
         dest_obj_name = Path(dest_file.parent.resource or '') / dest_file.name
-        dest_file.parent.upload([SwiftUploadObject(source, object_name=dest_obj_name)],
+        upload_obj = OBSUploadObject(source, dest_obj_name)
+        dest_file.parent.upload([upload_obj],
                                 **swift_retry_options)
 
 
@@ -195,7 +207,7 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
     Doing a copytree from ``a`` to a new posix destination of ``c`` is
     performed with::
 
-        path('a').copytree('c')
+        Path('a').copytree('c')
 
     The end result for c looks like::
 
@@ -208,18 +220,18 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
     semantics of the provided copy command. This function has been tested
     in production using the default command of ``cp -r`` and using ``mcp -r``.
 
-    Using swift source and destinations work in a similar manner. Assume
+    Using OBS source and destinations work in a similar manner. Assume
     the destination is a swift path and we upload the same ``a`` folder::
 
-        path('a').copytree('swift://tenant/container/folder')
+        Path('a').copytree('swift://tenant/container/folder')
 
     The end swift result will have one object::
 
-        path('swift://tenant/container/folder/b/1.txt')
+        Path('swift://tenant/container/folder/b/1.txt')
 
     Similarly one can do::
 
-        path('swift://tenant/container/folder/').copytree('c')
+        Path('swift://tenant/container/folder/').copytree('c')
 
     The end result for c looks the same as the above posix example::
 
@@ -238,22 +250,22 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
         headers (List[str]): See `SwiftPath.upload`.
 
     Raises:
-        ValueError: if two swift paths specified
+        ValueError: if two OBS paths are specified
         OSError: if destination is a posix path and it already exists
     """
     from storage_utils import Path
 
     source = Path(source)
     dest = Path(dest)
-    if is_swift_path(source) and is_swift_path(dest):
-        raise ValueError('cannot copy one swift path to another swift path')
+    if is_obs_path(source) and is_obs_path(dest):
+        raise ValueError('cannot copy one OBS path to another OBS path')
     from storage_utils.windows import WindowsPath
-    if is_swift_path(source) and isinstance(dest, WindowsPath):
-        raise ValueError('swift copytree to windows is not supported')
+    if is_obs_path(source) and isinstance(dest, WindowsPath):
+        raise ValueError('OBS copytree to windows is not supported')
 
     if is_filesystem_path(dest):
         dest.expand().abspath().parent.makedirs_p()
-        if is_swift_path(source):
+        if is_obs_path(source):
             source.download(dest, use_manifest=use_manifest,
                             condition=condition, **retry_args)
         else:

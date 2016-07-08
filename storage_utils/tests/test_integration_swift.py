@@ -1,4 +1,3 @@
-import gzip
 import logging
 import os
 import time
@@ -7,18 +6,16 @@ import uuid
 
 import mock
 import requests
-from six.moves import builtins
 
 import storage_utils
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
 from storage_utils import settings
 from storage_utils import swift
-from storage_utils.tests.shared import assert_same_data
-from storage_utils.tests.shared import BaseIntegrationTest
+from storage_utils.tests.test_integration import BaseIntegrationTest
 
 
-class SwiftIntegrationTest(BaseIntegrationTest):
+class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def setUp(self):
         super(SwiftIntegrationTest, self).setUp()
 
@@ -44,6 +41,8 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         except:
             self.test_container.rmtree()
             raise
+
+        self.test_dir = self.test_container / 'test'
 
     def tearDown(self):
         super(SwiftIntegrationTest, self).tearDown()
@@ -93,17 +92,6 @@ class SwiftIntegrationTest(BaseIntegrationTest):
                 # logic
                 self.assertEquals(len(mock_get_ks.call_args_list), 2)
 
-    def test_copy_to_from_container(self):
-        num_test_objs = 5
-        min_obj_size = 100
-        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            self.create_dataset(tmp_d, num_test_objs, min_obj_size)
-            for which_obj in self.get_dataset_obj_names(num_test_objs):
-                obj_path = storage_utils.join(self.test_container, '%s.txt' % which_obj)
-                storage_utils.copy(which_obj, obj_path)
-                storage_utils.copy(obj_path, 'copied_file')
-                self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
-
     def test_static_large_obj_copy_and_segment_container(self):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             segment_size = 1048576
@@ -132,26 +120,6 @@ class SwiftIntegrationTest(BaseIntegrationTest):
             obj_path = Path(tmp_d) / 'large_object.txt'
             Path(self.test_container / 'large_object.txt').copy(obj_path)
             self.assertCorrectObjectContents(obj_path, self.get_dataset_obj_names(1)[0], obj_size)
-
-    def test_hidden_file_nested_dir_copytree(self):
-        test_swift_dir = Path(self.test_container) / 'test'
-        with NamedTemporaryDirectory(change_dir=True):
-            builtins.open('.hidden_file', 'w').close()
-            os.symlink('.hidden_file', 'symlink')
-            os.mkdir('.hidden_dir')
-            os.mkdir('.hidden_dir/nested')
-            builtins.open('.hidden_dir/nested/file1', 'w').close()
-            builtins.open('.hidden_dir/nested/file2', 'w').close()
-            Path('.').copytree(test_swift_dir)
-
-        with NamedTemporaryDirectory(change_dir=True):
-            test_swift_dir.copytree('test', condition=lambda results: len(results) == 4)
-            self.assertTrue(Path('test/.hidden_file').isfile())
-            self.assertTrue(Path('test/symlink').isfile())
-            self.assertTrue(Path('test/.hidden_dir').isdir())
-            self.assertTrue(Path('test/.hidden_dir/nested').isdir())
-            self.assertTrue(Path('test/.hidden_dir/nested/file1').isfile())
-            self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
 
     def test_temp_url(self):
         basic_file = 'test.txt'
@@ -239,63 +207,6 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         globbed_objs = set(
             test_dir.glob('1*', condition=lambda results: len(results) == len(expected_glob)))
         self.assertEquals(globbed_objs, expected_glob)
-
-    def test_walkfiles(self):
-        with NamedTemporaryDirectory(change_dir=True):
-            # Make a dataset with files that will match a particular pattern (*.sh)
-            # and also empty directories that should be ignored when calling walkfiles
-            open('aabc.sh', 'w').close()
-            open('aabc', 'w').close()
-            os.mkdir('b')
-            open('b/c.sh', 'w').close()
-            os.mkdir('empty')
-            open('b/d', 'w').close()
-            open('b/abbbc', 'w').close()
-            Path('.').copytree(self.test_container)
-
-        unfiltered_files = list(self.test_container.walkfiles())
-        self.assertEquals(set(unfiltered_files), set([
-            storage_utils.join(self.test_container, 'aabc.sh'),
-            storage_utils.join(self.test_container, 'aabc'),
-            storage_utils.join(self.test_container, 'b/c.sh'),
-            storage_utils.join(self.test_container, 'b/d'),
-            storage_utils.join(self.test_container, 'b/abbbc'),
-        ]))
-        prefix_files = list(self.test_container.walkfiles('*.sh'))
-        self.assertEquals(set(prefix_files), set([
-            storage_utils.join(self.test_container, 'aabc.sh'),
-            storage_utils.join(self.test_container, 'b/c.sh'),
-        ]))
-        double_infix_files = list(self.test_container.walkfiles('a*b*c'))
-        self.assertEquals(set(double_infix_files), set([
-            storage_utils.join(self.test_container, 'aabc'),
-            storage_utils.join(self.test_container, 'b/abbbc'),
-        ]))
-        suffix_files = list(self.test_container.walkfiles('a*'))
-        self.assertEquals(set(suffix_files), set([
-            storage_utils.join(self.test_container, 'aabc.sh'),
-            storage_utils.join(self.test_container, 'aabc'),
-            storage_utils.join(self.test_container, 'b/abbbc'),
-        ]))
-
-    def test_copytree_to_from_container(self):
-        num_test_objs = 10
-        test_obj_size = 100
-        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-            storage_utils.copytree(
-                '.',
-                storage_utils.join(self.test_container, 'test'))
-
-        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            Path(self.test_container / 'test').copytree(
-                'test',
-                condition=lambda results: len(results) == num_test_objs)
-
-            # Verify contents of all downloaded test objects
-            for which_obj in self.get_dataset_obj_names(num_test_objs):
-                obj_path = Path('test') / which_obj
-                self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
     def test_copytree_w_headers(self):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
@@ -424,17 +335,6 @@ class SwiftIntegrationTest(BaseIntegrationTest):
         stat_data = storage_utils.Path(file_in_folder).stat()
         self.assertIn('Content-Type', stat_data)
         self.assertEqual(stat_data['Content-Type'], 'image/svg+xml')
-
-    def test_gzip_on_remote(self):
-        local_gzip = os.path.join(os.path.dirname(__file__),
-                                  'file_data/s_3_2126.bcl.gz')
-        remote_gzip = storage_utils.join(self.test_container,
-                                         storage_utils.basename(local_gzip))
-        storage_utils.copy(local_gzip, remote_gzip)
-        with storage_utils.open(remote_gzip) as fp:
-            with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
-                with gzip.open(local_gzip) as local_gzip_fp:
-                    assert_same_data(remote_gzip_fp, local_gzip_fp)
 
     def test_push_metadata(self):
         obj = self.test_container / 'object.txt'
