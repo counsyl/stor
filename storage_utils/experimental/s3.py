@@ -1,6 +1,7 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
+from multiprocessing.pool import ThreadPool
 import tempfile
 import threading
 
@@ -48,7 +49,8 @@ def _get_s3_client():
         boto3.Client: An instance of the S3 client.
     """
     if not hasattr(_thread_local, 's3_client'):
-        _thread_local.s3_client = boto3.client('s3')
+        session = boto3.session.Session()
+        _thread_local.s3_client = session.client('s3')
     return _thread_local.s3_client
 
 
@@ -361,10 +363,15 @@ class S3Path(OBSPath):
         dl_kwargs = {
             'Bucket': self.bucket,
             'Key': self.resource,
-            'Filename': dest
+            'Filename': str(dest)
         }
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
+
+    def _download_object(self, obj):
+        """Downloads a single object. Helper for threaded download."""
+        name = self.parts_class(obj['source'][len(utils.with_trailing_slash(self)):])
+        obj['source'].download_object(obj['dest'] / name)
 
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
@@ -380,10 +387,27 @@ class S3Path(OBSPath):
               directory.
         """
         source = utils.with_trailing_slash(self)
-        files_to_download = source.list()
-        for f in files_to_download:
-            name = self.parts_class(f[len(source):])
-            f.download_object(dest / name)
+        files_to_download = [
+            {'source': file, 'dest': dest}
+            for file in source.list()
+        ]
+
+        pool = ThreadPool(10)
+        pool.map(self._download_object, files_to_download)
+        pool.close()
+        pool.join()
+
+    def _upload_object(self, upload_obj):
+        """Upload a single object given an OBSUploadObject."""
+        if not Path(upload_obj.source).isdir():
+            ul_kwargs = {
+                'Bucket': self.bucket,
+                'Key': upload_obj.object_name,
+                'Filename': upload_obj.source
+            }
+            if upload_obj.options and 'headers' in upload_obj.options:
+                ul_kwargs.update({'ExtraArgs': upload_obj.options['headers']})
+            self._s3_client_call('upload_file', **ul_kwargs)
 
     def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
@@ -393,6 +417,11 @@ class S3Path(OBSPath):
         Args:
             source (List[str|OBSUploadObject]): A list of source files, directories, and
                 OBSUploadObjects to upload to S3.
+            headers (dict): A dictionary of object headers to apply to the object.
+                Headers will not be applied to OBSUploadObjects and any headers
+                specified by an OBSUploadObject will override these headers.
+                Headers should be specified as key-value pairs,
+                e.g. {'ContentLanguage': 'en'}
 
         Notes:
 
@@ -411,17 +440,12 @@ class S3Path(OBSPath):
         ]
         files_to_upload.extend([
             OBSUploadObject(name,
-                            (self.resource or Path('')) / utils.file_name_to_object_name(name))
+                            (self.resource or Path('')) / utils.file_name_to_object_name(name),
+                            options={'headers': headers} if headers else None)
             for name in files_to_convert
         ])
 
-        for f in files_to_upload:
-            # Skip empty directories for now
-            if Path(f.source).isdir():  # pragma: no cover
-                continue
-            ul_kwargs = {
-                'Bucket': self.bucket,
-                'Key': f.object_name,
-                'Filename': f.source
-            }
-            self._s3_client_call('upload_file', **ul_kwargs)
+        pool = ThreadPool(10)
+        pool.map(self._upload_object, files_to_upload)
+        pool.close()
+        pool.join()

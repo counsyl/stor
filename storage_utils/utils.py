@@ -51,15 +51,14 @@ def make_dest_dir(dest):
             A specific exception is if a directory that is being created already exists as a file.
     """
     dest = os.path.abspath(dest)
-    if not os.path.isdir(dest):
-        try:
-            os.makedirs(dest)
-        except OSError as exc:
-            if exc.errno == errno.ENOTDIR:
-                raise OSError(errno.ENOTDIR,
-                              'a parent directory of \'%s\' already exists as a file' % dest)
-            else:
-                raise
+    try:
+        os.makedirs(dest)
+    except OSError as exc:
+        if exc.errno == errno.ENOTDIR:
+            raise OSError(errno.ENOTDIR,
+                          'a parent directory of \'%s\' already exists as a file' % dest)
+        elif exc.errno != errno.EEXIST or os.path.isfile(dest):
+            raise
 
 
 def with_trailing_slash(p):

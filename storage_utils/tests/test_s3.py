@@ -116,8 +116,9 @@ class TestGetS3Client(S3TestCase):
     def test_get_s3_client_none(self):
         self.disable_get_s3_client_mock()
         client = s3._get_s3_client()
-        self.mock_s3_client.assert_called_once_with('s3')
-        self.assertEquals(client, self.mock_s3_client.return_value)
+        self.mock_s3_session.assert_called_once_with()
+        self.mock_s3_session.return_value.client.assert_called_once_with('s3')
+        self.assertEquals(client, self.mock_s3_session.return_value.client.return_value)
 
 
 class TestGetS3Iterator(S3TestCase):
@@ -841,6 +842,15 @@ class TestUpload(S3TestCase):
             s3_p.upload([OBSUploadObject('', '')])
         with self.assertRaisesRegexp(ValueError, 'OBSUploadObject'):
             s3_p.upload([OBSUploadObject(1234, 'dest')])
+
+    def test_upload_w_headers(self, mock_files):
+        mock_files.return_value = {'file.txt': 10}
+        s3_p = S3Path('s3://a/b')
+        s3_p.upload(['.'], headers={'ContentLanguage': 'en'})
+        self.mock_s3.upload_file.assert_called_once_with(Bucket='a',
+                                                         Key='b/file.txt',
+                                                         Filename='file.txt',
+                                                         ExtraArgs={'ContentLanguage': 'en'})
 
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)

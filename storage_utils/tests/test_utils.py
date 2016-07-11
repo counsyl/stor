@@ -180,4 +180,4 @@ class TestMakeDestDir(unittest.TestCase):
     def test_make_dest_dir_existing(self, mock_makedirs):
         os.mkdir('test/test')
         utils.make_dest_dir('test/test')
-        self.assertEquals(mock_makedirs.call_count, 0)
+        self.assertEquals(mock_makedirs.call_count, 1)

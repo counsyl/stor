@@ -38,7 +38,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         super(S3IntegrationTest, self).tearDown()
         self.test_dir.rmtree()
 
-    @unittest.skip("test takes a long time. run manually if you want to test.")
+    # @unittest.skip("test takes a long time. run manually if you want to test.")
     def test_over_1000_files(self):
         num_test_objs = 1234
         min_obj_size = 0
@@ -146,6 +146,15 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 self.assertCorrectObjectContents(which_obj, which_obj, min_obj_size)
                 (self.test_dir / which_obj).remove()
                 self.assertFalse((self.test_dir / which_obj).exists())
+
+    def test_upload_w_headers(self):
+        test_file = self.test_dir / 'a.txt'
+        with NamedTemporaryDirectory(change_dir=True):
+            open('a.txt', 'w').close()
+            self.test_dir.upload(['.'], headers={'ContentLanguage': 'en'})
+
+        self.assertTrue(test_file.exists())
+        self.assertEquals(test_file.stat()['ContentLanguage'], 'en')
 
     def test_download(self):
         with NamedTemporaryDirectory(change_dir=True):
