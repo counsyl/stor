@@ -14,6 +14,7 @@ from swiftclient.service import SwiftError
 from testfixtures import LogCapture
 
 import storage_utils
+from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import settings
@@ -71,16 +72,6 @@ class TestManifestUtilities(unittest.TestCase):
             read_contents = swift._get_data_manifest_contents(tmp_d)
 
             self.assertEquals(set(manifest_contents), set(read_contents))
-
-
-class TestCondition(unittest.TestCase):
-    def test_invalid_condition_type(self):
-        with self.assertRaisesRegexp(ValueError, 'must be callable'):
-            swift._validate_condition('bad_cond')
-
-    def test_invalid_condition_args(self):
-        with self.assertRaisesRegexp(ValueError, 'exactly one argument'):
-            swift._validate_condition(lambda: True)  # pragma: no cover
 
 
 class TestNew(SwiftTestCase):
@@ -481,7 +472,7 @@ class TestList(SwiftTestCase):
         }])
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaises(swift.ConditionNotMetError):
+        with self.assertRaises(exceptions.ConditionNotMetError):
             swift_p.list(condition=lambda results: len(results) == 3)
 
         # Verify that list was retried at least once
@@ -539,7 +530,7 @@ class TestList(SwiftTestCase):
         }])
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaises(swift.ConditionNotMetError):
+        with self.assertRaises(exceptions.ConditionNotMetError):
             swift_p.list(
                 condition=lambda results: len(results) == 3,
                 num_retries=5,
@@ -894,7 +885,7 @@ class TestList(SwiftTestCase):
         }])
 
         swift_p = SwiftPath('swift://tenant/container/')
-        with self.assertRaises(swift.ConditionNotMetError):
+        with self.assertRaises(exceptions.ConditionNotMetError):
             swift_p.list(use_manifest=True)
 
 
@@ -981,7 +972,7 @@ class TestGlob(SwiftTestCase):
             SwiftPath('swift://tenant/container2')
         ]
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(swift.ConditionNotMetError):
+        with self.assertRaises(exceptions.ConditionNotMetError):
             swift_p.glob('pattern*',
                          condition=lambda results: len(results) > 2,
                          num_retries=3)
@@ -1445,7 +1436,7 @@ class TestDownload(SwiftTestCase):
         }]
 
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(swift.ConditionNotMetError):
+        with self.assertRaises(exceptions.ConditionNotMetError):
             swift_p.download('output_dir', use_manifest=True, num_retries=2)
 
         self.assertEquals(len(mock_sleep.call_args_list), 2)
@@ -1724,7 +1715,7 @@ class TestUpload(SwiftTestCase):
 
         with NamedTemporaryDirectory(change_dir=True):
             swift_p = SwiftPath('swift://tenant/container/path')
-            with self.assertRaises(swift.ConditionNotMetError), settings.use(upload_settings):
+            with self.assertRaises(exceptions.ConditionNotMetError), settings.use(upload_settings):
                 swift_p.upload(['.'], use_manifest=True, num_retries=2)
         self.assertEquals(len(mock_sleep.call_args_list), 2)
 

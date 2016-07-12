@@ -13,6 +13,7 @@ from storage_utils.base import Path
 from storage_utils.obs import OBSFile
 from storage_utils.obs import OBSPath
 from storage_utils.obs import OBSUploadObject
+from storage_utils import settings
 from storage_utils import utils
 
 # Thread-local variable used to cache the client
@@ -21,13 +22,17 @@ _thread_local = threading.local()
 S3File = OBSFile
 
 
-def _parse_s3_error(exc):
+def _parse_s3_error(exc, **kwargs):
     """
     Parses botocore.exception.ClientError exceptions to throw a more
     informative exception.
     """
     http_status = exc.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
     msg = exc.response['Error'].get('Message', 'Unknown')
+    if 'Bucket' in kwargs:
+        msg += ' Bucket: ' + kwargs.get('Bucket')
+    if 'Key' in kwargs:
+        msg += ', Key: ' + kwargs.get('Key')
 
     if http_status == 403:
         return exceptions.UnauthorizedError(msg, exc)
@@ -79,7 +84,7 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except boto_s3_exceptions.ClientError as e:
-            raise _parse_s3_error(e)
+            raise _parse_s3_error(e, **kwargs)
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
         """
@@ -109,7 +114,7 @@ class S3Path(OBSPath):
         """
         return S3File(self, mode=mode)
 
-    def list(self, starts_with=None, limit=None, list_as_dir=False):
+    def list(self, starts_with=None, limit=None, list_as_dir=False, condition=None):
         """
         List contents using the resource of the path as a prefix.
 
@@ -118,12 +123,16 @@ class S3Path(OBSPath):
                 appended to the current swift path. The current path will be
                 treated as a directory.
             limit (int): Limit the amount of results returned.
+            condition (function(results) -> bool): The method will only return
+                when the results matches the condition.
+
 
         Returns:
             List[S3Path]: Every path in the listing
         """
         bucket = self.bucket
         prefix = self.resource
+        utils.validate_condition(condition)
 
         if starts_with:
             prefix = prefix / starts_with if prefix else starts_with
@@ -163,6 +172,7 @@ class S3Path(OBSPath):
         except boto_s3_exceptions.ClientError as e:
             raise _parse_s3_error(e)
 
+        utils.check_condition(condition, list_results)
         return list_results
 
     def listdir(self):
@@ -280,7 +290,9 @@ class S3Path(OBSPath):
             response = self._s3_client_call('delete_objects', Bucket=self.bucket, Delete=objects)
 
             if 'Errors' in response:
-                raise exceptions.RemoteError('an error occurred while using rmtree',
+                raise exceptions.RemoteError('an error occurred while using rmtree: %s, Key: %s'
+                                             % (response['Errors'][0].get('Message'),
+                                                response['Errors'][0].get('Key')),
                                              response['Errors'])
 
     def stat(self):
@@ -362,16 +374,17 @@ class S3Path(OBSPath):
         """
         dl_kwargs = {
             'Bucket': self.bucket,
-            'Key': self.resource,
+            'Key': str(self.resource),
             'Filename': str(dest)
         }
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
+        return dl_kwargs['Filename']
 
     def _download_object(self, obj):
         """Downloads a single object. Helper for threaded download."""
         name = self.parts_class(obj['source'][len(utils.with_trailing_slash(self)):])
-        obj['source'].download_object(obj['dest'] / name)
+        return obj['source'].download_object(obj['dest'] / name)
 
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
@@ -379,6 +392,11 @@ class S3Path(OBSPath):
         Args:
             dest (str): The destination path to download file to. If downloading to a directory,
                 there must be a trailing slash. The directory will be created if it doesn't exist.
+            condition (function(results) -> bool): The method will only return
+                when the results of download matches the condition.
+
+        Returns:
+            List[str]: A list of the downloaded file paths as strings.
 
         Notes:
             - The destination directory will be created automatically if it doesn't exist.
@@ -386,28 +404,35 @@ class S3Path(OBSPath):
             - This method downloads to paths relative to the current
               directory.
         """
+        utils.validate_condition(condition)
         source = utils.with_trailing_slash(self)
         files_to_download = [
             {'source': file, 'dest': dest}
             for file in source.list()
         ]
 
-        pool = ThreadPool(10)
-        pool.map(self._download_object, files_to_download)
+        options = settings.get()['s3:download']
+
+        pool = ThreadPool(options['num_threads'])
+        downloaded = pool.map(self._download_object, files_to_download)
         pool.close()
         pool.join()
+
+        utils.check_condition(condition, downloaded)
+        return downloaded
 
     def _upload_object(self, upload_obj):
         """Upload a single object given an OBSUploadObject."""
         if not Path(upload_obj.source).isdir():
             ul_kwargs = {
                 'Bucket': self.bucket,
-                'Key': upload_obj.object_name,
+                'Key': str(upload_obj.object_name),
                 'Filename': upload_obj.source
             }
             if upload_obj.options and 'headers' in upload_obj.options:
                 ul_kwargs.update({'ExtraArgs': upload_obj.options['headers']})
             self._s3_client_call('upload_file', **ul_kwargs)
+            return S3Path(self.drive + self.bucket) / ul_kwargs['Key']
 
     def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
@@ -417,11 +442,16 @@ class S3Path(OBSPath):
         Args:
             source (List[str|OBSUploadObject]): A list of source files, directories, and
                 OBSUploadObjects to upload to S3.
+            condition (function(results) -> bool): The method will only return
+                when the results of upload matches the condition.
             headers (dict): A dictionary of object headers to apply to the object.
                 Headers will not be applied to OBSUploadObjects and any headers
                 specified by an OBSUploadObject will override these headers.
                 Headers should be specified as key-value pairs,
                 e.g. {'ContentLanguage': 'en'}
+
+        Returns:
+            List[S3Path]: A list of the uploaded files as S3Paths.
 
         Notes:
 
@@ -432,6 +462,8 @@ class S3Path(OBSPath):
         - Update once directory markers are implemented
 
         """
+        utils.validate_condition(condition)
+
         files_to_convert = utils.walk_files_and_dirs([
             name for name in source if not isinstance(name, OBSUploadObject)
         ])
@@ -445,7 +477,12 @@ class S3Path(OBSPath):
             for name in files_to_convert
         ])
 
-        pool = ThreadPool(10)
-        pool.map(self._upload_object, files_to_upload)
+        options = settings.get()['s3:upload']
+
+        pool = ThreadPool(options['num_threads'])
+        uploaded = pool.map(self._upload_object, files_to_upload)
         pool.close()
         pool.join()
+
+        utils.check_condition(condition, uploaded)
+        return uploaded

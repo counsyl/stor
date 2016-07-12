@@ -117,6 +117,7 @@ Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0
 # Make new Exceptions structure backwards compatible
 SwiftError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
+ConditionNotMetError = stor_exceptions.ConditionNotMetError
 SwiftFile = OBSFile
 SwiftUploadObject = OBSUploadObject
 
@@ -249,35 +250,6 @@ class ConfigurationError(SwiftError):
     variables set in order to be configured.
     """
     pass
-
-
-class ConditionNotMetError(SwiftError):
-    """Thrown when a condition is not met."""
-    pass
-
-
-def _validate_condition(condition):
-    """Verifies condition is a function that takes one argument"""
-    if condition is None:
-        return
-    if not (hasattr(condition, '__call__') and hasattr(condition, '__code__')):
-        raise ValueError('condition must be callable')
-    if condition.__code__.co_argcount != 1:
-        raise ValueError('condition must take exactly one argument')
-
-
-def _check_condition(condition, results):
-    """Checks the results against the condition.
-
-    Raises:
-        ConditionNotMetError: If the condition returns False
-    """
-    if condition is None:
-        return
-
-    condition_met = condition(results)
-    if not condition_met:
-        raise ConditionNotMetError('condition not met')
 
 
 def _swift_retry(exceptions=None):
@@ -432,12 +404,6 @@ def _validate_manifest_list(expected_objs, list_results):
     """
     listed_objs = {r.resource for r in list_results}
     return set(expected_objs).issubset(listed_objs)
-
-
-def join_conditions(*conditions):
-    def wrapper(results):
-        return all(f(results) for f in conditions)
-    return wrapper
 
 
 class SwiftDownloadLogger(utils.BaseProgressLogger):
@@ -823,12 +789,13 @@ class SwiftPath(OBSPath):
         tenant = self.tenant
         prefix = self.resource
         full_listing = limit is None
-        _validate_condition(condition)
+        utils.validate_condition(condition)
 
         if use_manifest:
             object_names = _get_data_manifest_contents(self)
             manifest_cond = partial(_validate_manifest_list, object_names)
-            condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
+            condition = (utils.join_conditions(condition, manifest_cond)
+                         if condition else manifest_cond)
 
         # When starts_with is provided, treat the resource as a
         # directory that has the starts_with parameter after it. This allows
@@ -872,7 +839,7 @@ class SwiftPath(OBSPath):
         if ignore_segment_containers:
             paths = [p for p in paths if not p.is_segment_container()]
 
-        _check_condition(condition, paths)
+        utils.check_condition(condition, paths)
         return paths
 
     def listdir(self, ignore_segment_containers=True):
@@ -919,11 +886,11 @@ class SwiftPath(OBSPath):
             raise ValueError('multiple pattern globs not supported')
         if '*' in pattern and not pattern.endswith('*'):
             raise ValueError('only prefix queries are supported')
-        _validate_condition(condition)
+        utils.validate_condition(condition)
 
         paths = self.list(starts_with=pattern.replace('*', ''), num_retries=0)
 
-        _check_condition(condition, paths)
+        utils.check_condition(condition, paths)
         return paths
 
     @_swift_retry(exceptions=UnavailableError)
@@ -1124,7 +1091,7 @@ class SwiftPath(OBSPath):
         """
         if not self.container:
             raise ValueError('cannot call download on tenant with no container')
-        _validate_condition(condition)
+        utils.validate_condition(condition)
 
         if use_manifest:
             # Do a full list with the manifest before the download. This will retry until
@@ -1133,7 +1100,8 @@ class SwiftPath(OBSPath):
             self.list(use_manifest=True)
             object_names = _get_data_manifest_contents(self)
             manifest_cond = partial(_validate_manifest_download, object_names)
-            condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
+            condition = (utils.join_conditions(condition, manifest_cond)
+                         if condition else manifest_cond)
 
         options = settings.get()['swift:download']
         service_options = {
@@ -1154,7 +1122,7 @@ class SwiftPath(OBSPath):
                                                _progress_logger=dl,
                                                _service_options=service_options)
 
-        _check_condition(condition, results)
+        utils.check_condition(condition, results)
         return results
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
@@ -1214,7 +1182,7 @@ class SwiftPath(OBSPath):
             raise ValueError('must specify container when uploading')
         if use_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
             raise ValueError('can only upload one directory with use_manifest=True')
-        _validate_condition(condition)
+        utils.validate_condition(condition)
 
         swift_upload_objects = [
             name for name in to_upload
@@ -1250,7 +1218,8 @@ class SwiftPath(OBSPath):
 
             # Make a condition for validating the upload
             manifest_cond = partial(_validate_manifest_upload, object_names)
-            condition = join_conditions(condition, manifest_cond) if condition else manifest_cond
+            condition = (utils.join_conditions(condition, manifest_cond)
+                         if condition else manifest_cond)
 
         options = settings.get()['swift:upload']
         service_options = {
@@ -1274,7 +1243,7 @@ class SwiftPath(OBSPath):
                                                _progress_logger=ul,
                                                _service_options=service_options)
 
-        _check_condition(condition, results)
+        utils.check_condition(condition, results)
         return results
 
     @_swift_retry(exceptions=UnavailableError)

@@ -13,6 +13,7 @@ from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils.obs import OBSUploadObject
 from storage_utils import Path
+from storage_utils.posix import PosixPath
 from storage_utils import obs
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
@@ -309,6 +310,29 @@ class TestList(S3TestCase):
         s3_p = S3Path('s3://test-bucket')
         results = s3_p.list()
         self.assertEquals(len(results), 2234)
+
+    def test_list_condition(self):
+        mock_list = self.mock_s3_iterator
+        mock_list.__iter__.return_value = [{
+            'Contents': [
+                {'Key': 'path/to/resource1'},
+                {'Key': 'path/to/resource2'}
+            ],
+            'IsTruncated': False
+        }]
+
+        s3_p = S3Path('s3://bucket/path')
+        s3_p.list(condition=lambda results: len(results) == 2)
+
+        mock_list.__iter__.return_value = [{
+            'Contents': [
+                {'Key': 'path/to/resource1'},
+                {'Key': 'path/to/resource2'}
+            ],
+            'IsTruncated': False
+        }]
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            s3_p.list(condition=lambda results: len(results) == 3)
 
 
 class TestListdir(S3TestCase):
@@ -852,6 +876,26 @@ class TestUpload(S3TestCase):
                                                          Filename='file.txt',
                                                          ExtraArgs={'ContentLanguage': 'en'})
 
+    @mock.patch.object(PosixPath, 'isdir')
+    def test_upload_empty_dir(self, mock_isdir, mock_files):
+        mock_files.return_value = {'dir/'}
+        mock_isdir.return_value = True
+        s3_p = S3Path('s3://a/b/')
+        s3_p.upload(['dir/'])
+        self.assertEquals(self.mock_s3.upload_file.call_count, 0)
+
+    def test_upload_w_condition(self, mock_files):
+        mock_files.return_value = {'file1': 10, 'file2': 20}
+        s3_p = S3Path('s3://bucket')
+        s3_p.upload('test',
+                    condition=lambda results: len(results) == 2)
+        self.assertEquals(self.mock_s3.upload_file.call_count, 2)
+
+        mock_files.return_value = {'file1': 10, 'file2': 20}
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            s3_p.upload('test',
+                        condition=lambda results: len(results) == 3)
+
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
 class TestDownload(S3TestCase):
@@ -877,12 +921,31 @@ class TestDownload(S3TestCase):
             mock.call(Bucket='bucket', Key='file1', Filename='test/file1'),
             mock.call(Bucket='bucket', Key='file2', Filename='test/file2'),
             mock.call(Bucket='bucket', Key='dir/file3', Filename='test/dir/file3')
-        ])
+        ], any_order=True)
         mock_make_dest.assert_has_calls([
             mock.call('test'),
             mock.call('test'),
             mock.call('test/dir')
-        ])
+        ], any_order=True)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    def test_download_w_condition(self, mock_list, mock_make_dest):
+        mock_list.return_value = [
+            S3Path('s3://bucket/file1'),
+            S3Path('s3://bucket/file2')
+        ]
+        s3_p = S3Path('s3://bucket')
+        s3_p.download('test',
+                      condition=lambda results: len(results) == 2)
+        self.assertEquals(self.mock_s3.download_file.call_count, 2)
+
+        mock_list.return_value = [
+            S3Path('s3://bucket/file1'),
+            S3Path('s3://bucket/file2')
+        ]
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            s3_p.download('test',
+                          condition=lambda results: len(results) == 3)
 
 
 class TestCopy(S3TestCase):

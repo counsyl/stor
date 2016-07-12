@@ -32,3 +32,8 @@ class UnauthorizedError(RemoteError):
 class UnavailableError(RemoteError):
     """Thrown when a 503 response is returned."""
     pass
+
+
+class ConditionNotMetError(RemoteError):
+    """Thrown when a condition is not met."""
+    pass

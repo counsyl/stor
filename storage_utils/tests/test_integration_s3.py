@@ -170,3 +170,28 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 self.test_dir.download('.')
             with self.assertRaises(OSError):
                 (self.test_dir / 'dir').download('.')
+
+    def test_condition(self):
+        num_test_objs = 20
+        test_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            Path('.').copytree(self.test_dir)
+
+        # Verify a ConditionNotMet exception is thrown when attempting to list
+        # a file that hasn't been uploaded
+        expected_objs = {
+            self.test_dir / which_obj
+            for which_obj in self.get_dataset_obj_names(num_test_objs + 1)
+        }
+
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            self.test_dir.list(condition=lambda results: expected_objs == set(results))
+
+        # Verify that the condition passes when excluding the non-extant file
+        expected_objs = {
+            self.test_dir / which_obj
+            for which_obj in self.get_dataset_obj_names(num_test_objs)
+        }
+        objs = self.test_dir.list(condition=lambda results: expected_objs == set(results))
+        self.assertEquals(expected_objs, set(objs))

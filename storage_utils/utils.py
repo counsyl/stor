@@ -7,6 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+from storage_utils import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,36 @@ def with_trailing_slash(p):
     if not p:
         return p
     return type(p)(p.rstrip('/') + '/')
+
+
+def validate_condition(condition):
+    """Verifies condition is a function that takes one argument"""
+    if condition is None:
+        return
+    if not (hasattr(condition, '__call__') and hasattr(condition, '__code__')):
+        raise ValueError('condition must be callable')
+    if condition.__code__.co_argcount != 1:
+        raise ValueError('condition must take exactly one argument')
+
+
+def check_condition(condition, results):
+    """Checks the results against the condition.
+
+    Raises:
+        ConditionNotMetError: If the condition returns False
+    """
+    if condition is None:
+        return
+
+    condition_met = condition(results)
+    if not condition_met:
+        raise exceptions.ConditionNotMetError('condition not met')
+
+
+def join_conditions(*conditions):
+    def wrapper(results):
+        return all(f(results) for f in conditions)
+    return wrapper
 
 
 def is_swift_path(p):
