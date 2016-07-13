@@ -1,7 +1,9 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
+from functools import partial
 from multiprocessing.pool import ThreadPool
+import os
 import tempfile
 import threading
 
@@ -9,12 +11,12 @@ import boto3
 from botocore import exceptions as boto_s3_exceptions
 
 from storage_utils import exceptions
+from storage_utils import settings
+from storage_utils import utils
 from storage_utils.base import Path
 from storage_utils.obs import OBSFile
 from storage_utils.obs import OBSPath
 from storage_utils.obs import OBSUploadObject
-from storage_utils import settings
-from storage_utils import utils
 
 # Thread-local variable used to cache the client
 _thread_local = threading.local()
@@ -114,7 +116,12 @@ class S3Path(OBSPath):
         """
         return S3File(self, mode=mode)
 
-    def list(self, starts_with=None, limit=None, list_as_dir=False, condition=None):
+    def list(self,
+             starts_with=None,
+             limit=None,
+             condition=None,
+             use_manifest=False,
+             list_as_dir=False):
         """
         List contents using the resource of the path as a prefix.
 
@@ -125,14 +132,25 @@ class S3Path(OBSPath):
             limit (int): Limit the amount of results returned.
             condition (function(results) -> bool): The method will only return
                 when the results matches the condition.
-
+            use_manifest (bool): Perform the list and use the data manfest file to validate
+                the list.
 
         Returns:
             List[S3Path]: Every path in the listing
+
+        Raises:
+            RemoteError: An s3 client error occurred.
+            ConditionNotMetError: Results were returned, but they did not meet the condition.
         """
         bucket = self.bucket
         prefix = self.resource
         utils.validate_condition(condition)
+
+        if use_manifest:
+            object_names = utils.get_data_manifest_contents(self)
+            manifest_cond = partial(utils.validate_manifest_list, object_names)
+            condition = (utils.join_conditions(condition, manifest_cond)
+                         if condition else manifest_cond)
 
         if starts_with:
             prefix = prefix / starts_with if prefix else starts_with
@@ -379,7 +397,7 @@ class S3Path(OBSPath):
         }
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
-        return dl_kwargs['Filename']
+        return self
 
     def _download_object(self, obj):
         """Downloads a single object. Helper for threaded download."""
@@ -396,15 +414,20 @@ class S3Path(OBSPath):
                 when the results of download matches the condition.
 
         Returns:
-            List[str]: A list of the downloaded file paths as strings.
+            List[S3Path]: A list of the downloaded objects.
 
         Notes:
-            - The destination directory will be created automatically if it doesn't exist.
-
-            - This method downloads to paths relative to the current
-              directory.
+        - The destination directory will be created automatically if it doesn't exist.
+        - This method downloads to paths relative to the current directory.
         """
         utils.validate_condition(condition)
+
+        if use_manifest:
+            object_names = utils.get_data_manifest_contents(self)
+            manifest_cond = partial(utils.validate_manifest_list, object_names)
+            condition = (utils.join_conditions(condition, manifest_cond)
+                         if condition else manifest_cond)
+
         source = utils.with_trailing_slash(self)
         files_to_download = [
             {'source': file, 'dest': dest}
@@ -444,6 +467,8 @@ class S3Path(OBSPath):
                 OBSUploadObjects to upload to S3.
             condition (function(results) -> bool): The method will only return
                 when the results of upload matches the condition.
+            use_manifest (bool): Generate a data manifest and validate the upload results
+                are in the manifest.
             headers (dict): A dictionary of object headers to apply to the object.
                 Headers will not be applied to OBSUploadObjects and any headers
                 specified by an OBSUploadObject will override these headers.
@@ -462,6 +487,8 @@ class S3Path(OBSPath):
         - Update once directory markers are implemented
 
         """
+        if use_manifest and not (len(source) == 1 and os.path.isdir(source[0])):
+            raise ValueError('can only upload one directory with use_manifest=True')
         utils.validate_condition(condition)
 
         files_to_convert = utils.walk_files_and_dirs([
@@ -470,17 +497,36 @@ class S3Path(OBSPath):
         files_to_upload = [
             obj for obj in source if isinstance(obj, OBSUploadObject)
         ]
+
+        manifest_file_name = (Path(source[0]) / utils.DATA_MANIFEST_FILE_NAME
+                              if use_manifest else None)
+        resource_base = self.resource or Path('')
         files_to_upload.extend([
             OBSUploadObject(name,
-                            (self.resource or Path('')) / utils.file_name_to_object_name(name),
+                            resource_base / utils.file_name_to_object_name(name),
                             options={'headers': headers} if headers else None)
-            for name in files_to_convert
+            for name in files_to_convert if name != manifest_file_name
         ])
+
+        if use_manifest:
+            # Generate the data manifest and save it remotely
+            object_names = [o.object_name for o in files_to_upload]
+            utils.generate_and_save_data_manifest(source[0], object_names)
+            manifest_obj_name = resource_base / utils.file_name_to_object_name(manifest_file_name)
+            manifest_obj = OBSUploadObject(str(manifest_file_name),
+                                           manifest_obj_name,
+                                           options={'headers': headers} if headers else None)
+            self._upload_object(manifest_obj)
+
+            # Make a condition for validating the upload
+            manifest_cond = partial(utils.validate_manifest_list, object_names)
+            condition = (utils.join_conditions(condition, manifest_cond)
+                         if condition else manifest_cond)
 
         options = settings.get()['s3:upload']
 
         pool = ThreadPool(options['num_threads'])
-        uploaded = pool.map(self._upload_object, files_to_upload)
+        uploaded = [result for result in pool.map(self._upload_object, files_to_upload) if result]
         pool.close()
         pool.join()
 

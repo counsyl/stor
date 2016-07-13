@@ -11,6 +11,10 @@ from storage_utils import exceptions
 
 logger = logging.getLogger(__name__)
 
+# Name for the data manifest file when using the use_manifest option
+# for upload/download
+DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
+
 
 def file_name_to_object_name(p):
     """Given a file path, construct its object name.
@@ -97,6 +101,45 @@ def join_conditions(*conditions):
     def wrapper(results):
         return all(f(results) for f in conditions)
     return wrapper
+
+
+def generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
+    """Generates a data manifest for a given directory and saves it.
+
+    Args:
+        manifest_dir (str): The directory in which the manifest will be saved
+        data_manifest_contents (List[str]): The list of all objects that will
+            be part of the manifest.
+    """
+    import storage_utils
+    from storage_utils import Path
+
+    manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
+    with storage_utils.open(manifest_file_name, 'w') as out_file:
+        contents = '\n'.join(data_manifest_contents) + '\n'
+        out_file.write(contents)
+
+
+def get_data_manifest_contents(manifest_dir):
+    """Reads the manifest file and returns a set of expected files"""
+    import storage_utils
+
+    manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
+    with storage_utils.open(manifest, 'r') as manifest_file:
+        return [
+            f.strip() for f in manifest_file.readlines() if f.strip()
+        ]
+
+
+def validate_manifest_list(expected_objs, list_results):
+    """
+    Given a list of expected object names and results,
+    verify all expected objects are in the listed results
+    """
+    listed_objs = {r.resource for r in list_results}
+    print(expected_objs)
+    print(listed_objs)
+    return set(expected_objs).issubset(listed_objs)
 
 
 def is_swift_path(p):

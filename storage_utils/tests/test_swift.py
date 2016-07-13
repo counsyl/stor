@@ -19,6 +19,7 @@ from storage_utils import NamedTemporaryDirectory
 from storage_utils import path
 from storage_utils import settings
 from storage_utils import swift
+from storage_utils import utils
 from storage_utils.swift import SwiftPath
 from storage_utils.test import SwiftTestCase
 from storage_utils.tests.shared import assert_same_data
@@ -68,8 +69,8 @@ class TestManifestUtilities(unittest.TestCase):
     def test_generate_save_and_read_manifest(self):
         with NamedTemporaryDirectory() as tmp_d:
             manifest_contents = ['obj1', 'dir/obj2']
-            swift._generate_and_save_data_manifest(tmp_d, manifest_contents)
-            read_contents = swift._get_data_manifest_contents(tmp_d)
+            utils.generate_and_save_data_manifest(tmp_d, manifest_contents)
+            read_contents = utils.get_data_manifest_contents(tmp_d)
 
             self.assertEquals(set(manifest_contents), set(read_contents))
 
@@ -1618,15 +1619,15 @@ class TestUpload(SwiftTestCase):
                 './file2': 30
             },
             {
-                './%s' % swift.DATA_MANIFEST_FILE_NAME: 10
+                './%s' % utils.DATA_MANIFEST_FILE_NAME: 10
             }
         ]
         self.mock_swift.upload.side_effect = [
             [{
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME,
-                'path': './%s' % swift.DATA_MANIFEST_FILE_NAME
+                'object': 'path/%s' % utils.DATA_MANIFEST_FILE_NAME,
+                'path': './%s' % utils.DATA_MANIFEST_FILE_NAME
             }],
             [{
                 'success': True,
@@ -1659,9 +1660,9 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(len(manifest_upload_args), 2)
         self.assertEquals(manifest_upload_args[0], 'container')
         self.assertEquals([o.source for o in manifest_upload_args[1]],
-                          ['./%s' % swift.DATA_MANIFEST_FILE_NAME])
+                          ['./%s' % utils.DATA_MANIFEST_FILE_NAME])
         self.assertEquals([o.object_name for o in manifest_upload_args[1]],
-                          ['path/%s' % swift.DATA_MANIFEST_FILE_NAME])
+                          ['path/%s' % utils.DATA_MANIFEST_FILE_NAME])
 
         upload_args = self.mock_swift.upload.call_args_list[1][0]
         upload_kwargs = self.mock_swift.upload.call_args_list[1][1]
@@ -1837,20 +1838,20 @@ class TestUpload(SwiftTestCase):
     def test_upload_w_condition_and_use_manifest(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.side_effect = [
             {
-                './%s' % swift.DATA_MANIFEST_FILE_NAME: 20,
+                './%s' % utils.DATA_MANIFEST_FILE_NAME: 20,
                 './file1': 30,
                 './file2': 40
             },
             {
-                './%s' % swift.DATA_MANIFEST_FILE_NAME: 20
+                './%s' % utils.DATA_MANIFEST_FILE_NAME: 20
             }
         ]
         self.mock_swift.upload.side_effect = [
             [{
                 'success': True,
                 'action': 'upload_object',
-                'object': 'path/%s' % swift.DATA_MANIFEST_FILE_NAME,
-                'path': './%s' % swift.DATA_MANIFEST_FILE_NAME
+                'object': 'path/%s' % utils.DATA_MANIFEST_FILE_NAME,
+                'path': './%s' % utils.DATA_MANIFEST_FILE_NAME
             }],
             [{
                 'success': True,
@@ -1889,9 +1890,9 @@ class TestUpload(SwiftTestCase):
         self.assertEquals(len(manifest_upload_args), 2)
         self.assertEquals(manifest_upload_args[0], 'container')
         self.assertEquals(set([o.source for o in manifest_upload_args[1]]),
-                          set(['./%s' % swift.DATA_MANIFEST_FILE_NAME]))
+                          set(['./%s' % utils.DATA_MANIFEST_FILE_NAME]))
         self.assertEquals(set([o.object_name for o in manifest_upload_args[1]]),
-                          set(['path/%s' % swift.DATA_MANIFEST_FILE_NAME]))
+                          set(['path/%s' % utils.DATA_MANIFEST_FILE_NAME]))
 
         upload_args = self.mock_swift.upload.call_args_list[1][0]
         upload_kwargs = self.mock_swift.upload.call_args_list[1][1]

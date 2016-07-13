@@ -39,7 +39,6 @@ import threading
 import urllib
 import urlparse
 
-import storage_utils
 from storage_utils import exceptions as stor_exceptions
 from storage_utils.utils import file_name_to_object_name
 from storage_utils import is_swift_path
@@ -95,10 +94,6 @@ If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
 
 # Make the default segment size for static large objects be 1GB
 DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
-
-# Name for the data manifest file when using the use_manifest option
-# for upload/download
-DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 
 # Content types that are assigned to empty directories
 DIR_MARKER_TYPES = ('text/directory', 'application/directory')
@@ -346,29 +341,6 @@ def _retry_on_cached_auth_err(func):
     return wrapper
 
 
-def _generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
-    """Generates a data manifest for a given directory and saves it.
-
-    Args:
-        manifest_dir (str): The directory in which the manifest will be saved
-        data_manifest_contents (List[str]): The list of all objects that will
-            be part of the manifest.
-    """
-    manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
-    with storage_utils.open(manifest_file_name, 'w') as out_file:
-        contents = '\n'.join(data_manifest_contents) + '\n'
-        out_file.write(contents)
-
-
-def _get_data_manifest_contents(manifest_dir):
-    """Reads the manifest file and returns a set of expected files"""
-    manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
-    with storage_utils.open(manifest, 'r') as manifest_file:
-        return [
-            f.strip() for f in manifest_file.readlines() if f.strip()
-        ]
-
-
 def _validate_manifest_upload(expected_objs, upload_results):
     """
     Given a list of expected object names and a list of dictionaries of
@@ -395,15 +367,6 @@ def _validate_manifest_download(expected_objs, download_results):
         if r['success'] and r['action'] in ('download_object',)
     }
     return set(expected_objs).issubset(downloaded_objs)
-
-
-def _validate_manifest_list(expected_objs, list_results):
-    """
-    Given a list of expected object names and `SwiftPath.list` results,
-    verify all expected objects are in the listed results
-    """
-    listed_objs = {r.resource for r in list_results}
-    return set(expected_objs).issubset(listed_objs)
 
 
 class SwiftDownloadLogger(utils.BaseProgressLogger):
@@ -792,8 +755,8 @@ class SwiftPath(OBSPath):
         utils.validate_condition(condition)
 
         if use_manifest:
-            object_names = _get_data_manifest_contents(self)
-            manifest_cond = partial(_validate_manifest_list, object_names)
+            object_names = utils.get_data_manifest_contents(self)
+            manifest_cond = partial(utils.validate_manifest_list, object_names)
             condition = (utils.join_conditions(condition, manifest_cond)
                          if condition else manifest_cond)
 
@@ -1098,7 +1061,7 @@ class SwiftPath(OBSPath):
             # all results in the manifest can be listed, which helps ensure the download
             # can be performed without having to be retried
             self.list(use_manifest=True)
-            object_names = _get_data_manifest_contents(self)
+            object_names = utils.get_data_manifest_contents(self)
             manifest_cond = partial(_validate_manifest_download, object_names)
             condition = (utils.join_conditions(condition, manifest_cond)
                          if condition else manifest_cond)
@@ -1196,7 +1159,8 @@ class SwiftPath(OBSPath):
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results. Ignore the manifest file in the case of
         # since it will be uploaded individually
-        manifest_file_name = Path(to_upload[0]) / DATA_MANIFEST_FILE_NAME if use_manifest else None
+        manifest_file_name = (Path(to_upload[0]) / utils.DATA_MANIFEST_FILE_NAME
+                              if use_manifest else None)
         resource_base = utils.with_trailing_slash(self.resource) or PosixPath('')
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
@@ -1209,7 +1173,7 @@ class SwiftPath(OBSPath):
         if use_manifest:
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
-            _generate_and_save_data_manifest(to_upload[0], object_names)
+            utils.generate_and_save_data_manifest(to_upload[0], object_names)
             manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)
             manifest_obj = OBSUploadObject(manifest_file_name,
                                            object_name=manifest_obj_name,

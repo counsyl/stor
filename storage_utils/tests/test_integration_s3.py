@@ -55,6 +55,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.test_dir.download('./')
             self.assertEquals(1234, len(os.listdir(tmp_d)))
 
+    # @unittest.skip('skipping')
     def test_list_methods(self):
         fake_bucket = Path('s3://stor-test-bucket2')
         with self.assertRaises(exceptions.NotFoundError):
@@ -88,6 +89,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
 
         self.assertTrue(self.test_dir.listdir() == (self.test_dir + '/').listdir())
 
+    # @unittest.skip('skipping')
     def test_is_methods(self):
         """
         Tests is methods, exists(), and getsize().
@@ -130,6 +132,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         with self.assertRaises(exceptions.NotFoundError):
             fake_bucket.getsize()
 
+    # @unittest.skip('skipping')
     def test_upload_download_remove(self):
         num_test_objs = 10
         min_obj_size = 50
@@ -147,6 +150,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 (self.test_dir / which_obj).remove()
                 self.assertFalse((self.test_dir / which_obj).exists())
 
+    # @unittest.skip('skipping')
     def test_upload_w_headers(self):
         test_file = self.test_dir / 'a.txt'
         with NamedTemporaryDirectory(change_dir=True):
@@ -156,6 +160,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.assertTrue(test_file.exists())
         self.assertEquals(test_file.stat()['ContentLanguage'], 'en')
 
+    # @unittest.skip('skipping')
     def test_download(self):
         with NamedTemporaryDirectory(change_dir=True):
             os.mkdir('dir')

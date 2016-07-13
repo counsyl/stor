@@ -18,6 +18,7 @@ from storage_utils import obs
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.test import S3TestCase
+from storage_utils import utils
 from storage_utils.tests.shared import assert_same_data
 
 
@@ -333,6 +334,67 @@ class TestList(S3TestCase):
         }]
         with self.assertRaises(exceptions.ConditionNotMetError):
             s3_p.list(condition=lambda results: len(results) == 3)
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_list_w_use_manifest(self, mock_stream):
+        mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        mock_list = self.mock_s3_iterator
+        mock_list.__iter__.return_value = [{
+            'Contents': [
+                {'Key': 'my/obj1'},
+                {'Key': 'my/obj2'},
+                {'Key': 'my/obj3'}
+            ],
+            'IsTruncated': False
+        }]
+
+        s3_p = S3Path('s3://bucket')
+        results = s3_p.list(use_manifest=True)
+        self.assertEquals(set(results), set([
+            's3://bucket/my/obj1',
+            's3://bucket/my/obj2',
+            's3://bucket/my/obj3'
+        ]))
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_list_w_use_manifest_validation_err(self, mock_stream):
+        mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        mock_list = self.mock_s3_iterator
+        mock_list.__iter__.return_value = [{
+            'Contents': [
+                {'Key': 'my/obj1'},
+                {'Key': 'my/obj2'}
+            ],
+            'IsTruncated': False
+        }]
+
+        s3_p = S3Path('s3://bucket')
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            s3_p.list(use_manifest=True)
+
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_list_w_condition_and_use_manifest(self, mock_stream):
+        mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        mock_list = self.mock_s3_iterator
+        mock_list.__iter__.return_value = [{
+            'Contents': [
+                {'Key': 'my/obj1'},
+                {'Key': 'my/obj2'},
+                {'Key': 'my/obj3'}
+            ],
+            'IsTruncated': False
+        }]
+
+        s3_p = S3Path('s3://bucket')
+        results = s3_p.list(use_manifest=True, condition=lambda results: len(results) == 3)
+        self.assertEquals(set(results), set([
+            's3://bucket/my/obj1',
+            's3://bucket/my/obj2',
+            's3://bucket/my/obj3'
+        ]))
 
 
 class TestListdir(S3TestCase):
@@ -896,6 +958,80 @@ class TestUpload(S3TestCase):
             s3_p.upload('test',
                         condition=lambda results: len(results) == 3)
 
+    def test_upload_w_use_manifest(self, mock_files):
+        mock_files.side_effect = [
+            {
+                './file1': 20,
+                './file2': 30
+            },
+            {
+                './%s' % utils.DATA_MANIFEST_FILE_NAME: 10
+            }
+        ]
+
+        with NamedTemporaryDirectory(change_dir=True):
+            s3_p = S3Path('s3://bucket/path/')
+            s3_p.upload(['.'], use_manifest=True)
+
+        manifest_upload_kwargs = self.mock_s3.upload_file.call_args_list[0][1]
+        self.assertEquals(len(manifest_upload_kwargs), 3)
+        self.assertEquals(manifest_upload_kwargs['Bucket'], 'bucket')
+        self.assertEquals(manifest_upload_kwargs['Filename'],
+                          './%s' % utils.DATA_MANIFEST_FILE_NAME)
+        self.assertEquals(manifest_upload_kwargs['Key'],
+                          'path/%s' % utils.DATA_MANIFEST_FILE_NAME)
+
+    @mock.patch.object(S3Path, '_upload_object', autospec=True)
+    def test_upload_w_manifest_validation_err(self, mock_upload, mock_files):
+        mock_files.return_value = {
+            'file1': 20,
+            'file2': 10
+        }
+        mock_upload.return_value = S3Path('s3://bucket/path/file1')
+
+        with NamedTemporaryDirectory(change_dir=True):
+            s3_p = S3Path('s3://bucket/path')
+            with self.assertRaises(exceptions.ConditionNotMetError):
+                s3_p.upload(['.'], use_manifest=True)
+
+    def test_upload_w_condition_and_use_manifest(self, mock_files):
+        mock_files.side_effect = [
+            {
+                './%s' % utils.DATA_MANIFEST_FILE_NAME: 20,
+                './file1': 30,
+                './file2': 40
+            },
+            {
+                './%s' % utils.DATA_MANIFEST_FILE_NAME: 20
+            }
+        ]
+
+        with NamedTemporaryDirectory(change_dir=True):
+            s3_p = S3Path('s3://bucket/path')
+            s3_p.upload(['.'],
+                        use_manifest=True,
+                        condition=lambda results: len(results) == 2)
+
+        self.assertEquals(self.mock_s3.upload_file.call_count, 3)
+
+        manifest_upload_kwargs = self.mock_s3.upload_file.call_args_list[0][1]
+        self.assertEquals(len(manifest_upload_kwargs), 3)
+        self.assertEquals(manifest_upload_kwargs['Bucket'], 'bucket')
+        self.assertEquals(manifest_upload_kwargs['Filename'],
+                          './%s' % utils.DATA_MANIFEST_FILE_NAME)
+        self.assertEquals(manifest_upload_kwargs['Key'],
+                          'path/%s' % utils.DATA_MANIFEST_FILE_NAME)
+
+    def test_upload_w_use_manifest_multiple_uploads(self, mock_files):
+        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
+            S3Path('s3://bucket/path').upload(['.', '.'],
+                                              use_manifest=True)
+
+    def test_upload_w_use_manifest_single_file(self, mock_files):
+        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
+            S3Path('s3://bucket/path').upload(['file'],
+                                              use_manifest=True)
+
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
 class TestDownload(S3TestCase):
@@ -946,6 +1082,54 @@ class TestDownload(S3TestCase):
         with self.assertRaises(exceptions.ConditionNotMetError):
             s3_p.download('test',
                           condition=lambda results: len(results) == 3)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_download_w_use_manifest(self, mock_stream, mock_list, mock_make_dest_dir):
+        mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        mock_list.return_value = [
+            S3Path('s3://bucket/my/obj1'),
+            S3Path('s3://bucket/my/obj2'),
+            S3Path('s3://bucket/my/obj3')
+        ]
+
+        s3_p = S3Path('s3://bucket')
+        s3_p.download('test', use_manifest=True)
+        self.assertEquals(self.mock_s3.download_file.call_count, 3)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_download_w_use_manifest_validation_err(self, mock_stream, mock_list,
+                                                    mock_make_dest_dir):
+        mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        mock_list.return_value = [
+            S3Path('s3://bucket/my/obj1'),
+            S3Path('s3://bucket/my/obj2')
+        ]
+
+        s3_p = S3Path('s3://bucket')
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            s3_p.download('test', use_manifest=True)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_download_w_condition_and_use_manifest(self, mock_stream, mock_list,
+                                                   mock_make_dest_dir):
+        mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+        mock_list.return_value = [
+            S3Path('s3://bucket/my/obj1'),
+            S3Path('s3://bucket/my/obj2'),
+            S3Path('s3://bucket/my/obj3')
+        ]
+
+        s3_p = S3Path('s3://bucket')
+        s3_p.download('test',
+                      use_manifest=True,
+                      condition=lambda results: len(results) == 3)
+        self.assertEquals(self.mock_s3.download_file.call_count, 3)
 
 
 class TestCopy(S3TestCase):
