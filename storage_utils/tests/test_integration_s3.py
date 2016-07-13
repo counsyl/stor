@@ -200,3 +200,28 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         }
         objs = self.test_dir.list(condition=lambda results: expected_objs == set(results))
         self.assertEquals(expected_objs, set(objs))
+
+    def test_dir_markers(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            os.mkdir('empty')
+            os.mkdir('dir')
+            open('a.txt', 'w').close()
+            open('dir/b.txt', 'w').close()
+            self.test_dir.upload(['.'])
+
+        self.assertEquals(set(self.test_dir.list()), {
+            self.test_dir / 'a.txt',
+            self.test_dir / 'dir/b.txt',
+            self.test_dir / 'empty'
+        })
+        self.assertEquals(set(self.test_dir.list(ignore_dir_markers=True)), {
+            self.test_dir / 'a.txt',
+            self.test_dir / 'dir/b.txt'
+        })
+        self.assertTrue((self.test_dir / 'empty').isdir())
+
+        with NamedTemporaryDirectory(change_dir=True):
+            self.test_dir.download('.')
+            self.assertTrue(os.path.isdir('empty'))
+            self.assertTrue(os.path.exists('dir/b.txt'))
+            self.assertTrue(os.path.exists('a.txt'))

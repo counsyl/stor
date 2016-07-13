@@ -23,6 +23,11 @@ _thread_local = threading.local()
 
 S3File = OBSFile
 
+# Content types that are assigned to empty directories
+DIR_MARKER_TYPES = ('text/directory', 'application/directory')
+
+DEFAULT_DIR_MARKER = 'application/directory'
+
 
 def _parse_s3_error(exc, **kwargs):
     """
@@ -121,7 +126,8 @@ class S3Path(OBSPath):
              limit=None,
              condition=None,
              use_manifest=False,
-             list_as_dir=False):
+             list_as_dir=False,
+             ignore_dir_markers=False):
         """
         List contents using the resource of the path as a prefix.
 
@@ -181,6 +187,10 @@ class S3Path(OBSPath):
                     list_results.extend([
                         path_prefix / result['Key']
                         for result in page['Contents']
+                        if not ignore_dir_markers or
+                        (ignore_dir_markers and
+                         (path_prefix / result['Key']).stat().get('ContentType')
+                         not in DIR_MARKER_TYPES)
                     ])
                 if list_as_dir and 'CommonPrefixes' in page:
                     list_results.extend([
@@ -235,13 +245,17 @@ class S3Path(OBSPath):
             except exceptions.NotFoundError:
                 return False
         try:
+            return 'directory' in self.stat().get('ContentType', '')
+        except exceptions.NotFoundError:
+            pass
+        try:
             return bool(utils.with_trailing_slash(self).list(limit=1))
         except exceptions.NotFoundError:
             return False
 
     def isfile(self):
         try:
-            return bool(self.stat())
+            return 'directory' not in self.stat().get('ContentType', '')
         except (exceptions.NotFoundError, ValueError):
             return False
 
@@ -355,7 +369,10 @@ class S3Path(OBSPath):
             raise ValueError('stat cannot be called on a bucket')
 
         response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
-        del response['ResponseMetadata']
+        response = {
+            key: val for key, val in response.iteritems()
+            if key is not 'ResponseMetadata'
+        }
         return response
 
     def read_object(self):
@@ -390,6 +407,11 @@ class S3Path(OBSPath):
             - This method downloads to paths relative to the current
               directory.
         """
+        if self.isdir():
+            # Handle directory markers separately
+            utils.make_dest_dir(str(dest))
+            return self
+
         dl_kwargs = {
             'Bucket': self.bucket,
             'Key': str(self.resource),
@@ -446,16 +468,22 @@ class S3Path(OBSPath):
 
     def _upload_object(self, upload_obj):
         """Upload a single object given an OBSUploadObject."""
-        if not Path(upload_obj.source).isdir():
-            ul_kwargs = {
-                'Bucket': self.bucket,
-                'Key': str(upload_obj.object_name),
-                'Filename': upload_obj.source
-            }
+        ul_kwargs = {
+            'Bucket': self.bucket,
+            'Key': str(upload_obj.object_name)
+        }
+        if Path(upload_obj.source).isdir():
+            # Make a directory marker for empty directories
             if upload_obj.options and 'headers' in upload_obj.options:
-                ul_kwargs.update({'ExtraArgs': upload_obj.options['headers']})
+                ul_kwargs.update(upload_obj.options['headers'])
+            ul_kwargs['ContentType'] = DEFAULT_DIR_MARKER
+            self._s3_client_call('put_object', **ul_kwargs)
+        else:
+            ul_kwargs['Filename'] = upload_obj.source
+            if upload_obj.options and 'headers' in upload_obj.options:
+                ul_kwargs['ExtraArgs'] = upload_obj.options['headers']
             self._s3_client_call('upload_file', **ul_kwargs)
-            return S3Path(self.drive + self.bucket) / ul_kwargs['Key']
+        return S3Path(self.drive + self.bucket) / ul_kwargs['Key']
 
     def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
@@ -482,10 +510,6 @@ class S3Path(OBSPath):
 
         - This method uploads to paths relative to the current
           directory.
-
-        TODO:
-        - Update once directory markers are implemented
-
         """
         if use_manifest and not (len(source) == 1 and os.path.isdir(source[0])):
             raise ValueError('can only upload one directory with use_manifest=True')

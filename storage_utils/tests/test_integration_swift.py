@@ -12,12 +12,10 @@ from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
 from storage_utils import settings
 from storage_utils import swift
-from storage_utils import utils
-from storage_utils import exceptions
 from storage_utils.tests.test_integration import BaseIntegrationTest
 
 
-@unittest.skip("skipping")
+# @unittest.skip("skipping")
 class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def setUp(self):
         super(SwiftIntegrationTest, self).setUp()
@@ -318,42 +316,3 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.test_container.post({'read_acl': '.r:example.com'})
         self.assertEqual(self.test_container.stat()['Read-ACL'],
                          '.r:example.com')
-
-    def test_copytree_to_from_dir_w_manifest(self):
-            num_test_objs = 10
-            test_obj_size = 100
-            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-                self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-                # Make a nested file and an empty directory for testing purposes
-                tmp_d = Path(tmp_d)
-                os.mkdir(tmp_d / 'my_dir')
-                open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
-                os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
-
-                storage_utils.copytree(
-                    '.',
-                    self.test_dir,
-                    use_manifest=True)
-
-                # Validate the contents of the manifest file
-                manifest_contents = utils.get_data_manifest_contents(self.test_dir)
-                expected_contents = self.get_dataset_obj_names(num_test_objs)
-                expected_contents.extend(['my_dir/empty_file',
-                                          'my_dir/empty_dir'])
-                expected_contents = [Path('test') / c for c in expected_contents]
-                self.assertEquals(set(manifest_contents), set(expected_contents))
-
-            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-                # Download the results successfully
-                Path(self.test_dir).copytree(
-                    'test',
-                    use_manifest=True)
-
-                # Now delete one of the objects from swift. A second download
-                # will fail with a condition error
-                Path(self.test_dir / 'my_dir' / 'empty_dir').remove()
-                with self.assertRaises(exceptions.ConditionNotMetError):
-                    Path(self.test_dir).copytree(
-                        'test',
-                        use_manifest=True,
-                        num_retries=0)

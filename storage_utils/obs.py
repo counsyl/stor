@@ -196,7 +196,7 @@ class OBSPath(Path):
         Returns:
             Iter[Path]: Files recursively under the path
         """
-        for f in self.list():
+        for f in self.list(ignore_dir_markers=True):
             if pattern is None or f.fnmatch(pattern):
                 yield f
 

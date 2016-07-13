@@ -106,6 +106,7 @@ class BaseIntegrationTest:
                 tmp_d = Path(tmp_d)
                 os.mkdir(tmp_d / 'my_dir')
                 open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
+                os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
                 storage_utils.copytree(
                     '.',
@@ -115,21 +116,22 @@ class BaseIntegrationTest:
                 # Validate the contents of the manifest file
                 manifest_contents = utils.get_data_manifest_contents(self.test_dir)
                 expected_contents = self.get_dataset_obj_names(num_test_objs)
-                expected_contents.extend(['my_dir/empty_file'])
+                expected_contents.extend(['my_dir/empty_file',
+                                          'my_dir/empty_dir'])
                 expected_contents = [Path('test') / c for c in expected_contents]
                 self.assertEquals(set(manifest_contents), set(expected_contents))
 
             with NamedTemporaryDirectory(change_dir=True) as tmp_d:
                 # Download the results successfully
-                self.test_dir.copytree(
+                Path(self.test_dir).copytree(
                     'test',
                     use_manifest=True)
 
                 # Now delete one of the objects from swift. A second download
                 # will fail with a condition error
-                (self.test_dir / 'my_dir' / 'empty_file').remove()
+                Path(self.test_dir / 'my_dir' / 'empty_dir').remove()
                 with self.assertRaises(exceptions.ConditionNotMetError):
-                    self.test_dir.copytree(
+                    Path(self.test_dir).copytree(
                         'test',
                         use_manifest=True,
                         num_retries=0)

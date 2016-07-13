@@ -13,7 +13,6 @@ from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils.obs import OBSUploadObject
 from storage_utils import Path
-from storage_utils.posix import PosixPath
 from storage_utils import obs
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
@@ -396,6 +395,30 @@ class TestList(S3TestCase):
             's3://bucket/my/obj3'
         ]))
 
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    def test_list_ignore_dir_markers(self, mock_stat):
+        mock_stat.side_effect = [
+            {}, {}, {'ContentType': 'application/directory'}, {}
+        ]
+        mock_list = self.mock_s3_iterator
+        mock_list.__iter__.return_value = [{
+            'Contents': [
+                {'Key': 'pre/key1'},
+                {'Key': 'pre/key2'},
+                {'Key': 'dir/marker'},
+                {'Key': 'pre/key3'}
+            ],
+            'IsTruncated': False
+        }]
+        s3_p = S3Path('s3://test-bucket')
+        results = s3_p.list(ignore_dir_markers=True)
+
+        self.assertEquals(results, [
+            's3://test-bucket/pre/key1',
+            's3://test-bucket/pre/key2',
+            's3://test-bucket/pre/key3'
+        ])
+
 
 class TestListdir(S3TestCase):
     def test_listdir(self):
@@ -466,8 +489,9 @@ class TestListdir(S3TestCase):
         ])
 
 
+@mock.patch.object(S3Path, 'stat', return_value={}, autospec=True)
 class TestWalkFiles(S3TestCase):
-    def test_walkfiles_no_pattern(self):
+    def test_walkfiles_no_pattern(self, mock_stat):
         mock_list = self.mock_s3_iterator
         mock_list.__iter__.return_value = [{
             'Contents': [
@@ -490,7 +514,7 @@ class TestWalkFiles(S3TestCase):
             S3Path('s3://bucket/a/bpy/c3')
         ])
 
-    def test_walkfiles_w_pattern(self):
+    def test_walkfiles_w_pattern(self, mock_stat):
         mock_list = self.mock_s3_iterator
         mock_list.__iter__.return_value = [{
             'Contents': [
@@ -666,11 +690,22 @@ class TestIsdir(S3TestCase):
         mock_head_bucket.assert_called_once_with(Bucket='bucket')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_isdir_true_prefix(self, mock_list):
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    def test_isdir_true_prefix(self, mock_stat, mock_list):
+        mock_stat.side_effect = exceptions.NotFoundError('not found')
         mock_list.return_value = [S3Path('s3://bucket/pre/fix/key')]
         s3_p = S3Path('s3://bucket/pre/fix')
         self.assertTrue(s3_p.isdir())
         mock_list.assert_called_once_with(S3Path('s3://bucket/pre/fix/'), limit=1)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    def test_isdir_dir_marker(self, mock_stat, mock_list):
+        mock_stat.return_value = {'ContentType': 'application/directory'}
+        mock_list.return_value = [S3Path('s3://bucket/pre/fix/key')]
+        s3_p = S3Path('s3://bucket/pre/fix')
+        self.assertTrue(s3_p.isdir())
+        mock_stat.assert_called_once_with(S3Path('s3://bucket/pre/fix'))
 
     def test_isdir_false_bucket(self):
         mock_head_bucket = self.mock_s3.head_bucket
@@ -685,26 +720,29 @@ class TestIsdir(S3TestCase):
         mock_head_bucket.assert_called_once_with(Bucket='bucket')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_isdir_false_file(self, mock_list):
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    def test_isdir_false_file(self, mock_stat, mock_list):
+        mock_stat.return_value = {'key': 'val'}
         mock_list.return_value = []
         s3_p = S3Path('s3://bucket/pre/fix.txt')
         self.assertFalse(s3_p.isdir())
-        mock_list.assert_called_once_with(S3Path('s3://bucket/pre/fix.txt/'), limit=1)
+        mock_stat.assert_called_once_with(S3Path('s3://bucket/pre/fix.txt'))
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_isdir_false_not_found(self, mock_list):
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    def test_isdir_false_not_found(self, mock_stat, mock_list):
+        mock_stat.side_effect = exceptions.NotFoundError('not found')
         mock_list.side_effect = exceptions.NotFoundError('not found')
         s3_p = S3Path('s3://bucket/pre/fix')
         self.assertFalse(s3_p.isdir())
         mock_list.assert_called_once_with(S3Path('s3://bucket/pre/fix/'), limit=1)
 
-    @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_isdir_error(self, mock_list):
-        mock_list.side_effect = exceptions.RemoteError('error')
+    @mock.patch.object(S3Path, 'stat', autospec=True)
+    def test_isdir_error(self, mock_stat):
+        mock_stat.side_effect = exceptions.RemoteError('error')
         s3_p = S3Path('s3://bucket/pre/fix')
         with self.assertRaises(exceptions.RemoteError):
             s3_p.isdir()
-        mock_list.assert_called_once_with(S3Path('s3://bucket/pre/fix/'), limit=1)
 
 
 @mock.patch.object(S3Path, 'stat', autospec=True)
@@ -930,21 +968,30 @@ class TestUpload(S3TestCase):
             s3_p.upload([OBSUploadObject(1234, 'dest')])
 
     def test_upload_w_headers(self, mock_files):
-        mock_files.return_value = {'file.txt': 10}
-        s3_p = S3Path('s3://a/b')
-        s3_p.upload(['.'], headers={'ContentLanguage': 'en'})
-        self.mock_s3.upload_file.assert_called_once_with(Bucket='a',
-                                                         Key='b/file.txt',
-                                                         Filename='file.txt',
-                                                         ExtraArgs={'ContentLanguage': 'en'})
+        mock_files.return_value = {'file.txt': 10, 'dir': 0}
+        with mock.patch.object(type(Path('dir')), 'isdir', autospec=True) as mock_isdir:
+            mock_isdir.side_effect = lambda pth: pth == 'dir'
+            s3_p = S3Path('s3://a/b')
+            s3_p.upload(['.'], headers={'ContentLanguage': 'en'})
+            self.mock_s3.upload_file.assert_called_once_with(Bucket='a',
+                                                             Key='b/file.txt',
+                                                             Filename='file.txt',
+                                                             ExtraArgs={'ContentLanguage': 'en'})
+            self.mock_s3.put_object.assert_called_once_with(Bucket='a',
+                                                            Key='b/dir',
+                                                            ContentType='application/directory',
+                                                            ContentLanguage='en')
 
-    @mock.patch.object(PosixPath, 'isdir')
-    def test_upload_empty_dir(self, mock_isdir, mock_files):
-        mock_files.return_value = {'dir/'}
-        mock_isdir.return_value = True
-        s3_p = S3Path('s3://a/b/')
-        s3_p.upload(['dir/'])
-        self.assertEquals(self.mock_s3.upload_file.call_count, 0)
+    def test_upload_empty_dir(self, mock_files):
+        with mock.patch.object(type(Path('dir')), 'isdir') as mock_isdir:
+            mock_files.return_value = {'dir/'}
+            mock_isdir.return_value = True
+            s3_p = S3Path('s3://a/b/')
+            s3_p.upload(['dir/'])
+            self.assertEquals(self.mock_s3.upload_file.call_count, 0)
+            self.mock_s3.put_object.assert_called_once_with(Bucket='a',
+                                                            Key='b/dir',
+                                                            ContentType=s3.DEFAULT_DIR_MARKER)
 
     def test_upload_w_condition(self, mock_files):
         mock_files.return_value = {'file1': 10, 'file2': 20}
@@ -1034,9 +1081,11 @@ class TestUpload(S3TestCase):
 
 
 @mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
+@mock.patch.object(S3Path, 'isdir', autospec=True)
 class TestDownload(S3TestCase):
     @mock.patch.object(S3Path, 'isfile', return_value=True, autospec=True)
-    def test_download_file_to_file(self, mock_isfile, mock_make_dest):
+    def test_download_file_to_file(self, mock_isfile, mock_isdir, mock_make_dest):
+        mock_isdir.return_value = False
         s3_p = S3Path('s3://a/b/c.txt')
         s3_p.download_object('test/d.txt')
         self.mock_s3.download_file.assert_called_once_with(Bucket='a',
@@ -1045,7 +1094,8 @@ class TestDownload(S3TestCase):
         mock_make_dest.assert_called_once_with('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_download_dir(self, mock_list, mock_make_dest):
+    def test_download_dir(self, mock_list, mock_isdir, mock_make_dest):
+        mock_isdir.return_value = False
         mock_list.return_value = [
             S3Path('s3://bucket/file1'),
             S3Path('s3://bucket/file2'),
@@ -1065,7 +1115,32 @@ class TestDownload(S3TestCase):
         ], any_order=True)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_download_w_condition(self, mock_list, mock_make_dest):
+    def test_download_empty_dir(self, mock_list, mock_isdir, mock_make_dest):
+        mock_isdir.side_effect = lambda pth: pth.resource == 'empty'
+        mock_list.return_value = [
+            S3Path('s3://bucket/file1'),
+            S3Path('s3://bucket/file2'),
+            S3Path('s3://bucket/empty'),
+            S3Path('s3://bucket/dir/file3')
+        ]
+        s3_p = S3Path('s3://bucket')
+        s3_p.download('test')
+        print self.mock_s3.download_file.call_args_list
+        self.mock_s3.download_file.assert_has_calls([
+            mock.call(Bucket='bucket', Key='file1', Filename='test/file1'),
+            mock.call(Bucket='bucket', Key='file2', Filename='test/file2'),
+            mock.call(Bucket='bucket', Key='dir/file3', Filename='test/dir/file3')
+        ], any_order=True)
+        mock_make_dest.assert_has_calls([
+            mock.call('test'),
+            mock.call('test'),
+            mock.call('test/dir'),
+            mock.call('test/empty')
+        ], any_order=True)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    def test_download_w_condition(self, mock_list, mock_isdir, mock_make_dest):
+        mock_isdir.return_value = False
         mock_list.return_value = [
             S3Path('s3://bucket/file1'),
             S3Path('s3://bucket/file2')
@@ -1085,7 +1160,8 @@ class TestDownload(S3TestCase):
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch('botocore.response.StreamingBody', autospec=True)
-    def test_download_w_use_manifest(self, mock_stream, mock_list, mock_make_dest_dir):
+    def test_download_w_use_manifest(self, mock_stream, mock_list, mock_isdir, mock_make_dest_dir):
+        mock_isdir.return_value = False
         mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list.return_value = [
@@ -1100,8 +1176,9 @@ class TestDownload(S3TestCase):
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch('botocore.response.StreamingBody', autospec=True)
-    def test_download_w_use_manifest_validation_err(self, mock_stream, mock_list,
+    def test_download_w_use_manifest_validation_err(self, mock_stream, mock_list, mock_isdir,
                                                     mock_make_dest_dir):
+        mock_isdir.return_value = False
         mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list.return_value = [
@@ -1115,8 +1192,9 @@ class TestDownload(S3TestCase):
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch('botocore.response.StreamingBody', autospec=True)
-    def test_download_w_condition_and_use_manifest(self, mock_stream, mock_list,
+    def test_download_w_condition_and_use_manifest(self, mock_stream, mock_list, mock_isdir,
                                                    mock_make_dest_dir):
+        mock_isdir.return_value = False
         mock_stream.read.return_value = 'my/obj1\nmy/obj2\nmy/obj3\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list.return_value = [
