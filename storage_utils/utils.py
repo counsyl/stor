@@ -7,9 +7,13 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+import threading
 from storage_utils import exceptions
 
 logger = logging.getLogger(__name__)
+
+# Lock for logging in multithreaded methods
+_thread_lock = threading.Lock()
 
 # Name for the data manifest file when using the use_manifest option
 # for upload/download
@@ -137,8 +141,6 @@ def validate_manifest_list(expected_objs, list_results):
     verify all expected objects are in the listed results
     """
     listed_objs = {r.resource for r in list_results}
-    print(expected_objs)
-    print(listed_objs)
     return set(expected_objs).issubset(listed_objs)
 
 
@@ -513,9 +515,10 @@ class BaseProgressLogger(object):
 
         Messages are logged every time the ``result_interval`` is met.
         """
-        self.num_results += 1
-        self.update_progress(result)
-        if self.num_results % self.result_interval == 0:
-            progress_msg = self.get_progress_message()
-            if progress_msg:  # pragma: no cover
-                self.logger.log(self.level, progress_msg)
+        with _thread_lock:
+            self.num_results += 1
+            self.update_progress(result)
+            if self.num_results % self.result_interval == 0:
+                progress_msg = self.get_progress_message()
+                if progress_msg:  # pragma: no cover
+                    self.logger.log(self.level, progress_msg)

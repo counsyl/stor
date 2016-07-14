@@ -1,7 +1,9 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
+import copy
 from functools import partial
+import logging
 from multiprocessing.pool import ThreadPool
 import os
 import tempfile
@@ -21,6 +23,9 @@ from storage_utils.obs import OBSUploadObject
 # Thread-local variable used to cache the client
 _thread_local = threading.local()
 
+logger = logging.getLogger(__name__)
+progress_logger = logging.getLogger('%s.progress' % __name__)
+
 S3File = OBSFile
 
 # Content types that are assigned to empty directories
@@ -36,6 +41,8 @@ def _parse_s3_error(exc, **kwargs):
     """
     http_status = exc.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
     msg = exc.response['Error'].get('Message', 'Unknown')
+
+    # Give some more info about the error's origins
     if 'Bucket' in kwargs:
         msg += ' Bucket: ' + kwargs.get('Bucket')
     if 'Key' in kwargs:
@@ -66,6 +73,65 @@ def _get_s3_client():
     return _thread_local.s3_client
 
 
+class S3DownloadLogger(utils.BaseProgressLogger):
+    def __init__(self, total_download_objects):
+        super(S3DownloadLogger, self).__init__(progress_logger)
+        self.total_download_objects = total_download_objects
+        self.downloaded_bytes = 0
+
+    def update_progress(self, result):
+        """Tracks number of bytes downloaded."""
+        self.downloaded_bytes += os.path.getsize(result) if os.path.isfile(result) else 0
+
+    def get_start_message(self):
+        return 'starting download'
+
+    def get_finish_message(self):
+        return 'download complete - %s' % self.get_progress_message()
+
+    def get_progress_message(self):
+        elapsed_time = self.get_elapsed_time()
+        formatted_elapsed_time = self.format_time(elapsed_time)
+        mb = self.downloaded_bytes / (1024 * 1024.0)
+        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        return (
+            '%s/%s\t'
+            '%s\t'
+            '%0.2f MB\t'
+            '%0.2f MB/s'
+        ) % (self.num_results, self.total_download_objects, formatted_elapsed_time, mb, mb_s)
+
+
+class S3UploadLogger(utils.BaseProgressLogger):
+    def __init__(self, total_upload_objects):
+        super(S3UploadLogger, self).__init__(progress_logger)
+        self.total_upload_objects = total_upload_objects
+        self.uploaded_bytes = 0
+
+    def update_progress(self, result):
+        """Keep track of total uploaded bytes by referencing the object sizes"""
+        with _thread_lock:
+            self.uploaded_bytes += os.path.getsize(result) if result else 0
+
+    def get_start_message(self):
+        return 'starting upload of %s objects' % self.total_upload_objects
+
+    def get_finish_message(self):
+        return 'upload complete - %s' % self.get_progress_message()
+
+    def get_progress_message(self):
+        elapsed_time = self.get_elapsed_time()
+        formatted_elapsed_time = self.format_time(elapsed_time)
+        mb = self.uploaded_bytes / (1024 * 1024.0)
+        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        return (
+            '%s/%s\t'
+            '%s\t'
+            '%0.2f MB\t'
+            '%0.2f MB/s'
+        ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
+
+
 class S3Path(OBSPath):
     """
     Provides the ability to manipulate and access S3 resources
@@ -86,12 +152,17 @@ class S3Path(OBSPath):
         """
         Creates a boto3 S3 ``Client`` object and runs ``method_name``.
         """
+        method_options = copy.copy(kwargs)
+        method_progress_logger = method_options.pop('_progress_logger', None)
         s3_client = _get_s3_client()
         method = getattr(s3_client, method_name)
         try:
-            return method(*args, **kwargs)
+            result = method(*args, **method_options)
+            if method_progress_logger:
+                method_progress_logger.add_result(method_options.get('Filename', ''))
+            return result
         except boto_s3_exceptions.ClientError as e:
-            raise _parse_s3_error(e, **kwargs)
+            raise _parse_s3_error(e, **method_options)
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
         """
@@ -284,7 +355,6 @@ class S3Path(OBSPath):
                 # Check if path is a directory
                 if not self.exists():
                     raise
-
         return 0
 
     def remove(self):
@@ -394,7 +464,7 @@ class S3Path(OBSPath):
             fp.flush()
             self.upload([OBSUploadObject(fp.name, self.resource)])
 
-    def download_object(self, dest, **kwargs):
+    def download_object(self, dest, progress_logger=None, **kwargs):
         """
         Downloads a file from S3 to a destination file.
 
@@ -410,21 +480,24 @@ class S3Path(OBSPath):
         if self.isdir():
             # Handle directory markers separately
             utils.make_dest_dir(str(dest))
+            if progress_logger:
+                progress_logger.add_result('')
             return self
 
         dl_kwargs = {
             'Bucket': self.bucket,
             'Key': str(self.resource),
-            'Filename': str(dest)
+            'Filename': str(dest),
+            '_progress_logger': progress_logger
         }
         utils.make_dest_dir(self.parts_class(dest).parent)
         self._s3_client_call('download_file', **dl_kwargs)
         return self
 
-    def _download_object(self, obj):
+    def _download_object(self, obj, progress_logger=None):
         """Downloads a single object. Helper for threaded download."""
         name = self.parts_class(obj['source'][len(utils.with_trailing_slash(self)):])
-        return obj['source'].download_object(obj['dest'] / name)
+        return obj['source'].download_object(obj['dest'] / name, progress_logger=progress_logger)
 
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
@@ -458,19 +531,23 @@ class S3Path(OBSPath):
 
         options = settings.get()['s3:download']
 
-        pool = ThreadPool(options['num_threads'])
-        downloaded = pool.map(self._download_object, files_to_download)
-        pool.close()
-        pool.join()
+        with S3DownloadLogger(len(files_to_download)) as dl:
+            download_objs = partial(self._download_object, progress_logger=dl)
+
+            pool = ThreadPool(options['num_threads'])
+            downloaded = pool.map(download_objs, files_to_download)
+            pool.close()
+            pool.join()
 
         utils.check_condition(condition, downloaded)
         return downloaded
 
-    def _upload_object(self, upload_obj):
+    def _upload_object(self, upload_obj, progress_logger=None):
         """Upload a single object given an OBSUploadObject."""
         ul_kwargs = {
             'Bucket': self.bucket,
-            'Key': str(upload_obj.object_name)
+            'Key': str(upload_obj.object_name),
+            '_progress_logger': progress_logger
         }
         if Path(upload_obj.source).isdir():
             # Make a directory marker for empty directories
@@ -548,11 +625,13 @@ class S3Path(OBSPath):
                          if condition else manifest_cond)
 
         options = settings.get()['s3:upload']
+        with S3UploadLogger(len(files_to_upload)) as ul:
+            upload_objs = partial(self._upload_object, progress_logger=ul)
 
-        pool = ThreadPool(options['num_threads'])
-        uploaded = [result for result in pool.map(self._upload_object, files_to_upload) if result]
-        pool.close()
-        pool.join()
+            pool = ThreadPool(options['num_threads'])
+            uploaded = pool.map(upload_objs, files_to_upload)
+            pool.close()
+            pool.join()
 
         utils.check_condition(condition, uploaded)
         return uploaded
