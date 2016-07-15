@@ -16,6 +16,7 @@ from storage_utils import NamedTemporaryDirectory
 from storage_utils.obs import OBSUploadObject
 from storage_utils import Path
 from storage_utils import obs
+from storage_utils import settings
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.test import S3TestCase
@@ -1082,6 +1083,19 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
+    @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
+    def test_upload_num_threads(self, mock_pool, mock_getsize, mock_files):
+        mock_files.return_value = {
+            'file%s' % i: 20
+            for i in range(20)
+        }
+        mock_getsize.return_value = 20
+
+        s3_p = S3Path('s3://bucket')
+        with settings.use({'s3:upload': {'num_threads': 20}}):
+            s3_p.upload(['test'])
+        mock_pool.assert_called_once_with(20)
+
     @freezegun.freeze_time('2016-4-5')
     def test_upload_progress_logging(self, mock_getsize, mock_files):
         mock_files.return_value = {
@@ -1230,6 +1244,19 @@ class TestDownload(S3TestCase):
                       use_manifest=True,
                       condition=lambda results: len(results) == 3)
         self.assertEquals(self.mock_s3.download_file.call_count, 3)
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
+    def test_download_num_threads(self, mock_pool, mock_list, mock_getsize, mock_isdir,
+                                  mock_make_dest_dir):
+        mock_list.return_value = [
+            S3Path('s3://bucket/file%s' % i)
+            for i in range(20)
+        ]
+        s3_p = S3Path('s3://bucket')
+        with settings.use({'s3:download': {'num_threads': 20}}):
+            s3_p.download(['test'])
+        mock_pool.assert_called_once_with(20)
 
     @freezegun.freeze_time('2016-4-5')
     @mock.patch.object(S3Path, 'list', autospec=True)

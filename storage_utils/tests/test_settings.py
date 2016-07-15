@@ -54,9 +54,6 @@ class TestSettings(unittest.TestCase):
                 'checksum': True,
                 'leave_segments': True,
                 'object_threads': 10,
-
-
-
                 'segment_size': 1073741824,
                 'segment_threads': 10,
                 'skip_identical': False,
