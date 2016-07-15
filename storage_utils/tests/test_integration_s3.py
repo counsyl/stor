@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import unittest
 
 from storage_utils import exceptions
@@ -144,6 +145,10 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             for which_obj in self.get_dataset_obj_names(num_test_objs):
                 self.assertCorrectObjectContents(which_obj, which_obj, min_obj_size)
                 (self.test_dir / which_obj).remove()
+
+                # consistency check
+                while (self.test_dir / which_obj).exists():
+                    time.sleep(.5)
                 self.assertFalse((self.test_dir / which_obj).exists())
 
     def test_upload_w_headers(self):

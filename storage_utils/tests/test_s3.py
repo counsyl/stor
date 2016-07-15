@@ -1084,7 +1084,7 @@ class TestUpload(S3TestCase):
                                               use_manifest=True)
 
     @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
-    def test_upload_num_threads(self, mock_pool, mock_getsize, mock_files):
+    def test_upload_object_threads(self, mock_pool, mock_getsize, mock_files):
         mock_files.return_value = {
             'file%s' % i: 20
             for i in range(20)
@@ -1092,7 +1092,7 @@ class TestUpload(S3TestCase):
         mock_getsize.return_value = 20
 
         s3_p = S3Path('s3://bucket')
-        with settings.use({'s3:upload': {'num_threads': 20}}):
+        with settings.use({'s3:upload': {'object_threads': 20}}):
             s3_p.upload(['test'])
         mock_pool.assert_called_once_with(20)
 
@@ -1247,14 +1247,14 @@ class TestDownload(S3TestCase):
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
-    def test_download_num_threads(self, mock_pool, mock_list, mock_getsize, mock_isdir,
-                                  mock_make_dest_dir):
+    def test_download_object_threads(self, mock_pool, mock_list, mock_getsize, mock_isdir,
+                                     mock_make_dest_dir):
         mock_list.return_value = [
             S3Path('s3://bucket/file%s' % i)
             for i in range(20)
         ]
         s3_p = S3Path('s3://bucket')
-        with settings.use({'s3:download': {'num_threads': 20}}):
+        with settings.use({'s3:download': {'object_threads': 20}}):
             s3_p.download(['test'])
         mock_pool.assert_called_once_with(20)
 

@@ -490,7 +490,7 @@ class S3Path(OBSPath):
         self._s3_client_call('download_file', **dl_kwargs)
         return self
 
-    def _download_object(self, obj, progress_logger=None):
+    def _download_object_worker(self, obj, progress_logger=None):
         """Downloads a single object. Helper for threaded download."""
         name = self.parts_class(obj['source'][len(utils.with_trailing_slash(self)):])
         return obj['source'].download_object(obj['dest'] / name, progress_logger=progress_logger)
@@ -528,9 +528,9 @@ class S3Path(OBSPath):
         options = settings.get()['s3:download']
 
         with S3DownloadLogger(len(files_to_download)) as dl:
-            download_objs = partial(self._download_object, progress_logger=dl)
+            download_objs = partial(self._download_object_worker, progress_logger=dl)
 
-            pool = ThreadPool(options['num_threads'])
+            pool = ThreadPool(options['object_threads'])
             try:
                 downloaded = pool.map(download_objs, files_to_download)
             finally:
@@ -626,7 +626,7 @@ class S3Path(OBSPath):
         with S3UploadLogger(len(files_to_upload)) as ul:
             upload_objs = partial(self._upload_object, progress_logger=ul)
 
-            pool = ThreadPool(options['num_threads'])
+            pool = ThreadPool(options['object_threads'])
             try:
                 uploaded = pool.map(upload_objs, files_to_upload)
             finally:
