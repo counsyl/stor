@@ -15,7 +15,6 @@ from storage_utils import swift
 from storage_utils.tests.test_integration import BaseIntegrationTest
 
 
-# @unittest.skip("skipping")
 class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def setUp(self):
         super(SwiftIntegrationTest, self).setUp()

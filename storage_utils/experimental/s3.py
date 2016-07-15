@@ -110,8 +110,7 @@ class S3UploadLogger(utils.BaseProgressLogger):
 
     def update_progress(self, result):
         """Keep track of total uploaded bytes by referencing the object sizes"""
-        with _thread_lock:
-            self.uploaded_bytes += os.path.getsize(result) if result else 0
+        self.uploaded_bytes += os.path.getsize(result) if result else 0
 
     def get_start_message(self):
         return 'starting upload of %s objects' % self.total_upload_objects
@@ -306,9 +305,6 @@ class S3Path(OBSPath):
         return True
 
     def isdir(self):
-        """
-        TODO: Check for directory markers (once implemented)
-        """
         # Handle buckets separately (in case the bucket is empty)
         if not self.resource:
             try:
@@ -535,9 +531,11 @@ class S3Path(OBSPath):
             download_objs = partial(self._download_object, progress_logger=dl)
 
             pool = ThreadPool(options['num_threads'])
-            downloaded = pool.map(download_objs, files_to_download)
-            pool.close()
-            pool.join()
+            try:
+                downloaded = pool.map(download_objs, files_to_download)
+            finally:
+                pool.close()
+                pool.join()
 
         utils.check_condition(condition, downloaded)
         return downloaded
@@ -629,9 +627,11 @@ class S3Path(OBSPath):
             upload_objs = partial(self._upload_object, progress_logger=ul)
 
             pool = ThreadPool(options['num_threads'])
-            uploaded = pool.map(upload_objs, files_to_upload)
-            pool.close()
-            pool.join()
+            try:
+                uploaded = pool.map(upload_objs, files_to_upload)
+            finally:
+                pool.close()
+                pool.join()
 
         utils.check_condition(condition, uploaded)
         return uploaded

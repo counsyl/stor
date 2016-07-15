@@ -1235,7 +1235,7 @@ class TestDownload(S3TestCase):
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_progress_logging(self, mock_list, mock_getsize, mock_isdir,
                                        mock_make_dest_dir):
-        mock_isdir.side_effect = lambda pth: pth == 'dir'
+        mock_isdir.side_effect = lambda pth: pth == S3Path('s3://bucket/dir')
         mock_list.return_value = [
             S3Path('s3://bucket/file%s' % i)
             for i in range(19)
@@ -1251,6 +1251,13 @@ class TestDownload(S3TestCase):
                 ('storage_utils.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
                 ('storage_utils.experimental.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
+
+    def test_download_no_logging(self, mock_getsize, mock_isdir,
+                                 mock_make_dest_dir):
+        mock_isdir.return_value = True
+        s3_p = S3Path('s3://bucket/dir')
+        self.assertEquals(s3_p.download_object('test'), s3_p)
+        self.mock_s3.download_file.assert_not_called()
 
 
 class TestCopy(S3TestCase):
