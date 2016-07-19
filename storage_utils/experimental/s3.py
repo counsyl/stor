@@ -93,7 +93,7 @@ class S3DownloadLogger(utils.BaseProgressLogger):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
         mb = self.downloaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0.0
         return (
             '%s/%s\t'
             '%s\t'
@@ -196,6 +196,7 @@ class S3Path(OBSPath):
              limit=None,
              condition=None,
              use_manifest=False,
+             # hidden args
              list_as_dir=False,
              ignore_dir_markers=False):
         """
@@ -490,10 +491,11 @@ class S3Path(OBSPath):
         self._s3_client_call('download_file', **dl_kwargs)
         return self
 
-    def _download_object_worker(self, obj, progress_logger=None):
+    def _download_object_worker(self, obj_params, progress_logger=None):
         """Downloads a single object. Helper for threaded download."""
-        name = self.parts_class(obj['source'][len(utils.with_trailing_slash(self)):])
-        return obj['source'].download_object(obj['dest'] / name, progress_logger=progress_logger)
+        name = self.parts_class(obj_params['source'][len(utils.with_trailing_slash(self)):])
+        return obj_params['source'].download_object(obj_params['dest'] / name,
+                                                    progress_logger=progress_logger)
 
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
