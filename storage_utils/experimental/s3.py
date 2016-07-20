@@ -259,9 +259,7 @@ class S3Path(OBSPath):
                         path_prefix / result['Key']
                         for result in page['Contents']
                         if not ignore_dir_markers or
-                        (ignore_dir_markers and
-                         (path_prefix / result['Key']).stat().get('ContentType')
-                         not in DIR_MARKER_TYPES)
+                        (ignore_dir_markers and result['Key'][-1] != '/')
                     ])
                 if list_as_dir and 'CommonPrefixes' in page:
                     list_results.extend([
@@ -313,17 +311,13 @@ class S3Path(OBSPath):
             except exceptions.NotFoundError:
                 return False
         try:
-            return 'directory' in self.stat().get('ContentType', '')
-        except exceptions.NotFoundError:
-            pass
-        try:
             return bool(utils.with_trailing_slash(self).list(limit=1))
         except exceptions.NotFoundError:
             return False
 
     def isfile(self):
         try:
-            return 'directory' not in self.stat().get('ContentType', '')
+            return self.stat() and self[-1] != '/'
         except (exceptions.NotFoundError, ValueError):
             return False
 
@@ -474,7 +468,7 @@ class S3Path(OBSPath):
             - This method downloads to paths relative to the current
               directory.
         """
-        if self.isdir():
+        if self[-1] == '/':
             # Handle directory markers separately
             utils.make_dest_dir(str(dest))
             if progress_logger:
@@ -549,23 +543,27 @@ class S3Path(OBSPath):
             'Key': str(upload_obj.object_name),
             '_progress_logger': progress_logger
         }
-        if Path(upload_obj.source).isdir():
-            # Make a directory marker for empty directories
+        if upload_obj.object_name[-1] == '/':
+            # Handle empty directories separately
+            ul_kwargs['Key'] = utils.with_trailing_slash(ul_kwargs['Key'])
             if upload_obj.options and 'headers' in upload_obj.options:
                 ul_kwargs.update(upload_obj.options['headers'])
-            ul_kwargs['ContentType'] = DEFAULT_DIR_MARKER
-            self._s3_client_call('put_object', **ul_kwargs)
+            method = 'put_object'
         else:
             ul_kwargs['Filename'] = upload_obj.source
             if upload_obj.options and 'headers' in upload_obj.options:
                 ul_kwargs['ExtraArgs'] = upload_obj.options['headers']
-            self._s3_client_call('upload_file', **ul_kwargs)
+            method = 'upload_file'
+        self._s3_client_call(method, **ul_kwargs)
         return S3Path(self.drive + self.bucket) / ul_kwargs['Key']
 
     def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
 
         Note that the S3Path is treated as a directory.
+
+        Note that for user-provided OBSUploadObjects, an empty directory's destination
+        must have a trailing slash.
 
         Args:
             source (List[str|OBSUploadObject]): A list of source files, directories, and
@@ -603,9 +601,11 @@ class S3Path(OBSPath):
                               if use_manifest else None)
         resource_base = self.resource or Path('')
         files_to_upload.extend([
-            OBSUploadObject(name,
-                            resource_base / utils.file_name_to_object_name(name),
-                            options={'headers': headers} if headers else None)
+            OBSUploadObject(
+                name,
+                resource_base / (utils.with_trailing_slash(utils.file_name_to_object_name(name))
+                                 if Path(name).isdir() else utils.file_name_to_object_name(name)),
+                options={'headers': headers} if headers else None)
             for name in files_to_convert if name != manifest_file_name
         ])
 
