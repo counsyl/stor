@@ -52,6 +52,14 @@ common path methods listed above along with supporting the basic path
 manipulation methods (e.g. 'my' / 'path' == 'my/path'). For more information on
 accessing swift, go to the :ref:`swift` section.
 
+S3Path
+------
+
+``S3Path`` objects returned from the ``Path`` factory partially support the
+common path methods listed above along with supporting the basic path
+manipulation methods (e.g. 'my' / 'path' == 'my/path'). For more information on
+accessing swift, go to the :ref:`s3` section.
+
 PosixPath
 ---------
 

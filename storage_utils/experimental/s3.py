@@ -134,6 +134,12 @@ class S3Path(OBSPath):
 
     Right now, the client defaults to Amazon S3 endpoints, but in the
     near-future, users should be able to custom configure the S3 client.
+
+    Note that any S3 object whose name ends with a ``/`` is considered to be an empty directory
+    marker.
+    These objects will not be downloaded and instead an empty directory will be created.
+    This follows Amazon's convention as described in the
+    `S3 User Guide <http://docs.aws.amazon.com/AmazonS3/latest/UG/FolderOperations.html>`_.
     """
     drive = 's3://'
 
@@ -295,6 +301,12 @@ class S3Path(OBSPath):
         return True
 
     def isdir(self):
+        """
+        Any S3 object whose name ends with a ``/`` is considered to be an empty directory marker.
+        These objects will not be downloaded and instead an empty directory will be created.
+        This follows Amazon's convention as described in the
+        `S3 User Guide <http://docs.aws.amazon.com/AmazonS3/latest/UG/FolderOperations.html>`_.
+        """
         # Handle buckets separately (in case the bucket is empty)
         if not self.resource:
             try:
