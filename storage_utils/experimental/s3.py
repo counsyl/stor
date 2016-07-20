@@ -1,7 +1,6 @@
 """
 An experimental implementation of S3 in storage-utils.
 """
-import copy
 from functools import partial
 import logging
 from multiprocessing.pool import ThreadPool
@@ -27,11 +26,6 @@ logger = logging.getLogger(__name__)
 progress_logger = logging.getLogger('%s.progress' % __name__)
 
 S3File = OBSFile
-
-# Content types that are assigned to empty directories
-DIR_MARKER_TYPES = ('text/directory', 'application/directory')
-
-DEFAULT_DIR_MARKER = 'application/directory'
 
 
 def _parse_s3_error(exc, **kwargs):
@@ -81,10 +75,11 @@ class S3DownloadLogger(utils.BaseProgressLogger):
 
     def update_progress(self, result):
         """Tracks number of bytes downloaded."""
-        self.downloaded_bytes += os.path.getsize(result) if os.path.isfile(result) else 0
+        self.downloaded_bytes += (os.path.getsize(result['dest'])
+                                  if result['source'][-1] != '/' else 0)
 
     def get_start_message(self):
-        return 'starting download'
+        return 'starting download of %s objects' % self.total_download_objects
 
     def get_finish_message(self):
         return 'download complete - %s' % self.get_progress_message()
@@ -110,7 +105,8 @@ class S3UploadLogger(utils.BaseProgressLogger):
 
     def update_progress(self, result):
         """Keep track of total uploaded bytes by referencing the object sizes"""
-        self.uploaded_bytes += os.path.getsize(result) if result else 0
+        self.uploaded_bytes += (os.path.getsize(result['source'])
+                                if result['dest'][-1] != '/' else 0)
 
     def get_start_message(self):
         return 'starting upload of %s objects' % self.total_upload_objects
@@ -122,7 +118,7 @@ class S3UploadLogger(utils.BaseProgressLogger):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
         mb = self.uploaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0.0
         return (
             '%s/%s\t'
             '%s\t'
@@ -151,17 +147,12 @@ class S3Path(OBSPath):
         """
         Creates a boto3 S3 ``Client`` object and runs ``method_name``.
         """
-        method_options = copy.copy(kwargs)
-        method_progress_logger = method_options.pop('_progress_logger', None)
         s3_client = _get_s3_client()
         method = getattr(s3_client, method_name)
         try:
-            result = method(*args, **method_options)
-            if method_progress_logger:
-                method_progress_logger.add_result(method_options.get('Filename', ''))
-            return result
+            return method(*args, **kwargs)
         except boto_s3_exceptions.ClientError as e:
-            raise _parse_s3_error(e, **method_options)
+            raise _parse_s3_error(e, **kwargs)
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
         """
@@ -468,28 +459,33 @@ class S3Path(OBSPath):
             - This method downloads to paths relative to the current
               directory.
         """
+        result = {
+            'source': self,
+            'dest': dest,
+            'success': True
+        }
         if self[-1] == '/':
             # Handle directory markers separately
             utils.make_dest_dir(str(dest))
-            if progress_logger:
-                progress_logger.add_result('')
-            return self
+            return result
 
         dl_kwargs = {
             'Bucket': self.bucket,
             'Key': str(self.resource),
             'Filename': str(dest),
-            '_progress_logger': progress_logger
         }
         utils.make_dest_dir(self.parts_class(dest).parent)
-        self._s3_client_call('download_file', **dl_kwargs)
-        return self
+        try:
+            self._s3_client_call('download_file', **dl_kwargs)
+        except exceptions.RemoteError as e:
+            result['success'] = False
+            result['error'] = e
+        return result
 
-    def _download_object_worker(self, obj_params, progress_logger=None):
+    def _download_object_worker(self, obj_params):
         """Downloads a single object. Helper for threaded download."""
         name = self.parts_class(obj_params['source'][len(utils.with_trailing_slash(self)):])
-        return obj_params['source'].download_object(obj_params['dest'] / name,
-                                                    progress_logger=progress_logger)
+        return obj_params['source'].download_object(obj_params['dest'] / name)
 
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
@@ -522,27 +518,42 @@ class S3Path(OBSPath):
         ]
 
         options = settings.get()['s3:download']
-
+        downloaded = {'completed': [], 'failed': []}
         with S3DownloadLogger(len(files_to_download)) as dl:
-            download_objs = partial(self._download_object_worker, progress_logger=dl)
-
             pool = ThreadPool(options['object_threads'])
             try:
-                downloaded = pool.map(download_objs, files_to_download)
-            finally:
+                for result in pool.imap_unordered(self._download_object_worker,
+                                                  files_to_download):
+                    if result['success']:
+                        dl.add_result(result)
+                        downloaded['completed'].append(result)
+                    else:
+                        downloaded['failed'].append(result)
                 pool.close()
+            except:
+                pool.terminate()
+                raise
+            finally:
                 pool.join()
 
-        utils.check_condition(condition, downloaded)
+        if downloaded['failed']:
+            raise exceptions.FailedDownloadError('an error occurred while downloading', downloaded)
+
+        utils.check_condition(condition, [r['source'] for r in downloaded['completed']])
         return downloaded
 
-    def _upload_object(self, upload_obj, progress_logger=None):
+    def _upload_object(self, upload_obj):
         """Upload a single object given an OBSUploadObject."""
         ul_kwargs = {
             'Bucket': self.bucket,
-            'Key': str(upload_obj.object_name),
-            '_progress_logger': progress_logger
+            'Key': str(upload_obj.object_name)
         }
+        result = {
+            'source': upload_obj.source,
+            'dest': S3Path(self.drive + self.bucket) / ul_kwargs['Key'],
+            'success': True
+        }
+
         if upload_obj.object_name[-1] == '/':
             # Handle empty directories separately
             ul_kwargs['Key'] = utils.with_trailing_slash(ul_kwargs['Key'])
@@ -554,8 +565,14 @@ class S3Path(OBSPath):
             if upload_obj.options and 'headers' in upload_obj.options:
                 ul_kwargs['ExtraArgs'] = upload_obj.options['headers']
             method = 'upload_file'
-        self._s3_client_call(method, **ul_kwargs)
-        return S3Path(self.drive + self.bucket) / ul_kwargs['Key']
+
+        try:
+            self._s3_client_call(method, **ul_kwargs)
+        except exceptions.RemoteError as e:
+            result['success'] = False
+            result['error'] = e
+
+        return result
 
     def upload(self, source, condition=None, use_manifest=False, headers=None, **kwargs):
         """Uploads a list of files and directories to s3.
@@ -625,15 +642,25 @@ class S3Path(OBSPath):
                          if condition else manifest_cond)
 
         options = settings.get()['s3:upload']
+        uploaded = {'completed': [], 'failed': []}
         with S3UploadLogger(len(files_to_upload)) as ul:
-            upload_objs = partial(self._upload_object, progress_logger=ul)
-
             pool = ThreadPool(options['object_threads'])
             try:
-                uploaded = pool.map(upload_objs, files_to_upload)
-            finally:
+                for result in pool.imap_unordered(self._upload_object, files_to_upload):
+                    if result['success']:
+                        ul.add_result(result)
+                        uploaded['completed'].append(result)
+                    else:
+                        uploaded['failed'].append(result)
                 pool.close()
+            except:
+                pool.terminate()
+                raise
+            finally:
                 pool.join()
 
-        utils.check_condition(condition, uploaded)
+        if uploaded['failed']:
+            raise exceptions.FailedUploadError('an error occurred while uploading', uploaded)
+
+        utils.check_condition(condition, [r['dest'] for r in uploaded['completed']])
         return uploaded

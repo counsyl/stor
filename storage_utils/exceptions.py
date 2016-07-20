@@ -37,3 +37,13 @@ class UnavailableError(RemoteError):
 class ConditionNotMetError(RemoteError):
     """Thrown when a condition is not met."""
     pass
+
+
+class FailedUploadError(RemoteError):
+    """Thrown when an upload fails."""
+    pass
+
+
+class FailedDownloadError(RemoteError):
+    """Thrown when a download fails."""
+    pass

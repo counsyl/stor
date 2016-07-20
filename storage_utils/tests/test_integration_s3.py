@@ -195,12 +195,12 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.test_dir.list(condition=lambda results: expected_objs == set(results))
 
         # Verify that the condition passes when excluding the non-extant file
-        expected_objs = {
+        correct_objs = {
             self.test_dir / which_obj
             for which_obj in self.get_dataset_obj_names(num_test_objs)
         }
-        objs = self.test_dir.list(condition=lambda results: expected_objs == set(results))
-        self.assertEquals(expected_objs, set(objs))
+        objs = self.test_dir.list(condition=lambda results: correct_objs == set(results))
+        self.assertEquals(correct_objs, set(objs))
 
     def test_dir_markers(self):
         with NamedTemporaryDirectory(change_dir=True):
