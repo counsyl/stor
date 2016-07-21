@@ -73,6 +73,13 @@ def with_trailing_slash(p):
     return type(p)(p.rstrip('/') + '/')
 
 
+def has_trailing_slash(p):
+    """Checks if a path has a single trailing slash"""
+    if not p:
+        return False
+    return str(p)[-1] == '/'
+
+
 def validate_condition(condition):
     """Verifies condition is a function that takes one argument"""
     if condition is None:
