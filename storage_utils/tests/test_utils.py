@@ -176,8 +176,21 @@ class TestMakeDestDir(unittest.TestCase):
         utils.make_dest_dir('test/test')
         self.assertTrue(os.path.isdir('test/test'))
 
-    @mock.patch('os.makedirs', autospec=True)
-    def test_make_dest_dir_existing(self, mock_makedirs):
+    def test_make_dest_dir_existing(self):
         os.mkdir('test/test')
         utils.make_dest_dir('test/test')
-        self.assertEquals(mock_makedirs.call_count, 0)
+
+
+class TestCondition(unittest.TestCase):
+    def test_invalid_condition_type(self):
+        with self.assertRaisesRegexp(ValueError, 'must be callable'):
+            utils.validate_condition('bad_cond')
+
+    def test_invalid_condition_args(self):
+        with self.assertRaisesRegexp(ValueError, 'exactly one argument'):
+            utils.validate_condition(lambda: True)  # pragma: no cover
+
+
+class TestMisc(unittest.TestCase):
+    def test_has_trailing_slash(self):
+        self.assertFalse(utils.has_trailing_slash(''))

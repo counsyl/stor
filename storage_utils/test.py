@@ -159,10 +159,10 @@ class S3TestMixin(object):
 
         - mock_s3_iterator: A mock of the iterable object returned by _get_s3_iterator in S3Path.
         """
-        # Ensure that the S3 client will never be instantiated in tests
-        s3_client_patcher = mock.patch('boto3.client', autospec=True)
-        self.addCleanup(s3_client_patcher.stop)
-        self.mock_s3_client = s3_client_patcher.start()
+        # Ensure that the S3 session will never be instantiated in tests
+        s3_session_patcher = mock.patch('boto3.session.Session', autospec=True)
+        self.addCleanup(s3_session_patcher.stop)
+        self.mock_s3_session = s3_session_patcher.start()
 
         # This is the mock returned by _get_s3_client.
         # User can mock s3 methods on this mock.

@@ -32,6 +32,13 @@ class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
             'stor': {},
+            's3': {},
+            's3:upload': {
+                'object_threads': 10
+            },
+            's3:download': {
+                'object_threads': 10
+            },
             'swift': {},
             'swift:delete': {
                 'object_threads': 10
@@ -47,9 +54,6 @@ class TestSettings(unittest.TestCase):
                 'checksum': True,
                 'leave_segments': True,
                 'object_threads': 10,
-
-
-
                 'segment_size': 1073741824,
                 'segment_threads': 10,
                 'skip_identical': False,

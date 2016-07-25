@@ -7,8 +7,13 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+from storage_utils import exceptions
 
 logger = logging.getLogger(__name__)
+
+# Name for the data manifest file when using the use_manifest option
+# for upload/download
+DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 
 
 def file_name_to_object_name(p):
@@ -51,15 +56,14 @@ def make_dest_dir(dest):
             A specific exception is if a directory that is being created already exists as a file.
     """
     dest = os.path.abspath(dest)
-    if not os.path.isdir(dest):
-        try:
-            os.makedirs(dest)
-        except OSError as exc:
-            if exc.errno == errno.ENOTDIR:
-                raise OSError(errno.ENOTDIR,
-                              'a parent directory of \'%s\' already exists as a file' % dest)
-            else:
-                raise
+    try:
+        os.makedirs(dest)
+    except OSError as exc:
+        if exc.errno == errno.ENOTDIR:
+            raise OSError(errno.ENOTDIR,
+                          'a parent directory of \'%s\' already exists as a file' % dest)
+        elif exc.errno != errno.EEXIST or os.path.isfile(dest):
+            raise
 
 
 def with_trailing_slash(p):
@@ -67,6 +71,80 @@ def with_trailing_slash(p):
     if not p:
         return p
     return type(p)(p.rstrip('/') + '/')
+
+
+def has_trailing_slash(p):
+    """Checks if a path has a single trailing slash"""
+    if not p:
+        return False
+    return str(p)[-1] == '/'
+
+
+def validate_condition(condition):
+    """Verifies condition is a function that takes one argument"""
+    if condition is None:
+        return
+    if not (hasattr(condition, '__call__') and hasattr(condition, '__code__')):
+        raise ValueError('condition must be callable')
+    if condition.__code__.co_argcount != 1:
+        raise ValueError('condition must take exactly one argument')
+
+
+def check_condition(condition, results):
+    """Checks the results against the condition.
+
+    Raises:
+        ConditionNotMetError: If the condition returns False
+    """
+    if condition is None:
+        return
+
+    condition_met = condition(results)
+    if not condition_met:
+        raise exceptions.ConditionNotMetError('condition not met')
+
+
+def join_conditions(*conditions):
+    def wrapper(results):
+        return all(f(results) for f in conditions)
+    return wrapper
+
+
+def generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
+    """Generates a data manifest for a given directory and saves it.
+
+    Args:
+        manifest_dir (str): The directory in which the manifest will be saved
+        data_manifest_contents (List[str]): The list of all objects that will
+            be part of the manifest.
+    """
+    import storage_utils
+    from storage_utils import Path
+
+    manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
+    with storage_utils.open(manifest_file_name, 'w') as out_file:
+        contents = '\n'.join(data_manifest_contents) + '\n'
+        out_file.write(contents)
+
+
+def get_data_manifest_contents(manifest_dir):
+    """Reads the manifest file and returns a set of expected files"""
+    import storage_utils
+
+    manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
+    with storage_utils.open(manifest, 'r') as manifest_file:
+        return [
+            f.strip() for f in manifest_file.readlines() if f.strip()
+        ]
+
+
+def validate_manifest_list(expected_objs, list_results):
+    """
+    Given a list of expected object names and results,
+    verify all expected objects are in the listed results
+    """
+    listed_objs = {r.resource for r in list_results}
+    return set(expected_objs).issubset(listed_objs)
 
 
 def is_swift_path(p):

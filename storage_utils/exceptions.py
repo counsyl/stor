@@ -32,3 +32,23 @@ class UnauthorizedError(RemoteError):
 class UnavailableError(RemoteError):
     """Thrown when a 503 response is returned."""
     pass
+
+
+class ConditionNotMetError(RemoteError):
+    """Thrown when a condition is not met."""
+    pass
+
+
+class FailedTransferError(RemoteError):
+    """Thrown when a file transfer fails."""
+    pass
+
+
+class FailedUploadError(FailedTransferError):
+    """Thrown when an upload fails."""
+    pass
+
+
+class FailedDownloadError(FailedTransferError):
+    """Thrown when a download fails."""
+    pass

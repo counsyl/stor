@@ -46,7 +46,7 @@ class BaseIntegrationTest:
                 expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
                 self.assertEquals(contents, expected)
 
-        def test_copy_to_from_container(self):
+        def test_copy_to_from_dir(self):
             num_test_objs = 5
             min_obj_size = 100
             with NamedTemporaryDirectory(change_dir=True) as tmp_d:
@@ -57,7 +57,7 @@ class BaseIntegrationTest:
                     storage_utils.copy(obj_path, 'copied_file')
                     self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
 
-        def test_copytree_to_from_container(self):
+        def test_copytree_to_from_dir(self):
             num_test_objs = 10
             test_obj_size = 100
             with NamedTemporaryDirectory(change_dir=True) as tmp_d:
@@ -144,27 +144,27 @@ class BaseIntegrationTest:
                     with gzip.open(local_gzip) as local_gzip_fp:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
 
-    def test_file_read_write(self):
-        test_file = self.test_dir / 'test_file.txt'
-        copy_file = self.test_dir / 'copy_file.txt'
+        def test_file_read_write(self):
+            test_file = self.test_dir / 'test_file.txt'
+            copy_file = self.test_dir / 'copy_file.txt'
 
-        with test_file.open(mode='wb') as obj:
-            obj.write('this is a test\n')
-            obj.write('this is another line.\n')
+            with test_file.open(mode='wb') as obj:
+                obj.write('this is a test\n')
+                obj.write('this is another line.\n')
 
-        self.assertTrue(test_file.exists())
-        self.assertTrue(test_file.isfile())
-        self.assertFalse(test_file.isdir())
+            self.assertTrue(test_file.exists())
+            self.assertTrue(test_file.isfile())
+            self.assertFalse(test_file.isdir())
 
-        with test_file.open(mode='rb') as obj:
-            with copy_file.open(mode='wb') as copy_obj:
-                copy_obj.write(obj.read())
+            with test_file.open(mode='rb') as obj:
+                with copy_file.open(mode='wb') as copy_obj:
+                    copy_obj.write(obj.read())
 
-        self.assertTrue(copy_file.exists())
-        self.assertTrue(copy_file.isfile())
-        self.assertFalse(copy_file.isdir())
+            self.assertTrue(copy_file.exists())
+            self.assertTrue(copy_file.isfile())
+            self.assertFalse(copy_file.isdir())
 
-        test_contents = test_file.open(mode='rb').read()
-        copy_contents = copy_file.open(mode='rb').read()
-        self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
-        self.assertEquals(test_contents, copy_contents)
+            test_contents = test_file.open(mode='rb').read()
+            copy_contents = copy_file.open(mode='rb').read()
+            self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
+            self.assertEquals(test_contents, copy_contents)

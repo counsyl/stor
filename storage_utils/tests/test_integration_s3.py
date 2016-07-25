@@ -1,10 +1,13 @@
 import logging
 import os
+import time
 import unittest
 
+import storage_utils
 from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
 from storage_utils import Path
+from storage_utils import utils
 from storage_utils.tests.test_integration import BaseIntegrationTest
 
 
@@ -38,7 +41,6 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         super(S3IntegrationTest, self).tearDown()
         self.test_dir.rmtree()
 
-    @unittest.skip("test takes a long time. run manually if you want to test.")
     def test_over_1000_files(self):
         num_test_objs = 1234
         min_obj_size = 0
@@ -145,7 +147,20 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             for which_obj in self.get_dataset_obj_names(num_test_objs):
                 self.assertCorrectObjectContents(which_obj, which_obj, min_obj_size)
                 (self.test_dir / which_obj).remove()
+
+                # consistency check
+                while (self.test_dir / which_obj).exists():
+                    time.sleep(.5)
                 self.assertFalse((self.test_dir / which_obj).exists())
+
+    def test_upload_w_headers(self):
+        test_file = self.test_dir / 'a.txt'
+        with NamedTemporaryDirectory(change_dir=True):
+            open('a.txt', 'w').close()
+            self.test_dir.upload(['.'], headers={'ContentLanguage': 'en'})
+
+        self.assertTrue(test_file.exists())
+        self.assertEquals(test_file.stat()['ContentLanguage'], 'en')
 
     def test_download(self):
         with NamedTemporaryDirectory(change_dir=True):
@@ -161,3 +176,92 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 self.test_dir.download('.')
             with self.assertRaises(OSError):
                 (self.test_dir / 'dir').download('.')
+
+    def test_condition(self):
+        num_test_objs = 20
+        test_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            Path('.').copytree(self.test_dir)
+
+        # Verify a ConditionNotMet exception is thrown when attempting to list
+        # a file that hasn't been uploaded
+        expected_objs = {
+            self.test_dir / which_obj
+            for which_obj in self.get_dataset_obj_names(num_test_objs + 1)
+        }
+
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            self.test_dir.list(condition=lambda results: expected_objs == set(results))
+
+        # Verify that the condition passes when excluding the non-extant file
+        correct_objs = {
+            self.test_dir / which_obj
+            for which_obj in self.get_dataset_obj_names(num_test_objs)
+        }
+        objs = self.test_dir.list(condition=lambda results: correct_objs == set(results))
+        self.assertEquals(correct_objs, set(objs))
+
+    def test_dir_markers(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            os.mkdir('empty')
+            os.mkdir('dir')
+            open('a.txt', 'w').close()
+            open('dir/b.txt', 'w').close()
+            self.test_dir.upload(['.'])
+
+        self.assertEquals(set(self.test_dir.list()), {
+            self.test_dir / 'a.txt',
+            self.test_dir / 'dir/b.txt',
+            self.test_dir / 'empty/'
+        })
+        self.assertEquals(set(self.test_dir.list(ignore_dir_markers=True)), {
+            self.test_dir / 'a.txt',
+            self.test_dir / 'dir/b.txt'
+        })
+        self.assertTrue((self.test_dir / 'empty').isdir())
+
+        with NamedTemporaryDirectory(change_dir=True):
+            self.test_dir.download('.')
+            self.assertTrue(os.path.isdir('empty'))
+            self.assertTrue(os.path.exists('dir/b.txt'))
+            self.assertTrue(os.path.exists('a.txt'))
+
+    def test_copytree_to_from_dir_w_manifest(self):
+            num_test_objs = 10
+            test_obj_size = 100
+            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+                self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+                # Make a nested file and an empty directory for testing purposes
+                tmp_d = Path(tmp_d)
+                os.mkdir(tmp_d / 'my_dir')
+                open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
+                os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
+
+                storage_utils.copytree(
+                    '.',
+                    self.test_dir,
+                    use_manifest=True)
+
+                # Validate the contents of the manifest file
+                manifest_contents = utils.get_data_manifest_contents(self.test_dir)
+                expected_contents = self.get_dataset_obj_names(num_test_objs)
+                expected_contents.extend(['my_dir/empty_file',
+                                          'my_dir/empty_dir/'])
+                expected_contents = [Path('test') / c for c in expected_contents]
+                self.assertEquals(set(manifest_contents), set(expected_contents))
+
+            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+                # Download the results successfully
+                Path(self.test_dir).copytree(
+                    'test',
+                    use_manifest=True)
+
+                # Now delete one of the objects from swift. A second download
+                # will fail with a condition error
+                Path(self.test_dir / 'my_dir' / 'empty_dir/').remove()
+                with self.assertRaises(exceptions.ConditionNotMetError):
+                    Path(self.test_dir).copytree(
+                        'test',
+                        use_manifest=True,
+                        num_retries=0)
