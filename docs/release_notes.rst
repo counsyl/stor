@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v8.2.0
+------
+* Implement threading and progress logging in S3 ``upload`` and ``download``
+* Add S3 directory markers and additional options including condition checking and use_manifest
+
 v8.1.0
 ------
 
