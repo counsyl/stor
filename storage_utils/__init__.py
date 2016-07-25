@@ -68,6 +68,10 @@ getsize = _delegate_to_path('getsize')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
+# added for cli - can remove this comment after review
+listpath = _delegate_to_path('list')
+upload = _delegate_to_path('upload')
+download = _delegate_to_path('download')
 
 
 def path(pth):

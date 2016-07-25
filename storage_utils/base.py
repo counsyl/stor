@@ -259,6 +259,15 @@ class Path(text_type):
     def open(self, **kwargs):
         raise NotImplementedError
 
+    # todo: check if necessary and/or remove
+    def list(self):
+        raise NotImplementedError
+    def upload(self):
+        raise NotImplementedError
+    def download(self):
+        raise NotImplementedError
+
+
     def listdir(self):
         raise NotImplementedError
 
