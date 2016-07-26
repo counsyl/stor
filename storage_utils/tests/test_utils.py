@@ -189,3 +189,8 @@ class TestCondition(unittest.TestCase):
     def test_invalid_condition_args(self):
         with self.assertRaisesRegexp(ValueError, 'exactly one argument'):
             utils.validate_condition(lambda: True)  # pragma: no cover
+
+
+class TestMisc(unittest.TestCase):
+    def test_has_trailing_slash(self):
+        self.assertFalse(utils.has_trailing_slash(''))

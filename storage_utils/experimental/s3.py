@@ -76,7 +76,7 @@ class S3DownloadLogger(utils.BaseProgressLogger):
     def update_progress(self, result):
         """Tracks number of bytes downloaded."""
         self.downloaded_bytes += (os.path.getsize(result['dest'])
-                                  if result['source'][-1] != '/' else 0)
+                                  if not utils.has_trailing_slash(result['source']) else 0)
 
     def get_start_message(self):
         return 'starting download of %s objects' % self.total_download_objects
@@ -106,7 +106,7 @@ class S3UploadLogger(utils.BaseProgressLogger):
     def update_progress(self, result):
         """Keep track of total uploaded bytes by referencing the object sizes"""
         self.uploaded_bytes += (os.path.getsize(result['source'])
-                                if result['dest'][-1] != '/' else 0)
+                                if not utils.has_trailing_slash(result['dest']) else 0)
 
     def get_start_message(self):
         return 'starting upload of %s objects' % self.total_upload_objects
@@ -134,6 +134,12 @@ class S3Path(OBSPath):
 
     Right now, the client defaults to Amazon S3 endpoints, but in the
     near-future, users should be able to custom configure the S3 client.
+
+    Note that any S3 object whose name ends with a ``/`` is considered to be an empty directory
+    marker.
+    These objects will not be downloaded and instead an empty directory will be created.
+    This follows Amazon's convention as described in the
+    `S3 User Guide <http://docs.aws.amazon.com/AmazonS3/latest/UG/FolderOperations.html>`_.
     """
     drive = 's3://'
 
@@ -250,7 +256,7 @@ class S3Path(OBSPath):
                         path_prefix / result['Key']
                         for result in page['Contents']
                         if not ignore_dir_markers or
-                        (ignore_dir_markers and result['Key'][-1] != '/')
+                        (ignore_dir_markers and not utils.has_trailing_slash(result['Key']))
                     ])
                 if list_as_dir and 'CommonPrefixes' in page:
                     list_results.extend([
@@ -295,6 +301,12 @@ class S3Path(OBSPath):
         return True
 
     def isdir(self):
+        """
+        Any S3 object whose name ends with a ``/`` is considered to be an empty directory marker.
+        These objects will not be downloaded and instead an empty directory will be created.
+        This follows Amazon's convention as described in the
+        `S3 User Guide <http://docs.aws.amazon.com/AmazonS3/latest/UG/FolderOperations.html>`_.
+        """
         # Handle buckets separately (in case the bucket is empty)
         if not self.resource:
             try:
@@ -308,7 +320,7 @@ class S3Path(OBSPath):
 
     def isfile(self):
         try:
-            return self.stat() and self[-1] != '/'
+            return self.stat() and not utils.has_trailing_slash(self)
         except (exceptions.NotFoundError, ValueError):
             return False
 
@@ -464,7 +476,7 @@ class S3Path(OBSPath):
             'dest': dest,
             'success': True
         }
-        if self[-1] == '/':
+        if utils.has_trailing_slash(self):
             # Handle directory markers separately
             utils.make_dest_dir(str(dest))
             return result
@@ -554,7 +566,7 @@ class S3Path(OBSPath):
             'success': True
         }
 
-        if upload_obj.object_name[-1] == '/':
+        if utils.has_trailing_slash(upload_obj.object_name):
             # Handle empty directories separately
             ul_kwargs['Key'] = utils.with_trailing_slash(ul_kwargs['Key'])
             if upload_obj.options and 'headers' in upload_obj.options:

@@ -1,32 +1,18 @@
 import argparse
-import ast
 import copy
-from functools import partial
 import sys
 
 import storage_utils
-from storage_utils import Path
-from storage_utils.swift import SwiftPath
-from storage_utils.experimental.s3 import S3Path
+from storage_utils import exceptions
 from storage_utils import settings
+from storage_utils import Path
+
+PRINT_CMDS = ('list', 'listdir', 'ls')
 
 
-def validate_path(pth, valid_types=None):
-    """
-    Validate path against acceptable types and return the path,
-    or if no valid types specified, return the path.
-    """
-    p = Path(pth)
-    if not valid_types:
-        return p
-    elif type(p) in valid_types:
-        return p
-    else:
-        raise argparse.ArgumentTypeError('%s is not a valid path for this command' % pth)
-
-
-def to_dict(source):
-    return ast.literal_eval(source)
+def get_path(pth):
+    """Convert string to a Path type."""
+    return Path(pth)
 
 
 def create_parser():
@@ -54,7 +40,7 @@ def create_parser():
                                         parents=[manifest_parser],
                                         conflict_handler='resolve')
     parser_list.add_argument('path',
-                             type=partial(validate_path, valid_types=(S3Path, SwiftPath)),
+                             type=get_path,
                              metavar='PATH')
     parser_list.add_argument('-s', '--starts_with',
                              help='Append an additional path to the search path.',
@@ -71,7 +57,7 @@ def create_parser():
                                            help=listdir_msg,
                                            description=listdir_msg)
     parser_listdir.add_argument('path',
-                                type=validate_path,
+                                type=get_path,
                                 metavar='PATH')
     parser_listdir.set_defaults(func=storage_utils.listdir)
 
@@ -90,11 +76,11 @@ def create_parser():
                                           conflict_handler='resolve')
     parser_upload.add_argument('source',
                                nargs='+',
-                               type=validate_path,
+                               type=get_path,
                                metavar='SOURCE')
     parser_upload.add_argument('path',
                                nargs=1,
-                               type=partial(validate_path, valid_types=(S3Path, SwiftPath)),
+                               type=get_path,
                                metavar='DEST')
     parser_upload.set_defaults(func=storage_utils.upload)
 
@@ -105,10 +91,10 @@ def create_parser():
                                             parents=[manifest_parser],
                                             conflict_handler='resolve')
     parser_download.add_argument('path',
-                                 type=partial(validate_path, valid_types=(S3Path, SwiftPath)),
+                                 type=get_path,
                                  metavar='SOURCE')
     parser_download.add_argument('dest',
-                                 type=validate_path,
+                                 type=get_path,
                                  metavar='DEST')
     parser_download.set_defaults(func=storage_utils.download)
 
@@ -119,10 +105,10 @@ def create_parser():
                                             parents=[manifest_parser],
                                             conflict_handler='resolve')
     parser_copytree.add_argument('source',
-                                 type=validate_path,
+                                 type=get_path,
                                  metavar='SOURCE')
     parser_copytree.add_argument('dest',
-                                 type=validate_path,
+                                 type=get_path,
                                  metavar='DEST')
     parser_copytree.set_defaults(func=storage_utils.copytree)
 
@@ -131,10 +117,10 @@ def create_parser():
                                         help=copy_msg,
                                         description=copy_msg)
     parser_copy.add_argument('source',
-                             type=validate_path,
+                             type=get_path,
                              metavar='SOURCE')
     parser_copy.add_argument('dest',
-                             type=validate_path,
+                             type=get_path,
                              metavar='DEST')
     parser_copy.set_defaults(func=storage_utils.copy)
     cp_msg = 'Alias for copy.'
@@ -149,7 +135,7 @@ def create_parser():
                                           help=remove_msg,
                                           description=remove_msg)
     parser_remove.add_argument('path',
-                               type=validate_path,
+                               type=get_path,
                                metavar='PATH')
     parser_remove.set_defaults(func=storage_utils.remove)
     rm_msg = 'Alias for remove.'
@@ -164,7 +150,7 @@ def create_parser():
                                           help=rmtree_msg,
                                           description=rmtree_msg)
     parser_rmtree.add_argument('path',
-                               type=validate_path,
+                               type=get_path,
                                metavar='PATH')
     parser_rmtree.set_defaults(func=storage_utils.rmtree)
 
@@ -177,21 +163,33 @@ def process_args(args):
     func = args_copy.pop('func', None)
     pth = args_copy.pop('path', None)
     cmd = args_copy.pop('cmd', None)
+    if type(pth) is list:
+        pth = pth[0]
+
     if config:
         settings.update(settings.parse_config_file(config))
+    func_kwargs = {key: val for key, val in args_copy.iteritems() if val}
     try:
-        return func(pth, **{key: val for key, val in args_copy.iteritems() if val})
+        if pth:
+            return func(pth, **func_kwargs)
+        return func(**func_kwargs)
     except NotImplementedError:
         sys.stderr.write('%s is not a valid command for %s' % (cmd, pth))
+        sys.exit(1)
+    except exceptions.RemoteError as exc:
+        sys.stderr.write('%s: %s\n' % (exc.__class__.__name__, exc.message))
         sys.exit(1)
 
 
 def print_results(results):
     for result in results:
-        print str(result)
+        sys.stdout.write('%s\n' % str(result))
 
 
 def main():
     parser = create_parser()
     args = parser.parse_args()
-    print_results(process_args(args))
+    cmd = vars(args).get('cmd')
+    results = process_args(args)
+    if cmd in PRINT_CMDS:
+        print_results(results)

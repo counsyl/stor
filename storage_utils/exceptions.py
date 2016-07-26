@@ -39,11 +39,16 @@ class ConditionNotMetError(RemoteError):
     pass
 
 
-class FailedUploadError(RemoteError):
+class FailedTransferError(RemoteError):
+    """Thrown when a file transfer fails."""
+    pass
+
+
+class FailedUploadError(FailedTransferError):
     """Thrown when an upload fails."""
     pass
 
 
-class FailedDownloadError(RemoteError):
+class FailedDownloadError(FailedTransferError):
     """Thrown when a download fails."""
     pass

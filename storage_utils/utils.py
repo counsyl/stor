@@ -7,13 +7,9 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
-import threading
 from storage_utils import exceptions
 
 logger = logging.getLogger(__name__)
-
-# Lock for logging in multithreaded methods
-_thread_lock = threading.Lock()
 
 # Name for the data manifest file when using the use_manifest option
 # for upload/download
@@ -75,6 +71,13 @@ def with_trailing_slash(p):
     if not p:
         return p
     return type(p)(p.rstrip('/') + '/')
+
+
+def has_trailing_slash(p):
+    """Checks if a path has a single trailing slash"""
+    if not p:
+        return False
+    return str(p)[-1] == '/'
 
 
 def validate_condition(condition):
@@ -515,10 +518,9 @@ class BaseProgressLogger(object):
 
         Messages are logged every time the ``result_interval`` is met.
         """
-        with _thread_lock:
-            self.num_results += 1
-            self.update_progress(result)
-            if self.num_results % self.result_interval == 0:
-                progress_msg = self.get_progress_message()
-                if progress_msg:  # pragma: no cover
-                    self.logger.log(self.level, progress_msg)
+        self.num_results += 1
+        self.update_progress(result)
+        if self.num_results % self.result_interval == 0:
+            progress_msg = self.get_progress_message()
+            if progress_msg:  # pragma: no cover
+                self.logger.log(self.level, progress_msg)
