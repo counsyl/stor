@@ -276,3 +276,77 @@ class TestCat(BaseCliTest):
         self.parse_args('stor cat swift://some/test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world')
         mock_read.assert_called_once_with(SwiftPath('swift://some/test/file'))
+
+
+class TestCd(BaseCliTest):
+    def setUp(self):
+        # set up a temp file to use as env file so we don't mess up real defaults
+        self.test_env_file = NamedTemporaryFile(delete=False).name
+        mock_env_file_patcher = mock.patch('storage_utils.cli.ENV_FILE', self.test_env_file)
+        self.mock_env_file = mock_env_file_patcher.start()
+        self.addCleanup(mock_env_file_patcher.stop)
+
+        cli._clear_env()
+        super(TestCd, self).setUp()
+
+    def tearDown(self):
+        cli._clear_env()
+        os.remove(self.test_env_file)
+        super(TestCd, self).tearDown()
+
+    def generate_env_text(self, s3_path='s3://', swift_path='swift://'):
+        return '[env]\ns3 = %s\nswift = %s\n' % (s3_path, swift_path)
+
+    def test_cd_s3(self):
+        self.parse_args('stor cd s3://test')
+        self.assertIn(self.generate_env_text(s3_path='s3://test'),
+                      open(self.test_env_file).read())
+
+    def test_cd_swift(self):
+        self.parse_args('stor cd swift://test/container')
+        self.assertIn(self.generate_env_text(swift_path='swift://test/container'),
+                      open(self.test_env_file).read())
+
+    def test_clear_all(self):
+        with open(self.test_env_file, 'w') as outfile:
+            outfile.write(self.generate_env_text(s3_path='s3://test',
+                                                 swift_path='swift://test/container'))
+        self.parse_args('stor clear')
+        self.assertIn(self.generate_env_text(), open(self.test_env_file).read())
+
+    def test_clear_s3(self):
+        with open(self.test_env_file, 'w') as outfile:
+            outfile.write(self.generate_env_text(s3_path='s3://test',
+                                                 swift_path='swift://test/container'))
+        self.parse_args('stor clear s3')
+        self.assertIn(self.generate_env_text(swift_path='swift://test/container'),
+                      open(self.test_env_file).read())
+
+    def test_clear_swift(self):
+        with open(self.test_env_file, 'w') as outfile:
+            outfile.write(self.generate_env_text(s3_path='s3://test',
+                                                 swift_path='swift://test/container'))
+        self.parse_args('stor clear swift')
+        self.assertIn(self.generate_env_text(s3_path='s3://test'),
+                      open(self.test_env_file).read())
+
+    def test_pwd_all(self):
+        with open(self.test_env_file, 'w') as outfile:
+            outfile.write(self.generate_env_text(s3_path='s3://test',
+                                                 swift_path='swift://test/container'))
+        self.parse_args('stor pwd')
+        self.assertEquals(sys.stdout.getvalue(), 's3://test\nswift://test/container\n')
+
+    def test_pwd_s3(self):
+        with open(self.test_env_file, 'w') as outfile:
+            outfile.write(self.generate_env_text(s3_path='s3://test',
+                                                 swift_path='swift://test/container'))
+        self.parse_args('stor pwd s3')
+        self.assertEquals(sys.stdout.getvalue(), 's3://test\n')
+
+    def test_pwd_swift(self):
+        with open(self.test_env_file, 'w') as outfile:
+            outfile.write(self.generate_env_text(s3_path='s3://test',
+                                                 swift_path='swift://test/container'))
+        self.parse_args('stor pwd swift')
+        self.assertEquals(sys.stdout.getvalue(), 'swift://test/container\n')

@@ -1,5 +1,6 @@
 import argparse
 import copy
+import ConfigParser
 from functools import partial
 import os
 import sys
@@ -9,15 +10,77 @@ import storage_utils
 from storage_utils import exceptions
 from storage_utils import settings
 from storage_utils import Path
+from storage_utils.experimental.s3 import S3Path
+from storage_utils.swift import SwiftPath
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat')
+PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd')
+
+ENV_FILE = os.path.join(os.path.dirname(__file__), 'stor.env')
 
 
 class TempPath(Path):
     pass
 
 
-def cat(pth):
+def _get_env():
+    """Return a ConfigParser that represents the environment."""
+    parser = ConfigParser.SafeConfigParser()
+    with open(ENV_FILE) as fp:
+        parser.readfp(fp)
+    return parser
+
+_stor_env = _get_env()
+
+
+def _update_env():
+    """Update the parser using the ENV_FILE."""
+    with open(ENV_FILE) as fp:
+        _stor_env.readfp(fp)
+
+
+def _get_pwd(service=None):
+    """
+    Returns the present working directory for the given service,
+    or all services if none specified.
+    """
+    _update_env()
+    if service:
+        try:
+            return _stor_env.get('env', service)
+        except ConfigParser.NoOptionError:
+            raise ValueError('invalid service')
+    return [value for name, value in _stor_env.items('env')]
+
+
+def _env_chdir(pth):
+    """Sets the new current working directory."""
+    _update_env()
+    p_type = type(Path(pth))
+    if p_type is S3Path:
+        service = 's3'
+    elif p_type is SwiftPath:
+        service = 'swift'
+    else:
+        raise ValueError('invalid path')
+    _stor_env.set('env', service, pth)
+    with open(ENV_FILE, 'w') as outfile:
+        _stor_env.write(outfile)
+
+
+def _clear_env(service=None):
+    """Reset current working directory for the specified service or all if none specified."""
+    _update_env()
+    if service:
+        try:
+            _env_chdir(service + '://')
+        except ValueError:
+            raise ValueError('invalid service')
+    else:
+        for name, value in _stor_env.items('env'):
+            _env_chdir(name + '://')
+
+
+def _cat(pth):
     """Return the contents of a given path."""
     return pth.open().read()
 
@@ -33,7 +96,6 @@ def get_path(pth, mode=None):
         ntf = tempfile.NamedTemporaryFile(delete=False)
         ntf.write(sys.stdin.read())
         ntf.close()
-        print ntf.name
         return TempPath(ntf.name)
     return Path(pth)
 
@@ -157,7 +219,24 @@ def create_parser():
     cat_msg = 'Output file contents to stdout.'
     parser_cat = subparsers.add_parser('cat', help=cat_msg, description=cat_msg)
     parser_cat.add_argument('path', type=partial(get_path, mode='r'), metavar='PATH')
-    parser_cat.set_defaults(func=cat)
+    parser_cat.set_defaults(func=_cat)
+
+    cd_msg = 'Change directory to a given OBS path.'
+    parser_cd = subparsers.add_parser('cd', help=cd_msg, description=cd_msg)
+    parser_cd.add_argument('path', type=get_path, metavar='PATH')
+    parser_cd.set_defaults(func=_env_chdir)
+
+    pwd_msg = 'Get the present working directory of a service or all current directories.'
+    parser_pwd = subparsers.add_parser('pwd', help=pwd_msg, description=pwd_msg)
+    parser_pwd.add_argument('service', nargs='?', type=str, metavar='SERVICE')
+    parser_pwd.set_defaults(func=_get_pwd)
+
+    clear_msg = 'Clear current directories of a specified service.'
+    parser_clear = subparsers.add_parser('clear', help=clear_msg,
+                                         description='%s The current directories of all services'
+                                         ' will be cleared if SERVICE is omitted.' % clear_msg)
+    parser_clear.add_argument('service', nargs='?', type=str, metavar='SERVICE')
+    parser_clear.set_defaults(func=_clear_env)
 
     return parser
 
@@ -181,8 +260,15 @@ def process_args(args):
         if pth:
             return func(pth, **func_kwargs)
         return func(**func_kwargs)
-    except NotImplementedError:
-        sys.stderr.write('%s is not a valid command for %s' % (cmd, pth))
+    except (NotImplementedError, ValueError):
+        if pth:
+            value = pth
+        elif len(func_kwargs) > 0:
+            value = func_kwargs.values()[0]
+        else:
+            sys.stderr.write('%s is not a valid command for the given input\n' % (cmd, value))
+            sys.exit(1)
+        sys.stderr.write('%s is not a valid command for %s\n' % (cmd, value))
         sys.exit(1)
     except exceptions.RemoteError as exc:
         sys.stderr.write('%s: %s\n' % (exc.__class__.__name__, exc.message))
@@ -198,6 +284,8 @@ def clean_tempfiles(args):
 def print_results(results):
     if type(results) is str:
         sys.stdout.write(results)
+        if not results.endswith('\n'):
+            sys.stdout.write('\n')
     else:
         for result in results:
             sys.stdout.write('%s\n' % str(result))
