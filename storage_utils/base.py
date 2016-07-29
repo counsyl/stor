@@ -260,11 +260,11 @@ class Path(text_type):
         raise NotImplementedError
 
     # todo: check if necessary and/or remove
-    def list(self):
+    def list(self, *args, **kwargs):
         raise NotImplementedError
-    def upload(self):
+    def upload(self, *args, **kwargs):
         raise NotImplementedError
-    def download(self):
+    def download(self, *args, **kwargs):
         raise NotImplementedError
 
 

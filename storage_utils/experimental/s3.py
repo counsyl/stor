@@ -297,9 +297,6 @@ class S3Path(OBSPath):
         except exceptions.NotFoundError:
             return False
 
-    def isabs(self):
-        return True
-
     def isdir(self):
         """
         Any S3 object whose name ends with a ``/`` is considered to be an empty directory marker.
@@ -323,12 +320,6 @@ class S3Path(OBSPath):
             return self.stat() and not utils.has_trailing_slash(self)
         except (exceptions.NotFoundError, ValueError):
             return False
-
-    def islink(self):
-        return False
-
-    def ismount(self):
-        return True
 
     def getsize(self):
         """

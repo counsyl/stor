@@ -153,6 +153,9 @@ class OBSPath(Path):
         raise NotImplementedError
 
     def isabs(self):
+        parts = self._get_parts()
+        if '..' in parts or '.' in parts:
+            return False
         return True
 
     def isdir(self):

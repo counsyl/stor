@@ -48,7 +48,7 @@ def _get_pwd(service=None):
         try:
             return _stor_env.get('env', service)
         except ConfigParser.NoOptionError:
-            raise ValueError('invalid service')
+            raise ValueError('%s is an invalid service' % service)
     return [value for name, value in _stor_env.items('env')]
 
 
@@ -61,7 +61,9 @@ def _env_chdir(pth):
     elif p_type is SwiftPath:
         service = 'swift'
     else:
-        raise ValueError('invalid path')
+        raise ValueError('%s is an invalid path' % pth)
+    if pth != Path(pth).drive:
+        pth = pth.rstrip('/')
     _stor_env.set('env', service, pth)
     with open(ENV_FILE, 'w') as outfile:
         _stor_env.write(outfile)
@@ -71,10 +73,7 @@ def _clear_env(service=None):
     """Reset current working directory for the specified service or all if none specified."""
     _update_env()
     if service:
-        try:
-            _env_chdir(service + '://')
-        except ValueError:
-            raise ValueError('invalid service')
+        _env_chdir(service + '://')
     else:
         for name, value in _stor_env.items('env'):
             _env_chdir(name + '://')
@@ -97,7 +96,33 @@ def get_path(pth, mode=None):
         ntf.write(sys.stdin.read())
         ntf.close()
         return TempPath(ntf.name)
-    return Path(pth)
+    p = Path(pth)
+    # resolve relative paths
+    if not p.isabs():
+        if type(p) is S3Path:
+            service = 's3'
+        elif type(p) is SwiftPath:
+            service = 'swift'
+        else:
+            return p
+
+        pwd = Path(_get_pwd(service=service))
+        if pwd == p.drive:
+            raise ValueError('No current directory specified for relative path \'%s\'' % pth)
+
+        pwd = Path(pwd.rstrip('/'))
+        path_part = pth[len(p.drive):]
+        rel_part = path_part.split('/')[0]
+        if rel_part == '..':
+            if len(pwd[len(pwd.drive):].split('/')) > 1:
+                prefix = pwd.parent
+            else:
+                raise ValueError('Relative path \'%s\' is invalid for current directory \'%s\''
+                                 % (pth, pwd))
+        else:
+            prefix = pwd
+        p = prefix / path_part.split(rel_part, 1)[1].lstrip('/')
+    return p
 
 
 def create_parser():
@@ -260,15 +285,18 @@ def process_args(args):
         if pth:
             return func(pth, **func_kwargs)
         return func(**func_kwargs)
-    except (NotImplementedError, ValueError):
+    except NotImplementedError:
         if pth:
             value = pth
         elif len(func_kwargs) > 0:
             value = func_kwargs.values()[0]
         else:
-            sys.stderr.write('%s is not a valid command for the given input\n' % (cmd, value))
+            sys.stderr.write('%s is not a valid command for the given input\n' % cmd)
             sys.exit(1)
         sys.stderr.write('%s is not a valid command for %s\n' % (cmd, value))
+        sys.exit(1)
+    except ValueError as exc:
+        sys.stderr.write('Error: %s\n' % str(exc))
         sys.exit(1)
     except exceptions.RemoteError as exc:
         sys.stderr.write('%s: %s\n' % (exc.__class__.__name__, exc.message))
