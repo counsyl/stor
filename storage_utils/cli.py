@@ -110,16 +110,21 @@ def get_path(pth, mode=None):
 
         pwd = utils.remove_trailing_slash(pwd)
         path_part = pth[len(p.drive):]
-        rel_part = path_part.split('/')[0]
+        split_parts = path_part.split('/')
+        rel_part = split_parts[0]
+
+        prefix = pwd
+        depth = 1
         if rel_part == '..':
-            if len(pwd[len(pwd.drive):].split('/')) > 1:
-                prefix = pwd.parent
+            while split_parts[depth] == '..':
+                depth += 1
+            if len(pwd[len(pwd.drive):].split('/')) > depth:
+                for i in range(0, depth):
+                    prefix = prefix.parent
             else:
                 raise ValueError('Relative path \'%s\' is invalid for current directory \'%s\''
                                  % (pth, pwd))
-        else:
-            prefix = pwd
-        p = prefix / path_part.split(rel_part, 1)[1].lstrip('/')
+        p = prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
     return p
 
 

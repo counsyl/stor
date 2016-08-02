@@ -139,6 +139,20 @@ class TestGetPath(BaseCliTest):
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
             cli.get_path('swift://../b/c')
 
+    def test_relpath_nested_parent(self, mock_pwd):
+        mock_pwd.return_value = 's3://a/b/c'
+        self.assertEquals(cli.get_path('s3://../../d'), S3Path('s3://a/d'))
+        mock_pwd.return_value = 'swift://a/b/c/'
+        self.assertEquals(cli.get_path('swift://../../d'), SwiftPath('swift://a/d'))
+
+    def test_relpath_nested_parent_error(self, mock_pwd):
+        mock_pwd.return_value = 's3://a/b/c'
+        with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
+            cli.get_path('s3://../../../d')
+        mock_pwd.return_value = 'swift://a/b/c/'
+        with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
+            cli.get_path('swift://../../../d')
+
 
 class TestList(BaseCliTest):
     @mock.patch.object(S3Path, 'list', autospec=True)
