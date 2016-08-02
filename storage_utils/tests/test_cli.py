@@ -3,6 +3,7 @@ import os
 import mock
 import sys
 from tempfile import NamedTemporaryFile
+from storage_utils.posix import PosixPath
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.swift import SwiftPath
 from storage_utils import cli
@@ -75,6 +76,14 @@ class TestCliBasics(BaseCliTest):
         mock_clear.side_effect = NotImplementedError
         with self.assertRaisesRegexp(SystemExit, '1'):
             self.parse_args('stor clear')
+        self.assertIn('not a valid command', sys.stderr.getvalue())
+
+    @mock.patch.object(PosixPath, 'list', autospec=True)
+    @mock.patch('sys.stderr', new=StringIO())
+    def test_not_implemented_error_path(self, mock_list):
+        mock_list.side_effect = NotImplementedError
+        with self.assertRaisesRegexp(SystemExit, '1'):
+            self.parse_args('stor list some_path')
         self.assertIn('not a valid command', sys.stderr.getvalue())
 
 
@@ -158,11 +167,6 @@ class TestList(BaseCliTest):
                           'swift://t/c/file3\n')
         mock_list.assert_called_once_with(SwiftPath('swift://t/c/'))
 
-    @mock.patch('sys.stderr', autospec=True)
-    def test_list_bad_path(self, mock_stderr):
-        with self.assertRaisesRegexp(SystemExit, '1'):
-            self.parse_args('stor list some_path')
-
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_list_options(self, mock_list):
         mock_list.side_effect = [[
@@ -238,36 +242,6 @@ class TestListdir(BaseCliTest):
         mock_listdir.assert_called_once_with(S3Path('s3://bucket'))
 
 
-class TestUpload(BaseCliTest):
-    @mock.patch.object(S3Path, 'upload', autospec=True)
-    def test_upload_s3(self, mock_upload):
-        self.parse_args('stor upload . s3://bucket/dir')
-        mock_upload.assert_called_once_with(S3Path('s3://bucket/dir'), source=['.'])
-
-    @mock.patch.object(SwiftPath, 'upload', autospec=True)
-    def test_upload_swift(self, mock_upload):
-        self.parse_args('stor upload . swift://t/c/dir')
-        mock_upload.assert_called_once_with(SwiftPath('swift://t/c/dir'), source=['.'])
-
-    @mock.patch.object(S3Path, 'upload', autospec=True)
-    def test_upload_multiple(self, mock_upload):
-        self.parse_args('stor upload test dir file.txt s3://bucket')
-        mock_upload.assert_called_once_with(S3Path('s3://bucket'),
-                                            source=['test', 'dir', 'file.txt'])
-
-
-class TestDownload(BaseCliTest):
-    @mock.patch.object(S3Path, 'download', autospec=True)
-    def test_download_s3(self, mock_download):
-        self.parse_args('stor download s3://bucket/dir .')
-        mock_download.assert_called_once_with(S3Path('s3://bucket/dir'), dest='.')
-
-    @mock.patch.object(SwiftPath, 'download', autospec=True)
-    def test_upload_swift(self, mock_download):
-        self.parse_args('stor download swift://t/c/dir .')
-        mock_download.assert_called_once_with(SwiftPath('swift://t/c/dir'), dest='.')
-
-
 class TestCopytree(BaseCliTest):
     @mock.patch('storage_utils.copytree', autospec=True)
     def test_copytree(self, mock_copytree):
@@ -286,8 +260,8 @@ class TestCopy(BaseCliTest):
         mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
 
     def test_cp(self, mock_copy):
-        self.parse_args('stor cp s3://bucket/file.txt ./file1')
-        mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
+        self.parse_args('stor cp ./file1 swift://a/b/c')
+        mock_copy.assert_called_once_with(source='./file1', dest='swift://a/b/c')
 
     @mock.patch('sys.stdin', new=StringIO('some stdin input\n'))
     def test_copy_stdin(self, mock_copy):
@@ -331,6 +305,66 @@ class TestRmtree(BaseCliTest):
         mock_rmtree.assert_called_once_with(SwiftPath('swift://t/c/dir'))
 
 
+class TestWalkfiles(BaseCliTest):
+    @mock.patch.object(S3Path, 'walkfiles', autospec=True)
+    def test_walkfiles_s3(self, mock_walkfiles):
+        mock_walkfiles.return_value = [
+            's3://bucket/a/b.txt',
+            's3://bucket/c.txt',
+            's3://bucket/d.txt'
+        ]
+        self.parse_args('stor walkfiles -p=*.txt s3://bucket')
+        self.assertEquals(sys.stdout.getvalue(),
+                          's3://bucket/a/b.txt\n'
+                          's3://bucket/c.txt\n'
+                          's3://bucket/d.txt\n')
+        mock_walkfiles.assert_called_once_with(S3Path('s3://bucket'), pattern='*.txt')
+
+    @mock.patch.object(SwiftPath, 'walkfiles', autospec=True)
+    def test_walkfiles_swift(self, mock_walkfiles):
+        mock_walkfiles.return_value = [
+            'swift://t/c/a/b.txt',
+            'swift://t/c/c.txt',
+            'swift://t/c/d.txt'
+        ]
+        self.parse_args('stor walkfiles -p=*.txt swift://bucket')
+        self.assertEquals(sys.stdout.getvalue(),
+                          'swift://t/c/a/b.txt\n'
+                          'swift://t/c/c.txt\n'
+                          'swift://t/c/d.txt\n')
+        mock_walkfiles.assert_called_once_with(SwiftPath('swift://bucket'), pattern='*.txt')
+
+    @mock.patch.object(PosixPath, 'walkfiles', autospec=True)
+    def test_walkfiles_posix(self, mock_walkfiles):
+        mock_walkfiles.return_value = [
+            './a/b.txt',
+            './c.txt',
+            './d.txt'
+        ]
+        self.parse_args('stor walkfiles -p=*.txt .')
+        self.assertEquals(sys.stdout.getvalue(),
+                          './a/b.txt\n'
+                          './c.txt\n'
+                          './d.txt\n')
+        mock_walkfiles.assert_called_once_with(PosixPath('.'), pattern='*.txt')
+
+    @mock.patch.object(PosixPath, 'walkfiles', autospec=True)
+    def test_walkfiles_no_pattern(self, mock_walkfiles):
+        mock_walkfiles.return_value = [
+            './a/b.txt',
+            './c.txt',
+            './d.txt',
+            './file'
+        ]
+        self.parse_args('stor walkfiles .')
+        self.assertEquals(sys.stdout.getvalue(),
+                          './a/b.txt\n'
+                          './c.txt\n'
+                          './d.txt\n'
+                          './file\n')
+        mock_walkfiles.assert_called_once_with(PosixPath('.'))
+
+
 class TestCat(BaseCliTest):
     @mock.patch.object(S3Path, 'read_object', autospec=True)
     def test_cat_s3(self, mock_read):
@@ -355,7 +389,8 @@ class TestCd(BaseCliTest):
         self.mock_env_file = mock_env_file_patcher.start()
         self.addCleanup(mock_env_file_patcher.stop)
 
-        cli._clear_env()
+        with mock.patch('os.path.exists', return_value=False, autospec=True):
+            cli._clear_env()
         super(TestCd, self).setUp()
 
     def tearDown(self):

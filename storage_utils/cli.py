@@ -10,32 +10,34 @@ import storage_utils
 from storage_utils import exceptions
 from storage_utils import settings
 from storage_utils import Path
-from storage_utils.experimental.s3 import S3Path
-from storage_utils.swift import SwiftPath
+from storage_utils import utils
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd')
+PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles')
 
-ENV_FILE = os.path.join(os.path.dirname(__file__), 'stor.env')
+ENV_FILE = os.path.expanduser('~/.stor-cli.env')
+PKG_ENV_FILE = os.path.join(os.path.dirname(__file__), 'stor.env')
 
 
 class TempPath(Path):
-    pass
+    """Persist stdin to a temporary file for CLI operations with OBS."""
+    def __del__(self):
+        os.remove(str(self))
 
 
 def _get_env():
-    """Return a ConfigParser that represents the environment."""
+    """
+    Get the current environment using the ENV_FILE.
+
+    Returns a ConfigParser.
+    """
     parser = ConfigParser.SafeConfigParser()
+    # if env file doesn't exist, copy over the package default
+    if not os.path.exists(ENV_FILE):
+        with open(ENV_FILE, 'w') as outfile, open(PKG_ENV_FILE) as infile:
+            outfile.write(infile.read())
     with open(ENV_FILE) as fp:
         parser.readfp(fp)
     return parser
-
-_stor_env = _get_env()
-
-
-def _update_env():
-    """Update the parser using the ENV_FILE."""
-    with open(ENV_FILE) as fp:
-        _stor_env.readfp(fp)
 
 
 def _get_pwd(service=None):
@@ -43,39 +45,36 @@ def _get_pwd(service=None):
     Returns the present working directory for the given service,
     or all services if none specified.
     """
-    _update_env()
+    parser = _get_env()
     if service:
         try:
-            return _stor_env.get('env', service)
+            return parser.get('env', service)
         except ConfigParser.NoOptionError:
             raise ValueError('%s is an invalid service' % service)
-    return [value for name, value in _stor_env.items('env')]
+    return [value for name, value in parser.items('env')]
 
 
 def _env_chdir(pth):
     """Sets the new current working directory."""
-    _update_env()
-    p_type = type(Path(pth))
-    if p_type is S3Path:
-        service = 's3'
-    elif p_type is SwiftPath:
-        service = 'swift'
+    parser = _get_env()
+    if utils.is_obs_path(pth):
+        service = Path(pth).drive.rstrip(':/')
     else:
         raise ValueError('%s is an invalid path' % pth)
     if pth != Path(pth).drive:
-        pth = pth.rstrip('/')
-    _stor_env.set('env', service, pth)
+        pth = utils.remove_trailing_slash(pth)
+    parser.set('env', service, pth)
     with open(ENV_FILE, 'w') as outfile:
-        _stor_env.write(outfile)
+        parser.write(outfile)
 
 
 def _clear_env(service=None):
     """Reset current working directory for the specified service or all if none specified."""
-    _update_env()
+    parser = _get_env()
     if service:
         _env_chdir(service + '://')
     else:
-        for name, value in _stor_env.items('env'):
+        for name, value in parser.items('env'):
             _env_chdir(name + '://')
 
 
@@ -93,16 +92,15 @@ def get_path(pth, mode=None):
     """
     if pth == '-' and mode == 'r':
         ntf = tempfile.NamedTemporaryFile(delete=False)
+        print ntf.name
         ntf.write(sys.stdin.read())
         ntf.close()
         return TempPath(ntf.name)
     p = Path(pth)
     # resolve relative paths
     if not p.isabs():
-        if type(p) is S3Path:
-            service = 's3'
-        elif type(p) is SwiftPath:
-            service = 'swift'
+        if utils.is_obs_path(pth):
+            service = p.drive.rstrip(':/')
         else:
             return p
 
@@ -110,7 +108,7 @@ def get_path(pth, mode=None):
         if pwd == p.drive:
             raise ValueError('No current directory specified for relative path \'%s\'' % pth)
 
-        pwd = Path(pwd.rstrip('/'))
+        pwd = utils.remove_trailing_slash(pwd)
         path_part = pth[len(p.drive):]
         rel_part = path_part.split('/')[0]
         if rel_part == '..':
@@ -174,32 +172,6 @@ def create_parser():
                                       parents=[parser_listdir],
                                       conflict_handler='resolve')
 
-    upload_msg = 'Upload a source path or multiple source paths to a destination path.'
-    parser_upload = subparsers.add_parser('upload',
-                                          help=upload_msg,
-                                          description=upload_msg,
-                                          parents=[manifest_parser],
-                                          conflict_handler='resolve')
-    parser_upload.add_argument('source',
-                               nargs='+',
-                               type=get_path,
-                               metavar='SOURCE')
-    parser_upload.add_argument('path',
-                               nargs=1,
-                               type=get_path,
-                               metavar='DEST')
-    parser_upload.set_defaults(func=storage_utils.upload)
-
-    download_msg = 'Download a source directory to a destination directory.'
-    parser_download = subparsers.add_parser('download',
-                                            help=download_msg,
-                                            description=download_msg,
-                                            parents=[manifest_parser],
-                                            conflict_handler='resolve')
-    parser_download.add_argument('path', type=get_path, metavar='SOURCE')
-    parser_download.add_argument('dest', type=get_path, metavar='DEST')
-    parser_download.set_defaults(func=storage_utils.download)
-
     copytree_msg = 'Copy a source directory to a destination directory.'
     parser_copytree = subparsers.add_parser('copytree',
                                             description=copytree_msg,
@@ -241,6 +213,17 @@ def create_parser():
     parser_rmtree.add_argument('path', type=get_path, metavar='PATH')
     parser_rmtree.set_defaults(func=storage_utils.rmtree)
 
+    walkfiles_msg = 'List all files under a path that match an optional pattern.'
+    parser_walkfiles = subparsers.add_parser('walkfiles',
+                                             help=walkfiles_msg,
+                                             description=walkfiles_msg)
+    parser_walkfiles.add_argument('-p', '--pattern',
+                                  help='A regex pattern to match file names on.',
+                                  type=str,
+                                  metavar='REGEX')
+    parser_walkfiles.add_argument('path', type=get_path, metavar='PATH')
+    parser_walkfiles.set_defaults(func=storage_utils.walkfiles)
+
     cat_msg = 'Output file contents to stdout.'
     parser_cat = subparsers.add_parser('cat', help=cat_msg, description=cat_msg)
     parser_cat.add_argument('path', type=partial(get_path, mode='r'), metavar='PATH')
@@ -272,8 +255,6 @@ def process_args(args):
     func = args_copy.pop('func', None)
     pth = args_copy.pop('path', None)
     cmd = args_copy.pop('cmd', None)
-    if type(pth) is list:
-        pth = pth[0]
 
     if config:
         settings.update(settings.parse_config_file(config))
@@ -303,12 +284,6 @@ def process_args(args):
         sys.exit(1)
 
 
-def clean_tempfiles(args):
-    for key, val in vars(args).iteritems():
-        if type(val) is TempPath:
-            os.remove(str(val))
-
-
 def print_results(results):
     if type(results) is str:
         sys.stdout.write(results)
@@ -327,5 +302,3 @@ def main():
     cmd = vars(args).get('cmd')
     if cmd in PRINT_CMDS:
         print_results(results)
-
-    clean_tempfiles(args)
