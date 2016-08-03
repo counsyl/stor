@@ -1,3 +1,72 @@
+"""
+The CLI can be accessed through the command ``stor``. For details on
+valid subcommands, usage, and input options, refer to the ``--help`` / ``-h``
+flag.
+
+In addition to basic list, copy, and remove commands, the CLI also has some
+features such as specifying a current working directory on an OBS service
+(which allows for relative paths), ``cat``, and copying from ``stdin``.
+
+Relative Paths
+--------------
+
+Using the CLI, the user can specify a current working directory on supported
+OBS services (currently swift and s3) using the ``cd`` subcommand:
+
+    >>> stor cd s3://bucket
+    >>> stor cd swift://tenant/container
+
+To check the current working directory, use the ``pwd`` subcommand:
+
+    >>> stor pwd
+    s3://bucket
+    swift://tenant/container
+
+To clear the current working directory, use the ``clear`` subcommand:
+
+    >>> stor clear
+    >>> stor pwd
+    s3://
+    swift://
+
+This also means that relative paths can be used:
+
+    >>> stor cd s3://bucket/dir
+    >>> stor list s3://./child
+    s3://bucket/dir/child/file1
+    s3://bucket/dir/child/file2
+    >>> stor list s3://..
+    s3://bucket/a
+    s3://bucket/b/obj1
+    s3://bucket/dir/child/file1
+    s3://bucket/dir/child/file2
+
+``stdin`` and ``stdout``
+------------------------
+
+The CLI offers the ability to copy from ``stdin`` and output a path's
+contents to ``stdout``.
+
+To copy from ``stdin``, use the special ``-`` symbol. This means that the
+user can pipe output from one command into the ``stor`` CLI:
+
+    >>> echo "hello world" | stor cp - s3://my/file1
+
+The user can also output a path's contents to ``stdout`` using the ``cat``
+subcommand.
+
+    >>> stor cat s3://my/file1
+    hello world
+
+Direct file transfer between OBS services or within one OBS service is not
+yet supported, but can be accomplished using the two aforementioned features:
+
+    >>> stor cat s3://my/file1 | stor cp - s3://my/file2
+    >>> stor cat s3://my/file2
+    hello world
+
+"""
+
 import argparse
 import copy
 import ConfigParser
