@@ -59,7 +59,7 @@ class TestCliBasics(BaseCliTest):
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
-        self.parse_args('stor --config %s copytree source dest' % filename)
+        self.parse_args('stor --config %s cp -r source dest' % filename)
         self.assertEquals(settings._global_settings, expected_settings)
 
     @mock.patch('storage_utils.copy', autospec=True)
@@ -67,7 +67,7 @@ class TestCliBasics(BaseCliTest):
     def test_not_implemented_error(self, mock_copy):
         mock_copy.side_effect = NotImplementedError
         with self.assertRaisesRegexp(SystemExit, '1'):
-            self.parse_args('stor copy some/path some/where')
+            self.parse_args('stor cp some/path some/where')
         self.assertIn('not a valid command', sys.stderr.getvalue())
 
     @mock.patch('storage_utils.cli._clear_env', autospec=True)
@@ -212,7 +212,7 @@ class TestList(BaseCliTest):
         ])
 
 
-class TestListdir(BaseCliTest):
+class TestLs(BaseCliTest):
     @mock.patch.object(S3Path, 'listdir', autospec=True)
     def test_listdir_s3(self, mock_listdir):
         mock_listdir.return_value = [
@@ -220,7 +220,7 @@ class TestListdir(BaseCliTest):
             S3Path('s3://bucket/file2'),
             S3Path('s3://bucket/dir/')
         ]
-        self.parse_args('stor listdir s3://bucket')
+        self.parse_args('stor ls s3://bucket')
         self.assertEquals(sys.stdout.getvalue(),
                           's3://bucket/file1\n'
                           's3://bucket/file2\n'
@@ -234,33 +234,12 @@ class TestListdir(BaseCliTest):
             SwiftPath('swift://t/c/dir/'),
             SwiftPath('swift://t/c/file3')
         ]
-        self.parse_args('stor listdir swift://t/c')
+        self.parse_args('stor ls swift://t/c')
         self.assertEquals(sys.stdout.getvalue(),
                           'swift://t/c/file1\n'
                           'swift://t/c/dir/\n'
                           'swift://t/c/file3\n')
         mock_listdir.assert_called_once_with(SwiftPath('swift://t/c'))
-
-    @mock.patch.object(S3Path, 'listdir', autospec=True)
-    def test_ls(self, mock_listdir):
-        mock_listdir.return_value = [
-            S3Path('s3://bucket/file1'),
-            S3Path('s3://bucket/file2'),
-            S3Path('s3://bucket/dir/')
-        ]
-        self.parse_args('stor ls s3://bucket')
-        self.assertEquals(sys.stdout.getvalue(),
-                          's3://bucket/file1\n'
-                          's3://bucket/file2\n'
-                          's3://bucket/dir/\n')
-        mock_listdir.assert_called_once_with(S3Path('s3://bucket'))
-
-
-class TestCopytree(BaseCliTest):
-    @mock.patch('storage_utils.copytree', autospec=True)
-    def test_copytree(self, mock_copytree):
-        self.parse_args('stor copytree s3://bucket .')
-        mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
 
 
 @mock.patch('storage_utils.copy', autospec=True)
@@ -270,52 +249,70 @@ class TestCopy(BaseCliTest):
             outfile.write(infile.read())
 
     def test_copy(self, mock_copy):
-        self.parse_args('stor copy s3://bucket/file.txt ./file1')
+        self.parse_args('stor cp s3://bucket/file.txt ./file1')
         mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
-
-    def test_cp(self, mock_copy):
-        self.parse_args('stor cp ./file1 swift://a/b/c')
-        mock_copy.assert_called_once_with(source='./file1', dest='swift://a/b/c')
 
     @mock.patch('sys.stdin', new=StringIO('some stdin input\n'))
     def test_copy_stdin(self, mock_copy):
         mock_copy.side_effect = self.mock_copy_source
         with NamedTemporaryFile(delete=False) as ntf:
             test_file = ntf.name
-            self.parse_args('stor copy - %s' % test_file)
+            self.parse_args('stor cp - %s' % test_file)
         self.assertEquals(open(test_file).read(), 'some stdin input\n')
         temp_file = mock_copy.call_args_list[0][1]['source']
         self.assertFalse(os.path.exists(temp_file))
         os.remove(test_file)
         self.assertFalse(os.path.exists(test_file))
 
+    @mock.patch('sys.stderr', new=StringIO())
+    def test_copy_use_manifest_error(self, mock_copy):
+        with self.assertRaisesRegexp(SystemExit, '2'):
+            self.parse_args('stor cp -u my/obj swift://t/c/obj')
+        self.assertRegexpMatches(sys.stderr.getvalue(), '-u .* -r option')
+
+
+@mock.patch('storage_utils.copytree', autospec=True)
+class TestCopytree(BaseCliTest):
+    def test_copytree(self, mock_copytree):
+        self.parse_args('stor cp -r s3://bucket .')
+        mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
+
+    def test_copytree_use_manifest(self, mock_copytree):
+        self.parse_args('stor cp -ru swift://t/c/ .')
+        mock_copytree.assert_called_once_with(source='swift://t/c/', dest='.', use_manifest=True)
+
+    @mock.patch('sys.stderr', new=StringIO())
+    def test_copytree_use_manifest_error(self, mock_copytree):
+        with self.assertRaisesRegexp(SystemExit, '2'):
+            self.parse_args('stor cp -ur swift://t/c/ .')
+        self.assertRegexpMatches(sys.stderr.getvalue(), '-r must precede -u')
+
+    @mock.patch('sys.stderr', new=StringIO())
+    def test_copytree_stdin_error(self, mock_copytree):
+        with self.assertRaisesRegexp(SystemExit, '2'):
+            self.parse_args('stor cp -r - s3://bucket')
+        self.assertRegexpMatches(sys.stderr.getvalue(), '- cannot be used with -r')
+
 
 class TestRemove(BaseCliTest):
     @mock.patch.object(S3Path, 'remove', autospec=True)
     def test_remove_s3(self, mock_remove):
-        self.parse_args('stor remove s3://bucket/file1')
+        self.parse_args('stor rm s3://bucket/file1')
         mock_remove.assert_called_once_with(S3Path('s3://bucket/file1'))
 
     @mock.patch.object(SwiftPath, 'remove', autospec=True)
     def test_remove_swift(self, mock_remove):
-        self.parse_args('stor remove swift://t/c/file1')
+        self.parse_args('stor rm swift://t/c/file1')
         mock_remove.assert_called_once_with(SwiftPath('swift://t/c/file1'))
 
-    @mock.patch.object(S3Path, 'remove', autospec=True)
-    def test_rm(self, mock_remove):
-        self.parse_args('stor rm s3://bucket/file1')
-        mock_remove.assert_called_once_with(S3Path('s3://bucket/file1'))
-
-
-class TestRmtree(BaseCliTest):
     @mock.patch.object(S3Path, 'rmtree', autospec=True)
     def test_rmtree_s3(self, mock_rmtree):
-        self.parse_args('stor rmtree s3://bucket/dir')
+        self.parse_args('stor rm -r s3://bucket/dir')
         mock_rmtree.assert_called_once_with(S3Path('s3://bucket/dir'))
 
     @mock.patch.object(SwiftPath, 'rmtree', autospec=True)
     def test_rmtree_swift(self, mock_rmtree):
-        self.parse_args('stor rmtree swift://t/c/dir')
+        self.parse_args('stor rm -r swift://t/c/dir')
         mock_rmtree.assert_called_once_with(SwiftPath('swift://t/c/dir'))
 
 

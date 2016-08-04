@@ -93,6 +93,55 @@ class TempPath(Path):
         os.remove(str(self))
 
 
+def _make_stdin_action(func):
+    """
+    Return a StdinAction object that checks for stdin.
+    func should be the function indicated by -r that is not valid to use with stdin.
+    """
+    class StdinAction(argparse._StoreAction):
+        def __call__(self, parser, namespace, values, option_string=None):
+            if values == '-':
+                if namespace.func == func:
+                    raise argparse.ArgumentError(self, '- cannot be used with -r')
+                else:
+                    ntf = tempfile.NamedTemporaryFile(delete=False)
+                    ntf.write(sys.stdin.read())
+                    ntf.close()
+                    super(StdinAction, self).__call__(parser,
+                                                      namespace,
+                                                      TempPath(ntf.name),
+                                                      option_string=option_string)
+            else:
+                super(StdinAction, self).__call__(parser,
+                                                  namespace,
+                                                  values,
+                                                  option_string=option_string)
+    return StdinAction
+
+
+def _make_check_func_action(func):
+    """Make a CheckFuncAction with the given function."""
+    class CheckFuncAction(argparse._StoreTrueAction):
+        def __call__(self, parser, namespace, values, option_string=None):
+            if namespace.func == func:
+                super(CheckFuncAction, self).__call__(parser,
+                                                      namespace,
+                                                      values,
+                                                      option_string=option_string)
+            else:
+                raise argparse.ArgumentError(self, '%s can only be used with the -r option.'
+                                                   ' -r must precede %s.'
+                                             % (option_string, option_string))
+    return CheckFuncAction
+
+
+def _make_use_manifest_arg(parser, func):
+    """Add the use_manifest option to argument parser with the specified function."""
+    parser.add_argument('-u', '--use_manifest',
+                        help='Validate that results are in the data manifest.',
+                        action=_make_check_func_action(func))
+
+
 def _get_env():
     """
     Get the current environment using the ENV_FILE.
@@ -159,12 +208,6 @@ def get_path(pth, mode=None):
     The string ``-`` is a special string depending on mode.
     With mode 'r', it represents stdin and a temporary file is created and returned.
     """
-    if pth == '-' and mode == 'r':
-        ntf = tempfile.NamedTemporaryFile(delete=False)
-        print ntf.name
-        ntf.write(sys.stdin.read())
-        ntf.close()
-        return TempPath(ntf.name)
     p = Path(pth)
     # resolve relative paths
     if not p.isabs():
@@ -218,9 +261,7 @@ def create_parser():
     list_msg = 'List contents using the path as a prefix.'
     parser_list = subparsers.add_parser('list',
                                         help=list_msg,
-                                        description=list_msg,
-                                        parents=[manifest_parser],
-                                        conflict_handler='resolve')
+                                        description=list_msg)
     parser_list.add_argument('path', type=get_path, metavar='PATH')
     parser_list.add_argument('-s', '--starts_with',
                              help='Append an additional path to the search path.',
@@ -230,62 +271,47 @@ def create_parser():
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
+    _make_use_manifest_arg(parser_list, storage_utils.listpath)
     parser_list.set_defaults(func=storage_utils.listpath)
 
-    listdir_msg = 'List path as a directory.'
-    parser_listdir = subparsers.add_parser('listdir',
-                                           help=listdir_msg,
-                                           description=listdir_msg)
-    parser_listdir.add_argument('path', type=get_path, metavar='PATH')
-    parser_listdir.set_defaults(func=storage_utils.listdir)
-
-    ls_msg = 'Alias for listdir.'
+    ls_msg = 'List path as a directory.'
     parser_ls = subparsers.add_parser('ls',  # noqa
                                       help=ls_msg,
-                                      description='%s %s' % (ls_msg, listdir_msg),
-                                      parents=[parser_listdir],
-                                      conflict_handler='resolve')
+                                      description=ls_msg)
+    parser_ls.add_argument('path', type=get_path, metavar='PATH')
+    parser_ls.set_defaults(func=storage_utils.listdir)
 
-    copytree_msg = 'Copy a source directory to a destination directory.'
-    parser_copytree = subparsers.add_parser('copytree',
-                                            description=copytree_msg,
-                                            help=copytree_msg,
-                                            parents=[manifest_parser],
-                                            conflict_handler='resolve')
-    parser_copytree.add_argument('source', type=get_path, metavar='SOURCE')
-    parser_copytree.add_argument('dest', type=get_path, metavar='DEST')
-    parser_copytree.set_defaults(func=storage_utils.copytree)
-
-    copy_msg = 'Copy a source file to a destination path.'
-    parser_copy = subparsers.add_parser('copy',
-                                        help=copy_msg,
-                                        description='%s\n \'-\' is a special character that allows'
-                                                    ' for using stdin as the source.' % copy_msg)
-    parser_copy.add_argument('source', type=partial(get_path, mode='r'), metavar='SOURCE')
-    parser_copy.add_argument('dest', type=get_path, metavar='DEST')
-    parser_copy.set_defaults(func=storage_utils.copy)
+    cp_msg = 'Copy a source to a destination path.'
     cp_msg = 'Alias for copy.'
     parser_cp = subparsers.add_parser('cp',  # noqa
                                       help=cp_msg,
-                                      description='%s %s' % (cp_msg, copy_msg),
-                                      parents=[parser_copy],
-                                      conflict_handler='resolve')
+                                      description='%s\n \'-\' is a special character that allows'
+                                                  ' for using stdin as the source.' % cp_msg)
+    parser_cp.add_argument('-r',
+                           help='Copy a directory and its subtree to the destination directory.'
+                                ' Must be specified before any other flags.',
+                           action='store_const',
+                           dest='func',
+                           const=storage_utils.copytree,
+                           default=storage_utils.copy)
+    parser_cp.add_argument('source',
+                           type=get_path,
+                           metavar='SOURCE',
+                           action=_make_stdin_action(storage_utils.copytree))
+    parser_cp.add_argument('dest', type=get_path, metavar='DEST')
+    _make_use_manifest_arg(parser_cp, storage_utils.copytree)
 
-    remove_msg = 'Remove file at path.'
-    parser_remove = subparsers.add_parser('remove', help=remove_msg, description=remove_msg)
-    parser_remove.add_argument('path', type=get_path, metavar='PATH')
-    parser_remove.set_defaults(func=storage_utils.remove)
-    rm_msg = 'Alias for remove.'
-    parser_rm = subparsers.add_parser('rm',  # noqa
+    rm_msg = 'Remove file at a path.'
+    parser_rm = subparsers.add_parser('rm',
                                       help=rm_msg,
-                                      description='%s %s' % (rm_msg, remove_msg),
-                                      parents=[parser_remove],
-                                      conflict_handler='resolve')
-
-    rmtree_msg = 'Remove a path and all its contents.'
-    parser_rmtree = subparsers.add_parser('rmtree', help=rmtree_msg, description=rmtree_msg)
-    parser_rmtree.add_argument('path', type=get_path, metavar='PATH')
-    parser_rmtree.set_defaults(func=storage_utils.rmtree)
+                                      description='%s Use the -r flag to remove a tree.' % rm_msg)
+    parser_rm.add_argument('-r',
+                           help='Remove a path and all its contents.',
+                           action='store_const',
+                           dest='func',
+                           const=storage_utils.rmtree,
+                           default=storage_utils.remove)
+    parser_rm.add_argument('path', type=get_path, metavar='PATH')
 
     walkfiles_msg = 'List all files under a path that match an optional pattern.'
     parser_walkfiles = subparsers.add_parser('walkfiles',
