@@ -71,6 +71,7 @@ import argparse
 import copy
 import ConfigParser
 from functools import partial
+import logging
 import os
 import sys
 import tempfile
@@ -395,6 +396,12 @@ def print_results(results):
 
 
 def main():
+    logging.basicConfig()
+    s3_logger = logging.getLogger('storage_utils.experimental.s3')
+    s3_logger.setLevel(logging.INFO)
+    swift_logger = logging.getLogger('storage_utils.swift')
+    swift_logger.setLevel(logging.INFO)
+
     parser = create_parser()
     args = parser.parse_args()
     results = process_args(args)
