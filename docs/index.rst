@@ -65,7 +65,7 @@ In Depth Documentation
 For more detailed documentation about the various interfaces offered by Counsyl Storage Utils, check out the following:
 
 - :ref:`cli`: In depth documentation about the command line interface.
-- :ref:`main_interface`: In depth documentation about the main interface.
+- :ref:`main_interface`: In depth documentation about the main library interface.
 - :ref:`swift`: In depth documentation about Swift access.
 - :ref:`posix`: In depth documentation about Posix access.
 - :ref:`windows`: In depth documentation about Windows access.
