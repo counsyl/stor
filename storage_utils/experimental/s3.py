@@ -9,7 +9,9 @@ import tempfile
 import threading
 
 import boto3
-from botocore import exceptions as boto_s3_exceptions
+from boto3 import exceptions as boto3_exceptions
+from boto3.s3.transfer import S3Transfer
+from botocore import exceptions as botocore_exceptions
 
 from storage_utils import exceptions
 from storage_utils import settings
@@ -157,7 +159,7 @@ class S3Path(OBSPath):
         method = getattr(s3_client, method_name)
         try:
             return method(*args, **kwargs)
-        except boto_s3_exceptions.ClientError as e:
+        except botocore_exceptions.ClientError as e:
             raise _parse_s3_error(e, **kwargs)
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
@@ -168,6 +170,21 @@ class S3Path(OBSPath):
         s3_client = _get_s3_client()
         paginator = s3_client.get_paginator(method_name)
         return paginator.paginate(**kwargs)
+
+    def _make_s3_transfer(self, method_name, *args, **kwargs):
+        """
+        Creates a boto3 ``S3Transfer`` object for doing multipart uploads
+        and downloads and executes the given method.
+        """
+        s3_client = _get_s3_client()
+        transfer = S3Transfer(s3_client)
+        method = getattr(transfer, method_name)
+        try:
+            return method(*args, **kwargs)
+        except boto3_exceptions.S3UploadFailedError as e:
+            raise exceptions.FailedUploadError(str(e), e)
+        except boto3_exceptions.RetriesExceededError as e:
+            raise exceptions.FailedDownloadError(str(e), e)
 
     def open(self, mode='r'):
         """
@@ -263,7 +280,7 @@ class S3Path(OBSPath):
                         path_prefix / result['Prefix']
                         for result in page['CommonPrefixes']
                     ])
-        except boto_s3_exceptions.ClientError as e:
+        except botocore_exceptions.ClientError as e:
             raise _parse_s3_error(e)
 
         utils.check_condition(condition, list_results)
@@ -473,13 +490,13 @@ class S3Path(OBSPath):
             return result
 
         dl_kwargs = {
-            'Bucket': self.bucket,
-            'Key': str(self.resource),
-            'Filename': str(dest),
+            'bucket': self.bucket,
+            'key': str(self.resource),
+            'filename': str(dest),
         }
         utils.make_dest_dir(self.parts_class(dest).parent)
         try:
-            self._s3_client_call('download_file', **dl_kwargs)
+            self._make_s3_transfer('download_file', **dl_kwargs)
         except exceptions.RemoteError as e:
             result['success'] = False
             result['error'] = e
@@ -547,30 +564,36 @@ class S3Path(OBSPath):
 
     def _upload_object(self, upload_obj):
         """Upload a single object given an OBSUploadObject."""
-        ul_kwargs = {
-            'Bucket': self.bucket,
-            'Key': str(upload_obj.object_name)
-        }
+        if utils.has_trailing_slash(upload_obj.object_name):
+            # Handle empty directories separately
+            ul_kwargs = {
+                'Bucket': self.bucket,
+                'Key': utils.with_trailing_slash(str(upload_obj.object_name))
+            }
+            if upload_obj.options and 'headers' in upload_obj.options:
+                ul_kwargs.update(upload_obj.options['headers'])
+            s3_call = self._s3_client_call
+            method = 'put_object'
+        else:
+            ul_kwargs = {
+                'bucket': self.bucket,
+                'key': str(upload_obj.object_name),
+                'filename': upload_obj.source
+            }
+            if upload_obj.options and 'headers' in upload_obj.options:
+                ul_kwargs['extra_args'] = upload_obj.options['headers']
+            s3_call = self._make_s3_transfer
+            method = 'upload_file'
+
         result = {
             'source': upload_obj.source,
-            'dest': S3Path(self.drive + self.bucket) / ul_kwargs['Key'],
+            'dest': S3Path(self.drive + self.bucket) / (ul_kwargs.get('key') or
+                                                        ul_kwargs.get('Key')),
             'success': True
         }
 
-        if utils.has_trailing_slash(upload_obj.object_name):
-            # Handle empty directories separately
-            ul_kwargs['Key'] = utils.with_trailing_slash(ul_kwargs['Key'])
-            if upload_obj.options and 'headers' in upload_obj.options:
-                ul_kwargs.update(upload_obj.options['headers'])
-            method = 'put_object'
-        else:
-            ul_kwargs['Filename'] = upload_obj.source
-            if upload_obj.options and 'headers' in upload_obj.options:
-                ul_kwargs['ExtraArgs'] = upload_obj.options['headers']
-            method = 'upload_file'
-
         try:
-            self._s3_client_call(method, **ul_kwargs)
+            s3_call(method, **ul_kwargs)
         except exceptions.RemoteError as e:
             result['success'] = False
             result['error'] = e

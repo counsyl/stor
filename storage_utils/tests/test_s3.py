@@ -5,6 +5,8 @@ import ntpath
 from tempfile import NamedTemporaryFile
 import unittest
 
+from boto3.exceptions import RetriesExceededError
+from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import ClientError
 import freezegun
 import mock
@@ -925,10 +927,10 @@ class TestUpload(S3TestCase):
         s3_p = S3Path('s3://bucket')
         s3_p.upload(['upload'])
 
-        self.mock_s3.upload_file.assert_has_calls([
-            mock.call(Bucket='bucket', Key='file1', Filename='file1'),
-            mock.call(Bucket='bucket', Key='file2', Filename='file2'),
-            mock.call(Bucket='bucket', Key='dir/file3', Filename='dir/file3')
+        self.mock_s3_transfer.upload_file.assert_has_calls([
+            mock.call(bucket='bucket', key='file1', filename='file1'),
+            mock.call(bucket='bucket', key='file2', filename='file2'),
+            mock.call(bucket='bucket', key='dir/file3', filename='dir/file3')
         ], any_order=True)
 
     def test_upload_rel_path(self, mock_getsize, mock_files):
@@ -937,9 +939,9 @@ class TestUpload(S3TestCase):
         s3_p = S3Path('s3://a/b')
         s3_p.upload(['../', './'])
 
-        self.mock_s3.upload_file.assert_has_calls([
-            mock.call(Bucket='a', Key='b/file1', Filename='../file1'),
-            mock.call(Bucket='a', Key='b/file2', Filename='./file2')
+        self.mock_s3_transfer.upload_file.assert_has_calls([
+            mock.call(bucket='a', key='b/file1', filename='../file1'),
+            mock.call(bucket='a', key='b/file2', filename='./file2')
         ], any_order=True)
 
     def test_upload_abs_path(self, mock_getsize, mock_files):
@@ -948,9 +950,9 @@ class TestUpload(S3TestCase):
         s3_p = S3Path('s3://a/b')
         s3_p.upload(['/path/to/file1'])
 
-        self.mock_s3.upload_file.assert_called_once_with(Bucket='a',
-                                                         Key='b/path/to/file1',
-                                                         Filename='/path/to/file1')
+        self.mock_s3_transfer.upload_file.assert_called_once_with(bucket='a',
+                                                                  key='b/path/to/file1',
+                                                                  filename='/path/to/file1')
 
     def test_upload_object_invalid(self, mock_getsize, mock_files):
         s3_p = S3Path('s3://a/b')
@@ -965,10 +967,12 @@ class TestUpload(S3TestCase):
             mock_isdir.side_effect = lambda pth: pth == 'dir'
             s3_p = S3Path('s3://a/b')
             s3_p.upload(['.'], headers={'ContentLanguage': 'en'})
-            self.mock_s3.upload_file.assert_called_once_with(Bucket='a',
-                                                             Key='b/file.txt',
-                                                             Filename='file.txt',
-                                                             ExtraArgs={'ContentLanguage': 'en'})
+            self.mock_s3_transfer.upload_file.assert_called_once_with(bucket='a',
+                                                                      key='b/file.txt',
+                                                                      filename='file.txt',
+                                                                      extra_args={
+                                                                          'ContentLanguage': 'en'
+                                                                      })
             self.mock_s3.put_object.assert_called_once_with(Bucket='a',
                                                             Key='b/dir/',
                                                             ContentLanguage='en')
@@ -979,7 +983,7 @@ class TestUpload(S3TestCase):
             mock_isdir.return_value = True
             s3_p = S3Path('s3://a/b/')
             s3_p.upload(['dir/'])
-            self.assertEquals(self.mock_s3.upload_file.call_count, 0)
+            self.assertEquals(self.mock_s3_transfer.upload_file.call_count, 0)
             self.mock_s3.put_object.assert_called_once_with(Bucket='a', Key='b/dir/')
 
     def test_upload_w_condition(self, mock_getsize, mock_files):
@@ -987,7 +991,7 @@ class TestUpload(S3TestCase):
         s3_p = S3Path('s3://bucket')
         s3_p.upload('test',
                     condition=lambda results: len(results) == 2)
-        self.assertEquals(self.mock_s3.upload_file.call_count, 2)
+        self.assertEquals(self.mock_s3_transfer.upload_file.call_count, 2)
 
         mock_files.return_value = {'file1': 10, 'file2': 20}
         with self.assertRaises(exceptions.ConditionNotMetError):
@@ -1009,12 +1013,12 @@ class TestUpload(S3TestCase):
             s3_p = S3Path('s3://bucket/path/')
             s3_p.upload(['.'], use_manifest=True)
 
-        manifest_upload_kwargs = self.mock_s3.upload_file.call_args_list[0][1]
+        manifest_upload_kwargs = self.mock_s3_transfer.upload_file.call_args_list[0][1]
         self.assertEquals(len(manifest_upload_kwargs), 3)
-        self.assertEquals(manifest_upload_kwargs['Bucket'], 'bucket')
-        self.assertEquals(manifest_upload_kwargs['Filename'],
+        self.assertEquals(manifest_upload_kwargs['bucket'], 'bucket')
+        self.assertEquals(manifest_upload_kwargs['filename'],
                           './%s' % utils.DATA_MANIFEST_FILE_NAME)
-        self.assertEquals(manifest_upload_kwargs['Key'],
+        self.assertEquals(manifest_upload_kwargs['key'],
                           'path/%s' % utils.DATA_MANIFEST_FILE_NAME)
 
     @mock.patch.object(S3Path, '_upload_object', autospec=True)
@@ -1052,14 +1056,14 @@ class TestUpload(S3TestCase):
                         use_manifest=True,
                         condition=lambda results: len(results) == 2)
 
-        self.assertEquals(self.mock_s3.upload_file.call_count, 3)
+        self.assertEquals(self.mock_s3_transfer.upload_file.call_count, 3)
 
-        manifest_upload_kwargs = self.mock_s3.upload_file.call_args_list[0][1]
+        manifest_upload_kwargs = self.mock_s3_transfer.upload_file.call_args_list[0][1]
         self.assertEquals(len(manifest_upload_kwargs), 3)
-        self.assertEquals(manifest_upload_kwargs['Bucket'], 'bucket')
-        self.assertEquals(manifest_upload_kwargs['Filename'],
+        self.assertEquals(manifest_upload_kwargs['bucket'], 'bucket')
+        self.assertEquals(manifest_upload_kwargs['filename'],
                           './%s' % utils.DATA_MANIFEST_FILE_NAME)
-        self.assertEquals(manifest_upload_kwargs['Key'],
+        self.assertEquals(manifest_upload_kwargs['key'],
                           'path/%s' % utils.DATA_MANIFEST_FILE_NAME)
 
     def test_upload_w_use_manifest_multiple_uploads(self, mock_getsize, mock_files):
@@ -1090,9 +1094,9 @@ class TestUpload(S3TestCase):
             'file1': 20,
             'file2': 10
         }
-        self.mock_s3.upload_file.side_effect = [
+        self.mock_s3_transfer.upload_file.side_effect = [
             None,
-            ClientError({'Error': {}}, 'method')
+            S3UploadFailedError('failed')
         ]
 
         with self.assertRaises(exceptions.FailedUploadError):
@@ -1103,7 +1107,7 @@ class TestUpload(S3TestCase):
             'file1': 20,
             'file2': 10
         }
-        self.mock_s3.upload_file.side_effect = [None, ValueError]
+        self.mock_s3_transfer.upload_file.side_effect = [None, ValueError]
 
         with self.assertRaises(ValueError):
             S3Path('s3://bucket/path').upload(['test'])
@@ -1134,9 +1138,9 @@ class TestDownload(S3TestCase):
     def test_download_file_to_file(self, mock_isfile, mock_getsize, mock_make_dest):
         s3_p = S3Path('s3://a/b/c.txt')
         s3_p.download_object('test/d.txt')
-        self.mock_s3.download_file.assert_called_once_with(Bucket='a',
-                                                           Key='b/c.txt',
-                                                           Filename='test/d.txt')
+        self.mock_s3_transfer.download_file.assert_called_once_with(bucket='a',
+                                                                    key='b/c.txt',
+                                                                    filename='test/d.txt')
         mock_make_dest.assert_called_once_with('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
@@ -1148,10 +1152,10 @@ class TestDownload(S3TestCase):
         ]
         s3_p = S3Path('s3://bucket')
         s3_p.download('test')
-        self.mock_s3.download_file.assert_has_calls([
-            mock.call(Bucket='bucket', Key='file1', Filename='test/file1'),
-            mock.call(Bucket='bucket', Key='file2', Filename='test/file2'),
-            mock.call(Bucket='bucket', Key='dir/file3', Filename='test/dir/file3')
+        self.mock_s3_transfer.download_file.assert_has_calls([
+            mock.call(bucket='bucket', key='file1', filename='test/file1'),
+            mock.call(bucket='bucket', key='file2', filename='test/file2'),
+            mock.call(bucket='bucket', key='dir/file3', filename='test/dir/file3')
         ], any_order=True)
         mock_make_dest.assert_has_calls([
             mock.call('test'),
@@ -1169,10 +1173,10 @@ class TestDownload(S3TestCase):
         ]
         s3_p = S3Path('s3://bucket')
         s3_p.download('test')
-        self.mock_s3.download_file.assert_has_calls([
-            mock.call(Bucket='bucket', Key='file1', Filename='test/file1'),
-            mock.call(Bucket='bucket', Key='file2', Filename='test/file2'),
-            mock.call(Bucket='bucket', Key='dir/file3', Filename='test/dir/file3')
+        self.mock_s3_transfer.download_file.assert_has_calls([
+            mock.call(bucket='bucket', key='file1', filename='test/file1'),
+            mock.call(bucket='bucket', key='file2', filename='test/file2'),
+            mock.call(bucket='bucket', key='dir/file3', filename='test/dir/file3')
         ], any_order=True)
         mock_make_dest.assert_has_calls([
             mock.call('test'),
@@ -1190,7 +1194,7 @@ class TestDownload(S3TestCase):
         s3_p = S3Path('s3://bucket')
         s3_p.download('test',
                       condition=lambda results: len(results) == 2)
-        self.assertEquals(self.mock_s3.download_file.call_count, 2)
+        self.assertEquals(self.mock_s3_transfer.download_file.call_count, 2)
 
         mock_list.return_value = [
             S3Path('s3://bucket/file1'),
@@ -1214,7 +1218,7 @@ class TestDownload(S3TestCase):
 
         s3_p = S3Path('s3://bucket')
         s3_p.download('test', use_manifest=True)
-        self.assertEquals(self.mock_s3.download_file.call_count, 3)
+        self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch('botocore.response.StreamingBody', autospec=True)
@@ -1247,7 +1251,7 @@ class TestDownload(S3TestCase):
         s3_p.download('test',
                       use_manifest=True,
                       condition=lambda results: len(results) == 3)
-        self.assertEquals(self.mock_s3.download_file.call_count, 3)
+        self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
@@ -1269,9 +1273,9 @@ class TestDownload(S3TestCase):
             S3Path('s3://bucket/my/obj2'),
             S3Path('s3://bucket/my/obj3')
         ]
-        self.mock_s3.download_file.side_effect = [
+        self.mock_s3_transfer.download_file.side_effect = [
             None,
-            ClientError({'Error': {}}, 'method')
+            RetriesExceededError('failed')
         ]
 
         with self.assertRaises(exceptions.FailedDownloadError):
@@ -1284,7 +1288,7 @@ class TestDownload(S3TestCase):
             S3Path('s3://bucket/my/obj2'),
             S3Path('s3://bucket/my/obj3')
         ]
-        self.mock_s3.download_file.side_effect = [None, ValueError]
+        self.mock_s3_transfer.download_file.side_effect = [None, ValueError]
 
         with self.assertRaises(ValueError):
             S3Path('s3://bucket/path').download('test')
@@ -1457,18 +1461,18 @@ line4
 
     @mock.patch('time.sleep', autospec=True)
     def test_write_multiple_w_context_manager(self, mock_sleep):
-        mock_upload = self.mock_s3.upload_file
+        mock_upload = self.mock_s3_transfer.upload_file
         s3_p = S3Path('s3://bucket/key/obj')
         with s3_p.open(mode='wb') as obj:
             obj.write('hello')
             obj.write(' world')
         upload_call, = mock_upload.call_args_list
-        self.assertTrue(upload_call[1]['Bucket'] == s3_p.bucket)
-        self.assertTrue(upload_call[1]['Key'] == s3_p.resource)
+        self.assertTrue(upload_call[1]['bucket'] == s3_p.bucket)
+        self.assertTrue(upload_call[1]['key'] == s3_p.resource)
 
     @mock.patch('time.sleep', autospec=True)
     def test_write_multiple_flush_multiple_upload(self, mock_sleep):
-        mock_upload = self.mock_s3.upload_file
+        mock_upload = self.mock_s3_transfer.upload_file
         s3_p = S3Path('s3://bucket/key/obj')
         with NamedTemporaryFile(delete=False) as ntf1,\
                 NamedTemporaryFile(delete=False) as ntf2,\
@@ -1481,15 +1485,15 @@ line4
                     obj.write(' world')
                     obj.flush()
                 u1, u2, u3 = mock_upload.call_args_list
-                self.assertTrue(u1[1]['Bucket'] == s3_p.bucket)
-                self.assertTrue(u2[1]['Bucket'] == s3_p.bucket)
-                self.assertTrue(u3[1]['Bucket'] == s3_p.bucket)
-                self.assertTrue(u1[1]['Filename'] == ntf1.name)
-                self.assertTrue(u2[1]['Filename'] == ntf2.name)
-                self.assertTrue(u3[1]['Filename'] == ntf3.name)
-                self.assertTrue(u1[1]['Key'] == s3_p.resource)
-                self.assertTrue(u2[1]['Key'] == s3_p.resource)
-                self.assertTrue(u3[1]['Key'] == s3_p.resource)
+                self.assertTrue(u1[1]['bucket'] == s3_p.bucket)
+                self.assertTrue(u2[1]['bucket'] == s3_p.bucket)
+                self.assertTrue(u3[1]['bucket'] == s3_p.bucket)
+                self.assertTrue(u1[1]['filename'] == ntf1.name)
+                self.assertTrue(u2[1]['filename'] == ntf2.name)
+                self.assertTrue(u3[1]['filename'] == ntf3.name)
+                self.assertTrue(u1[1]['key'] == s3_p.resource)
+                self.assertTrue(u2[1]['key'] == s3_p.resource)
+                self.assertTrue(u3[1]['key'] == s3_p.resource)
                 self.assertEqual(open(ntf1.name).read(), 'hello')
                 self.assertEqual(open(ntf2.name).read(), 'hello world')
                 # third call happens because we don't care about checking for
@@ -1498,7 +1502,7 @@ line4
 
     @mock.patch('time.sleep', autospec=True)
     def test_close_no_writes(self, mock_sleep):
-        mock_upload = self.mock_s3.upload_file
+        mock_upload = self.mock_s3_transfer.upload_file
         s3_p = S3Path('s3://bucket/key/obj')
         obj = s3_p.open(mode='wb')
         obj.close()
