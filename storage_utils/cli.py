@@ -406,11 +406,14 @@ def print_results(results):
 
 
 def main():
-    logging.basicConfig()
-    s3_logger = logging.getLogger('storage_utils.experimental.s3')
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    s3_logger = logging.getLogger('storage_utils.experimental.s3.progress')
     s3_logger.setLevel(logging.INFO)
-    swift_logger = logging.getLogger('storage_utils.swift')
+    s3_logger.addHandler(handler)
+    swift_logger = logging.getLogger('storage_utils.swift.progress')
     swift_logger.setLevel(logging.INFO)
+    swift_logger.addHandler(handler)
 
     parser = create_parser()
     args = parser.parse_args()
