@@ -1112,6 +1112,18 @@ class TestUpload(S3TestCase):
         with self.assertRaises(ValueError):
             S3Path('s3://bucket/path').upload(['test'])
 
+    def test_upload_multipart_settings(self, mock_getsize, mock_files):
+        mock_files.return_value = {
+            'file1': 20,
+            'file2': 10
+        }
+        s3_p = S3Path('s3://bucket')
+        with settings.use({'s3:upload': {'segment_size': '5M', 'segment_threads': 20}}):
+            s3_p.upload(['test'])
+        self.mock_get_s3_transfer_config.assert_called_with(multipart_threshold=5242880,
+                                                            max_concurrency=20,
+                                                            multipart_chunksize=5242880)
+
     @freezegun.freeze_time('2016-4-5')
     def test_upload_progress_logging(self, mock_getsize, mock_files):
         mock_files.return_value = {
@@ -1292,6 +1304,20 @@ class TestDownload(S3TestCase):
 
         with self.assertRaises(ValueError):
             S3Path('s3://bucket/path').download('test')
+
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    def test_download_multipart_settings(self, mock_list, mock_getsize, mock_make_dest_dir):
+        mock_list.return_value = [
+            S3Path('s3://bucket/my/obj1'),
+            S3Path('s3://bucket/my/obj2'),
+            S3Path('s3://bucket/my/obj3')
+        ]
+        s3_p = S3Path('s3://bucket')
+        with settings.use({'s3:download': {'segment_size': '5M', 'segment_threads': 20}}):
+            s3_p.download('test')
+        self.mock_get_s3_transfer_config.assert_called_with(multipart_threshold=5242880,
+                                                            max_concurrency=20,
+                                                            multipart_chunksize=5242880)
 
     @freezegun.freeze_time('2016-4-5')
     @mock.patch.object(S3Path, 'list', autospec=True)

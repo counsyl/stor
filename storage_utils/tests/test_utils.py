@@ -192,6 +192,23 @@ class TestCondition(unittest.TestCase):
             utils.validate_condition(lambda: True)  # pragma: no cover
 
 
+class TestSizeConversion(unittest.TestCase):
+    def test_str_to_bytes_int(self):
+        self.assertEquals(5, utils.str_to_bytes(5))
+
+    def test_str_to_bytes_invalid_str_short(self):
+        with self.assertRaises(ValueError):
+            utils.str_to_bytes('M')
+
+    def test_str_to_bytes_invalid_str_long(self):
+        with self.assertRaises(ValueError):
+            utils.str_to_bytes('wrongM')
+
+    def test_str_to_bytes_invalid_units(self):
+        with self.assertRaises(ValueError):
+            utils.str_to_bytes('10L')
+
+
 class TestMisc(unittest.TestCase):
     def test_has_trailing_slash_none(self):
         self.assertFalse(utils.has_trailing_slash(None))

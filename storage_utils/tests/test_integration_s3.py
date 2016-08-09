@@ -1,3 +1,4 @@
+from cStringIO import StringIO
 import logging
 import os
 import time
@@ -228,40 +229,60 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.assertTrue(os.path.exists('a.txt'))
 
     def test_copytree_to_from_dir_w_manifest(self):
-            num_test_objs = 10
-            test_obj_size = 100
-            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-                self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-                # Make a nested file and an empty directory for testing purposes
-                tmp_d = Path(tmp_d)
-                os.mkdir(tmp_d / 'my_dir')
-                open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
-                os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
+        num_test_objs = 10
+        test_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            # Make a nested file and an empty directory for testing purposes
+            tmp_d = Path(tmp_d)
+            os.mkdir(tmp_d / 'my_dir')
+            open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
+            os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
-                storage_utils.copytree(
-                    '.',
-                    self.test_dir,
-                    use_manifest=True)
+            storage_utils.copytree(
+                '.',
+                self.test_dir,
+                use_manifest=True)
 
-                # Validate the contents of the manifest file
-                manifest_contents = utils.get_data_manifest_contents(self.test_dir)
-                expected_contents = self.get_dataset_obj_names(num_test_objs)
-                expected_contents.extend(['my_dir/empty_file',
-                                          'my_dir/empty_dir/'])
-                expected_contents = [Path('test') / c for c in expected_contents]
-                self.assertEquals(set(manifest_contents), set(expected_contents))
+            # Validate the contents of the manifest file
+            manifest_contents = utils.get_data_manifest_contents(self.test_dir)
+            expected_contents = self.get_dataset_obj_names(num_test_objs)
+            expected_contents.extend(['my_dir/empty_file',
+                                      'my_dir/empty_dir/'])
+            expected_contents = [Path('test') / c for c in expected_contents]
+            self.assertEquals(set(manifest_contents), set(expected_contents))
 
-            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-                # Download the results successfully
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            # Download the results successfully
+            Path(self.test_dir).copytree(
+                'test',
+                use_manifest=True)
+
+            # Now delete one of the objects from swift. A second download
+            # will fail with a condition error
+            Path(self.test_dir / 'my_dir' / 'empty_dir/').remove()
+            with self.assertRaises(exceptions.ConditionNotMetError):
                 Path(self.test_dir).copytree(
                     'test',
-                    use_manifest=True)
+                    use_manifest=True,
+                    num_retries=0)
 
-                # Now delete one of the objects from swift. A second download
-                # will fail with a condition error
-                Path(self.test_dir / 'my_dir' / 'empty_dir/').remove()
-                with self.assertRaises(exceptions.ConditionNotMetError):
-                    Path(self.test_dir).copytree(
-                        'test',
-                        use_manifest=True,
-                        num_retries=0)
+    def test_multipart_transfer(self):
+        logger = StringIO()
+        handler = logging.StreamHandler(logger)
+        logging.getLogger('botocore').setLevel(logging.DEBUG)
+        logging.getLogger('botocore').addHandler(handler)
+        handler.setLevel(logging.DEBUG)
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, 1, 10 * 1024 * 1024)
+            self.test_dir.upload(['.'])
+
+        self.assertEquals(1, len(self.test_dir.listdir()))
+
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.test_dir.download('.')
+            self.assertEquals(1, len(Path('.').listdir()))
+        self.assertIn("CompleteMultipartUploadResult", logger.getvalue())
+        # Check for multipart download by checking for multiple 206 GET requests
+        # to the object
+        self.assertRegexpMatches(logger.getvalue(), '"GET /test/0 HTTP/1.1" 206')

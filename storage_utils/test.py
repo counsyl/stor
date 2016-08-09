@@ -1,4 +1,5 @@
 import mock
+from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.swift import SwiftPath
 import unittest
@@ -194,6 +195,12 @@ class S3TestMixin(object):
         self.mock_get_s3_transfer = s3_transfer_patcher.start()
         self.mock_get_s3_transfer.return_value = self.mock_s3_transfer
 
+        # Mock the TransferConfig object
+        s3_transfer_config_patcher = mock.patch('storage_utils.experimental.s3.TransferConfig',
+                                                autospec=True)
+        self.addCleanup(s3_transfer_config_patcher.stop)
+        self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()
+
 
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
     """A TestCase class that sets up swift mocks and provides additional assertions"""
@@ -207,3 +214,8 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
     def setUp(self):
         super(S3TestCase, self).setUp()
         self.setup_s3_mocks()
+        try:
+            del s3._thread_local.s3_transfer
+            del s3._thread_local.s3_transfer_config
+        except AttributeError:
+            pass

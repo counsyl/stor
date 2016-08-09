@@ -34,10 +34,14 @@ class TestSettings(unittest.TestCase):
             'stor': {},
             's3': {},
             's3:upload': {
-                'object_threads': 10
+                'segment_size': 8388608,
+                'object_threads': 10,
+                'segment_threads': 10
             },
             's3:download': {
-                'object_threads': 10
+                'segment_size': 8388608,
+                'object_threads': 10,
+                'segment_threads': 10
             },
             'swift': {},
             'swift:delete': {

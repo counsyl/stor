@@ -16,6 +16,27 @@ logger = logging.getLogger(__name__)
 DATA_MANIFEST_FILE_NAME = '.data_manifest.csv'
 
 
+def str_to_bytes(s):
+    """
+    Converts a given string into an integer representing bytes
+    where G is gigabytes, M is megabytes, K is kilobytes, and B
+    is bytes.
+    """
+    if type(s) is int:
+        return s
+
+    units = {'B': 1, 'K': 1024, 'M': 1024 ** 2, 'G': 1024 ** 3}
+    if len(s) < 2:
+        raise ValueError('invalid size')
+    order = s[-1]
+    try:
+        return units[order] * int(s[:-1])
+    except ValueError:
+        raise ValueError('invalid size')
+    except KeyError:
+        raise ValueError('invalid units')
+
+
 def file_name_to_object_name(p):
     """Given a file path, construct its object name.
 
