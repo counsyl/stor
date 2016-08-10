@@ -6,6 +6,7 @@ import logging
 from multiprocessing.pool import ThreadPool
 import os
 import tempfile
+import thread
 import threading
 
 import boto3
@@ -648,19 +649,22 @@ class S3Path(OBSPath):
         uploaded = {'completed': [], 'failed': []}
         with S3UploadLogger(len(files_to_upload)) as ul:
             pool = ThreadPool(options['object_threads'])
+            p = pool.map_async(self._upload_object, files_to_upload)
             try:
-                for result in pool.imap_unordered(self._upload_object, files_to_upload):
-                    if result['success']:
-                        ul.add_result(result)
-                        uploaded['completed'].append(result)
-                    else:
-                        uploaded['failed'].append(result)
+                results = p.get(0xFFFF)
                 pool.close()
             except:
                 pool.terminate()
                 raise
             finally:
                 pool.join()
+
+            for result in results:
+                if result['success']:
+                    ul.add_result(result)
+                    uploaded['completed'].append(result)
+                else:
+                    uploaded['failed'].append(result)
 
         if uploaded['failed']:
             raise exceptions.FailedUploadError('an error occurred while uploading', uploaded)
