@@ -30,7 +30,7 @@ To clear the current working directory, use the ``clear`` subcommand:
     swift://
 
 This also means that relative paths can be used. Relative paths are indicated
-by omitting the `//` in the path and instead indicating a relative path, as
+by omitting the ``//`` in the path and instead indicating a relative path, as
 shown:
 
     >>> stor cd s3://bucket/dir
