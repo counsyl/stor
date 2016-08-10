@@ -17,7 +17,7 @@ file's contents to ``stdout`` with a ``cat`` command.
 >>> stor pwd
 s3://bucket
 swift://
->>> stor list s3://.
+>>> stor list s3:.
 s3://bucket/obj1
 s3://bucket/obj2
 s3://bucket/dir/obj3

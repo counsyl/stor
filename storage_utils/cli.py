@@ -29,13 +29,18 @@ To clear the current working directory, use the ``clear`` subcommand:
     s3://
     swift://
 
-This also means that relative paths can be used:
+This also means that relative paths can be used. Relative paths are indicated
+by omitting the `//` in the path and instead indicating a relative path, as
+shown:
 
     >>> stor cd s3://bucket/dir
-    >>> stor list s3://./child
+    >>> stor list s3:child
     s3://bucket/dir/child/file1
     s3://bucket/dir/child/file2
-    >>> stor list s3://..
+    >>> stor list s3:./child
+    s3://bucket/dir/child/file1
+    s3://bucket/dir/child/file2
+    >>> stor list s3:..
     s3://bucket/a
     s3://bucket/b/obj1
     s3://bucket/dir/child/file1
@@ -84,6 +89,7 @@ from storage_utils import Path
 from storage_utils import utils
 
 PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles')
+SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
 PKG_ENV_FILE = os.path.join(os.path.dirname(__file__), 'default.env')
@@ -213,6 +219,18 @@ def _cat(pth):
     return pth.open().read()
 
 
+def _is_obs_relpath(pth):
+    """Check if path is an OBS relative path."""
+    prefixes = tuple(service + ':' for service in SERVICES)
+    if pth.startswith(prefixes):
+        if pth.startswith(tuple(p + '//' for p in prefixes)):
+            return False
+        elif pth in prefixes or pth.startswith(tuple(p + '/' for p in prefixes)):
+            raise ValueError('%s is an invalid path' % pth)
+        return True
+    return False
+
+
 def get_path(pth, mode=None):
     """
     Convert string to a Path type.
@@ -220,38 +238,42 @@ def get_path(pth, mode=None):
     The string ``-`` is a special string depending on mode.
     With mode 'r', it represents stdin and a temporary file is created and returned.
     """
-    p = Path(pth)
-    # resolve relative paths
-    if not p.isabs():
-        if utils.is_obs_path(pth):
-            service = p.drive.rstrip(':/')
+    if not _is_obs_relpath(pth):
+        return Path(pth)
+
+    # Handle relative paths
+    for s in SERVICES:
+        if pth.startswith(s):
+            service = s
+            break
+
+    relprefix = service + ':'
+
+    pwd = Path(_get_pwd(service=service))
+    if pwd == pwd.drive:
+        raise ValueError('No current directory specified for relative path \'%s\'' % pth)
+
+    pwd = utils.remove_trailing_slash(pwd)
+    path_part = pth[len(relprefix):]
+    split_parts = path_part.split('/')
+    rel_part = split_parts[0]
+
+    prefix = pwd
+    depth = 1
+    if rel_part == '..':
+        # remove trailing slash otherwise we won't find the right parent
+        prefix = utils.remove_trailing_slash(prefix)
+        while len(split_parts) > depth and split_parts[depth] == '..':
+            depth += 1
+        if len(pwd[len(pwd.drive):].split('/')) > depth:
+            for i in range(0, depth):
+                prefix = prefix.parent
         else:
-            return p
-
-        pwd = Path(_get_pwd(service=service))
-        if pwd == p.drive:
-            raise ValueError('No current directory specified for relative path \'%s\'' % pth)
-
-        pwd = utils.remove_trailing_slash(pwd)
-        path_part = pth[len(p.drive):]
-        split_parts = path_part.split('/')
-        rel_part = split_parts[0]
-
-        prefix = pwd
-        depth = 1
-        if rel_part == '..':
-            # remove trailing slash otherwise we won't find the right parent
-            prefix = utils.remove_trailing_slash(prefix)
-            while len(split_parts) > depth and split_parts[depth] == '..':
-                depth += 1
-            if len(pwd[len(pwd.drive):].split('/')) > depth:
-                for i in range(0, depth):
-                    prefix = prefix.parent
-            else:
-                raise ValueError('Relative path \'%s\' is invalid for current directory \'%s\''
-                                 % (pth, pwd))
-        p = prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
-    return p
+            raise ValueError('Relative path \'%s\' is invalid for current directory \'%s\''
+                             % (pth, pwd))
+    elif rel_part != '.':
+        return prefix / path_part
+    return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
 def create_parser():
