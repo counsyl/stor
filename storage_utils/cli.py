@@ -219,16 +219,20 @@ def _cat(pth):
     return pth.open().read()
 
 
-def _is_obs_relpath(pth):
-    """Check if path is an OBS relative path."""
+def _obs_relpath_service(pth):
+    """
+    Check if path is an OBS relative path and if so,
+    return the service, otherwise return an empty string.
+    """
     prefixes = tuple(service + ':' for service in SERVICES)
     if pth.startswith(prefixes):
         if pth.startswith(tuple(p + '//' for p in prefixes)):
-            return False
+            return ''
         elif pth in prefixes or pth.startswith(tuple(p + '/' for p in prefixes)):
             raise ValueError('%s is an invalid path' % pth)
-        return True
-    return False
+        parts = pth.split(':', 1)
+        return parts[0]
+    return ''
 
 
 def get_path(pth, mode=None):
@@ -238,14 +242,9 @@ def get_path(pth, mode=None):
     The string ``-`` is a special string depending on mode.
     With mode 'r', it represents stdin and a temporary file is created and returned.
     """
-    if not _is_obs_relpath(pth):
+    service = _obs_relpath_service(pth)
+    if not service:
         return Path(pth)
-
-    # Handle relative paths
-    for s in SERVICES:
-        if pth.startswith(s):
-            service = s
-            break
 
     relprefix = service + ':'
 
