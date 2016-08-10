@@ -79,6 +79,7 @@ from functools import partial
 import logging
 import os
 import shutil
+import signal
 import sys
 import tempfile
 
@@ -99,6 +100,13 @@ def perror(msg):
     """Print error message and exit."""
     sys.stderr.write(msg)
     sys.exit(1)
+
+
+def force_exit(signum, frame):
+    sys.stderr.write(' Aborted\n')
+    os._exit(1)
+
+signal.signal(signal.SIGINT, force_exit)
 
 
 class TempPath(Path):
