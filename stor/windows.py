@@ -2,7 +2,7 @@
 Provides functionality for accessing resources on Windows file systems.
 """
 import ntpath
-from storage_utils import base
+from stor import base
 
 
 class WindowsPath(base.FileSystemPath):

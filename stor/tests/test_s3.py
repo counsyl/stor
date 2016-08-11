@@ -10,18 +10,18 @@ import freezegun
 import mock
 from testfixtures import LogCapture
 
-import storage_utils
-from storage_utils import exceptions
-from storage_utils import NamedTemporaryDirectory
-from storage_utils.obs import OBSUploadObject
-from storage_utils import Path
-from storage_utils import obs
-from storage_utils import settings
-from storage_utils.experimental import s3
-from storage_utils.experimental.s3 import S3Path
-from storage_utils.test import S3TestCase
-from storage_utils import utils
-from storage_utils.tests.shared import assert_same_data
+import stor
+from stor import exceptions
+from stor import NamedTemporaryDirectory
+from stor.obs import OBSUploadObject
+from stor import Path
+from stor import obs
+from stor import settings
+from stor.experimental import s3
+from stor.experimental.s3 import S3Path
+from stor.test import S3TestCase
+from stor import utils
+from stor.tests.shared import assert_same_data
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -108,7 +108,7 @@ class TestResource(unittest.TestCase):
         self.assertEquals(s3_p.resource, 'nested/dir/')
 
 
-@mock.patch('storage_utils.experimental.s3._thread_local', mock.Mock())
+@mock.patch('stor.experimental.s3._thread_local', mock.Mock())
 class TestGetS3Client(S3TestCase):
     def test_get_s3_client_exists(self):
         s3._thread_local.s3_client = 'client'
@@ -912,7 +912,7 @@ class TestStat(S3TestCase):
         mock_head_object.assert_called_once_with(Bucket='bucket', Key='dir')
 
 
-@mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
+@mock.patch('stor.utils.walk_files_and_dirs', autospec=True)
 @mock.patch('os.path.getsize', autospec=True)
 class TestUpload(S3TestCase):
     def test_upload_to_bucket(self, mock_getsize, mock_files):
@@ -1072,7 +1072,7 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
-    @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
+    @mock.patch('stor.experimental.s3.ThreadPool', autospec=True)
     def test_upload_object_threads(self, mock_pool, mock_getsize, mock_files):
         mock_files.return_value = {
             'file%s' % i: 20
@@ -1117,17 +1117,17 @@ class TestUpload(S3TestCase):
         mock_getsize.return_value = 20
 
         s3_p = S3Path('s3://bucket')
-        with LogCapture('storage_utils.experimental.s3.progress') as progress_log:
+        with LogCapture('stor.experimental.s3.progress') as progress_log:
             s3_p.upload(['upload'])
             progress_log.check(
-                ('storage_utils.experimental.s3.progress', 'INFO', 'starting upload of 20 objects'),  # nopep8
-                ('storage_utils.experimental.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.experimental.s3.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', 'starting upload of 20 objects'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
 
-@mock.patch('storage_utils.utils.make_dest_dir', autospec=True)
+@mock.patch('stor.utils.make_dest_dir', autospec=True)
 @mock.patch('os.path.getsize', autospec=True)
 class TestDownload(S3TestCase):
     @mock.patch.object(S3Path, 'isfile', return_value=True, autospec=True)
@@ -1250,7 +1250,7 @@ class TestDownload(S3TestCase):
         self.assertEquals(self.mock_s3.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    @mock.patch('storage_utils.experimental.s3.ThreadPool', autospec=True)
+    @mock.patch('stor.experimental.s3.ThreadPool', autospec=True)
     def test_download_object_threads(self, mock_pool, mock_list, mock_getsize,
                                      mock_make_dest_dir):
         mock_list.return_value = [
@@ -1299,13 +1299,13 @@ class TestDownload(S3TestCase):
         mock_getsize.return_value = 100
 
         s3_p = S3Path('s3://bucket')
-        with LogCapture('storage_utils.experimental.s3.progress') as progress_log:
+        with LogCapture('stor.experimental.s3.progress') as progress_log:
             s3_p.download('output_dir')
             progress_log.check(
-                ('storage_utils.experimental.s3.progress', 'INFO', 'starting download of 20 objects'),  # nopep8
-                ('storage_utils.experimental.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.experimental.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', 'starting download of 20 objects'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.experimental.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
 
@@ -1506,17 +1506,17 @@ line4
         self.assertFalse(mock_upload.called)
 
     def test_works_with_gzip(self):
-        gzip_path = storage_utils.join(storage_utils.dirname(__file__),
-                                       'file_data', 's_3_2126.bcl.gz')
-        text = storage_utils.open(gzip_path).read()
+        gzip_path = stor.join(stor.dirname(__file__),
+                              'file_data', 's_3_2126.bcl.gz')
+        text = stor.open(gzip_path).read()
         with mock.patch.object(S3Path, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
-            s3_file = storage_utils.open('s3://A/C/s_3_2126.bcl.gz')
+            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz')
 
             with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(s3_file_fp, gzip_fp)
-            s3_file = storage_utils.open('s3://A/C/s_3_2126.bcl.gz')
+            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz')
             with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     # after seeking should still be same

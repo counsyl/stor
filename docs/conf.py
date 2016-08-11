@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# counsyl-storage-utils documentation build configuration file
+# stor documentation build configuration file
 import os
 import subprocess
 
@@ -36,7 +36,7 @@ master_doc = 'toc'
 default_role = 'any'
 
 # General information about the project.
-project = u'counsyl-storage-utils'
+project = u'stor'
 copyright = u'2015, Counsyl Inc'
 
 # The short X.Y version.
@@ -83,7 +83,7 @@ html_show_sphinx = False
 html_show_copyright = True
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'counsyl-storage-utils-doc'
+htmlhelp_basename = 'stor-doc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -103,7 +103,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'counsyl-storage-utils.tex', u'counsyl-storage-utils Documentation',
+    ('index', 'stor.tex', u'stor Documentation',
      u'Counsyl Inc.', 'manual'),
 ]
 
@@ -112,7 +112,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'counsyl-storage-utils', u'counsyl-storage-utils Documentation',
+    ('index', 'stor', u'stor Documentation',
      [u'Counsyl Inc.'], 1)
 ]
 
@@ -122,7 +122,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'counsyl-storage-utils', u'counsyl-storage-utils Documentation',
-     u'Counsyl Inc.', 'counsyl-storage-utils', 'A short description',
+    ('index', 'stor', u'stor Documentation',
+     u'Counsyl Inc.', 'stor', 'A short description',
      'Miscellaneous'),
 ]

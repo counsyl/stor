@@ -11,13 +11,13 @@ import threading
 import boto3
 from botocore import exceptions as boto_s3_exceptions
 
-from storage_utils import exceptions
-from storage_utils import settings
-from storage_utils import utils
-from storage_utils.base import Path
-from storage_utils.obs import OBSFile
-from storage_utils.obs import OBSPath
-from storage_utils.obs import OBSUploadObject
+from stor import exceptions
+from stor import settings
+from stor import utils
+from stor.base import Path
+from stor.obs import OBSFile
+from stor.obs import OBSPath
+from stor.obs import OBSUploadObject
 
 # Thread-local variable used to cache the client
 _thread_local = threading.local()

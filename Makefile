@@ -1,7 +1,7 @@
 # Makefile for packaging and testing this app. Should follow make contract
 # at https://github.counsyl.com/techops/lambda-ci#make-build
 
-PACKAGE_NAME=storage_utils
+PACKAGE_NAME=stor
 TEST_OUTPUT?=nosetests.xml
 PIP_INDEX_URL?=https://pypi.counsyl.com/counsyl/prod/+simple/
 

@@ -1,4 +1,4 @@
-counsyl-storage-utils Documentation
+stor Documentation
 ===================================
 Counsyl Storage Utils provides utilities for performing Posix/Windows file system IO and accessing object-based storage. Below is a quick start for using the core ``path`` functionality of this module. Other low-level interfaces are described in the later sections
 
@@ -9,25 +9,25 @@ The core of this project is a shared cross-compatible API for doing file
 manipulation and file access on Posix/Windows file systems and Swift Object
 Based Storage. The module is designed to work either as a drop-in replacement
 for most functionality found in ``os.path`` or with an object-oriented API via
-``storage_utils.Path``.
+``stor.Path``.
 
 Ultimately, storage utils lets you write one piece of code to work with local
 or remote files.
 
 .. code-block:: python
 
-  import storage_utils
+  import stor
 
   p = '/my/local/somemanifest.json'
 
   # Perform normal path.py operations
-  p = storage_utils.join(p, 'file')
-  with storage_utils.open(p) as fp:
+  p = stor.join(p, 'file')
+  with stor.open(p) as fp:
     json.load(fp)
 
   # Access swift object storage
   p = 'swift://tenant/container/object/somemanifest.json')
-  with storage_utils.open(p) as fp:
+  with stor.open(p) as fp:
     json.load(fp)
 
 

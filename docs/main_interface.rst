@@ -3,16 +3,16 @@
 Main Interface
 ==============
 
-.. automodule:: storage_utils
+.. automodule:: stor
   :members:
   :exclude-members: Path
 
-.. module:: storage_utils.base
+.. module:: stor.base
 
 Path Class
 ----------
 
-The ``storage_utils.Path`` class is the parent to all concrete base classes and
+The ``stor.Path`` class is the parent to all concrete base classes and
 should be used as the main entry point to the object oriented API.
 
 .. autoclass:: Path
@@ -22,7 +22,7 @@ should be used as the main entry point to the object oriented API.
 Common Path Methods
 -------------------
 
-By using the top-level functions in the storage_utils module (or the main
+By using the top-level functions in the stor module (or the main
 ``Path`` interface) users can write code that is portable across Swift storage,
 Windows, and Posix-based filesystems.  In particular, the following methods:
 

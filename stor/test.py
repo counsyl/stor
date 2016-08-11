@@ -1,6 +1,6 @@
 import mock
-from storage_utils.experimental.s3 import S3Path
-from storage_utils.swift import SwiftPath
+from stor.experimental.s3 import S3Path
+from stor.swift import SwiftPath
 import unittest
 
 
@@ -88,20 +88,20 @@ class SwiftTestMixin(object):
         self.mock_get_swift_service.return_value = self.mock_swift
 
         # Set settings for swift
-        self._user_patcher = mock.patch('storage_utils.swift.username', '__dummy__')
+        self._user_patcher = mock.patch('stor.swift.username', '__dummy__')
         self.addCleanup(self._user_patcher.stop)
         self.mock_swift_username = self._user_patcher.start()
 
-        self._pass_patcher = mock.patch('storage_utils.swift.password', '__dummy__')
+        self._pass_patcher = mock.patch('stor.swift.password', '__dummy__')
         self.addCleanup(self._pass_patcher.stop)
         self.mock_swift_password = self._pass_patcher.start()
 
-        self._auth_patcher = mock.patch('storage_utils.swift.auth_url', '__dummy__')
+        self._auth_patcher = mock.patch('stor.swift.auth_url', '__dummy__')
         self.addCleanup(self._auth_patcher.stop)
         self.mock_swift_auth_url = self._auth_patcher.start()
 
         # ensures we never cache data between tests
-        _cache_patcher = mock.patch.dict('storage_utils.swift._cached_auth_token_map', clear=True)
+        _cache_patcher = mock.patch.dict('stor.swift._cached_auth_token_map', clear=True)
         self.addCleanup(_cache_patcher.stop)
         _cache_patcher.start()
 
@@ -167,7 +167,7 @@ class S3TestMixin(object):
         # This is the mock returned by _get_s3_client.
         # User can mock s3 methods on this mock.
         self.mock_s3 = mock.Mock()
-        self._get_s3_client_patcher = mock.patch('storage_utils.experimental.s3._get_s3_client',
+        self._get_s3_client_patcher = mock.patch('stor.experimental.s3._get_s3_client',
                                                  autospec=True)
         self.addCleanup(self.disable_get_s3_client_mock)
         self.mock_get_s3_client = self._get_s3_client_patcher.start()

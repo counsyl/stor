@@ -3,12 +3,12 @@ import os
 import time
 import unittest
 
-import storage_utils
-from storage_utils import exceptions
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import Path
-from storage_utils import utils
-from storage_utils.tests.test_integration import BaseIntegrationTest
+import stor
+from stor import exceptions
+from stor import NamedTemporaryDirectory
+from stor import Path
+from stor import utils
+from stor.tests.test_integration import BaseIntegrationTest
 
 
 class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
@@ -238,7 +238,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
                 os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
-                storage_utils.copytree(
+                stor.copytree(
                     '.',
                     self.test_dir,
                     use_manifest=True)

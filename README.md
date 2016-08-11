@@ -1,6 +1,6 @@
-# counsyl-storage-utils
+# stor
 
-This project provides utilities for performing Posix file system IO and accessing object-based storage. The documentation for Counsyl Storage Utils can be viewed at https://github.counsyl.com/pages/dev/counsyl-storage-utils/
+This project provides utilities for performing Posix file system IO and accessing object-based storage. The documentation for Counsyl Storage Utils can be viewed at https://github.counsyl.com/pages/dev/stor/
 
 
 ## Running the Tests

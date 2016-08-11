@@ -20,7 +20,7 @@ def _parse_config_val(value):
 def _initialize(filename=None):
     """
     Initialize global settings from configuration file. The configuration file
-    **must** define all required settings, otherwise `storage_utils` will not work.
+    **must** define all required settings, otherwise `stor` will not work.
     Every time this function is called it overwrites existing ``_global_settings``.
     When trying to update or change ``_global_settings``, `update` or `use` should
     be called instead.
@@ -123,7 +123,7 @@ class _Use(object):
 #:   settings (dict): A nested dictionary of settings options.
 #:
 #: Example:
-#:      >>> from storage_utils import settings
+#:      >>> from stor import settings
 #:      >>> with settings.use({'swift:upload': {'object_threads': 20}}):
 #:      >>>     # do something here
 use = _Use

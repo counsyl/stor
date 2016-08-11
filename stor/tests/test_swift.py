@@ -13,16 +13,16 @@ from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from testfixtures import LogCapture
 
-import storage_utils
-from storage_utils import exceptions
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import path
-from storage_utils import settings
-from storage_utils import swift
-from storage_utils import utils
-from storage_utils.swift import SwiftPath
-from storage_utils.test import SwiftTestCase
-from storage_utils.tests.shared import assert_same_data
+import stor
+from stor import exceptions
+from stor import NamedTemporaryDirectory
+from stor import path
+from stor import settings
+from stor import swift
+from stor import utils
+from stor.swift import SwiftPath
+from stor.test import SwiftTestCase
+from stor.tests.shared import assert_same_data
 
 
 def _service_404_exception():
@@ -172,13 +172,13 @@ class TestUpdateSettings(SwiftTestCase):
 
 
 class TestGetSwiftConnectionOptions(SwiftTestCase):
-    @mock.patch('storage_utils.swift.username', None)
+    @mock.patch('stor.swift.username', None)
     def test_wo_username(self):
         swift_p = SwiftPath('swift://tenant/')
         with self.assertRaises(swift.ConfigurationError):
             swift_p._get_swift_connection_options()
 
-    @mock.patch('storage_utils.swift.password', None)
+    @mock.patch('stor.swift.password', None)
     def test_wo_password(self):
         swift_p = SwiftPath('swift://tenant/')
         with self.assertRaises(swift.ConfigurationError):
@@ -218,7 +218,7 @@ class TestGetSwiftConnection(SwiftTestCase):
         self.mock_swift_get_conn.assert_called_once_with({'option': 'value'})
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
+@mock.patch('stor.swift.num_retries', 5)
 class TestSwiftFile(SwiftTestCase):
     def test_invalid_buffer_mode(self):
         swift_f = SwiftPath('swift://tenant/container/obj').open()
@@ -385,17 +385,17 @@ line4
         self.assertFalse(mock_upload.called)
 
     def test_works_with_gzip(self):
-        gzip_path = storage_utils.join(storage_utils.dirname(__file__),
-                                       'file_data', 's_3_2126.bcl.gz')
-        text = storage_utils.open(gzip_path).read()
+        gzip_path = stor.join(stor.dirname(__file__),
+                              'file_data', 's_3_2126.bcl.gz')
+        text = stor.open(gzip_path).read()
         with mock.patch.object(SwiftPath, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
-            swift_file = storage_utils.open('swift://A/C/s_3_2126.bcl.gz')
+            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')
 
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(swift_file_fp, gzip_fp)
-            swift_file = storage_utils.open('swift://A/C/s_3_2126.bcl.gz')
+            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     # after seeking should still be same
@@ -406,16 +406,16 @@ line4
 
 class TestTempURL(SwiftTestCase):
     @freezegun.freeze_time('2016-02-23 12:00:00')
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    @mock.patch('stor.swift.temp_url_key', 'temp_key')
+    @mock.patch('stor.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_success(self):
         temp_url = SwiftPath('swift://tenant/container/obj').temp_url()
         expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
         self.assertEquals(temp_url, expected)
 
     @freezegun.freeze_time('2016-02-23 12:00:00')
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    @mock.patch('stor.swift.temp_url_key', 'temp_key')
+    @mock.patch('stor.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_success_w_inline(self):
         temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=False)
         expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100'  # nopep8
@@ -425,33 +425,33 @@ class TestTempURL(SwiftTestCase):
         self.assertEquals(temp_url, expected)
 
     @freezegun.freeze_time('2016-02-23 12:00:00')
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    @mock.patch('stor.swift.temp_url_key', 'temp_key')
+    @mock.patch('stor.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_success_w_inline_and_filename(self):
         temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True, filename='file')
         expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline&filename=file'  # nopep8
         self.assertEquals(temp_url, expected)
 
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    @mock.patch('stor.swift.temp_url_key', 'temp_key')
+    @mock.patch('stor.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_no_obj(self):
         with self.assertRaisesRegexp(ValueError, 'on object'):
             SwiftPath('swift://tenant/container').temp_url()
 
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', None)
+    @mock.patch('stor.swift.temp_url_key', 'temp_key')
+    @mock.patch('stor.swift.auth_url', None)
     def test_no_auth_url(self):
         with self.assertRaisesRegexp(ValueError, 'auth_url'):
             SwiftPath('swift://tenant/container/obj').temp_url()
 
-    @mock.patch('storage_utils.swift.temp_url_key', None)
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
+    @mock.patch('stor.swift.temp_url_key', None)
+    @mock.patch('stor.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_no_temp_url_key(self):
         with self.assertRaisesRegexp(ValueError, 'temp_url_key'):
             SwiftPath('swift://tenant/container/obj').temp_url()
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
+@mock.patch('stor.swift.num_retries', 5)
 class TestList(SwiftTestCase):
     def test_error(self):
         mock_list = self.mock_swift_conn.get_container
@@ -1111,7 +1111,7 @@ class TestDownloadObject(SwiftTestCase):
         self.assertEquals(download_kwargs['objects'], ['d'])
         self.assertEquals(download_kwargs['options'], {'out_file': 'file.txt'})
 
-    @mock.patch('storage_utils.swift.num_retries', 0)
+    @mock.patch('stor.swift.num_retries', 0)
     def test_raises_inconsistent_error(self):
         self.mock_swift.download.side_effect = SwiftError(
             'Error downloading /s_2_2110.bcl: '
@@ -1205,7 +1205,7 @@ class TestDownloadObjects(SwiftTestCase):
                 'swift://tenant/container/bad/e/f/g.txt'
             ])
 
-    @mock.patch('storage_utils.swift.num_retries', 0)
+    @mock.patch('stor.swift.num_retries', 0)
     def test_raises_inconsistent_error(self):
         self.mock_swift.download.side_effect = SwiftError(
             'Error downloading /s_2_2110.bcl: '
@@ -1222,11 +1222,11 @@ class TestDownloadObjects(SwiftTestCase):
 class TestGetProgressLogger(unittest.TestCase):
     def test_success(self):
         l = swift.get_progress_logger()
-        expected = logging.getLogger('storage_utils.swift.progress')
+        expected = logging.getLogger('stor.swift.progress')
         self.assertEquals(l, expected)
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
+@mock.patch('stor.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
     def test_download_tenant(self):
         swift_p = SwiftPath('swift://tenant')
@@ -1267,13 +1267,13 @@ class TestDownload(SwiftTestCase):
         self.mock_swift.download.return_value.append({'action': 'random_action'})
 
         swift_p = SwiftPath('swift://tenant/container')
-        with LogCapture('storage_utils.swift.progress') as progress_log:
+        with LogCapture('stor.swift.progress') as progress_log:
             swift_p.download('output_dir')
             progress_log.check(
-                ('storage_utils.swift.progress', 'INFO', 'starting download'),
-                ('storage_utils.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', 'starting download'),
+                ('stor.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
     def test_download_resource(self):
@@ -1485,7 +1485,7 @@ class TestFileNameToObjectName(SwiftTestCase):
                           'home/wes/path/file')
 
 
-@mock.patch('storage_utils.utils.walk_files_and_dirs', autospec=True)
+@mock.patch('stor.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
     def test_abs_path(self, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = {
@@ -1551,7 +1551,7 @@ class TestUpload(SwiftTestCase):
         self.assertEquals([o.object_name for o in upload_args[1]],
                           ['path/relative_path/file1'])
 
-    @mock.patch('storage_utils.swift.num_retries', 5)
+    @mock.patch('stor.swift.num_retries', 5)
     @mock.patch('time.sleep', autospec=True)
     def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = {
@@ -1783,14 +1783,14 @@ class TestUpload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container')
-        with LogCapture('storage_utils.swift.progress') as progress_log:
+        with LogCapture('stor.swift.progress') as progress_log:
             with settings.use(upload_settings):
                 swift_p.upload(['upload'])
             progress_log.check(
-                ('storage_utils.swift.progress', 'INFO', 'starting upload of 20 objects'),
-                ('storage_utils.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('storage_utils.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', 'starting upload of 20 objects'),
+                ('stor.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):
@@ -2376,7 +2376,7 @@ class TestInitialSettings(unittest.TestCase):
     @mock.patch.dict(os.environ, {'OS_AUTH_URL': 'http://test_auth_url.com'})
     def test_env_vars_are_loaded_during_import(self):
         reimported_swift = imp.load_module('reimported_swift',
-                                           *imp.find_module('swift', ['storage_utils']))
+                                           *imp.find_module('swift', ['stor']))
         self.assertEquals(reimported_swift.username, 'test_username')
         self.assertEquals(reimported_swift.password, 'test_password')
         self.assertEquals(reimported_swift.num_retries, 2)
@@ -2449,7 +2449,7 @@ class TestCompatHelpers(SwiftTestCase):
 
 
 class TestAuthCacheRetrying(SwiftTestCase):
-    @mock.patch('storage_utils.swift._clear_cached_auth_credentials', spec_set=True)
+    @mock.patch('stor.swift._clear_cached_auth_credentials', spec_set=True)
     def test_refresh_cache_once_on_auth_err(self, mock_clear_cached_auth_credentials):
         self.mock_swift.download.side_effect = swift.AuthenticationError('auth err')
 
@@ -2564,7 +2564,7 @@ class TestIsMethods(SwiftTestCase):
     def test_isfile_directory_sentinel(self):
         self.mock_swift.stat.return_value = _make_stat_response(
             {'items': [('Content Type', 'application/directory')]})
-        self.assertFalse(storage_utils.isfile('swift://A/B/C'))
+        self.assertFalse(stor.isfile('swift://A/B/C'))
         self.mock_swift.stat.assert_called_with(container='B',
                                                 objects=['C'])
 

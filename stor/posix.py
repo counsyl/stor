@@ -2,7 +2,7 @@
 Provides functionality for accessing resources on Posix file systems.
 """
 import posixpath
-from storage_utils import base
+from stor import base
 
 
 class PosixPath(base.FileSystemPath):

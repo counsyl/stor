@@ -1,4 +1,4 @@
-.. module:: storage_utils.swift
+.. module:: stor.swift
 
 .. _swift:
 

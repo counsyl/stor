@@ -17,7 +17,7 @@ Examples:
     A basic example of configuring the swift authentication parameters
     and downloading a directory::
 
-    >>> from storage_utils import swift
+    >>> from stor import swift
     >>> swift.update_settings(auth_url='swift_auth_url.com',
     ...                       username='swift_user',
     ...                       password='swift_pass')
@@ -39,16 +39,16 @@ import threading
 import urllib
 import urlparse
 
-from storage_utils import exceptions as stor_exceptions
-from storage_utils.utils import file_name_to_object_name
-from storage_utils import is_swift_path
-from storage_utils.base import Path
-from storage_utils.obs import OBSFile
-from storage_utils.obs import OBSPath
-from storage_utils.obs import OBSUploadObject
-from storage_utils import utils
-from storage_utils.posix import PosixPath
-from storage_utils import settings
+from stor import exceptions as stor_exceptions
+from stor.utils import file_name_to_object_name
+from stor import is_swift_path
+from stor.base import Path
+from stor.obs import OBSFile
+from stor.obs import OBSPath
+from stor.obs import OBSUploadObject
+from stor import utils
+from stor.posix import PosixPath
+from stor import settings
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -144,14 +144,14 @@ def update_settings(**settings):
 
         To update all authentication settings at once, do::
 
-            from storage_utils import swift
+            from stor import swift
             swift.update_settings(auth_url='swift_auth_url.com',
                                   username='swift_user',
                                   password='swift_pass')
 
         To update every retry setting at once, do::
 
-            from storage_utils import swift
+            from stor import swift
             swift.update_settings(initial_retry_sleep=5,
                                   num_retries=5,
                                   retry_sleep_function=custom_retry_func)
@@ -953,7 +953,7 @@ class SwiftPath(OBSPath):
 
             To download a objects to a ``dest/folder`` destination::
 
-                from storage_utils import path
+                from stor import path
                 p = path('swift://tenant/container/dir/')
                 results = p.download_objects('dest/folder', ['subdir/f1.txt',
                                                              'subdir/f2.txt'])
@@ -965,7 +965,7 @@ class SwiftPath(OBSPath):
 
             To download full swift paths relative to a download path::
 
-                from storage_utils import path
+                from stor import path
                 p = path('swift://tenant/container/dir/')
                 results = p.download_objects('dest/folder', [
                     'swift://tenant/container/dir/subdir/f1.txt',
@@ -1025,7 +1025,7 @@ class SwiftPath(OBSPath):
 
         This method retries `num_retries` times if swift is unavailable or if
         the returned download result does not match the ``condition``
-        condition. View `module-level documentation <storage_utils.swift>`
+        condition. View `module-level documentation <stor.swift>`
         for more information about configuring retry logic at the module or
         method level.
 
@@ -1098,7 +1098,7 @@ class SwiftPath(OBSPath):
 
         This method retries `num_retries` times if swift is unavailable or if
         the returned upload result does not match the ``condition``
-        condition. View `module-level documentation <storage_utils.swift>`
+        condition. View `module-level documentation <stor.swift>`
         for more information about configuring retry logic at the module or
         method level.
 
@@ -1236,7 +1236,7 @@ class SwiftPath(OBSPath):
         """Removes a resource and all of its contents.
 
         This method retries `num_retries` times if swift is unavailable.
-        View `module-level documentation <storage_utils.swift>` for more
+        View `module-level documentation <stor.swift>` for more
         information about configuring retry logic at the module or method
         level.
 

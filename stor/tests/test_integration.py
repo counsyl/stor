@@ -4,10 +4,10 @@ import unittest
 
 from six.moves import builtins
 
-import storage_utils
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import Path
-from storage_utils.tests.shared import assert_same_data
+import stor
+from stor import NamedTemporaryDirectory
+from stor import Path
+from stor.tests.shared import assert_same_data
 
 
 class BaseIntegrationTest:
@@ -52,9 +52,9 @@ class BaseIntegrationTest:
             with NamedTemporaryDirectory(change_dir=True) as tmp_d:
                 self.create_dataset(tmp_d, num_test_objs, min_obj_size)
                 for which_obj in self.get_dataset_obj_names(num_test_objs):
-                    obj_path = storage_utils.join(self.test_dir, '%s.txt' % which_obj)
-                    storage_utils.copy(which_obj, obj_path)
-                    storage_utils.copy(obj_path, 'copied_file')
+                    obj_path = stor.join(self.test_dir, '%s.txt' % which_obj)
+                    stor.copy(which_obj, obj_path)
+                    stor.copy(obj_path, 'copied_file')
                     self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
 
         def test_copytree_to_from_dir(self):
@@ -62,7 +62,7 @@ class BaseIntegrationTest:
             test_obj_size = 100
             with NamedTemporaryDirectory(change_dir=True) as tmp_d:
                 self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-                storage_utils.copytree(
+                stor.copytree(
                     '.',
                     self.test_dir)
 
@@ -110,36 +110,36 @@ class BaseIntegrationTest:
 
             unfiltered_files = list(self.test_dir.walkfiles())
             self.assertEquals(set(unfiltered_files), set([
-                storage_utils.join(self.test_dir, 'aabc.sh'),
-                storage_utils.join(self.test_dir, 'aabc'),
-                storage_utils.join(self.test_dir, 'b/c.sh'),
-                storage_utils.join(self.test_dir, 'b/d'),
-                storage_utils.join(self.test_dir, 'b/abbbc'),
+                stor.join(self.test_dir, 'aabc.sh'),
+                stor.join(self.test_dir, 'aabc'),
+                stor.join(self.test_dir, 'b/c.sh'),
+                stor.join(self.test_dir, 'b/d'),
+                stor.join(self.test_dir, 'b/abbbc'),
             ]))
             prefix_files = list(self.test_dir.walkfiles('*.sh'))
             self.assertEquals(set(prefix_files), set([
-                storage_utils.join(self.test_dir, 'aabc.sh'),
-                storage_utils.join(self.test_dir, 'b/c.sh'),
+                stor.join(self.test_dir, 'aabc.sh'),
+                stor.join(self.test_dir, 'b/c.sh'),
             ]))
             double_infix_files = list(self.test_dir.walkfiles('a*b*c'))
             self.assertEquals(set(double_infix_files), set([
-                storage_utils.join(self.test_dir, 'aabc'),
-                storage_utils.join(self.test_dir, 'b/abbbc'),
+                stor.join(self.test_dir, 'aabc'),
+                stor.join(self.test_dir, 'b/abbbc'),
             ]))
             suffix_files = list(self.test_dir.walkfiles('a*'))
             self.assertEquals(set(suffix_files), set([
-                storage_utils.join(self.test_dir, 'aabc.sh'),
-                storage_utils.join(self.test_dir, 'aabc'),
-                storage_utils.join(self.test_dir, 'b/abbbc'),
+                stor.join(self.test_dir, 'aabc.sh'),
+                stor.join(self.test_dir, 'aabc'),
+                stor.join(self.test_dir, 'b/abbbc'),
             ]))
 
         def test_gzip_on_remote(self):
             local_gzip = os.path.join(os.path.dirname(__file__),
                                       'file_data/s_3_2126.bcl.gz')
-            remote_gzip = storage_utils.join(self.test_dir,
-                                             storage_utils.basename(local_gzip))
-            storage_utils.copy(local_gzip, remote_gzip)
-            with storage_utils.open(remote_gzip) as fp:
+            remote_gzip = stor.join(self.test_dir,
+                                    stor.basename(local_gzip))
+            stor.copy(local_gzip, remote_gzip)
+            with stor.open(remote_gzip) as fp:
                 with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
                     with gzip.open(local_gzip) as local_gzip_fp:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
