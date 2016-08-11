@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v9.0.0
+------
+
+* Renamed to stor
+
 v8.2.0
 ------
 * Implement threading and progress logging in S3 ``upload`` and ``download``
