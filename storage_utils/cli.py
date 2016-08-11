@@ -17,18 +17,18 @@ Relative Paths
 --------------
 
 Using the CLI, the user can specify a current working directory on supported
-OBS services (currently swift and s3) using the ``cd`` subcommand:
+OBS services (currently swift and s3) using the ``cd`` subcommand::
 
     $ stor cd s3://bucket
-    $  stor cd swift://tenant/container
+    $ stor cd swift://tenant/container
 
-To check the current working directory, use the ``pwd`` subcommand:
+To check the current working directory, use the ``pwd`` subcommand::
 
     $ stor pwd
     s3://bucket
     swift://tenant/container
 
-To clear the current working directory, use the ``clear`` subcommand:
+To clear the current working directory, use the ``clear`` subcommand::
 
     $ stor clear
     $ stor pwd
@@ -37,7 +37,7 @@ To clear the current working directory, use the ``clear`` subcommand:
 
 This also means that relative paths can be used. Relative paths are indicated
 by omitting the ``//`` in the path and instead indicating a relative path, as
-shown:
+shown::
 
     $ stor cd s3://bucket/dir
     $ stor list s3:child
@@ -59,12 +59,12 @@ The CLI offers the ability to copy from ``stdin`` and output a path's
 contents to ``stdout``.
 
 To copy from ``stdin``, use the special ``-`` symbol. This means that the
-user can pipe output from one command into the ``stor`` CLI:
+user can pipe output from one command into the ``stor`` CLI::
 
     $ echo "hello world" | stor cp - s3://my/file1
 
 The user can also output a path's contents to ``stdout`` using the ``cat``
-subcommand.
+subcommand::
 
     $ stor cat s3://my/file1
     hello world
