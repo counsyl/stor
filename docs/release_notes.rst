@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v8.3.0
+------
+
+* Removes the default Counsyl auth url
+* Fixes some references to 'file_name_to_object_name' since it's now part of utils
+* Monkey patches an error in python-swiftclient
+
 v8.2.0
 ------
 * Implement threading and progress logging in S3 ``upload`` and ``download``
