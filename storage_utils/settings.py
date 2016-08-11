@@ -5,6 +5,7 @@ import os
 import threading
 
 CONFIG_FILE = 'default.cfg'
+USER_CONFIG_FILE = '~/.stor.cfg'
 
 _global_settings = {}
 thread_local = threading.local()
@@ -51,6 +52,9 @@ def _initialize(filename=None):
     When trying to update or change ``_global_settings``, `update` or `use` should
     be called instead.
 
+    Also looks in the user's home directory for a custom configuration
+    specified in ``~/.stor.cfg``.
+
     Defaults to reading from the default configuration file ``default.cfg``.
 
     Args:
@@ -59,14 +63,18 @@ def _initialize(filename=None):
     Returns:
         None
     """
-    global _global_settings
     _global_settings.clear()
-    filename = filename or os.path.join(os.path.dirname(__file__), CONFIG_FILE)
-    _global_settings.update(parse_config_file(filename))
+    default_cfg = filename or os.path.join(os.path.dirname(__file__), CONFIG_FILE)
+    _global_settings.update(parse_config_file(default_cfg))
+    custom_cfg = os.path.expanduser(USER_CONFIG_FILE)
+    if os.path.exists(custom_cfg):
+        _global_settings.update(parse_config_file(custom_cfg))
 
 
-def _update(d, updates):
-    """Updates a nested dictionary with given dictionary"""
+def _update(d, updates, validate=True):
+    """
+    Updates a nested dictionary with given dictionary
+    """
     for key, value in updates.iteritems():
         if type(value) is dict:
             if not type(d) is dict or key not in d:
@@ -102,7 +110,10 @@ def update(settings=None):
     if hasattr(thread_local, 'settings'):
         raise RuntimeError('update() cannot be called from within a settings context manager')
     if settings:
-        _update(_global_settings, settings)
+        if not _global_settings:
+            _update(_global_settings, settings, validate=False)
+        else:
+            _update(_global_settings, settings)
 
 
 class _Use(object):

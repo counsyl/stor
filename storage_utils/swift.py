@@ -82,7 +82,7 @@ swift_client.get_auth_keystone = patched_get_auth_keystone
 # Default module-level settings for swift authentication.
 # If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
 # environment variables will be used
-auth_url = os.environ.get('OS_AUTH_URL')
+auth_url = os.environ.get('OS_AUTH_URL') or settings.get()['swift'].get('auth_url')
 """The swift authentication URL
 
 If not set, the ``OS_AUTH_URL`` environment variable will be used. If
@@ -90,13 +90,13 @@ that is not set, the ``DEFAULT_AUTH_URL`` global constant will
 be used.
 """
 
-username = os.environ.get('OS_USERNAME')
+username = os.environ.get('OS_USERNAME') or settings.get()['swift'].get('username')
 """The swift username
 
 If not set, the ``OS_USERNAME`` environment variable will be used.
 """
 
-password = os.environ.get('OS_PASSWORD')
+password = os.environ.get('OS_PASSWORD') or settings.get()['swift'].get('password')
 """The swift password
 
 If not set, the ``OS_PASSWORD`` environment variable will be used.
