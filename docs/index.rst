@@ -1,7 +1,6 @@
 counsyl-storage-utils Documentation
 ===================================
-Counsyl Storage Utils provides a cross-compatible API for doing file manipulation and file access
-on Posix/Windows file systems and object-based storage (OBS) systems.
+Counsyl Storage Utils provides a cross-compatible API for doing file manipulation and file access on Posix/Windows file systems and object-based storage (OBS) systems.
 
 A rich command line interface and library is provided as part of Counsyl Storage Utils. Below is a quick start for using the :ref:`cli <CLI>` interface and the core library functionality of this module. Other low-level interfaces are described in the later sections
 
