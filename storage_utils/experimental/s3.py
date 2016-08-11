@@ -529,6 +529,7 @@ class S3Path(OBSPath):
                 while True:
                     try:
                         result = result_iter.next(0xFFFF)
+                        print result
                         if result['success']:
                             dl.add_result(result)
                             downloaded['completed'].append(result)

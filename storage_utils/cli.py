@@ -102,7 +102,7 @@ def perror(msg):
     sys.exit(1)
 
 
-def force_exit(signum, frame):
+def force_exit(signum, frame):  # pragma: no cover
     sys.stderr.write(' Aborted\n')
     os._exit(1)
 
