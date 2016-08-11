@@ -1,6 +1,6 @@
 stor Documentation
-===================================
-Counsyl Storage Utils provides utilities for performing Posix/Windows file system IO and accessing object-based storage. Below is a quick start for using the core ``path`` functionality of this module. Other low-level interfaces are described in the later sections
+==================
+Stor provides utilities for performing Posix/Windows file system IO and accessing object-based storage. Below is a quick start for using the core ``path`` functionality of this module. Other low-level interfaces are described in the later sections
 
 Path Quick Start
 ----------------
@@ -11,7 +11,7 @@ Based Storage. The module is designed to work either as a drop-in replacement
 for most functionality found in ``os.path`` or with an object-oriented API via
 ``stor.Path``.
 
-Ultimately, storage utils lets you write one piece of code to work with local
+Ultimately, stor lets you write one piece of code to work with local
 or remote files.
 
 .. code-block:: python

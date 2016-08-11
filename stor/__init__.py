@@ -1,8 +1,8 @@
 """
-storage-utils
-=============
+stor
+====
 
-Storage utils is a library that aims to make it easy to write code that works
+Stor is a library that aims to make it easy to write code that works
 with both local posix filesystems and Swift Object Based Storage. In general,
 you should be able to replace most uses of ``os.path`` and ``open`` with::
 
