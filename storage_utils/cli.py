@@ -3,9 +3,15 @@ The CLI can be accessed through the command ``stor``. For details on
 valid subcommands, usage, and input options, refer to the ``--help`` / ``-h``
 flag.
 
-In addition to basic list, copy, and remove commands, the CLI also has some
-features such as specifying a current working directory on an OBS service
+In addition to UNIX-like basic list, copy, and remove commands, the CLI also
+has some features such as specifying a current working directory on an OBS service
 (which allows for relative paths), ``cat``, and copying from ``stdin``.
+
+The ``list`` command is different from the ``ls`` command. ``list`` recursively
+lists all files and directories under a given path while ``ls`` lists the path
+as a directory in a way that is similar to the UNIX command.
+
+To copy or remove a tree, use the ``-r`` flag with ``cp`` or ``remove``.
 
 Relative Paths
 --------------
@@ -13,19 +19,19 @@ Relative Paths
 Using the CLI, the user can specify a current working directory on supported
 OBS services (currently swift and s3) using the ``cd`` subcommand:
 
-    >>> stor cd s3://bucket
-    >>> stor cd swift://tenant/container
+    $ stor cd s3://bucket
+    $  stor cd swift://tenant/container
 
 To check the current working directory, use the ``pwd`` subcommand:
 
-    >>> stor pwd
+    $ stor pwd
     s3://bucket
     swift://tenant/container
 
 To clear the current working directory, use the ``clear`` subcommand:
 
-    >>> stor clear
-    >>> stor pwd
+    $ stor clear
+    $ stor pwd
     s3://
     swift://
 
@@ -33,14 +39,14 @@ This also means that relative paths can be used. Relative paths are indicated
 by omitting the ``//`` in the path and instead indicating a relative path, as
 shown:
 
-    >>> stor cd s3://bucket/dir
-    >>> stor list s3:child
+    $ stor cd s3://bucket/dir
+    $ stor list s3:child
     s3://bucket/dir/child/file1
     s3://bucket/dir/child/file2
-    >>> stor list s3:./child
+    $ stor list s3:./child
     s3://bucket/dir/child/file1
     s3://bucket/dir/child/file2
-    >>> stor list s3:..
+    $ stor list s3:..
     s3://bucket/a
     s3://bucket/b/obj1
     s3://bucket/dir/child/file1
@@ -55,21 +61,16 @@ contents to ``stdout``.
 To copy from ``stdin``, use the special ``-`` symbol. This means that the
 user can pipe output from one command into the ``stor`` CLI:
 
-    >>> echo "hello world" | stor cp - s3://my/file1
+    $ echo "hello world" | stor cp - s3://my/file1
 
 The user can also output a path's contents to ``stdout`` using the ``cat``
 subcommand.
 
-    >>> stor cat s3://my/file1
+    $ stor cat s3://my/file1
     hello world
 
-Direct file transfer between OBS services or within one OBS service is not
-yet supported, but can be accomplished using the two aforementioned features:
-
-    >>> stor cat s3://my/file1 | stor cp - s3://my/file2
-    >>> stor cat s3://my/file2
-    hello world
-
+Direct file transfer between OBS services or within one OBS service (server-side copy)
+is not yet supported.
 """
 
 import argparse
@@ -142,29 +143,6 @@ def _make_stdin_action(func, err_msg):
                                                   values,
                                                   option_string=option_string)
     return StdinAction
-
-
-def _make_check_func_action(func, err_msg):
-    """Make a CheckFuncAction with the given function."""
-    class CheckFuncAction(argparse._StoreTrueAction):
-        def __call__(self, parser, namespace, values, option_string=None):
-            if namespace.func == func:
-                super(CheckFuncAction, self).__call__(parser,
-                                                      namespace,
-                                                      values,
-                                                      option_string=option_string)
-            else:
-                raise argparse.ArgumentError(self, err_msg)
-    return CheckFuncAction
-
-
-def _make_use_manifest_arg(parser, func):
-    """Add the use_manifest option to argument parser with the specified function."""
-    parser.add_argument('-u', '--use_manifest',
-                        help='Validate that results are in the data manifest.',
-                        action=_make_check_func_action(func,
-                                                       '-u can only be used with the -r option.'
-                                                       ' -r must precede -u.'))
 
 
 def _get_env():
@@ -284,13 +262,6 @@ def get_path(pth, mode=None):
 
 
 def create_parser():
-    # base parsers to hold commonly-used arguments and options
-    # todo: is this a good practice?
-    manifest_parser = argparse.ArgumentParser()
-    manifest_parser.add_argument('-u', '--use_manifest',
-                                 help='Validate that results are in the data manifest.',
-                                 action='store_true')
-
     parser = argparse.ArgumentParser(description='A command line interface for storage-utils.')
 
     # todo: make default an environment variable?
@@ -306,15 +277,15 @@ def create_parser():
                                         help=list_msg,
                                         description=list_msg)
     parser_list.add_argument('path', type=get_path, metavar='PATH')
-    parser_list.add_argument('-s', '--starts_with',
+    parser_list.add_argument('-s', '--starts-with',
                              help='Append an additional path to the search path.',
                              type=str,
+                             dest='starts_with',
                              metavar='PREFIX')
     parser_list.add_argument('-l', '--limit',
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    _make_use_manifest_arg(parser_list, storage_utils.listpath)
     parser_list.set_defaults(func=storage_utils.listpath)
 
     ls_msg = 'List path as a directory.'
@@ -343,7 +314,6 @@ def create_parser():
                            action=_make_stdin_action(storage_utils.copytree,
                                                      '- cannot be used with -r'))
     parser_cp.add_argument('dest', type=get_path, metavar='DEST')
-    _make_use_manifest_arg(parser_cp, storage_utils.copytree)
 
     rm_msg = 'Remove file at a path.'
     parser_rm = subparsers.add_parser('rm',
@@ -421,6 +391,8 @@ def process_args(args):
     except ValueError as exc:
         perror('Error: %s\n' % str(exc))
     except exceptions.RemoteError as exc:
+        if type(exc) is exceptions.NotFoundError and pth:
+            perror('Not Found: %s' % pth)
         perror('%s: %s\n' % (exc.__class__.__name__, exc.message))
 
 

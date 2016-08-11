@@ -244,7 +244,7 @@ class TestList(BaseCliTest):
             S3Path('s3://some-bucket/b')
         ]]
 
-        self.parse_args('stor list s3://some-bucket -us dir')
+        self.parse_args('stor list s3://some-bucket -s dir')
         self.assertEquals(sys.stdout.getvalue(),
                           's3://some-bucket/dir/a\n'
                           's3://some-bucket/dir/b\n'
@@ -259,9 +259,17 @@ class TestList(BaseCliTest):
                           's3://some-bucket/b\n')
 
         mock_list.assert_has_calls([
-            mock.call(S3Path('s3://some-bucket'), starts_with='dir', use_manifest=True),
+            mock.call(S3Path('s3://some-bucket'), starts_with='dir'),
             mock.call(S3Path('s3://some-bucket'), limit=2)
         ])
+
+    @mock.patch('sys.stderr', new=StringIO())
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    def test_list_not_found(self, mock_list):
+        mock_list.side_effect = exceptions.NotFoundError('not found')
+        with self.assertRaisesRegexp(SystemExit, '1'):
+            self.parse_args('stor list s3://bucket/path')
+        self.assertIn('s3://bucket/path', sys.stderr.getvalue())
 
 
 class TestLs(BaseCliTest):
@@ -316,28 +324,12 @@ class TestCopy(BaseCliTest):
         os.remove(test_file)
         self.assertFalse(os.path.exists(test_file))
 
-    @mock.patch('sys.stderr', new=StringIO())
-    def test_copy_use_manifest_error(self, mock_copy):
-        with self.assertRaisesRegexp(SystemExit, '2'):
-            self.parse_args('stor cp -u my/obj swift://t/c/obj')
-        self.assertRegexpMatches(sys.stderr.getvalue(), '-u .* -r option')
-
 
 @mock.patch('storage_utils.copytree', autospec=True)
 class TestCopytree(BaseCliTest):
     def test_copytree(self, mock_copytree):
         self.parse_args('stor cp -r s3://bucket .')
         mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
-
-    def test_copytree_use_manifest(self, mock_copytree):
-        self.parse_args('stor cp -ru swift://t/c/ .')
-        mock_copytree.assert_called_once_with(source='swift://t/c/', dest='.', use_manifest=True)
-
-    @mock.patch('sys.stderr', new=StringIO())
-    def test_copytree_use_manifest_error(self, mock_copytree):
-        with self.assertRaisesRegexp(SystemExit, '2'):
-            self.parse_args('stor cp -ur swift://t/c/ .')
-        self.assertRegexpMatches(sys.stderr.getvalue(), '-r must precede -u')
 
     @mock.patch('sys.stderr', new=StringIO())
     def test_copytree_stdin_error(self, mock_copytree):
