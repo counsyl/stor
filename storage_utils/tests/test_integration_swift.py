@@ -25,6 +25,9 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             raise unittest.SkipTest(
                 'SWIFT_TEST_USERNAME env var not set. Skipping integration test')
 
+        print 'AUTH URL', swift.auth_url
+        print 'ENV AUTH_URL', os.environ.get('OS_AUTH_URL')
+
         # Disable loggers so nose output wont be trashed
         logging.getLogger('requests').setLevel(logging.CRITICAL)
         logging.getLogger('swiftclient').setLevel(logging.CRITICAL)
@@ -33,6 +36,8 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         swift.update_settings(username=os.environ.get('SWIFT_TEST_USERNAME'),
                               password=os.environ.get('SWIFT_TEST_PASSWORD'),
                               num_retries=5)
+
+        print 'AUTHURL AFTER', swift.auth_url
 
         self.test_container = Path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
         if self.test_container.exists():
