@@ -2,7 +2,7 @@
 
 Testing
 =======
-Counsyl Storage Utils provides a test case to use when testing against Swift storage. It also
+Stor provides a test case to use when testing against Swift storage. It also
 provides a mixin class that can be used when creating other base test classes
 
 .. automodule:: stor.test

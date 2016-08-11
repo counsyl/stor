@@ -1,6 +1,6 @@
 # stor
 
-This project provides utilities for performing Posix file system IO and accessing object-based storage. The documentation for Counsyl Storage Utils can be viewed at https://github.counsyl.com/pages/dev/stor/
+This project provides a cross-compatible API for accessing Posix and OBS storage systems. The documentation for stor can be viewed at https://github.counsyl.com/pages/dev/counsyl-storage-utils/
 
 
 ## Running the Tests
