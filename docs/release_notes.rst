@@ -7,6 +7,7 @@ v8.3.0
 * Removes the default Counsyl auth url
 * Fixes some references to 'file_name_to_object_name' since it's now part of utils
 * Monkey patches an error in python-swiftclient
+* Vendors in Counsyl backoff
 
 v8.2.0
 ------
