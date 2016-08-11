@@ -152,7 +152,7 @@ v6.0.0
 * Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows
-* Added `swift.file_name_to_object_name` for converting file names on any system to
+* Added 'swift.file_name_to_object_name' for converting file names on any system to
   their associated object name
 * Integration tests are part of package's tests
 * Addition of `swift.ConflictError` exception, which is thrown when storage

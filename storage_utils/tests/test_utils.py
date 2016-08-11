@@ -195,3 +195,40 @@ class TestCondition(unittest.TestCase):
 class TestMisc(unittest.TestCase):
     def test_has_trailing_slash(self):
         self.assertFalse(utils.has_trailing_slash(''))
+
+
+class TestFileNameToObjectName(unittest.TestCase):
+    @mock.patch('os.path', ntpath)
+    def test_abs_windows_path(self):
+        self.assertEquals(utils.file_name_to_object_name(r'C:\windows\path\\'),
+                          'windows/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_rel_windows_path(self):
+        self.assertEquals(utils.file_name_to_object_name(r'.\windows\path\\'),
+                          'windows/path')
+
+    def test_abs_path(self):
+        self.assertEquals(utils.file_name_to_object_name('/abs/path/'),
+                          'abs/path')
+
+    def test_hidden_file(self):
+        self.assertEquals(utils.file_name_to_object_name('.hidden'),
+                          '.hidden')
+
+    def test_hidden_dir(self):
+        self.assertEquals(utils.file_name_to_object_name('.git/file'),
+                          '.git/file')
+
+    def test_no_obj_name(self):
+        self.assertEquals(utils.file_name_to_object_name('.'),
+                          '')
+
+    def test_poorly_formatted_path(self):
+        self.assertEquals(utils.file_name_to_object_name('.//poor//path//file'),
+                          'poor/path/file')
+
+    @mock.patch.dict(os.environ, {'HOME': '/home/wes/'})
+    def test_path_w_env_var(self):
+        self.assertEquals(utils.file_name_to_object_name('$HOME/path//file'),
+                          'home/wes/path/file')
