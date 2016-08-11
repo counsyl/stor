@@ -59,6 +59,26 @@ logger = logging.getLogger(__name__)
 progress_logger = logging.getLogger('%s.progress' % __name__)
 
 
+# python-swiftclient has a subtle bug in get_auth_keystone. If
+# the auth_token is set beforehand and a token refresh happens,
+# the invalid auth_token persists in the os_options argument,
+# causing it to enter an infinite retry loop on authentication
+# errors. Patch the get_auth_keystone function with one that
+# clears the auth_token parameter on any Exceptions.
+# Note that this behavior is tested in
+# storage_utils.tests.test_integration_swift:SwiftIntegrationTest.test_cached_auth_and_auth_invalidation
+real_get_auth_keystone = swift_client.get_auth_keystone
+
+
+def patched_get_auth_keystone(auth_url, user, key, os_options, **kwargs):
+    try:
+        return real_get_auth_keystone(auth_url, user, key, os_options, **kwargs)
+    except:
+        os_options.pop('auth_token', None)
+        raise
+swift_client.get_auth_keystone = patched_get_auth_keystone
+
+
 # Default module-level settings for swift authentication.
 # If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
 # environment variables will be used
