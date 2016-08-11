@@ -3,7 +3,6 @@ import logging
 import mock
 import ntpath
 import os
-import shutil
 import storage_utils
 from storage_utils.posix import PosixPath
 from storage_utils.experimental.s3 import S3Path
@@ -151,34 +150,36 @@ class TestPathFunction(unittest.TestCase):
 
 
 class TestMakeDestDir(unittest.TestCase):
-    def setUp(self):
-        super(TestMakeDestDir, self).setUp()
-        os.mkdir('test')
-
-    def tearDown(self):
-        super(TestMakeDestDir, self).tearDown()
-        shutil.rmtree('test')
-
     def test_make_dest_dir_w_oserror(self):
-        open('test/test', 'w').close()
-        with self.assertRaises(OSError):
-            utils.make_dest_dir('test/test')
-        self.assertFalse(os.path.isdir('test/test'))
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            test_file = os.path.join(tmp_d, 'test_file')
+            open(test_file, 'w').close()
+
+            with self.assertRaises(OSError):
+                utils.make_dest_dir(test_file)
+            self.assertFalse(os.path.isdir(test_file))
 
     def test_make_dest_dir_w_enotdir_error(self):
-        open('test/test', 'w').close()
-        with self.assertRaises(OSError) as exc:
-            utils.make_dest_dir('test/test/test')
-        self.assertEquals(exc.exception.errno, errno.ENOTDIR)
-        self.assertFalse(os.path.isdir('test/test/test'))
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            test_file = os.path.join(tmp_d, 'test_file')
+            open(test_file, 'w').close()
+            with self.assertRaises(OSError) as exc:
+                new_dir = os.path.join(test_file, 'test')
+                utils.make_dest_dir(new_dir)
+            self.assertEquals(exc.exception.errno, errno.ENOTDIR)
+            self.assertFalse(os.path.isdir(new_dir))
 
     def test_make_dest_dir_success(self):
-        utils.make_dest_dir('test/test')
-        self.assertTrue(os.path.isdir('test/test'))
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            dest_dir = os.path.join(tmp_d, 'test')
+            utils.make_dest_dir(dest_dir)
+            self.assertTrue(os.path.isdir(dest_dir))
 
     def test_make_dest_dir_existing(self):
-        os.mkdir('test/test')
-        utils.make_dest_dir('test/test')
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            dest_dir = os.path.join(tmp_d, 'test')
+            utils.make_dest_dir(dest_dir)
+            self.assertTrue(os.path.isdir(dest_dir))
 
 
 class TestCondition(unittest.TestCase):
