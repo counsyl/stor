@@ -17,6 +17,32 @@ def _parse_config_val(value):
         return value
 
 
+def parse_config_file(filename):
+    """
+    Parses a configuration file and returns a settings dictionary.
+
+    Args:
+        filename (str): File to read configuration settings from.
+
+    Returns:
+        dict: A dictionary of settings options.
+    """
+    parser = SafeConfigParser()
+
+    with open(filename) as fp:
+        parser.readfp(fp)
+
+    settings = {
+        section: {
+            item[0]: _parse_config_val(item[1])
+            for item in parser.items(section)
+        }
+        for section in parser.sections()
+    }
+
+    return settings
+
+
 def _initialize(filename=None):
     """
     Initialize global settings from configuration file. The configuration file
@@ -35,22 +61,8 @@ def _initialize(filename=None):
     """
     global _global_settings
     _global_settings.clear()
-
-    parser = SafeConfigParser()
     filename = filename or os.path.join(os.path.dirname(__file__), CONFIG_FILE)
-
-    with open(filename) as fp:
-        parser.readfp(fp)
-
-    settings = {
-        section: {
-            item[0]: _parse_config_val(item[1])
-            for item in parser.items(section)
-        }
-        for section in parser.sections()
-    }
-
-    _global_settings.update(settings)
+    _global_settings.update(parse_config_file(filename))
 
 
 def _update(d, updates):
