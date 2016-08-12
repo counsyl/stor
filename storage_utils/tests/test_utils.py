@@ -195,9 +195,26 @@ class TestCondition(unittest.TestCase):
 
 
 class TestMisc(unittest.TestCase):
-<<<<<<< HEAD
     def test_has_trailing_slash(self):
         self.assertFalse(utils.has_trailing_slash(''))
+
+    def test_has_trailing_slash_none(self):
+        self.assertFalse(utils.has_trailing_slash(None))
+
+    def test_has_trailing_slash_true(self):
+        self.assertTrue(utils.has_trailing_slash('has/slash/'))
+
+    def test_has_trailing_slash_false(self):
+        self.assertFalse(utils.has_trailing_slash('no/slash'))
+
+    def test_remove_trailing_slash_none(self):
+        self.assertIsNone(utils.remove_trailing_slash(None))
+
+    def test_remove_trailing_slash_wo_slash(self):
+        self.assertEquals(utils.remove_trailing_slash('no/slash'), 'no/slash')
+
+    def test_remove_trailing_slash_multiple(self):
+        self.assertEquals(utils.remove_trailing_slash('many/slashes//'), 'many/slashes')
 
 
 class TestFileNameToObjectName(unittest.TestCase):
@@ -235,22 +252,3 @@ class TestFileNameToObjectName(unittest.TestCase):
     def test_path_w_env_var(self):
         self.assertEquals(utils.file_name_to_object_name('$HOME/path//file'),
                           'home/wes/path/file')
-=======
-    def test_has_trailing_slash_none(self):
-        self.assertFalse(utils.has_trailing_slash(None))
-
-    def test_has_trailing_slash_true(self):
-        self.assertTrue(utils.has_trailing_slash('has/slash/'))
-
-    def test_has_trailing_slash_false(self):
-        self.assertFalse(utils.has_trailing_slash('no/slash'))
-
-    def test_remove_trailing_slash_none(self):
-        self.assertIsNone(utils.remove_trailing_slash(None))
-
-    def test_remove_trailing_slash_wo_slash(self):
-        self.assertEquals(utils.remove_trailing_slash('no/slash'), 'no/slash')
-
-    def test_remove_trailing_slash_multiple(self):
-        self.assertEquals(utils.remove_trailing_slash('many/slashes//'), 'many/slashes')
->>>>>>> b8d3fc6100dfde36fee0f0f96a4df3ff2f9da0dc
