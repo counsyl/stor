@@ -6,6 +6,7 @@ Table of Contents
 
    index
    installation
+   cli
    main_interface
    swift
    s3

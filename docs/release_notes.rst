@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-v8.3.0
+v8.4.0
 ------
 
 * Removes the default Counsyl auth url
@@ -9,8 +9,14 @@ v8.3.0
 * Monkey patches an error in python-swiftclient
 * Vendors in Counsyl backoff
 
+v8.3.0
+------
+
+* Add a CLI offering UNIX-like commands, relative paths, and working with ``stdin`` and ``stdout``.
+
 v8.2.0
 ------
+
 * Implement threading and progress logging in S3 ``upload`` and ``download``
 * Add S3 directory markers and additional options including condition checking and use_manifest
 
@@ -20,7 +26,6 @@ v8.1.0
 * Added S3 compatibility, including ``S3Path`` and associated methods.
 * Consolidated common code: created base ``OBSPath`` and ``OBSFile`` classes
 * Created ``OBSUploadObject`` that wraps around ``SwiftUploadObject`` to make it cloud-agnostic
-
 
 v8.0.0
 ------

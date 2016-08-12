@@ -1245,7 +1245,7 @@ class SwiftPath(OBSPath):
         """
         if not self.container or not self.resource:
             raise ValueError('path must contain a container and resource to '
-                             'remove')
+                             'remove a single file')
 
         return self._swift_service_call('delete',
                                         self.container,
