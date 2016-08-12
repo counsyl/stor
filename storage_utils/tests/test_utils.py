@@ -155,7 +155,7 @@ class TestMakeDestDir(unittest.TestCase):
             test_file = os.path.join(tmp_d, 'test_file')
             open(test_file, 'w').close()
 
-            with self.assertRaises(OSError):
+            with self.assertRaisesRegexp(OSError, 'File exists'):
                 utils.make_dest_dir(test_file)
             self.assertFalse(os.path.isdir(test_file))
 
@@ -163,7 +163,7 @@ class TestMakeDestDir(unittest.TestCase):
         with utils.NamedTemporaryDirectory() as tmp_d:
             test_file = os.path.join(tmp_d, 'test_file')
             open(test_file, 'w').close()
-            with self.assertRaises(OSError) as exc:
+            with self.assertRaisesRegexp(OSError, 'already exists as a file') as exc:
                 new_dir = os.path.join(test_file, 'test')
                 utils.make_dest_dir(new_dir)
             self.assertEquals(exc.exception.errno, errno.ENOTDIR)
@@ -178,6 +178,7 @@ class TestMakeDestDir(unittest.TestCase):
     def test_make_dest_dir_existing(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             dest_dir = os.path.join(tmp_d, 'test')
+            os.mkdir(dest_dir)
             utils.make_dest_dir(dest_dir)
             self.assertTrue(os.path.isdir(dest_dir))
 
