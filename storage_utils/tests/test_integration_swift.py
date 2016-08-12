@@ -21,6 +21,8 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def setUp(self):
         super(SwiftIntegrationTest, self).setUp()
 
+        print 'ENV', os.environ
+
         if not os.environ.get('SWIFT_TEST_USERNAME'):
             raise unittest.SkipTest(
                 'SWIFT_TEST_USERNAME env var not set. Skipping integration test')
