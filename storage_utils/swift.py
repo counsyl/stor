@@ -27,7 +27,6 @@ Examples:
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
-from backoff.backoff import with_backoff
 import copy
 from functools import partial
 from functools import wraps
@@ -39,30 +38,51 @@ import threading
 import urllib
 import urlparse
 
-from storage_utils import exceptions as stor_exceptions
-from storage_utils.utils import file_name_to_object_name
-from storage_utils import is_swift_path
-from storage_utils.base import Path
-from storage_utils.obs import OBSFile
-from storage_utils.obs import OBSPath
-from storage_utils.obs import OBSUploadObject
-from storage_utils import utils
-from storage_utils.posix import PosixPath
-from storage_utils import settings
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
 from swiftclient.utils import generate_temp_url
+
+from storage_utils import exceptions as stor_exceptions
+from storage_utils import is_swift_path
+from storage_utils import settings
+from storage_utils import utils
+from storage_utils.base import Path
+from storage_utils.obs import OBSFile
+from storage_utils.obs import OBSPath
+from storage_utils.obs import OBSUploadObject
+from storage_utils.posix import PosixPath
+from storage_utils.third_party.backoff import with_backoff
 
 
 logger = logging.getLogger(__name__)
 progress_logger = logging.getLogger('%s.progress' % __name__)
 
 
+# python-swiftclient has a subtle bug in get_auth_keystone. If
+# the auth_token is set beforehand and a token refresh happens,
+# the invalid auth_token persists in the os_options argument,
+# causing it to enter an infinite retry loop on authentication
+# errors. Patch the get_auth_keystone function with one that
+# clears the auth_token parameter on any Exceptions.
+# Note that this behavior is tested in
+# storage_utils.tests.test_integration_swift:SwiftIntegrationTest.test_cached_auth_and_auth_invalidation
+real_get_auth_keystone = swift_client.get_auth_keystone
+
+
+def patched_get_auth_keystone(auth_url, user, key, os_options, **kwargs):
+    try:
+        return real_get_auth_keystone(auth_url, user, key, os_options, **kwargs)
+    except:
+        os_options.pop('auth_token', None)
+        raise
+swift_client.get_auth_keystone = patched_get_auth_keystone
+
+
 # Default module-level settings for swift authentication.
 # If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
 # environment variables will be used
-auth_url = os.environ.get('OS_AUTH_URL', 'https://swift.counsyl.com/auth/v2.0')
+auth_url = os.environ.get('OS_AUTH_URL')
 """The swift authentication URL
 
 If not set, the ``OS_AUTH_URL`` environment variable will be used. If
@@ -1165,7 +1185,7 @@ class SwiftPath(OBSPath):
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
             OBSUploadObject(f,
-                            object_name=resource_base / file_name_to_object_name(f),
+                            object_name=resource_base / utils.file_name_to_object_name(f),
                             options=upload_object_options)
             for f in all_files_to_upload if f != manifest_file_name
         ])
@@ -1174,7 +1194,7 @@ class SwiftPath(OBSPath):
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
             utils.generate_and_save_data_manifest(to_upload[0], object_names)
-            manifest_obj_name = resource_base / file_name_to_object_name(manifest_file_name)
+            manifest_obj_name = resource_base / utils.file_name_to_object_name(manifest_file_name)
             manifest_obj = OBSUploadObject(manifest_file_name,
                                            object_name=manifest_obj_name,
                                            options=upload_object_options)
