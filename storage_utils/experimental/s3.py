@@ -574,13 +574,17 @@ class S3Path(OBSPath):
         with S3DownloadLogger(len(files_to_download)) as dl:
             pool = ThreadPool(options['object_threads'])
             try:
-                for result in pool.imap_unordered(download_w_config,
-                                                  files_to_download):
-                    if result['success']:
-                        dl.add_result(result)
-                        downloaded['completed'].append(result)
-                    else:
-                        downloaded['failed'].append(result)
+                result_iter = pool.imap_unordered(download_w_config, files_to_download)
+                while True:
+                    try:
+                        result = result_iter.next(0xFFFF)
+                        if result['success']:
+                            dl.add_result(result)
+                            downloaded['completed'].append(result)
+                        else:
+                            downloaded['failed'].append(result)
+                    except StopIteration:
+                        break
                 pool.close()
             except:
                 pool.terminate()
@@ -713,12 +717,17 @@ class S3Path(OBSPath):
         with S3UploadLogger(len(files_to_upload)) as ul:
             pool = ThreadPool(options['object_threads'])
             try:
-                for result in pool.imap_unordered(upload_w_config, files_to_upload):
-                    if result['success']:
-                        ul.add_result(result)
-                        uploaded['completed'].append(result)
-                    else:
-                        uploaded['failed'].append(result)
+                result_iter = pool.imap_unordered(upload_w_config, files_to_upload)
+                while True:
+                    try:
+                        result = result_iter.next(0xFFFF)
+                        if result['success']:
+                            ul.add_result(result)
+                            uploaded['completed'].append(result)
+                        else:
+                            uploaded['failed'].append(result)
+                    except StopIteration:
+                        break
                 pool.close()
             except:
                 pool.terminate()

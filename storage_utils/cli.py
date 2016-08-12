@@ -3,39 +3,50 @@ The CLI can be accessed through the command ``stor``. For details on
 valid subcommands, usage, and input options, refer to the ``--help`` / ``-h``
 flag.
 
-In addition to basic list, copy, and remove commands, the CLI also has some
-features such as specifying a current working directory on an OBS service
+In addition to UNIX-like basic list, copy, and remove commands, the CLI also
+has some features such as specifying a current working directory on an OBS service
 (which allows for relative paths), ``cat``, and copying from ``stdin``.
+
+The ``list`` command is different from the ``ls`` command. ``list`` recursively
+lists all files and directories under a given path while ``ls`` lists the path
+as a directory in a way that is similar to the UNIX command.
+
+To copy or remove a tree, use the ``-r`` flag with ``cp`` or ``remove``.
 
 Relative Paths
 --------------
 
 Using the CLI, the user can specify a current working directory on supported
-OBS services (currently swift and s3) using the ``cd`` subcommand:
+OBS services (currently swift and s3) using the ``cd`` subcommand::
 
-    >>> stor cd s3://bucket
-    >>> stor cd swift://tenant/container
+    $ stor cd s3://bucket
+    $ stor cd swift://tenant/container
 
-To check the current working directory, use the ``pwd`` subcommand:
+To check the current working directory, use the ``pwd`` subcommand::
 
-    >>> stor pwd
+    $ stor pwd
     s3://bucket
     swift://tenant/container
 
-To clear the current working directory, use the ``clear`` subcommand:
+To clear the current working directory, use the ``clear`` subcommand::
 
-    >>> stor clear
-    >>> stor pwd
+    $ stor clear
+    $ stor pwd
     s3://
     swift://
 
-This also means that relative paths can be used:
+This also means that relative paths can be used. Relative paths are indicated
+by omitting the ``//`` in the path and instead indicating a relative path, as
+shown::
 
-    >>> stor cd s3://bucket/dir
-    >>> stor list s3://./child
+    $ stor cd s3://bucket/dir
+    $ stor list s3:child
     s3://bucket/dir/child/file1
     s3://bucket/dir/child/file2
-    >>> stor list s3://..
+    $ stor list s3:./child
+    s3://bucket/dir/child/file1
+    s3://bucket/dir/child/file2
+    $ stor list s3:..
     s3://bucket/a
     s3://bucket/b/obj1
     s3://bucket/dir/child/file1
@@ -48,30 +59,28 @@ The CLI offers the ability to copy from ``stdin`` and output a path's
 contents to ``stdout``.
 
 To copy from ``stdin``, use the special ``-`` symbol. This means that the
-user can pipe output from one command into the ``stor`` CLI:
+user can pipe output from one command into the ``stor`` CLI::
 
-    >>> echo "hello world" | stor cp - s3://my/file1
+    $ echo "hello world" | stor cp - s3://my/file1
 
 The user can also output a path's contents to ``stdout`` using the ``cat``
-subcommand.
+subcommand::
 
-    >>> stor cat s3://my/file1
+    $ stor cat s3://my/file1
     hello world
 
-Direct file transfer between OBS services or within one OBS service is not
-yet supported, but can be accomplished using the two aforementioned features:
-
-    >>> stor cat s3://my/file1 | stor cp - s3://my/file2
-    >>> stor cat s3://my/file2
-    hello world
-
+Direct file transfer between OBS services or within one OBS service (server-side copy)
+is not yet supported.
 """
 
 import argparse
 import copy
 import ConfigParser
 from functools import partial
+import logging
 import os
+import shutil
+import signal
 import sys
 import tempfile
 
@@ -82,9 +91,23 @@ from storage_utils import Path
 from storage_utils import utils
 
 PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles')
+SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
-PKG_ENV_FILE = os.path.join(os.path.dirname(__file__), 'stor.env')
+PKG_ENV_FILE = os.path.join(os.path.dirname(__file__), 'default.env')
+
+
+def perror(msg):
+    """Print error message and exit."""
+    sys.stderr.write(msg)
+    sys.exit(1)
+
+
+def force_exit(signum, frame):  # pragma: no cover
+    sys.stderr.write(' Aborted\n')
+    os._exit(1)
+
+signal.signal(signal.SIGINT, force_exit)
 
 
 class TempPath(Path):
@@ -93,20 +116,23 @@ class TempPath(Path):
         os.remove(str(self))
 
 
-def _make_stdin_action(func):
+def _make_stdin_action(func, err_msg):
     """
     Return a StdinAction object that checks for stdin.
-    func should be the function indicated by -r that is not valid to use with stdin.
+    func should be the function associated with the parser's -r flag
+    that is not valid to use with stdin.
     """
     class StdinAction(argparse._StoreAction):
         def __call__(self, parser, namespace, values, option_string=None):
             if values == '-':
                 if namespace.func == func:
-                    raise argparse.ArgumentError(self, '- cannot be used with -r')
+                    raise argparse.ArgumentError(self, err_msg)
                 else:
                     ntf = tempfile.NamedTemporaryFile(delete=False)
-                    ntf.write(sys.stdin.read())
-                    ntf.close()
+                    try:
+                        ntf.write(sys.stdin.read())
+                    finally:
+                        ntf.close()
                     super(StdinAction, self).__call__(parser,
                                                       namespace,
                                                       TempPath(ntf.name),
@@ -119,29 +145,6 @@ def _make_stdin_action(func):
     return StdinAction
 
 
-def _make_check_func_action(func):
-    """Make a CheckFuncAction with the given function."""
-    class CheckFuncAction(argparse._StoreTrueAction):
-        def __call__(self, parser, namespace, values, option_string=None):
-            if namespace.func == func:
-                super(CheckFuncAction, self).__call__(parser,
-                                                      namespace,
-                                                      values,
-                                                      option_string=option_string)
-            else:
-                raise argparse.ArgumentError(self, '%s can only be used with the -r option.'
-                                                   ' -r must precede %s.'
-                                             % (option_string, option_string))
-    return CheckFuncAction
-
-
-def _make_use_manifest_arg(parser, func):
-    """Add the use_manifest option to argument parser with the specified function."""
-    parser.add_argument('-u', '--use_manifest',
-                        help='Validate that results are in the data manifest.',
-                        action=_make_check_func_action(func))
-
-
 def _get_env():
     """
     Get the current environment using the ENV_FILE.
@@ -151,8 +154,7 @@ def _get_env():
     parser = ConfigParser.SafeConfigParser()
     # if env file doesn't exist, copy over the package default
     if not os.path.exists(ENV_FILE):
-        with open(ENV_FILE, 'w') as outfile, open(PKG_ENV_FILE) as infile:
-            outfile.write(infile.read())
+        shutil.copyfile(PKG_ENV_FILE, ENV_FILE)
     with open(ENV_FILE) as fp:
         parser.readfp(fp)
     return parser
@@ -166,10 +168,10 @@ def _get_pwd(service=None):
     parser = _get_env()
     if service:
         try:
-            return parser.get('env', service)
+            return utils.with_trailing_slash(parser.get('env', service))
         except ConfigParser.NoOptionError:
             raise ValueError('%s is an invalid service' % service)
-    return [value for name, value in parser.items('env')]
+    return [utils.with_trailing_slash(value) for name, value in parser.items('env')]
 
 
 def _env_chdir(pth):
@@ -180,6 +182,8 @@ def _env_chdir(pth):
     else:
         raise ValueError('%s is an invalid path' % pth)
     if pth != Path(pth).drive:
+        if not Path(pth).isdir():
+            raise ValueError('%s is not a directory' % pth)
         pth = utils.remove_trailing_slash(pth)
     parser.set('env', service, pth)
     with open(ENV_FILE, 'w') as outfile:
@@ -201,6 +205,22 @@ def _cat(pth):
     return pth.open().read()
 
 
+def _obs_relpath_service(pth):
+    """
+    Check if path is an OBS relative path and if so,
+    return the service, otherwise return an empty string.
+    """
+    prefixes = tuple(service + ':' for service in SERVICES)
+    if pth.startswith(prefixes):
+        if pth.startswith(tuple(p + '//' for p in prefixes)):
+            return ''
+        elif pth in prefixes or pth.startswith(tuple(p + '/' for p in prefixes)):
+            raise ValueError('%s is an invalid path' % pth)
+        parts = pth.split(':', 1)
+        return parts[0]
+    return ''
+
+
 def get_path(pth, mode=None):
     """
     Convert string to a Path type.
@@ -208,46 +228,40 @@ def get_path(pth, mode=None):
     The string ``-`` is a special string depending on mode.
     With mode 'r', it represents stdin and a temporary file is created and returned.
     """
-    p = Path(pth)
-    # resolve relative paths
-    if not p.isabs():
-        if utils.is_obs_path(pth):
-            service = p.drive.rstrip(':/')
+    service = _obs_relpath_service(pth)
+    if not service:
+        return Path(pth)
+
+    relprefix = service + ':'
+
+    pwd = Path(_get_pwd(service=service))
+    if pwd == pwd.drive:
+        raise ValueError('No current directory specified for relative path \'%s\'' % pth)
+
+    pwd = utils.remove_trailing_slash(pwd)
+    path_part = pth[len(relprefix):]
+    split_parts = path_part.split('/')
+    rel_part = split_parts[0]
+
+    prefix = pwd
+    depth = 1
+    if rel_part == '..':
+        # remove trailing slash otherwise we won't find the right parent
+        prefix = utils.remove_trailing_slash(prefix)
+        while len(split_parts) > depth and split_parts[depth] == '..':
+            depth += 1
+        if len(pwd[len(pwd.drive):].split('/')) > depth:
+            for i in range(0, depth):
+                prefix = prefix.parent
         else:
-            return p
-
-        pwd = Path(_get_pwd(service=service))
-        if pwd == p.drive:
-            raise ValueError('No current directory specified for relative path \'%s\'' % pth)
-
-        pwd = utils.remove_trailing_slash(pwd)
-        path_part = pth[len(p.drive):]
-        split_parts = path_part.split('/')
-        rel_part = split_parts[0]
-
-        prefix = pwd
-        depth = 1
-        if rel_part == '..':
-            while split_parts[depth] == '..':
-                depth += 1
-            if len(pwd[len(pwd.drive):].split('/')) > depth:
-                for i in range(0, depth):
-                    prefix = prefix.parent
-            else:
-                raise ValueError('Relative path \'%s\' is invalid for current directory \'%s\''
-                                 % (pth, pwd))
-        p = prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
-    return p
+            raise ValueError('Relative path \'%s\' is invalid for current directory \'%s\''
+                             % (pth, pwd))
+    elif rel_part != '.':
+        return prefix / path_part
+    return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
 def create_parser():
-    # base parsers to hold commonly-used arguments and options
-    # todo: is this a good practice?
-    manifest_parser = argparse.ArgumentParser()
-    manifest_parser.add_argument('-u', '--use_manifest',
-                                 help='Validate that results are in the data manifest.',
-                                 action='store_true')
-
     parser = argparse.ArgumentParser(description='A command line interface for storage-utils.')
 
     # todo: make default an environment variable?
@@ -263,15 +277,15 @@ def create_parser():
                                         help=list_msg,
                                         description=list_msg)
     parser_list.add_argument('path', type=get_path, metavar='PATH')
-    parser_list.add_argument('-s', '--starts_with',
+    parser_list.add_argument('-s', '--starts-with',
                              help='Append an additional path to the search path.',
                              type=str,
+                             dest='starts_with',
                              metavar='PREFIX')
     parser_list.add_argument('-l', '--limit',
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    _make_use_manifest_arg(parser_list, storage_utils.listpath)
     parser_list.set_defaults(func=storage_utils.listpath)
 
     ls_msg = 'List path as a directory.'
@@ -297,9 +311,9 @@ def create_parser():
     parser_cp.add_argument('source',
                            type=get_path,
                            metavar='SOURCE',
-                           action=_make_stdin_action(storage_utils.copytree))
+                           action=_make_stdin_action(storage_utils.copytree,
+                                                     '- cannot be used with -r'))
     parser_cp.add_argument('dest', type=get_path, metavar='DEST')
-    _make_use_manifest_arg(parser_cp, storage_utils.copytree)
 
     rm_msg = 'Remove file at a path.'
     parser_rm = subparsers.add_parser('rm',
@@ -372,16 +386,14 @@ def process_args(args):
         elif len(func_kwargs) > 0:
             value = func_kwargs.values()[0]
         else:
-            sys.stderr.write('%s is not a valid command for the given input\n' % cmd)
-            sys.exit(1)
-        sys.stderr.write('%s is not a valid command for %s\n' % (cmd, value))
-        sys.exit(1)
+            perror('%s is not a valid command for the given input\n' % cmd)
+        perror('%s is not a valid command for %s\n' % (cmd, value))
     except ValueError as exc:
-        sys.stderr.write('Error: %s\n' % str(exc))
-        sys.exit(1)
+        perror('Error: %s\n' % str(exc))
     except exceptions.RemoteError as exc:
-        sys.stderr.write('%s: %s\n' % (exc.__class__.__name__, exc.message))
-        sys.exit(1)
+        if type(exc) is exceptions.NotFoundError and pth:
+            perror('Not Found: %s' % pth)
+        perror('%s: %s\n' % (exc.__class__.__name__, exc.message))
 
 
 def print_results(results):
@@ -395,6 +407,15 @@ def print_results(results):
 
 
 def main():
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    s3_logger = logging.getLogger('storage_utils.experimental.s3.progress')
+    s3_logger.setLevel(logging.INFO)
+    s3_logger.addHandler(handler)
+    swift_logger = logging.getLogger('storage_utils.swift.progress')
+    swift_logger.setLevel(logging.INFO)
+    swift_logger.addHandler(handler)
+
     parser = create_parser()
     args = parser.parse_args()
     results = process_args(args)

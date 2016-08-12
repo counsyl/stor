@@ -92,66 +92,118 @@ class TestGetPath(BaseCliTest):
     def test_relpath_no_s3(self, mock_pwd):
         mock_pwd.return_value = 's3://'
         with self.assertRaisesRegexp(ValueError, 'relative path'):
-            cli.get_path('s3://../test')
+            cli.get_path('s3:../test')
 
     def test_relpath_no_swift(self, mock_pwd):
         mock_pwd.return_value = 'swift://'
         with self.assertRaisesRegexp(ValueError, 'relative path'):
-            cli.get_path('swift://../test')
+            cli.get_path('swift:../test')
+
+    def test_relpath_empty_s3(self, mock_pwd):
+        with self.assertRaisesRegexp(ValueError, 'invalid'):
+            cli.get_path('s3:')
+
+    def test_relpath_empty_swift(self, mock_pwd):
+        with self.assertRaisesRegexp(ValueError, 'invalid'):
+            cli.get_path('swift:')
 
     def test_relpath_current_s3(self, mock_pwd):
         mock_pwd.return_value = 's3://test'
-        self.assertEquals(cli.get_path('s3://./b/c'), S3Path('s3://test/b/c'))
+        self.assertEquals(cli.get_path('s3:.'), S3Path('s3://test/'))
         mock_pwd.return_value = 's3://test/'
-        self.assertEquals(cli.get_path('s3://./b/c'), S3Path('s3://test/b/c'))
+        self.assertEquals(cli.get_path('s3:.'), S3Path('s3://test/'))
 
     def test_relpath_current_swift(self, mock_pwd):
+        mock_pwd.return_value = 'swift://test'
+        self.assertEquals(cli.get_path('swift:.'), SwiftPath('swift://test/'))
+        mock_pwd.return_value = 'swift://test/'
+        self.assertEquals(cli.get_path('swift:.'), SwiftPath('swift://test/'))
+
+    def test_relpath_current_subdir_s3(self, mock_pwd):
+        mock_pwd.return_value = 's3://test'
+        self.assertEquals(cli.get_path('s3:./b/c'), S3Path('s3://test/b/c'))
+        mock_pwd.return_value = 's3://test/'
+        self.assertEquals(cli.get_path('s3:./b/c'), S3Path('s3://test/b/c'))
+
+    def test_relpath_current_subdir_swift(self, mock_pwd):
         mock_pwd.return_value = 'swift://test/cont'
-        self.assertEquals(cli.get_path('swift://./b/c'), SwiftPath('swift://test/cont/b/c'))
+        self.assertEquals(cli.get_path('swift:./b/c'), SwiftPath('swift://test/cont/b/c'))
         mock_pwd.return_value = 'swift://test/cont/'
-        self.assertEquals(cli.get_path('swift://./b/c'), SwiftPath('swift://test/cont/b/c'))
+        self.assertEquals(cli.get_path('swift:./b/c'), SwiftPath('swift://test/cont/b/c'))
+
+    def test_relpath_current_subdir_no_dot_s3(self, mock_pwd):
+        mock_pwd.return_value = 's3://test'
+        self.assertEquals(cli.get_path('s3:b/c'), S3Path('s3://test/b/c'))
+        mock_pwd.return_value = 's3://test/'
+        self.assertEquals(cli.get_path('s3:b/c'), S3Path('s3://test/b/c'))
+
+    def test_relpath_current_subdir_no_dot_swift(self, mock_pwd):
+        mock_pwd.return_value = 'swift://test/cont'
+        self.assertEquals(cli.get_path('swift:b/c'), SwiftPath('swift://test/cont/b/c'))
+        mock_pwd.return_value = 'swift://test/cont/'
+        self.assertEquals(cli.get_path('swift:b/c'), SwiftPath('swift://test/cont/b/c'))
 
     def test_relpath_parent_s3(self, mock_pwd):
         mock_pwd.return_value = 's3://test/dir'
-        self.assertEquals(cli.get_path('s3://../b/c'), S3Path('s3://test/b/c'))
+        self.assertEquals(cli.get_path('s3:..'), S3Path('s3://test/'))
         mock_pwd.return_value = 's3://test/dir/'
-        self.assertEquals(cli.get_path('s3://../b/c'), S3Path('s3://test/b/c'))
+        self.assertEquals(cli.get_path('s3:..'), S3Path('s3://test/'))
 
     def test_relpath_parent_swift(self, mock_pwd):
+        mock_pwd.return_value = 'swift://test/dir'
+        self.assertEquals(cli.get_path('swift:..'), SwiftPath('swift://test/'))
+        mock_pwd.return_value = 'swift://test/dir/'
+        self.assertEquals(cli.get_path('swift:..'), SwiftPath('swift://test/'))
+
+    def test_relpath_parent_subdir_s3(self, mock_pwd):
+        mock_pwd.return_value = 's3://test/dir'
+        self.assertEquals(cli.get_path('s3:../b/c'), S3Path('s3://test/b/c'))
+        mock_pwd.return_value = 's3://test/dir/'
+        self.assertEquals(cli.get_path('s3:../b/c'), S3Path('s3://test/b/c'))
+
+    def test_relpath_parent_subdir_swift(self, mock_pwd):
         mock_pwd.return_value = 'swift://test/cont/dir'
-        self.assertEquals(cli.get_path('swift://../b/c'), SwiftPath('swift://test/cont/b/c'))
+        self.assertEquals(cli.get_path('swift:../b/c'), SwiftPath('swift://test/cont/b/c'))
         mock_pwd.return_value = 'swift://test/cont/dir/'
-        self.assertEquals(cli.get_path('swift://../b/c'), SwiftPath('swift://test/cont/b/c'))
+        self.assertEquals(cli.get_path('swift:../b/c'), SwiftPath('swift://test/cont/b/c'))
 
     def test_relpath_no_parent_s3(self, mock_pwd):
         mock_pwd.return_value = 's3://test'
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
-            cli.get_path('s3://../b/c')
+            cli.get_path('s3:../b/c')
         mock_pwd.return_value = 's3://test/'
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
-            cli.get_path('s3://../b/c')
+            cli.get_path('s3:../b/c')
 
     def test_relpath_no_parent_swift(self, mock_pwd):
         mock_pwd.return_value = 'swift://test'
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
-            cli.get_path('swift://../b/c')
+            cli.get_path('swift:../b/c')
         mock_pwd.return_value = 'swift://test/'
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
-            cli.get_path('swift://../b/c')
+            cli.get_path('swift:../b/c')
 
     def test_relpath_nested_parent(self, mock_pwd):
         mock_pwd.return_value = 's3://a/b/c'
-        self.assertEquals(cli.get_path('s3://../../d'), S3Path('s3://a/d'))
+        self.assertEquals(cli.get_path('s3:../../d'), S3Path('s3://a/d'))
         mock_pwd.return_value = 'swift://a/b/c/'
-        self.assertEquals(cli.get_path('swift://../../d'), SwiftPath('swift://a/d'))
+        self.assertEquals(cli.get_path('swift:../../d'), SwiftPath('swift://a/d'))
 
     def test_relpath_nested_parent_error(self, mock_pwd):
         mock_pwd.return_value = 's3://a/b/c'
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
-            cli.get_path('s3://../../../d')
+            cli.get_path('s3:../../../d')
         mock_pwd.return_value = 'swift://a/b/c/'
         with self.assertRaisesRegexp(ValueError, 'Relative path.*invalid'):
-            cli.get_path('swift://../../../d')
+            cli.get_path('swift:../../../d')
+
+    def test_invalid_abspath_s3(self, mock_pwd):
+        with self.assertRaisesRegexp(ValueError, 'invalid path'):
+            cli.get_path('s3:/some/path')
+
+    def test_invalid_abspath_swift(self, mock_pwd):
+        with self.assertRaisesRegexp(ValueError, 'invalid path'):
+            cli.get_path('swift:/some/path')
 
 
 class TestList(BaseCliTest):
@@ -192,7 +244,7 @@ class TestList(BaseCliTest):
             S3Path('s3://some-bucket/b')
         ]]
 
-        self.parse_args('stor list s3://some-bucket -us dir')
+        self.parse_args('stor list s3://some-bucket -s dir')
         self.assertEquals(sys.stdout.getvalue(),
                           's3://some-bucket/dir/a\n'
                           's3://some-bucket/dir/b\n'
@@ -207,9 +259,17 @@ class TestList(BaseCliTest):
                           's3://some-bucket/b\n')
 
         mock_list.assert_has_calls([
-            mock.call(S3Path('s3://some-bucket'), starts_with='dir', use_manifest=True),
+            mock.call(S3Path('s3://some-bucket'), starts_with='dir'),
             mock.call(S3Path('s3://some-bucket'), limit=2)
         ])
+
+    @mock.patch('sys.stderr', new=StringIO())
+    @mock.patch.object(S3Path, 'list', autospec=True)
+    def test_list_not_found(self, mock_list):
+        mock_list.side_effect = exceptions.NotFoundError('not found')
+        with self.assertRaisesRegexp(SystemExit, '1'):
+            self.parse_args('stor list s3://bucket/path')
+        self.assertIn('s3://bucket/path', sys.stderr.getvalue())
 
 
 class TestLs(BaseCliTest):
@@ -264,28 +324,12 @@ class TestCopy(BaseCliTest):
         os.remove(test_file)
         self.assertFalse(os.path.exists(test_file))
 
-    @mock.patch('sys.stderr', new=StringIO())
-    def test_copy_use_manifest_error(self, mock_copy):
-        with self.assertRaisesRegexp(SystemExit, '2'):
-            self.parse_args('stor cp -u my/obj swift://t/c/obj')
-        self.assertRegexpMatches(sys.stderr.getvalue(), '-u .* -r option')
-
 
 @mock.patch('storage_utils.copytree', autospec=True)
 class TestCopytree(BaseCliTest):
     def test_copytree(self, mock_copytree):
         self.parse_args('stor cp -r s3://bucket .')
         mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
-
-    def test_copytree_use_manifest(self, mock_copytree):
-        self.parse_args('stor cp -ru swift://t/c/ .')
-        mock_copytree.assert_called_once_with(source='swift://t/c/', dest='.', use_manifest=True)
-
-    @mock.patch('sys.stderr', new=StringIO())
-    def test_copytree_use_manifest_error(self, mock_copytree):
-        with self.assertRaisesRegexp(SystemExit, '2'):
-            self.parse_args('stor cp -ur swift://t/c/ .')
-        self.assertRegexpMatches(sys.stderr.getvalue(), '-r must precede -u')
 
     @mock.patch('sys.stderr', new=StringIO())
     def test_copytree_stdin_error(self, mock_copytree):
@@ -412,18 +456,34 @@ class TestCd(BaseCliTest):
     def generate_env_text(self, s3_path='s3://', swift_path='swift://'):
         return '[env]\ns3 = %s\nswift = %s\n' % (s3_path, swift_path)
 
-    def test_cd_s3(self):
+    @mock.patch.object(S3Path, 'isdir', return_value=True, autospec=True)
+    def test_cd_s3(self, mock_isdir):
         self.parse_args('stor cd s3://test')
         self.assertIn(self.generate_env_text(s3_path='s3://test'),
                       open(self.test_env_file).read())
 
-    def test_cd_swift(self):
+    @mock.patch.object(SwiftPath, 'isdir', return_value=True, autospec=True)
+    def test_cd_swift(self, mock_isdir):
         self.parse_args('stor cd swift://test/container')
         self.assertIn(self.generate_env_text(swift_path='swift://test/container'),
                       open(self.test_env_file).read())
 
+    @mock.patch.object(S3Path, 'isdir', return_value=False, autospec=True)
     @mock.patch('sys.stderr', new=StringIO())
-    def test_cd_error(self):
+    def test_cd_not_dir_s3(self, mock_isdir):
+        with self.assertRaisesRegexp(SystemExit, '1'):
+            self.parse_args('stor cd s3://test/file')
+        self.assertIn('not a directory', sys.stderr.getvalue())
+
+    @mock.patch.object(SwiftPath, 'isdir', return_value=False, autospec=True)
+    @mock.patch('sys.stderr', new=StringIO())
+    def test_cd_not_dir_swift(self, mock_isdir):
+        with self.assertRaisesRegexp(SystemExit, '1'):
+            self.parse_args('stor cd swift://test/container/file')
+        self.assertIn('not a directory', sys.stderr.getvalue())
+
+    @mock.patch('sys.stderr', new=StringIO())
+    def test_cd_bad_path_error(self):
         with self.assertRaisesRegexp(SystemExit, '1'):
             self.parse_args('stor cd drive://not/correct')
         self.assertIn('invalid path', sys.stderr.getvalue())
@@ -456,21 +516,21 @@ class TestCd(BaseCliTest):
             outfile.write(self.generate_env_text(s3_path='s3://test',
                                                  swift_path='swift://test/container'))
         self.parse_args('stor pwd')
-        self.assertEquals(sys.stdout.getvalue(), 's3://test\nswift://test/container\n')
+        self.assertEquals(sys.stdout.getvalue(), 's3://test/\nswift://test/container/\n')
 
     def test_pwd_s3(self):
         with open(self.test_env_file, 'w') as outfile:
             outfile.write(self.generate_env_text(s3_path='s3://test',
                                                  swift_path='swift://test/container'))
         self.parse_args('stor pwd s3')
-        self.assertEquals(sys.stdout.getvalue(), 's3://test\n')
+        self.assertEquals(sys.stdout.getvalue(), 's3://test/\n')
 
     def test_pwd_swift(self):
         with open(self.test_env_file, 'w') as outfile:
             outfile.write(self.generate_env_text(s3_path='s3://test',
                                                  swift_path='swift://test/container'))
         self.parse_args('stor pwd swift')
-        self.assertEquals(sys.stdout.getvalue(), 'swift://test/container\n')
+        self.assertEquals(sys.stdout.getvalue(), 'swift://test/container/\n')
 
     @mock.patch('sys.stderr', new=StringIO())
     def test_pwd_error(self):
