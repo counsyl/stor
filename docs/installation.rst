@@ -38,3 +38,20 @@ The final step is to then copy stor's tab completion script in the proper locati
 
     mkdir `brew --prefix`/etc/bash_completion.d
     curl -o `brew --prefix`/etc/bash_completion.d/stor https://github.counsyl.com/dev/counsyl-storage-utils/storage_utils/stor-completion.bash
+
+Linux
+~~~~~
+
+Depending on your Linux distribution, you will need to first install `Bash Completion <https://github.com/scop/bash-completion>`_.
+
+It can be installed using apt-get or yum::
+
+    apt-get install bash-completion
+
+The bash completion script for stor can then be installed with::
+
+    curl -o /etc/bash_completion.d/stor https://github.counsyl.com/dev/counsyl-storage-utils/storage_utils/stor-completion.bash
+
+If you don't have permissions to install the script to /etc, it can also be saved in your home directory as follows::
+
+    curl -o ~/.bash_completion https://github.counsyl.com/dev/counsyl-storage-utils/storage_utils/stor-completion.bash
