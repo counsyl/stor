@@ -3,13 +3,13 @@ import os
 import mock
 import sys
 from tempfile import NamedTemporaryFile
-from storage_utils.posix import PosixPath
-from storage_utils.experimental.s3 import S3Path
-from storage_utils.swift import SwiftPath
-from storage_utils import cli
-from storage_utils import exceptions
-from storage_utils import settings
-from storage_utils import test
+from stor.posix import PosixPath
+from stor.experimental.s3 import S3Path
+from stor.swift import SwiftPath
+from stor import cli
+from stor import exceptions
+from stor import settings
+from stor import test
 
 
 @mock.patch('sys.stdout', new=StringIO())
@@ -27,8 +27,8 @@ class TestCliBasics(BaseCliTest):
         with self.assertRaisesRegexp(SystemExit, '1'):
             self.parse_args('stor list s3://bucket')
 
-    @mock.patch.dict('storage_utils.settings._global_settings', {}, clear=True)
-    @mock.patch('storage_utils.copytree', autospec=True)
+    @mock.patch.dict('stor.settings._global_settings', {}, clear=True)
+    @mock.patch('stor.copytree', autospec=True)
     def test_cli_config(self, mock_copytree):
         expected_settings = {
             'stor': {
@@ -62,7 +62,7 @@ class TestCliBasics(BaseCliTest):
         self.parse_args('stor --config %s cp -r source dest' % filename)
         self.assertEquals(settings._global_settings, expected_settings)
 
-    @mock.patch('storage_utils.copy', autospec=True)
+    @mock.patch('stor.copy', autospec=True)
     @mock.patch('sys.stderr', new=StringIO())
     def test_not_implemented_error(self, mock_copy):
         mock_copy.side_effect = NotImplementedError
@@ -70,7 +70,7 @@ class TestCliBasics(BaseCliTest):
             self.parse_args('stor cp some/path some/where')
         self.assertIn('not a valid command', sys.stderr.getvalue())
 
-    @mock.patch('storage_utils.cli._clear_env', autospec=True)
+    @mock.patch('stor.cli._clear_env', autospec=True)
     @mock.patch('sys.stderr', new=StringIO())
     def test_not_implemented_error_no_args(self, mock_clear):
         mock_clear.side_effect = NotImplementedError
@@ -87,7 +87,7 @@ class TestCliBasics(BaseCliTest):
         self.assertIn('not a valid command', sys.stderr.getvalue())
 
 
-@mock.patch('storage_utils.cli._get_pwd', autospec=True)
+@mock.patch('stor.cli._get_pwd', autospec=True)
 class TestGetPath(BaseCliTest):
     def test_relpath_no_s3(self, mock_pwd):
         mock_pwd.return_value = 's3://'
@@ -302,7 +302,7 @@ class TestLs(BaseCliTest):
         mock_listdir.assert_called_once_with(SwiftPath('swift://t/c'))
 
 
-@mock.patch('storage_utils.copy', autospec=True)
+@mock.patch('stor.copy', autospec=True)
 class TestCopy(BaseCliTest):
     def mock_copy_source(self, source, dest, *args, **kwargs):
         with open(dest, 'w') as outfile, open(source) as infile:
@@ -325,7 +325,7 @@ class TestCopy(BaseCliTest):
         self.assertFalse(os.path.exists(test_file))
 
 
-@mock.patch('storage_utils.copytree', autospec=True)
+@mock.patch('stor.copytree', autospec=True)
 class TestCopytree(BaseCliTest):
     def test_copytree(self, mock_copytree):
         self.parse_args('stor cp -r s3://bucket .')
@@ -440,7 +440,7 @@ class TestCd(BaseCliTest):
     def setUp(self):
         # set up a temp file to use as env file so we don't mess up real defaults
         self.test_env_file = NamedTemporaryFile(delete=False).name
-        mock_env_file_patcher = mock.patch('storage_utils.cli.ENV_FILE', self.test_env_file)
+        mock_env_file_patcher = mock.patch('stor.cli.ENV_FILE', self.test_env_file)
         self.mock_env_file = mock_env_file_patcher.start()
         self.addCleanup(mock_env_file_patcher.stop)
 
