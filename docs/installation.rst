@@ -10,7 +10,8 @@ To install the latest code directly from source, type::
     pip install git+git://github.counsyl.com/dev/counsyl-storage-utils.git
 
 
-..  _cli_tab_completion:
+..  _cli_tab_completion_installation:
+
 CLI Tab Completion Installation
 -------------------------------
 
@@ -20,12 +21,10 @@ steps based on their environment. Instructions for OSX and Linux are provided in
 OSX
 ~~~
 
-Tab completion requires the installation of `Bash Completion 
-<https://github.com/scop/bash-completion>`_.
-These instructions show how to set it up using `Homebrew <http://brew.sh/>`.
-Details on installing Homebrew can be found `here <http://brew.sh/>`.
+Tab completion requires the installation of `Bash Completion <https://github.com/scop/bash-completion>`_,
+which can be be installed with `Homebrew <http://brew.sh/>`_.
 
-Install bash completion using::
+Install Bash Completion using::
 
     brew install bash-completion
 
