@@ -28,6 +28,7 @@ test_settings = {
 
 @mock.patch.dict('storage_utils.settings._global_settings', copy.deepcopy(test_settings),
                  clear=True)
+@mock.patch('os.environ', {})
 class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
@@ -43,7 +44,12 @@ class TestSettings(unittest.TestCase):
                 'object_threads': 10,
                 'segment_threads': 10
             },
-            'swift': {},
+            'swift': {
+                'username': '',
+                'password': '',
+                'auth_url': '',
+                'temp_url_key': ''
+            },
             'swift:delete': {
                 'object_threads': 10
             },
@@ -67,17 +73,28 @@ class TestSettings(unittest.TestCase):
         settings._initialize()
         self.assertEquals(settings._global_settings, expected_settings)
 
-    def test_initialize_file(self):
+    def test_initialize_w_user_file(self):
         expected_settings = {
-            'stor': {
-                'str_val': 'this is a string'
+            'stor': {},
+            's3': {},
+            's3:upload': {
+                'segment_size': 8388608,
+                'object_threads': 10,
+                'segment_threads': 10
             },
-            'something': {
-                'just': 'another value'
+            's3:download': {
+                'segment_size': 8388608,
+                'object_threads': 10,
+                'segment_threads': 10
             },
             'swift': {
-                'num_retries': 5,
-                'fake_secret_key': '7jsdf0983j""SP{}?//'
+                'username': 'fake_user',
+                'password': 'fake_password',
+                'auth_url': '',
+                'temp_url_key': ''
+            },
+            'swift:delete': {
+                'object_threads': 10
             },
             'swift:download': {
                 'container_threads': 10,
@@ -97,7 +114,8 @@ class TestSettings(unittest.TestCase):
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
-        settings._initialize(filename)
+        with mock.patch('storage_utils.settings.USER_CONFIG_FILE', filename):
+            settings._initialize()
         self.assertEquals(settings._global_settings, expected_settings)
 
     def test_get(self):
@@ -139,6 +157,14 @@ class TestSettings(unittest.TestCase):
     def test_update_wo_settings(self):
         settings.update()
         self.assertEquals(settings._global_settings, test_settings)
+
+    @mock.patch.dict('storage_utils.settings._global_settings',
+                     {'foo': 1}, clear=True)
+    def test_update_validation_error(self):
+        with self.assertRaisesRegexp(ValueError, 'not a valid setting'):
+            settings.update({'foo': {'bar': 3}})
+        with self.assertRaisesRegexp(ValueError, 'not a valid setting'):
+            settings.update({'bar': 4})
 
     def test_use_w_settings(self):
         update_settings = {
@@ -182,7 +208,7 @@ class TestSettings(unittest.TestCase):
             self.assertEquals(settings._global_settings, test_settings)
         self.assertEquals(settings._global_settings, test_settings)
 
-    @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
+    @mock.patch.dict('storage_utils.settings._global_settings', {'foo': ''}, clear=True)
     def test_use_nested_w_update(self):
         settings.update({'foo': 0})
         self.assertEquals(settings.get(), {'foo': 0})
@@ -199,7 +225,7 @@ class TestSettings(unittest.TestCase):
         settings.update({'foo': 3})
         self.assertEquals(settings.get(), {'foo': 3})
 
-    @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
+    @mock.patch.dict('storage_utils.settings._global_settings', {'foo': ''}, clear=True)
     def test_use_update_w_error(self):
         with settings.use({'foo': 1}):
             with self.assertRaises(RuntimeError):
@@ -211,7 +237,7 @@ class TestSettings(unittest.TestCase):
             self.assertEquals(settings.get(), {'foo': value})
             time.sleep(.01)
 
-    @mock.patch.dict('storage_utils.settings._global_settings', clear=True)
+    @mock.patch.dict('storage_utils.settings._global_settings', {'foo': ''}, clear=True)
     def test_use_multithreaded(self):
         threads = []
         for i in range(30):
