@@ -84,11 +84,11 @@ import signal
 import sys
 import tempfile
 
-import storage_utils
-from storage_utils import exceptions
-from storage_utils import settings
-from storage_utils import Path
-from storage_utils import utils
+import stor
+from stor import exceptions
+from stor import settings
+from stor import Path
+from stor import utils
 
 PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles')
 SERVICES = ('s3', 'swift')
@@ -262,7 +262,7 @@ def get_path(pth, mode=None):
 
 
 def create_parser():
-    parser = argparse.ArgumentParser(description='A command line interface for storage-utils.')
+    parser = argparse.ArgumentParser(description='A command line interface for stor.')
 
     # todo: make default an environment variable?
     parser.add_argument('-c', '--config',
@@ -286,14 +286,14 @@ def create_parser():
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    parser_list.set_defaults(func=storage_utils.listpath)
+    parser_list.set_defaults(func=stor.listpath)
 
     ls_msg = 'List path as a directory.'
     parser_ls = subparsers.add_parser('ls',  # noqa
                                       help=ls_msg,
                                       description=ls_msg)
     parser_ls.add_argument('path', type=get_path, metavar='PATH')
-    parser_ls.set_defaults(func=storage_utils.listdir)
+    parser_ls.set_defaults(func=stor.listdir)
 
     cp_msg = 'Copy a source to a destination path.'
     cp_msg = 'Alias for copy.'
@@ -306,12 +306,12 @@ def create_parser():
                                 ' Must be specified before any other flags.',
                            action='store_const',
                            dest='func',
-                           const=storage_utils.copytree,
-                           default=storage_utils.copy)
+                           const=stor.copytree,
+                           default=stor.copy)
     parser_cp.add_argument('source',
                            type=get_path,
                            metavar='SOURCE',
-                           action=_make_stdin_action(storage_utils.copytree,
+                           action=_make_stdin_action(stor.copytree,
                                                      '- cannot be used with -r'))
     parser_cp.add_argument('dest', type=get_path, metavar='DEST')
 
@@ -323,8 +323,8 @@ def create_parser():
                            help='Remove a path and all its contents.',
                            action='store_const',
                            dest='func',
-                           const=storage_utils.rmtree,
-                           default=storage_utils.remove)
+                           const=stor.rmtree,
+                           default=stor.remove)
     parser_rm.add_argument('path', type=get_path, metavar='PATH')
 
     walkfiles_msg = 'List all files under a path that match an optional pattern.'
@@ -336,7 +336,7 @@ def create_parser():
                                   type=str,
                                   metavar='REGEX')
     parser_walkfiles.add_argument('path', type=get_path, metavar='PATH')
-    parser_walkfiles.set_defaults(func=storage_utils.walkfiles)
+    parser_walkfiles.set_defaults(func=stor.walkfiles)
 
     cat_msg = 'Output file contents to stdout.'
     parser_cat = subparsers.add_parser('cat', help=cat_msg, description=cat_msg)
@@ -409,10 +409,10 @@ def print_results(results):
 def main():
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    s3_logger = logging.getLogger('storage_utils.experimental.s3.progress')
+    s3_logger = logging.getLogger('stor.experimental.s3.progress')
     s3_logger.setLevel(logging.INFO)
     s3_logger.addHandler(handler)
-    swift_logger = logging.getLogger('storage_utils.swift.progress')
+    swift_logger = logging.getLogger('stor.swift.progress')
     swift_logger.setLevel(logging.INFO)
     swift_logger.addHandler(handler)
 
