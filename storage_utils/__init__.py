@@ -56,6 +56,7 @@ expand = _delegate_to_path('expand')
 join = _delegate_to_path('joinpath')
 split = _delegate_to_path('splitpath')
 splitext = _delegate_to_path('splitext')
+listpath = _delegate_to_path('list')
 listdir = _delegate_to_path('listdir')
 glob = _delegate_to_path('glob')
 exists = _delegate_to_path('exists')
@@ -68,10 +69,6 @@ getsize = _delegate_to_path('getsize')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
-# added for cli - can remove this comment after review
-listpath = _delegate_to_path('list')
-upload = _delegate_to_path('upload')
-download = _delegate_to_path('download')
 
 
 def path(pth):
