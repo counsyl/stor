@@ -9,7 +9,7 @@ def get_version():
     """
     Extracts the version number from setup.py
     """
-    proc = subprocess.Popen(['make', 'version'], cwd='..',
+    proc = subprocess.Popen(['make', '--no-print-directory', 'version'], cwd='..',
                             stdout=subprocess.PIPE)
     return proc.communicate()[0].strip()
 
