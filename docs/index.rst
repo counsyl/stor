@@ -30,6 +30,8 @@ file's contents to ``stdout`` with a ``cat`` command::
 
 For more details on using the CLI, go to the :ref:`cli <CLI>` section or see ``stor --help`` on the command line after installing.
 
+.. note::  The CLI also has tab completion capabilities that can be installed with instructions :ref:`here <cli_tab_completion_installation>`.
+
 Library Quick Start
 -------------------
 

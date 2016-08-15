@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v8.5.0
+------
+
+* Adds tab completion to CLI
+
 v8.4.0
 ------
 
