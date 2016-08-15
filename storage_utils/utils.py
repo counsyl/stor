@@ -80,6 +80,13 @@ def has_trailing_slash(p):
     return str(p)[-1] == '/'
 
 
+def remove_trailing_slash(p):
+    """Returns a path with trailing slashes removed or None if not a path"""
+    if not p:
+        return p
+    return type(p)(p.rstrip('/'))
+
+
 def validate_condition(condition):
     """Verifies condition is a function that takes one argument"""
     if condition is None:

@@ -1,8 +1,22 @@
 Release Notes
 =============
 
+v8.4.0
+------
+
+* Removes the default Counsyl auth url
+* Fixes some references to 'file_name_to_object_name' since it's now part of utils
+* Monkey patches an error in python-swiftclient
+* Vendors in Counsyl backoff
+
+v8.3.0
+------
+
+* Add a CLI offering UNIX-like commands, relative paths, and working with ``stdin`` and ``stdout``.
+
 v8.2.0
 ------
+
 * Implement threading and progress logging in S3 ``upload`` and ``download``
 * Add S3 directory markers and additional options including condition checking and use_manifest
 
@@ -12,7 +26,6 @@ v8.1.0
 * Added S3 compatibility, including ``S3Path`` and associated methods.
 * Consolidated common code: created base ``OBSPath`` and ``OBSFile`` classes
 * Created ``OBSUploadObject`` that wraps around ``SwiftUploadObject`` to make it cloud-agnostic
-
 
 v8.0.0
 ------
@@ -152,7 +165,7 @@ v6.0.0
 * Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows
-* Added `swift.file_name_to_object_name` for converting file names on any system to
+* Added 'swift.file_name_to_object_name' for converting file names on any system to
   their associated object name
 * Integration tests are part of package's tests
 * Addition of `swift.ConflictError` exception, which is thrown when storage

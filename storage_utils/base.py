@@ -259,14 +259,9 @@ class Path(text_type):
     def open(self, **kwargs):
         raise NotImplementedError
 
-    # todo: check if necessary and/or remove
     def list(self, *args, **kwargs):
+        """List all contents using the path as a prefix."""
         raise NotImplementedError
-    def upload(self, *args, **kwargs):
-        raise NotImplementedError
-    def download(self, *args, **kwargs):
-        raise NotImplementedError
-
 
     def listdir(self):
         raise NotImplementedError
