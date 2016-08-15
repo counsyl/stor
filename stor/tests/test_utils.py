@@ -3,7 +3,6 @@ import logging
 import mock
 import ntpath
 import os
-import shutil
 import unittest
 
 from testfixtures import LogCapture
@@ -15,7 +14,6 @@ from stor.experimental.s3 import S3Path
 from stor.swift import SwiftPath
 from stor.windows import WindowsPath
 from stor import utils
-
 
 
 class TestBaseProgressLogger(unittest.TestCase):
@@ -41,7 +39,7 @@ class TestPath(unittest.TestCase):
 
     @mock.patch('os.path', ntpath)
     def test_abs_windows_path_returned(self):
-        p = Path('C:\\my\\windows\\path')y
+        p = Path('C:\\my\\windows\\path')
         self.assertTrue(isinstance(p, WindowsPath))
 
     def test_s3_returned(self):
@@ -151,7 +149,7 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
 class TestPathFunction(unittest.TestCase):
     def test_path_function_back_compat(self):
         pth = Path('/blah')
-        self.assertIsInstance(pth, storage_utils.Path)
+        self.assertIsInstance(pth, stor.Path)
 
 
 class TestMakeDestDir(unittest.TestCase):

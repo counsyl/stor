@@ -53,7 +53,6 @@ from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
 from stor.third_party.backoff import with_backoff
-from stor.utils import file_name_to_object_name
 
 
 logger = logging.getLogger(__name__)

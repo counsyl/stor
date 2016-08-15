@@ -5,7 +5,6 @@ import unittest
 
 import stor
 from stor import NamedTemporaryDirectory
-from stor import path
 from stor import Path
 from stor import posix
 from stor.experimental import s3

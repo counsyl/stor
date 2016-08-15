@@ -3,4 +3,4 @@
 CLI
 ===
 
-.. automodule:: storage_utils.cli
+.. automodule:: stor.cli
