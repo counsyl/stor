@@ -54,4 +54,4 @@ The bash completion script for stor can then be installed with::
 
 If you don't have permissions to install the script to /etc, it can also be saved in your home directory as follows::
 
-    cat `which-stor-completion.bash` >> ~/.bash_completion
+    cat `which stor-completion.bash` >> ~/.bash_completion
