@@ -11,7 +11,8 @@ __get_path_prefix()
 _stor_complete()
 {
         COMPREPLY=()
-        local cur=$(_get_cword)
+        local cur
+        _get_comp_words_by_ref -n : cur
         local words=$(stor ls "$(__get_path_prefix $cur)" 2>/dev/null) || ""
         COMPREPLY=( $(compgen -W "$words" -- "$cur") )
         __ltrim_colon_completions "$cur"
