@@ -297,9 +297,6 @@ class S3Path(OBSPath):
         except exceptions.NotFoundError:
             return False
 
-    def isabs(self):
-        return True
-
     def isdir(self):
         """
         Any S3 object whose name ends with a ``/`` is considered to be an empty directory marker.
@@ -323,12 +320,6 @@ class S3Path(OBSPath):
             return self.stat() and not utils.has_trailing_slash(self)
         except (exceptions.NotFoundError, ValueError):
             return False
-
-    def islink(self):
-        return False
-
-    def ismount(self):
-        return True
 
     def getsize(self):
         """
@@ -534,13 +525,17 @@ class S3Path(OBSPath):
         with S3DownloadLogger(len(files_to_download)) as dl:
             pool = ThreadPool(options['object_threads'])
             try:
-                for result in pool.imap_unordered(self._download_object_worker,
-                                                  files_to_download):
-                    if result['success']:
-                        dl.add_result(result)
-                        downloaded['completed'].append(result)
-                    else:
-                        downloaded['failed'].append(result)
+                result_iter = pool.imap_unordered(self._download_object_worker, files_to_download)
+                while True:
+                    try:
+                        result = result_iter.next(0xFFFF)
+                        if result['success']:
+                            dl.add_result(result)
+                            downloaded['completed'].append(result)
+                        else:
+                            downloaded['failed'].append(result)
+                    except StopIteration:
+                        break
                 pool.close()
             except:
                 pool.terminate()
@@ -658,12 +653,17 @@ class S3Path(OBSPath):
         with S3UploadLogger(len(files_to_upload)) as ul:
             pool = ThreadPool(options['object_threads'])
             try:
-                for result in pool.imap_unordered(self._upload_object, files_to_upload):
-                    if result['success']:
-                        ul.add_result(result)
-                        uploaded['completed'].append(result)
-                    else:
-                        uploaded['failed'].append(result)
+                result_iter = pool.imap_unordered(self._upload_object, files_to_upload)
+                while True:
+                    try:
+                        result = result_iter.next(0xFFFF)
+                        if result['success']:
+                            ul.add_result(result)
+                            uploaded['completed'].append(result)
+                        else:
+                            uploaded['failed'].append(result)
+                    except StopIteration:
+                        break
                 pool.close()
             except:
                 pool.terminate()

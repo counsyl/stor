@@ -1,5 +1,8 @@
 import mock
 import os
+import tempfile
+import unittest
+
 import stor
 from stor import NamedTemporaryDirectory
 from stor import path
@@ -10,8 +13,6 @@ from stor import settings
 from stor import swift
 from stor import utils
 from stor import windows
-import tempfile
-import unittest
 
 
 class TestDiv(unittest.TestCase):
@@ -125,9 +126,9 @@ class TestCopy(unittest.TestCase):
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
     def test_swift_destination(self, mock_upload):
-        dest = stor.path('swift://tenant/container/file.txt')
+        dest = Path('swift://tenant/container/file.txt')
         with tempfile.NamedTemporaryFile() as tmp_f:
-            path(tmp_f.name).copy(dest)
+            Path(tmp_f.name).copy(dest)
             upload_args = mock_upload.call_args_list[0][0]
             self.assertEquals(upload_args[0], dest.parent)
             self.assertEquals(upload_args[1][0].source, tmp_f.name)
@@ -186,7 +187,7 @@ class TestCopytree(unittest.TestCase):
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
     def test_swift_destination(self, mock_upload):
         source = '.'
-        dest = stor.path('swift://tenant/container')
+        dest = Path('swift://tenant/container')
         options = {
             'swift:upload': {
                 'object_threads': 30,
@@ -207,7 +208,7 @@ class TestCopytree(unittest.TestCase):
 class TestOpen(unittest.TestCase):
     def test_open_works_w_swift_params(self):
         with tempfile.NamedTemporaryFile() as f:
-            p = stor.path(f.name).open(swift_upload_kwargs={
+            p = Path(f.name).open(swift_upload_kwargs={
                 'use_slo': True
             })
             p.close()
@@ -236,6 +237,39 @@ class TestGlob(unittest.TestCase):
 
             files = Path('.').glob('*.txt')
             self.assertEquals(set(files), set(['./file.txt', './file2.txt']))
+
+
+class TestList(unittest.TestCase):
+    def test_list(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            open('file1.txt', 'w').close()
+            os.mkdir('dir')
+            os.mkdir('dir/dir2')
+            open('dir/file2.txt', 'w').close()
+            open('dir/dir2/file3', 'w').close()
+            open('dir/dir2/file4.txt', 'w').close()
+
+            files = Path('.').list()
+            self.assertEquals(set(files), set(['./file1.txt',
+                                               './dir/file2.txt',
+                                               './dir/dir2/file3',
+                                               './dir/dir2/file4.txt']))
+
+
+class TestWalkfiles(unittest.TestCase):
+    def test_walkfiles(self):
+        with NamedTemporaryDirectory(change_dir=True):
+            open('file1.txt', 'w').close()
+            os.mkdir('dir')
+            os.mkdir('dir/dir2')
+            open('dir/file2.txt', 'w').close()
+            open('dir/dir2/file3', 'w').close()
+            open('dir/dir2/file4.txt', 'w').close()
+
+            files = Path('.').walkfiles(pattern='*.txt')
+            self.assertEquals(set(files), set(['./file1.txt',
+                                               './dir/file2.txt',
+                                               './dir/dir2/file4.txt']))
 
 
 class TestMisc(unittest.TestCase):

@@ -1079,6 +1079,7 @@ class TestUpload(S3TestCase):
             for i in range(20)
         }
         mock_getsize.return_value = 20
+        mock_pool.return_value.imap_unordered.return_value.next.side_effect = StopIteration
 
         s3_p = S3Path('s3://bucket')
         with settings.use({'s3:upload': {'object_threads': 20}}):
@@ -1257,6 +1258,7 @@ class TestDownload(S3TestCase):
             S3Path('s3://bucket/file%s' % i)
             for i in range(20)
         ]
+        mock_pool.return_value.imap_unordered.return_value.next.side_effect = StopIteration
         s3_p = S3Path('s3://bucket')
         with settings.use({'s3:download': {'object_threads': 20}}):
             s3_p.download(['test'])

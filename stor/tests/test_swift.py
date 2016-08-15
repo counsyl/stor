@@ -1448,43 +1448,6 @@ class TestDownload(SwiftTestCase):
                            mock.call(mock.ANY, use_manifest=True)])
 
 
-class TestFileNameToObjectName(SwiftTestCase):
-    @mock.patch('os.path', ntpath)
-    def test_abs_windows_path(self):
-        self.assertEquals(swift.file_name_to_object_name(r'C:\windows\path\\'),
-                          'windows/path')
-
-    @mock.patch('os.path', ntpath)
-    def test_rel_windows_path(self):
-        self.assertEquals(swift.file_name_to_object_name(r'.\windows\path\\'),
-                          'windows/path')
-
-    def test_abs_path(self):
-        self.assertEquals(swift.file_name_to_object_name('/abs/path/'),
-                          'abs/path')
-
-    def test_hidden_file(self):
-        self.assertEquals(swift.file_name_to_object_name('.hidden'),
-                          '.hidden')
-
-    def test_hidden_dir(self):
-        self.assertEquals(swift.file_name_to_object_name('.git/file'),
-                          '.git/file')
-
-    def test_no_obj_name(self):
-        self.assertEquals(swift.file_name_to_object_name('.'),
-                          '')
-
-    def test_poorly_formatted_path(self):
-        self.assertEquals(swift.file_name_to_object_name('.//poor//path//file'),
-                          'poor/path/file')
-
-    @mock.patch.dict(os.environ, {'HOME': '/home/wes/'})
-    def test_path_w_env_var(self):
-        self.assertEquals(swift.file_name_to_object_name('$HOME/path//file'),
-                          'home/wes/path/file')
-
-
 @mock.patch('stor.utils.walk_files_and_dirs', autospec=True)
 class TestUpload(SwiftTestCase):
     def test_abs_path(self, mock_walk_files_and_dirs):

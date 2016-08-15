@@ -4,14 +4,18 @@ import mock
 import ntpath
 import os
 import shutil
+import unittest
+
+from testfixtures import LogCapture
+
 import stor
+from stor import Path
 from stor.posix import PosixPath
 from stor.experimental.s3 import S3Path
 from stor.swift import SwiftPath
 from stor.windows import WindowsPath
 from stor import utils
-from testfixtures import LogCapture
-import unittest
+
 
 
 class TestBaseProgressLogger(unittest.TestCase):
@@ -28,16 +32,16 @@ class TestBaseProgressLogger(unittest.TestCase):
 
 class TestPath(unittest.TestCase):
     def test_swift_returned(self):
-        p = stor.path('swift://my/swift/path')
+        p = Path('swift://my/swift/path')
         self.assertTrue(isinstance(p, SwiftPath))
 
     def test_posix_path_returned(self):
-        p = stor.path('my/posix/path')
+        p = Path('my/posix/path')
         self.assertTrue(isinstance(p, PosixPath))
 
     @mock.patch('os.path', ntpath)
     def test_abs_windows_path_returned(self):
-        p = stor.path('C:\\my\\windows\\path')
+        p = Path('C:\\my\\windows\\path')y
         self.assertTrue(isinstance(p, WindowsPath))
 
     def test_s3_returned(self):
@@ -78,7 +82,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
         # is because git doesnt allow a truly empty directory to be checked
         # in
         swift_dir = (
-            stor.path(__file__).expand().abspath().parent /
+            Path(__file__).expand().abspath().parent /
             'swift_upload'
         )
         with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
@@ -91,7 +95,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
 
     def test_w_file(self):
         name = (
-            stor.path(__file__).expand().abspath().parent /
+            Path(__file__).expand().abspath().parent /
             'swift_upload' / 'file1'
         )
 
@@ -100,7 +104,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
 
     def test_w_invalid_file(self):
         name = (
-            stor.path(__file__).expand().abspath().parent /
+            Path(__file__).expand().abspath().parent /
             'swift_upload' / 'invalid'
         )
 
@@ -113,7 +117,7 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
         tmp_d = None
         with utils.NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.assertTrue(tmp_d.exists())
-            p = stor.path('.').expand().abspath()
+            p = Path('.').expand().abspath()
             self.assertTrue(tmp_d in p)
 
         self.assertFalse(tmp_d.exists())
@@ -146,39 +150,42 @@ class TestNamedTemporaryDirectory(unittest.TestCase):
 
 class TestPathFunction(unittest.TestCase):
     def test_path_function_back_compat(self):
-        pth = stor.path('/blah')
-        self.assertIsInstance(pth, stor.Path)
+        pth = Path('/blah')
+        self.assertIsInstance(pth, storage_utils.Path)
 
 
 class TestMakeDestDir(unittest.TestCase):
-    def setUp(self):
-        super(TestMakeDestDir, self).setUp()
-        os.mkdir('test')
-
-    def tearDown(self):
-        super(TestMakeDestDir, self).tearDown()
-        shutil.rmtree('test')
-
     def test_make_dest_dir_w_oserror(self):
-        open('test/test', 'w').close()
-        with self.assertRaises(OSError):
-            utils.make_dest_dir('test/test')
-        self.assertFalse(os.path.isdir('test/test'))
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            test_file = os.path.join(tmp_d, 'test_file')
+            open(test_file, 'w').close()
+
+            with self.assertRaisesRegexp(OSError, 'File exists'):
+                utils.make_dest_dir(test_file)
+            self.assertFalse(os.path.isdir(test_file))
 
     def test_make_dest_dir_w_enotdir_error(self):
-        open('test/test', 'w').close()
-        with self.assertRaises(OSError) as exc:
-            utils.make_dest_dir('test/test/test')
-        self.assertEquals(exc.exception.errno, errno.ENOTDIR)
-        self.assertFalse(os.path.isdir('test/test/test'))
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            test_file = os.path.join(tmp_d, 'test_file')
+            open(test_file, 'w').close()
+            with self.assertRaisesRegexp(OSError, 'already exists as a file') as exc:
+                new_dir = os.path.join(test_file, 'test')
+                utils.make_dest_dir(new_dir)
+            self.assertEquals(exc.exception.errno, errno.ENOTDIR)
+            self.assertFalse(os.path.isdir(new_dir))
 
     def test_make_dest_dir_success(self):
-        utils.make_dest_dir('test/test')
-        self.assertTrue(os.path.isdir('test/test'))
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            dest_dir = os.path.join(tmp_d, 'test')
+            utils.make_dest_dir(dest_dir)
+            self.assertTrue(os.path.isdir(dest_dir))
 
     def test_make_dest_dir_existing(self):
-        os.mkdir('test/test')
-        utils.make_dest_dir('test/test')
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            dest_dir = os.path.join(tmp_d, 'test')
+            os.mkdir(dest_dir)
+            utils.make_dest_dir(dest_dir)
+            self.assertTrue(os.path.isdir(dest_dir))
 
 
 class TestCondition(unittest.TestCase):
@@ -194,3 +201,58 @@ class TestCondition(unittest.TestCase):
 class TestMisc(unittest.TestCase):
     def test_has_trailing_slash(self):
         self.assertFalse(utils.has_trailing_slash(''))
+
+    def test_has_trailing_slash_none(self):
+        self.assertFalse(utils.has_trailing_slash(None))
+
+    def test_has_trailing_slash_true(self):
+        self.assertTrue(utils.has_trailing_slash('has/slash/'))
+
+    def test_has_trailing_slash_false(self):
+        self.assertFalse(utils.has_trailing_slash('no/slash'))
+
+    def test_remove_trailing_slash_none(self):
+        self.assertIsNone(utils.remove_trailing_slash(None))
+
+    def test_remove_trailing_slash_wo_slash(self):
+        self.assertEquals(utils.remove_trailing_slash('no/slash'), 'no/slash')
+
+    def test_remove_trailing_slash_multiple(self):
+        self.assertEquals(utils.remove_trailing_slash('many/slashes//'), 'many/slashes')
+
+
+class TestFileNameToObjectName(unittest.TestCase):
+    @mock.patch('os.path', ntpath)
+    def test_abs_windows_path(self):
+        self.assertEquals(utils.file_name_to_object_name(r'C:\windows\path\\'),
+                          'windows/path')
+
+    @mock.patch('os.path', ntpath)
+    def test_rel_windows_path(self):
+        self.assertEquals(utils.file_name_to_object_name(r'.\windows\path\\'),
+                          'windows/path')
+
+    def test_abs_path(self):
+        self.assertEquals(utils.file_name_to_object_name('/abs/path/'),
+                          'abs/path')
+
+    def test_hidden_file(self):
+        self.assertEquals(utils.file_name_to_object_name('.hidden'),
+                          '.hidden')
+
+    def test_hidden_dir(self):
+        self.assertEquals(utils.file_name_to_object_name('.git/file'),
+                          '.git/file')
+
+    def test_no_obj_name(self):
+        self.assertEquals(utils.file_name_to_object_name('.'),
+                          '')
+
+    def test_poorly_formatted_path(self):
+        self.assertEquals(utils.file_name_to_object_name('.//poor//path//file'),
+                          'poor/path/file')
+
+    @mock.patch.dict(os.environ, {'HOME': '/home/wes/'})
+    def test_path_w_env_var(self):
+        self.assertEquals(utils.file_name_to_object_name('$HOME/path//file'),
+                          'home/wes/path/file')

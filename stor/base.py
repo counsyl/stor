@@ -259,6 +259,10 @@ class Path(text_type):
     def open(self, **kwargs):
         raise NotImplementedError
 
+    def list(self, *args, **kwargs):
+        """List all contents using the path as a prefix."""
+        raise NotImplementedError
+
     def listdir(self):
         raise NotImplementedError
 

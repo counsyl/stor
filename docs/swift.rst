@@ -133,4 +133,4 @@ Exceptions
 Utilities
 ---------
 
-.. autofunction:: file_name_to_object_name
+.. autofunction:: storage_utils.utils.file_name_to_object_name
