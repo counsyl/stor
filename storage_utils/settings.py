@@ -7,7 +7,7 @@ import threading
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'
 
-ENV_VARS = {
+_ENV_VARS = {
     'swift': {
         'username': 'OS_USERNAME',
         'password': 'OS_PASSWORD',
@@ -42,11 +42,11 @@ def _get_env_vars():
     Currently handles swift credentials.
     """
     new_settings = {}
-    for section in ENV_VARS:
+    for section in _ENV_VARS:
         options = {}
-        for option in ENV_VARS[section]:
-            if ENV_VARS[section][option] in os.environ:
-                options[option] = _parse_config_val(os.environ.get(ENV_VARS[section][option]))
+        for option in _ENV_VARS[section]:
+            if _ENV_VARS[section][option] in os.environ:
+                options[option] = _parse_config_val(os.environ.get(_ENV_VARS[section][option]))
         new_settings[section] = options
     update(new_settings)
 

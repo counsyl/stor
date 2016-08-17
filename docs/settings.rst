@@ -1,8 +1,8 @@
 Settings
 ========
 
-Provides global settings and options for methods such as `SwiftPath.upload`
-and `SwiftPath.download`.
+Provides global settings and options for accessing OBS services like swift
+and configuring methods such as `SwiftPath.upload` and `SwiftPath.download`.
 
 Settings are stored internally as nested dictionaries. When using `update` or
 `use`, this dictionary structure should be followed.
