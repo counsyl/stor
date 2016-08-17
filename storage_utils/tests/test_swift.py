@@ -1,5 +1,4 @@
 import cStringIO
-import imp
 import gzip
 import logging
 import ntpath
@@ -16,7 +15,7 @@ from testfixtures import LogCapture
 import storage_utils
 from storage_utils import exceptions
 from storage_utils import NamedTemporaryDirectory
-from storage_utils import path
+from storage_utils import Path
 from storage_utils import settings
 from storage_utils import swift
 from storage_utils import utils
@@ -49,19 +48,19 @@ def _make_stat_response(stat_response=None):
 
 class TestBasicPathMethods(unittest.TestCase):
     def test_name(self):
-        p = path('swift://tenant/container/path/to/resource')
+        p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.name, 'resource')
 
     def test_parent(self):
-        p = path('swift://tenant/container/path/to/resource')
+        p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.parent, 'swift://tenant/container/path/to')
 
     def test_dirname(self):
-        p = path('swift://tenant/container/path/to/resource')
+        p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.dirname(), 'swift://tenant/container/path/to')
 
     def test_basename(self):
-        p = path('swift://tenant/container/path/to/resource')
+        p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
 
 
@@ -94,13 +93,13 @@ class TestRepr(SwiftTestCase):
 class TestPathManipulations(SwiftTestCase):
     def test_add(self):
         swift_p = SwiftPath('swift://a')
-        swift_p = swift_p + 'b' + path('c')
+        swift_p = swift_p + 'b' + Path('c')
         self.assertTrue(isinstance(swift_p, SwiftPath))
         self.assertEquals(swift_p, 'swift://abc')
 
     def test_div(self):
         swift_p = SwiftPath('swift://t')
-        swift_p = swift_p / 'c' / path('p')
+        swift_p = swift_p / 'c' / Path('p')
         self.assertTrue(isinstance(swift_p, SwiftPath))
         self.assertEquals(swift_p, 'swift://t/c/p')
 
@@ -155,41 +154,30 @@ class TestResource(SwiftTestCase):
         self.assertEquals(swift_p.resource, 'nested/dir')
 
 
-class TestUpdateSettings(SwiftTestCase):
-    def test_bad_setting(self):
-        with self.assertRaisesRegexp(ValueError, 'invalid setting'):
-            swift.update_settings(bad_setting='bad')
-
-    def test_update_all_settings(self):
-        swift.update_settings(auth_url='testing_auth_url',
-                              password='testing_password',
-                              username='testing_username',
-                              num_retries=100)
-        self.assertEquals(swift.auth_url, 'testing_auth_url')
-        self.assertEquals(swift.password, 'testing_password')
-        self.assertEquals(swift.username, 'testing_username')
-        self.assertEquals(swift.num_retries, 100)
-
-
 class TestGetSwiftConnectionOptions(SwiftTestCase):
-    @mock.patch('storage_utils.swift.username', None)
     def test_wo_username(self):
         swift_p = SwiftPath('swift://tenant/')
-        with self.assertRaises(swift.ConfigurationError):
-            swift_p._get_swift_connection_options()
+        with settings.use({'swift': {'username': ''}}):
+            with self.assertRaises(swift.ConfigurationError):
+                swift_p._get_swift_connection_options()
 
-    @mock.patch('storage_utils.swift.password', None)
     def test_wo_password(self):
         swift_p = SwiftPath('swift://tenant/')
-        with self.assertRaises(swift.ConfigurationError):
-            swift_p._get_swift_connection_options()
+        with settings.use({'swift': {'password': ''}}):
+            with self.assertRaises(swift.ConfigurationError):
+                swift_p._get_swift_connection_options()
 
     def test_w_update_settings(self):
-        swift.update_settings(auth_url='new_auth_url',
-                              password='new_password',
-                              username='new_username')
-        swift_p = SwiftPath('swift://tenant/')
-        options = swift_p._get_swift_connection_options()
+        new_settings = {
+            'swift': {
+                'auth_url': 'new_auth_url',
+                'password': 'new_password',
+                'username': 'new_username'
+            }
+        }
+        with settings.use(new_settings):
+            swift_p = SwiftPath('swift://tenant/')
+            options = swift_p._get_swift_connection_options()
         self.assertEquals(options['os_auth_url'], 'new_auth_url')
         self.assertEquals(options['os_username'], 'new_username')
         self.assertEquals(options['os_password'], 'new_password')
@@ -218,8 +206,11 @@ class TestGetSwiftConnection(SwiftTestCase):
         self.mock_swift_get_conn.assert_called_once_with({'option': 'value'})
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
 class TestSwiftFile(SwiftTestCase):
+    def setUp(self):
+        super(TestSwiftFile, self).setUp()
+        settings.update({'swift': {'num_retries': 5}})
+
     def test_invalid_buffer_mode(self):
         swift_f = SwiftPath('swift://tenant/container/obj').open()
         swift_f.mode = 'invalid'
@@ -406,53 +397,86 @@ line4
 
 class TestTempURL(SwiftTestCase):
     @freezegun.freeze_time('2016-02-23 12:00:00')
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_success(self):
-        temp_url = SwiftPath('swift://tenant/container/obj').temp_url()
+        temp_settings = {
+            'swift': {
+                'temp_url_key': 'temp_key',
+                'auth_url': 'https://swift.com/auth/v1/'
+            }
+        }
+        with settings.use(temp_settings):
+            temp_url = SwiftPath('swift://tenant/container/obj').temp_url()
         expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
         self.assertEquals(temp_url, expected)
 
     @freezegun.freeze_time('2016-02-23 12:00:00')
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_success_w_inline(self):
-        temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=False)
-        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100'  # nopep8
-        self.assertEquals(temp_url, expected)
-        temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True)
-        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
-        self.assertEquals(temp_url, expected)
+        temp_settings = {
+            'swift': {
+                'temp_url_key': 'temp_key',
+                'auth_url': 'https://swift.com/auth/v1/'
+            }
+        }
+        with settings.use(temp_settings):
+            temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=False)
+            expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100'  # nopep8
+            self.assertEquals(temp_url, expected)
+            temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True)
+            expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
+            self.assertEquals(temp_url, expected)
 
     @freezegun.freeze_time('2016-02-23 12:00:00')
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_success_w_inline_and_filename(self):
-        temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True, filename='file')
+        temp_settings = {
+            'swift': {
+                'temp_url_key': 'temp_key',
+                'auth_url': 'https://swift.com/auth/v1/'
+            }
+        }
+        with settings.use(temp_settings):
+            temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True, filename='file')  # nopep8
         expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline&filename=file'  # nopep8
         self.assertEquals(temp_url, expected)
 
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_no_obj(self):
-        with self.assertRaisesRegexp(ValueError, 'on object'):
-            SwiftPath('swift://tenant/container').temp_url()
+        temp_settings = {
+            'swift': {
+                'temp_url_key': 'temp_key',
+                'auth_url': 'https://swift.com/auth/v1/'
+            }
+        }
+        with settings.use(temp_settings):
+            with self.assertRaisesRegexp(ValueError, 'on object'):
+                SwiftPath('swift://tenant/container').temp_url()
 
-    @mock.patch('storage_utils.swift.temp_url_key', 'temp_key')
-    @mock.patch('storage_utils.swift.auth_url', None)
     def test_no_auth_url(self):
-        with self.assertRaisesRegexp(ValueError, 'auth_url'):
-            SwiftPath('swift://tenant/container/obj').temp_url()
+        temp_settings = {
+            'swift': {
+                'temp_url_key': 'temp_key',
+                'auth_url': ''
+            }
+        }
+        with settings.use(temp_settings):
+            with self.assertRaisesRegexp(ValueError, 'auth url'):
+                SwiftPath('swift://tenant/container/obj').temp_url()
 
-    @mock.patch('storage_utils.swift.temp_url_key', None)
-    @mock.patch('storage_utils.swift.auth_url', 'https://swift.com/auth/v1/')
     def test_no_temp_url_key(self):
-        with self.assertRaisesRegexp(ValueError, 'temp_url_key'):
-            SwiftPath('swift://tenant/container/obj').temp_url()
+        temp_settings = {
+            'swift': {
+                'temp_url_key': '',
+                'auth_url': 'https://swift.com/auth/v1/'
+            }
+        }
+        with settings.use(temp_settings):
+            with self.assertRaisesRegexp(ValueError, 'temporary url key'):
+                SwiftPath('swift://tenant/container/obj').temp_url()
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
 class TestList(SwiftTestCase):
+    def setUp(self):
+        super(TestList, self).setUp()
+        settings.update({'swift': {'num_retries': 5}})
+
     def test_error(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.side_effect = ValueError
@@ -1076,7 +1100,7 @@ class TestExists(SwiftTestCase):
         mock_list.return_value = ({}, [])
         # key is we append trailing slash so only *could* match if there were a
         # file within the directory
-        result = path('swift://A/B/C/D')
+        result = Path('swift://A/B/C/D')
         self.assertFalse(result.exists())
         mock_list.assert_called_with('B', full_listing=False,
                                      limit=1, prefix='C/D/')
@@ -1111,15 +1135,15 @@ class TestDownloadObject(SwiftTestCase):
         self.assertEquals(download_kwargs['objects'], ['d'])
         self.assertEquals(download_kwargs['options'], {'out_file': 'file.txt'})
 
-    @mock.patch('storage_utils.swift.num_retries', 0)
     def test_raises_inconsistent_error(self):
         self.mock_swift.download.side_effect = SwiftError(
             'Error downloading /s_2_2110.bcl: '
             'md5sum != etag, b7a3d2ab6051e9390124f4df6040d9f5 != 15e3051e5558749f434acaeef2d5526d'
         )
-        with self.assertRaises(swift.InconsistentDownloadError):
-            swift_p = SwiftPath('swift://tenant/container/d')
-            swift_p.download_object('file.txt')
+        with settings.use({'swift': {'num_retries': 0}}):
+            with self.assertRaises(swift.InconsistentDownloadError):
+                swift_p = SwiftPath('swift://tenant/container/d')
+                swift_p.download_object('file.txt')
 
 
 class TestDownloadObjects(SwiftTestCase):
@@ -1205,18 +1229,18 @@ class TestDownloadObjects(SwiftTestCase):
                 'swift://tenant/container/bad/e/f/g.txt'
             ])
 
-    @mock.patch('storage_utils.swift.num_retries', 0)
     def test_raises_inconsistent_error(self):
         self.mock_swift.download.side_effect = SwiftError(
             'Error downloading /s_2_2110.bcl: '
             'read_length != content_length, 20 != 10'
         )
-        with self.assertRaises(swift.InconsistentDownloadError):
-            swift_p = SwiftPath('swift://tenant/container/bad')
-            swift_p.download_objects('output_dir', [
-                'swift://tenant/container/bad/e/f.txt',
-                'swift://tenant/container/bad/e/f/g.txt'
-            ])
+        with settings.use({'swift': {'num_retries': 0}}):
+            with self.assertRaises(swift.InconsistentDownloadError):
+                swift_p = SwiftPath('swift://tenant/container/bad')
+                swift_p.download_objects('output_dir', [
+                    'swift://tenant/container/bad/e/f.txt',
+                    'swift://tenant/container/bad/e/f/g.txt'
+                ])
 
 
 class TestGetProgressLogger(unittest.TestCase):
@@ -1226,8 +1250,11 @@ class TestGetProgressLogger(unittest.TestCase):
         self.assertEquals(l, expected)
 
 
-@mock.patch('storage_utils.swift.num_retries', 5)
 class TestDownload(SwiftTestCase):
+    def setUp(self):
+        super(TestDownload, self).setUp()
+        settings.update({'swift': {'num_retries': 5}})
+
     def test_download_tenant(self):
         swift_p = SwiftPath('swift://tenant')
         with self.assertRaisesRegexp(ValueError, 'tenant'):
@@ -1514,7 +1541,6 @@ class TestUpload(SwiftTestCase):
         self.assertEquals([o.object_name for o in upload_args[1]],
                           ['path/relative_path/file1'])
 
-    @mock.patch('storage_utils.swift.num_retries', 5)
     @mock.patch('time.sleep', autospec=True)
     def test_upload_put_object_error(self, mock_sleep, mock_walk_files_and_dirs):
         mock_walk_files_and_dirs.return_value = {
@@ -1527,8 +1553,9 @@ class TestUpload(SwiftTestCase):
             "failure and no ability to reset contents for reupload.")
 
         swift_p = SwiftPath('swift://tenant/container/path')
-        with self.assertRaisesRegexp(swift.FailedUploadError, 'put_object'):
-            swift_p.upload(['upload'])
+        with settings.use({'swift': {'num_retries': 5}}):
+            with self.assertRaisesRegexp(swift.FailedUploadError, 'put_object'):
+                swift_p.upload(['upload'])
 
         self.assertEquals(len(self.mock_swift.upload.call_args_list), 6)
 
@@ -1665,15 +1692,13 @@ class TestUpload(SwiftTestCase):
             'path': 'file2'
         }]
         upload_settings = {
-            'swift': {
-                'upload': {
-                    'segment_size': 1000,
-                    'use_slo': True,
-                    'leave_segments': True,
-                    'changed': True,
-                    'checksum': False,
-                    'skip_identical': True
-                }
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'checksum': False,
+                'skip_identical': True
             }
         }
 
@@ -1893,14 +1918,14 @@ class TestCopy(SwiftTestCase):
     def test_copy_posix_file_destination(self, mockdownload_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
         p.copy('file_dest.txt')
-        mockdownload_object.assert_called_once_with(p, path(u'file_dest.txt'))
+        mockdownload_object.assert_called_once_with(p, Path(u'file_dest.txt'))
 
     @mock.patch.object(swift.SwiftPath, 'download_object', autospec=True)
     def test_copy_posix_dir_destination(self, mockdownload_object):
         p = SwiftPath('swift://tenant/container/file_source.txt')
         with NamedTemporaryDirectory() as tmp_d:
             p.copy(tmp_d)
-            mockdownload_object.assert_called_once_with(p, path(tmp_d) / 'file_source.txt')
+            mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
 
     def test_copy_swift_destination(self):
         p = SwiftPath('swift://tenant/container/file_source')
@@ -1916,7 +1941,7 @@ class TestCopytree(SwiftTestCase):
             p.copytree('path', num_retries=1)
         mock_download.assert_called_once_with(
             p,
-            path(u'path'),
+            Path(u'path'),
             condition=None,
             use_manifest=False,
             num_retries=1)
@@ -2332,20 +2357,6 @@ class TestRmtree(SwiftTestCase):
         ])
 
 
-class TestInitialSettings(unittest.TestCase):
-    @mock.patch.dict(os.environ, {'OS_USERNAME': 'test_username'})
-    @mock.patch.dict(os.environ, {'OS_PASSWORD': 'test_password'})
-    @mock.patch.dict(os.environ, {'OS_NUM_RETRIES': '2'})
-    @mock.patch.dict(os.environ, {'OS_AUTH_URL': 'http://test_auth_url.com'})
-    def test_env_vars_are_loaded_during_import(self):
-        reimported_swift = imp.load_module('reimported_swift',
-                                           *imp.find_module('swift', ['storage_utils']))
-        self.assertEquals(reimported_swift.username, 'test_username')
-        self.assertEquals(reimported_swift.password, 'test_password')
-        self.assertEquals(reimported_swift.num_retries, 2)
-        self.assertEquals(reimported_swift.auth_url, 'http://test_auth_url.com')
-
-
 class TestPost(SwiftTestCase):
     def test_only_tenant(self):
         self.mock_swift.post.return_value = {}
@@ -2424,8 +2435,13 @@ class TestAuthCacheRetrying(SwiftTestCase):
 
 class TestSwiftAuthCaching(SwiftTestCase):
     def setUp(self):
-        self.setup_swift_mocks()
+        super(TestSwiftAuthCaching, self).setUp()
         self.disable_get_swift_service_mock()
+
+        test_settings = settings.get()['swift']
+        self.auth_url = test_settings['auth_url']
+        self.username = test_settings['username']
+        self.password = test_settings['password']
 
         def different_auth_per_tenant(auth_url, username, password, opts):
             return opts['tenant_name'] + 'url', opts['tenant_name'] + 'token'
@@ -2433,65 +2449,66 @@ class TestSwiftAuthCaching(SwiftTestCase):
         self.mock_swift_get_auth_keystone.side_effect = different_auth_per_tenant
 
     def test_simple_auth_caching(self):
-        path('swift://AUTH_seq_upload_prod')._get_swift_service()
-        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+        Path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(self.auth_url, self.username, self.password,
                              {'tenant_name': 'AUTH_seq_upload_prod'})
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
-        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        Path('swift://AUTH_seq_upload_prod')._get_swift_service()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
 
     def test_swift_auth_caching_multiple_tenants(self):
-        path('swift://AUTH_seq_upload_prod')._get_swift_service()
-        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+        Path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(self.auth_url, self.username, self.password,
                              {'tenant_name': 'AUTH_seq_upload_prod'})
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq])
         self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
-        path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        Path('swift://AUTH_seq_upload_prod')._get_swift_service()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq])
 
-        path('swift://AUTH_final_analysis_prod')._get_swift_service()
-        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+        Path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        call_final_prod = mock.call(self.auth_url, self.username, self.password,
                                     {'tenant_name': 'AUTH_final_analysis_prod'})
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq, call_final_prod])
-        path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        Path('swift://AUTH_final_analysis_prod')._get_swift_service()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq, call_final_prod])
-
-    def test_update_settings_clears_cache(self):
-        path('swift://AUTH_final_analysis_prod')._get_swift_service()
-        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
-                                    {'tenant_name': 'AUTH_final_analysis_prod'})
-        self.assertIn('AUTH_final_analysis_prod', swift._cached_auth_token_map)
-        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
-                         [call_final_prod])
-        swift.update_settings()
-        self.assertEqual(swift._cached_auth_token_map, {})
-        path('swift://AUTH_final_analysis_prod')._get_swift_service()
-        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
-                         [call_final_prod, call_final_prod])
 
     def test_auth_caching_connection(self):
-        path('swift://AUTH_seq_upload_prod')._get_swift_connection()
-        call_seq = mock.call(swift.auth_url, swift.username, swift.password,
+        Path('swift://AUTH_seq_upload_prod')._get_swift_connection()
+        call_seq = mock.call(self.auth_url, self.username, self.password,
                              {'tenant_name': 'AUTH_seq_upload_prod'})
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq])
         self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
-        path('swift://AUTH_seq_upload_prod')._get_swift_connection()
+        Path('swift://AUTH_seq_upload_prod')._get_swift_connection()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq])
 
-        path('swift://AUTH_final_analysis_prod')._get_swift_connection()
-        call_final_prod = mock.call(swift.auth_url, swift.username, swift.password,
+        Path('swift://AUTH_final_analysis_prod')._get_swift_connection()
+        call_final_prod = mock.call(self.auth_url, self.username, self.password,
                                     {'tenant_name': 'AUTH_final_analysis_prod'})
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq, call_final_prod])
-        path('swift://AUTH_final_analysis_prod')._get_swift_connection()
+        Path('swift://AUTH_final_analysis_prod')._get_swift_connection()
         self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list,
                          [call_seq, call_final_prod])
+
+    def test_auth_caching_updated_settings(self):
+        Path('swift://AUTH_seq_upload_prod')._get_swift_service()
+        call_seq = mock.call(self.auth_url, self.username, self.password,
+                             {'tenant_name': 'AUTH_seq_upload_prod'})
+        self.assertIn('AUTH_seq_upload_prod', swift._cached_auth_token_map)
+        self.assertEqual(self.mock_swift_get_auth_keystone.call_args_list, [call_seq])
+        Path('swift://AUTH_final_analysis_prod')._get_swift_service()
+        self.assertIn('AUTH_final_analysis_prod', swift._cached_auth_token_map)
+
+        settings.update({'swift': {'username': 'new_user'}})
+        Path('swift://AUTH_seq_upload_prod')._get_swift_service()
+
+        self.assertNotIn('AUTH_final_analysis_prod', swift._cached_auth_token_map)
 
 
 class TestIsMethods(SwiftTestCase):

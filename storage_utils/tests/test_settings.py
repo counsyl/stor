@@ -28,8 +28,8 @@ test_settings = {
 
 @mock.patch.dict('storage_utils.settings._global_settings', copy.deepcopy(test_settings),
                  clear=True)
-@mock.patch('os.environ', {})
 class TestSettings(unittest.TestCase):
+    @mock.patch.dict(os.environ, {}, clear=True)
     def test_initialize_default(self):
         expected_settings = {
             'stor': {},
@@ -48,7 +48,8 @@ class TestSettings(unittest.TestCase):
                 'username': '',
                 'password': '',
                 'auth_url': '',
-                'temp_url_key': ''
+                'temp_url_key': '',
+                'num_retries': 0
             },
             'swift:delete': {
                 'object_threads': 10
@@ -73,6 +74,7 @@ class TestSettings(unittest.TestCase):
         settings._initialize()
         self.assertEquals(settings._global_settings, expected_settings)
 
+    @mock.patch.dict(os.environ, {}, clear=True)
     def test_initialize_w_user_file(self):
         expected_settings = {
             'stor': {},
@@ -91,7 +93,8 @@ class TestSettings(unittest.TestCase):
                 'username': 'fake_user',
                 'password': 'fake_password',
                 'auth_url': '',
-                'temp_url_key': ''
+                'temp_url_key': '',
+                'num_retries': 0
             },
             'swift:delete': {
                 'object_threads': 10
@@ -117,6 +120,22 @@ class TestSettings(unittest.TestCase):
         with mock.patch('storage_utils.settings.USER_CONFIG_FILE', filename):
             settings._initialize()
         self.assertEquals(settings._global_settings, expected_settings)
+
+    @mock.patch.dict(os.environ, {'OS_USERNAME': 'test_username'})
+    @mock.patch.dict(os.environ, {'OS_PASSWORD': 'test_password'})
+    @mock.patch.dict(os.environ, {'OS_NUM_RETRIES': '2'})
+    @mock.patch.dict(os.environ, {'OS_AUTH_URL': 'http://test_auth_url.com'})
+    def test_env_vars_loaded(self):
+        print os.environ
+        print settings.get()
+        settings._initialize()
+        print settings.get()
+        print os.environ
+        initial_settings = settings.get()['swift']
+        self.assertEquals(initial_settings['username'], 'test_username')
+        self.assertEquals(initial_settings['password'], 'test_password')
+        self.assertEquals(initial_settings['num_retries'], 2)
+        self.assertEquals(initial_settings['auth_url'], 'http://test_auth_url.com')
 
     def test_get(self):
         self.assertEquals(settings.get(), test_settings)

@@ -246,7 +246,7 @@ v4.0.0
 v3.0.0
 ------
 
-* Added `swift.update_settings` function for updating swift module settings. 
+* Added ``swift.update_settings`` function for updating swift module settings. 
   Settings may no longer be changed at module level.
 
 v2.3.0

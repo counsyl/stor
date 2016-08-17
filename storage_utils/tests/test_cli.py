@@ -28,18 +28,32 @@ class TestCliBasics(BaseCliTest):
             self.parse_args('stor list s3://bucket')
 
     @mock.patch.dict('storage_utils.settings._global_settings', {}, clear=True)
+    @mock.patch.dict(os.environ, {}, clear=True)
     @mock.patch('storage_utils.copytree', autospec=True)
+    @mock.patch('storage_utils.settings.USER_CONFIG_FILE', '')
     def test_cli_config(self, mock_copytree):
         expected_settings = {
-            'stor': {
-                'str_val': 'this is a string'
+            'stor': {},
+            's3': {},
+            's3:upload': {
+                'segment_size': 8388608,
+                'object_threads': 10,
+                'segment_threads': 10
             },
-            'something': {
-                'just': 'another value'
+            's3:download': {
+                'segment_size': 8388608,
+                'object_threads': 10,
+                'segment_threads': 10
             },
             'swift': {
-                'num_retries': 5,
-                'fake_secret_key': '7jsdf0983j""SP{}?//'
+                'username': 'fake_user',
+                'password': 'fake_password',
+                'auth_url': '',
+                'temp_url_key': '',
+                'num_retries': 0
+            },
+            'swift:delete': {
+                'object_threads': 10
             },
             'swift:download': {
                 'container_threads': 10,

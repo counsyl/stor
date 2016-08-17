@@ -12,7 +12,8 @@ ENV_VARS = {
         'username': 'OS_USERNAME',
         'password': 'OS_PASSWORD',
         'auth_url': 'OS_AUTH_URL',
-        'temp_url_key': 'OS_TEMP_URL_KEY'
+        'temp_url_key': 'OS_TEMP_URL_KEY',
+        'num_retries': 'OS_NUM_RETRIES'
     }
 }
 """
@@ -45,7 +46,7 @@ def _get_env_vars():
         options = {}
         for option in ENV_VARS[section]:
             if ENV_VARS[section][option] in os.environ:
-                options[option] = os.environ.get(ENV_VARS[section][option])
+                options[option] = _parse_config_val(os.environ.get(ENV_VARS[section][option]))
         new_settings[section] = options
     update(new_settings)
 
