@@ -120,6 +120,12 @@ def get_progress_logger():
 
 
 def _get_or_create_auth_credentials(tenant_name):
+    """
+    Gets the cached auth credential or creates one if none exists.
+
+    If any auth setting is updated, all cached auth credentials are
+    cleared and new auth credentials are created for the requested tenant.
+    """
     options = settings.get()['swift']
     auth_url = options.get('auth_url')
     username = options.get('username')
@@ -871,7 +877,7 @@ class SwiftPath(OBSPath):
     def download_object(self, out_file):
         """Downloads a single object to an output file.
 
-        This method retries ```num_retries``` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View module-level documentation for more information about configuring
         retry logic at the module or method level.
 
@@ -901,7 +907,7 @@ class SwiftPath(OBSPath):
         does not exist, the call will fail with partially downloaded objects
         residing in the destination path.
 
-        This method retries ```num_retries``` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View `module-level documentation <swiftretry>` for more information
         about configuring retry logic at the module or method level.
 
@@ -1105,7 +1111,7 @@ class SwiftPath(OBSPath):
 
         Raises:
             SwiftError: A swift client error occurred.
-            ConditionNotMetError: The ``condition`` argument did not pass after ```num_retries```
+            ConditionNotMetError: The ``condition`` argument did not pass after ``num_retries``
                 or the ``use_manifest`` option was turned on and the upload results could not
                 be verified. Partially uploaded results are not deleted.
 
@@ -1290,7 +1296,7 @@ class SwiftPath(OBSPath):
         object. Using ``stat`` on a directory of objects will
         produce a `NotFoundError`.
 
-        This method retries ```num_retries``` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View `module-level documentation <swiftretry>` for more information
         about configuring retry logic at the module or method level.
 

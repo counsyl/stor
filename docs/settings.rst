@@ -33,6 +33,16 @@ Examples:
             }
         }
 
+Precedence
+----------
+Settings can be configured in the following ways in order of precedence:
+
+1. When using the :ref:`cli`, a configuration file specified using the ``--config`` flag.
+
+2. Setting environment variables.
+
+3. User-specified configuration in a ``~/stor.cfg`` file.
+
 
 Default Settings
 ----------------
