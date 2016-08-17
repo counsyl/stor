@@ -79,7 +79,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.assertEquals(len(mock_get_ks.call_args_list), 2)
             # Note that the auth_token is passed into the keystone client but then popped
             # from the kwargs. Assert that an auth token is no longer part of the retry calls
-            self.assertTrue('auth_token' in mock_get_ks.call_args_list[0][0][3])
+            self.assertTrue('auth_token' not in mock_get_ks.call_args_list[0][0][3])
             self.assertTrue('auth_token' not in mock_get_ks.call_args_list[1][0][3])
 
             # Now make the auth always be invalid and verify that an auth error is thrown
