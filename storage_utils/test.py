@@ -1,4 +1,5 @@
 import mock
+from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.swift import SwiftPath
 import unittest
@@ -158,6 +159,10 @@ class S3TestMixin(object):
         - mock_get_s3_iterator: A mock of the _get_s3_iterator method in S3Path.
 
         - mock_s3_iterator: A mock of the iterable object returned by _get_s3_iterator in S3Path.
+
+        - mock_s3_transfer: A mock of the Transfer instance returned by S3Transfer
+
+        - mock_get_s3_transfer: A mock of the boto3.s3.transfer.S3Transfer object
         """
         # Ensure that the S3 session will never be instantiated in tests
         s3_session_patcher = mock.patch('boto3.session.Session', autospec=True)
@@ -182,6 +187,20 @@ class S3TestMixin(object):
         self.mock_get_s3_iterator = self._get_s3_iterator_patcher.start()
         self.mock_get_s3_iterator.return_value = self.mock_s3_iterator
 
+        # Ensure that an S3Transfer object will never be instantiated in tests.
+        # User can mock methods associated with S3Transfer on this mock.
+        self.mock_s3_transfer = mock.Mock()
+        s3_transfer_patcher = mock.patch('storage_utils.experimental.s3.S3Transfer', autospec=True)
+        self.addCleanup(s3_transfer_patcher.stop)
+        self.mock_get_s3_transfer = s3_transfer_patcher.start()
+        self.mock_get_s3_transfer.return_value = self.mock_s3_transfer
+
+        # Mock the TransferConfig object
+        s3_transfer_config_patcher = mock.patch('storage_utils.experimental.s3.TransferConfig',
+                                                autospec=True)
+        self.addCleanup(s3_transfer_config_patcher.stop)
+        self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()
+
 
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
     """A TestCase class that sets up swift mocks and provides additional assertions"""
@@ -195,3 +214,8 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
     def setUp(self):
         super(S3TestCase, self).setUp()
         self.setup_s3_mocks()
+        try:
+            del s3._thread_local.s3_transfer
+            del s3._thread_local.s3_transfer_config
+        except AttributeError:
+            pass
