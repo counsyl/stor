@@ -4,7 +4,7 @@ import mock
 import sys
 from tempfile import NamedTemporaryFile
 from stor.posix import PosixPath
-from stor.experimental.s3 import S3Path
+from stor.s3 import S3Path
 from stor.swift import SwiftPath
 from stor import cli
 from stor import exceptions

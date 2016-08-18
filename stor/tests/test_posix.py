@@ -7,7 +7,7 @@ import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor import posix
-from stor.experimental import s3
+from stor import s3
 from stor import settings
 from stor import swift
 from stor import utils

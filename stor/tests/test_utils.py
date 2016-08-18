@@ -10,7 +10,7 @@ from testfixtures import LogCapture
 import stor
 from stor import Path
 from stor.posix import PosixPath
-from stor.experimental.s3 import S3Path
+from stor.s3 import S3Path
 from stor.swift import SwiftPath
 from stor.windows import WindowsPath
 from stor import utils

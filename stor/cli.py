@@ -412,7 +412,7 @@ def print_results(results):
 def main():
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    s3_logger = logging.getLogger('stor.experimental.s3.progress')
+    s3_logger = logging.getLogger('stor.s3.progress')
     s3_logger.setLevel(logging.INFO)
     s3_logger.addHandler(handler)
     swift_logger = logging.getLogger('stor.swift.progress')
