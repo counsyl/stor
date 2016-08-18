@@ -64,7 +64,7 @@ With this interface, one can write code that is compatible with S3, Swift, Posix
 
 In Depth Documentation
 ----------------------
-For more detailed documentation about the various interfaces offered by Counsyl Storage Utils, check out the following:
+For more detailed documentation about the various interfaces offered by stor, check out the following:
 
 - :ref:`cli`: In depth documentation about the command line interface.
 - :ref:`main_interface`: In depth documentation about the main library interface.
