@@ -1,4 +1,4 @@
-from storage_utils import utils
+from stor import utils
 
 import errno
 import fnmatch
@@ -31,7 +31,7 @@ class Path(text_type):
 
     Examples::
 
-        >>> from storage_utils import Path
+        >>> from stor import Path
         >>> Path('/some/path')
         PosixPath('/some/path')
         >>> Path('swift://AUTH_something/cont/blah')
@@ -45,19 +45,19 @@ class Path(text_type):
             if not hasattr(path, 'startswith'):
                 raise TypeError('must be a string like')
             if utils.is_swift_path(path):
-                from storage_utils.swift import SwiftPath
+                from stor.swift import SwiftPath
 
                 cls = SwiftPath
             elif utils.is_s3_path(path):
-                from storage_utils.experimental.s3 import S3Path
+                from stor.experimental.s3 import S3Path
 
                 cls = S3Path
             elif os.path == ntpath:
-                from storage_utils.windows import WindowsPath
+                from stor.windows import WindowsPath
 
                 cls = WindowsPath
             elif os.path == posixpath:
-                from storage_utils.posix import PosixPath
+                from stor.posix import PosixPath
 
                 cls = PosixPath
             else:  # pragma: no cover

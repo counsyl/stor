@@ -1,4 +1,4 @@
-.. module:: storage_utils.swift
+.. module:: stor.swift
 
 .. _swift:
 
@@ -113,4 +113,4 @@ Exceptions
 Utilities
 ---------
 
-.. autofunction:: storage_utils.utils.file_name_to_object_name
+.. autofunction:: stor.utils.file_name_to_object_name

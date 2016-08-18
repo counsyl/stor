@@ -1,6 +1,6 @@
 import unittest
 
-from storage_utils.experimental.s3 import S3Path
+from stor.experimental.s3 import S3Path
 
 
 class TestBasics(unittest.TestCase):

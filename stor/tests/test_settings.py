@@ -1,7 +1,7 @@
 import copy
 import mock
 import os
-from storage_utils import settings
+from stor import settings
 import threading
 import time
 import unittest
@@ -26,7 +26,7 @@ test_settings = {
 }
 
 
-@mock.patch.dict('storage_utils.settings._global_settings', copy.deepcopy(test_settings),
+@mock.patch.dict('stor.settings._global_settings', copy.deepcopy(test_settings),
                  clear=True)
 class TestSettings(unittest.TestCase):
     @mock.patch.dict(os.environ, {}, clear=True)
@@ -140,7 +140,7 @@ class TestSettings(unittest.TestCase):
     def test_get(self):
         self.assertEquals(settings.get(), test_settings)
 
-    @mock.patch.dict('storage_utils.settings._global_settings',
+    @mock.patch.dict('stor.settings._global_settings',
                      copy.deepcopy(test_settings), clear=True)
     def test_update_w_settings(self):
         update_settings = {
@@ -227,7 +227,7 @@ class TestSettings(unittest.TestCase):
             self.assertEquals(settings._global_settings, test_settings)
         self.assertEquals(settings._global_settings, test_settings)
 
-    @mock.patch.dict('storage_utils.settings._global_settings', {'foo': ''}, clear=True)
+    @mock.patch.dict('stor.settings._global_settings', {'foo': ''}, clear=True)
     def test_use_nested_w_update(self):
         settings.update({'foo': 0})
         self.assertEquals(settings.get(), {'foo': 0})
@@ -244,7 +244,7 @@ class TestSettings(unittest.TestCase):
         settings.update({'foo': 3})
         self.assertEquals(settings.get(), {'foo': 3})
 
-    @mock.patch.dict('storage_utils.settings._global_settings', {'foo': ''}, clear=True)
+    @mock.patch.dict('stor.settings._global_settings', {'foo': ''}, clear=True)
     def test_use_update_w_error(self):
         with settings.use({'foo': 1}):
             with self.assertRaises(RuntimeError):
@@ -256,7 +256,7 @@ class TestSettings(unittest.TestCase):
             self.assertEquals(settings.get(), {'foo': value})
             time.sleep(.01)
 
-    @mock.patch.dict('storage_utils.settings._global_settings', {'foo': ''}, clear=True)
+    @mock.patch.dict('stor.settings._global_settings', {'foo': ''}, clear=True)
     def test_use_multithreaded(self):
         threads = []
         for i in range(30):

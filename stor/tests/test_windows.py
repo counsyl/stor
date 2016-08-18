@@ -1,7 +1,7 @@
-from storage_utils import posix
-from storage_utils.experimental import s3
-from storage_utils import swift
-from storage_utils import windows
+from stor import posix
+from stor.experimental import s3
+from stor import swift
+from stor import windows
 import unittest
 
 

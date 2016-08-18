@@ -186,7 +186,7 @@ class _Use(object):
 #:   settings (dict): A nested dictionary of settings options.
 #:
 #: Example:
-#:      >>> from storage_utils import settings
+#:      >>> from stor import settings
 #:      >>> with settings.use({'swift:upload': {'object_threads': 20}}):
 #:      >>>     # do something here
 use = _Use

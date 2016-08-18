@@ -1,6 +1,6 @@
 import unittest
 
-from storage_utils.swift import SwiftPath
+from stor.swift import SwiftPath
 
 
 class TestBasics(unittest.TestCase):

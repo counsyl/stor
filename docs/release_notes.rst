@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v10.0.0
+-------
+* Renamed to stor
+
 v9.0.0
 ------
 
@@ -139,7 +143,7 @@ v6.3.0
 v6.2.2
 ------
 
-* Fix ``storage_utils.NamedTemporaryDirectory`` to delete temp directory on exception as well.
+* Fix ``stor.NamedTemporaryDirectory`` to delete temp directory on exception as well.
 
 v6.2.1
 ------
@@ -155,7 +159,7 @@ v6.2.0
 v6.1.0
 ------
 
-* Added `storage_utils.getsize` to public API (along with
+* Added `stor.getsize` to public API (along with
   `Path.getsize` and `SwiftPath.getsize`). Port of `os.path.getsize`.
 
 v6.0.0
@@ -166,12 +170,12 @@ v6.0.0
   and implemented most ``os.path.is*`` methods on swift, particularly ``isdir()`` and ``isfile()``.
 * Removed certain "fancy" path.py methods from ``FileSystemPath`` to reduce the
   public API surface and make it easier to test everything in use.
-* Eliminated ``storage_utils.third_party`` and integrated into library (added
+* Eliminated ``stor.third_party`` and integrated into library (added
   note to LICENSE file with original inspiration)
-* Reworked path hierarchy so that all classes inherit from ``storage_utils.Path``
+* Reworked path hierarchy so that all classes inherit from ``stor.Path``
 * Segment containers are ignored by default when doing `SwiftPath.listdir`
 * Cache authentication credentials for performance.
-* Renamed ``storage_utils.is_posix_path``.
+* Renamed ``stor.is_posix_path``.
 * Added `WindowsPath` for windows compatibility
 * Updated swift methods so that they always use forward slashes in paths, even if
   objects are uploaded from windows
@@ -282,7 +286,7 @@ v2.1.0
 v2.0.0
 ------
 
-* Vendored path.py into ``storage_utils.third_party.path`` to address version
+* Vendored path.py into ``stor.third_party.path`` to address version
   conflicts in downstream packages and encourage users not to import the path
   class directly.
 
@@ -321,7 +325,7 @@ v0.2
 v0.1
 ----
 
-* The initial release of counsyl-storage-utils.
+* The initial release of stor.
 * Provides a path factory that creates SwiftPath and Path objects.
 * Provides various utilities for file system procedures.
 * Provides a SwiftTestCase class for testing Swift.

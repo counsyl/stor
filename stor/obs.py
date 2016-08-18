@@ -5,9 +5,9 @@ from cached_property import cached_property
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 
-from storage_utils.base import Path
-from storage_utils.posix import PosixPath
-from storage_utils import utils
+from stor.base import Path
+from stor.posix import PosixPath
+from stor import utils
 
 
 def _delegate_to_buffer(attr_name, valid_modes=None):
