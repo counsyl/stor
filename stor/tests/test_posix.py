@@ -1,23 +1,24 @@
 import mock
 import os
-import storage_utils
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import Path
-from storage_utils import posix
-from storage_utils.experimental import s3
-from storage_utils import settings
-from storage_utils import swift
-from storage_utils import utils
-from storage_utils import windows
 import tempfile
 import unittest
+
+import stor
+from stor import NamedTemporaryDirectory
+from stor import Path
+from stor import posix
+from stor.experimental import s3
+from stor import settings
+from stor import swift
+from stor import utils
+from stor import windows
 
 
 class TestDiv(unittest.TestCase):
     def test_success(self):
         p = posix.PosixPath('my/path') / 'other/path'
         self.assertEquals(p, posix.PosixPath('my/path/other/path'))
-        self.assertEquals(p, storage_utils.join('my/path', 'other/path'))
+        self.assertEquals(p, stor.join('my/path', 'other/path'))
 
     def test_rdiv(self):
         p = 'my/path' / posix.PosixPath('other/path')
@@ -30,15 +31,15 @@ class TestDiv(unittest.TestCase):
     def test_w_swift_component(self):
         p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
         self.assertEquals(p, posix.PosixPath('my/path/name'))
-        self.assertEquals(storage_utils.join('my/path',
-                                             swift.SwiftPath('swift://t/c/name').name),
+        self.assertEquals(stor.join('my/path',
+                                    swift.SwiftPath('swift://t/c/name').name),
                           p)
 
     def test_w_s3_component(self):
         p = posix.PosixPath('my/path') / s3.S3Path('s3://b/name').name
         self.assertEquals(p, posix.PosixPath('my/path/name'))
-        self.assertEquals(storage_utils.join('my/path',
-                                             s3.S3Path('s3://b/name').name),
+        self.assertEquals(stor.join('my/path',
+                                    s3.S3Path('s3://b/name').name),
                           p)
 
 
@@ -66,7 +67,7 @@ class TestAdd(unittest.TestCase):
 
 class TestCopy(unittest.TestCase):
     def test_posix_dir_destination(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
             with open(source / '1', 'w') as tmp_file:
@@ -79,7 +80,7 @@ class TestCopy(unittest.TestCase):
             self.assertEquals((dest / '1').open().read(), '1')
 
     def test_posix_file_destination(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
             with open(source / '1', 'w') as tmp_file:
@@ -92,7 +93,7 @@ class TestCopy(unittest.TestCase):
             self.assertEquals(dest.open().read(), '1')
 
     def test_ambigious_swift_resource_destination(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / '1'
             with open(source, 'w') as tmp_file:
                 tmp_file.write('1')
@@ -102,7 +103,7 @@ class TestCopy(unittest.TestCase):
                 utils.copy(source, dest)
 
     def test_ambigious_swift_container_destination(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / '1'
             with open(source, 'w') as tmp_file:
                 tmp_file.write('1')
@@ -112,7 +113,7 @@ class TestCopy(unittest.TestCase):
                 utils.copy(source, dest)
 
     def test_tenant_swift_destination(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
             with open(source / '1', 'w') as tmp_file:
@@ -145,7 +146,7 @@ class TestCopy(unittest.TestCase):
 
 class TestCopytree(unittest.TestCase):
     def test_posix_destination(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
             with open(source / '1', 'w') as tmp_file:
@@ -156,7 +157,7 @@ class TestCopytree(unittest.TestCase):
             self.assertTrue((dest / '1').exists())
 
     def test_posix_destination_w_cmd(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
             with open(source / '1', 'w') as tmp_file:
@@ -167,7 +168,7 @@ class TestCopytree(unittest.TestCase):
             self.assertTrue((dest / '1').exists())
 
     def test_posix_destination_already_exists(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / '1'
             source.makedirs_p()
 
@@ -175,7 +176,7 @@ class TestCopytree(unittest.TestCase):
                 utils.copytree(source, tmp_d)
 
     def test_posix_destination_w_error(self):
-        with storage_utils.NamedTemporaryDirectory() as tmp_d:
+        with stor.NamedTemporaryDirectory() as tmp_d:
             invalid_source = tmp_d / 'source'
             dest = tmp_d / 'my' / 'dest'
 
@@ -213,16 +214,16 @@ class TestOpen(unittest.TestCase):
 
     def test_functional_open(self):
         with tempfile.NamedTemporaryFile() as f:
-            with storage_utils.open(f.name, 'wb', swift_upload_kwargs={}) as f:
+            with stor.open(f.name, 'wb', swift_upload_kwargs={}) as f:
                 f.write('blah')
 
     def test_open_works_wo_swift_params(self):
         with tempfile.NamedTemporaryFile() as f:
-            p = storage_utils.Path(f.name).open()
+            p = stor.Path(f.name).open()
             p.close()
 
         with tempfile.NamedTemporaryFile() as f:
-            p = storage_utils.open(f.name)
+            p = stor.open(f.name)
             p.close()
 
 

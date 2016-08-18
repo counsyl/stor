@@ -47,10 +47,10 @@ Settings can be configured in the following ways in order of precedence:
 Default Settings
 ----------------
 
-.. literalinclude:: ../storage_utils/default.cfg
+.. literalinclude:: ../stor/default.cfg
 
 Settings API
 ------------
 
-.. automodule:: storage_utils.settings
+.. automodule:: stor.settings
     :members:

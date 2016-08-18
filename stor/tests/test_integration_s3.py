@@ -4,12 +4,12 @@ import os
 import time
 import unittest
 
-import storage_utils
-from storage_utils import exceptions
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import Path
-from storage_utils import utils
-from storage_utils.tests.test_integration import BaseIntegrationTest
+import stor
+from stor import exceptions
+from stor import NamedTemporaryDirectory
+from stor import Path
+from stor import utils
+from stor.tests.test_integration import BaseIntegrationTest
 
 
 class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
@@ -239,7 +239,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
             os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
-            storage_utils.copytree(
+            stor.copytree(
                 '.',
                 self.test_dir,
                 use_manifest=True)
@@ -258,7 +258,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                 'test',
                 use_manifest=True)
 
-            # Now delete one of the objects from swift. A second download
+            # Now delete one of the objects from s3. A second download
             # will fail with a condition error
             Path(self.test_dir / 'my_dir' / 'empty_dir/').remove()
             with self.assertRaises(exceptions.ConditionNotMetError):

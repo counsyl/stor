@@ -1,8 +1,8 @@
-counsyl-storage-utils Documentation
-===================================
-Counsyl Storage Utils provides a cross-compatible API for doing file manipulation and file access on Posix/Windows file systems and object-based storage (OBS) systems.
+stor Documentation
+==================
+Stor provides a cross-compatible API for doing file manipulation and file access on Posix/Windows file systems and object-based storage (OBS) systems.
 
-A rich command line interface and library is provided as part of Counsyl Storage Utils. Below is a quick start for using the :ref:`cli` interface and the core library functionality of this module. Other low-level interfaces are described in the later sections
+A rich command line interface and library is provided as part of Stor. Below is a quick start for using the :ref:`cli` interface and the core library functionality of this module. Other low-level interfaces are described in the later sections.
 
 CLI Quick Start
 ---------------
@@ -37,25 +37,25 @@ Library Quick Start
 
 The library is designed to work either as a drop-in replacement
 for most functionality found in ``os.path`` or with an object-oriented API via
-``storage_utils.Path``.
+``stor.Path``.
 
-Ultimately, storage utils lets you write one piece of code to work with local
+Ultimately, stor lets you write one piece of code to work with local
 or remote files.
 
 .. code-block:: python
 
-  import storage_utils
+  import stor
 
   p = '/my/local/somemanifest.json'
 
   # Perform normal path.py operations
-  p = storage_utils.join(p, 'file')
-  with storage_utils.open(p) as fp:
+  p = stor.join(p, 'file')
+  with stor.open(p) as fp:
     json.load(fp)
 
   # Access swift object storage
   p = 'swift://tenant/container/object/somemanifest.json')
-  with storage_utils.open(p) as fp:
+  with stor.open(p) as fp:
     json.load(fp)
 
 

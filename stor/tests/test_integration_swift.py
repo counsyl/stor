@@ -7,14 +7,14 @@ import uuid
 import mock
 import requests
 
-import storage_utils
-from storage_utils import exceptions
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import Path
-from storage_utils import settings
-from storage_utils import swift
-from storage_utils import utils
-from storage_utils.tests.test_integration import BaseIntegrationTest
+import stor
+from stor import exceptions
+from stor import NamedTemporaryDirectory
+from stor import Path
+from stor import settings
+from stor import swift
+from stor import utils
+from stor.tests.test_integration import BaseIntegrationTest
 
 
 class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
@@ -102,8 +102,8 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             segment_size = 1048576
             obj_size = segment_size * 4 + 100
             self.create_dataset(tmp_d, 1, obj_size)
-            obj_path = storage_utils.join(tmp_d,
-                                          self.get_dataset_obj_names(1)[0])
+            obj_path = stor.join(tmp_d,
+                                 self.get_dataset_obj_names(1)[0])
             options = {'swift:upload': {'segment_size': segment_size}}
             with settings.use(options):
                 obj_path.copy(self.test_container / 'large_object.txt')
@@ -130,29 +130,29 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         basic_file = 'test.txt'
         complex_file = 'my test?file=special_chars.txt'
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            nested_tmp_dir = storage_utils.join(tmp_d, 'tmp')
+            nested_tmp_dir = stor.join(tmp_d, 'tmp')
             os.mkdir(nested_tmp_dir)
-            basic_file_p = storage_utils.join(nested_tmp_dir, basic_file)
-            complex_file_p = storage_utils.join(nested_tmp_dir, 'my test?file=special_chars.txt')
+            basic_file_p = stor.join(nested_tmp_dir, basic_file)
+            complex_file_p = stor.join(nested_tmp_dir, 'my test?file=special_chars.txt')
 
-            with storage_utils.open(basic_file_p, 'w') as f:
+            with stor.open(basic_file_p, 'w') as f:
                 f.write('basic test')
-            with storage_utils.open(complex_file_p, 'w') as f:
+            with stor.open(complex_file_p, 'w') as f:
                 f.write('complex test')
 
             self.test_container.upload(['.'])
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            basic_obj = storage_utils.Path(
-                storage_utils.join(self.test_container, 'tmp', basic_file))
+            basic_obj = stor.Path(
+                stor.join(self.test_container, 'tmp', basic_file))
             basic_temp_url = basic_obj.temp_url(inline=False, filename=basic_file)
             r = requests.get(basic_temp_url)
             self.assertEquals(r.content, 'basic test')
             self.assertEquals(r.headers['Content-Disposition'],
                               'attachment; filename="test.txt"; filename*=UTF-8\'\'test.txt')
 
-            complex_obj = storage_utils.Path(
-                storage_utils.join(self.test_container, 'tmp', complex_file))
+            complex_obj = stor.Path(
+                stor.join(self.test_container, 'tmp', complex_file))
             complex_temp_url = complex_obj.temp_url(inline=False, filename=complex_file)
             r = requests.get(complex_temp_url)
             self.assertEquals(r.content, 'complex test')
@@ -217,12 +217,12 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def test_copytree_w_headers(self):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             open(tmp_d / 'test_obj', 'w').close()
-            storage_utils.copytree(
+            stor.copytree(
                 '.',
                 self.test_container,
                 headers=['X-Delete-After:1000'])
 
-        obj = storage_utils.join(self.test_container, 'test_obj')
+        obj = stor.join(self.test_container, 'test_obj')
         stat_results = obj.stat()
         self.assertTrue('x-delete-at' in stat_results['headers'])
 
@@ -236,7 +236,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             open(tmp_d / 'base_file1', 'w').close()
             open(tmp_d / 'base_file2', 'w').close()
 
-            storage_utils.copytree(
+            stor.copytree(
                 '.',
                 self.test_container,
                 use_manifest=True)
@@ -263,42 +263,42 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def test_is_methods(self):
         container = self.test_container
         container = self.test_container
-        file_with_prefix = storage_utils.join(container, 'analysis.txt')
+        file_with_prefix = stor.join(container, 'analysis.txt')
 
         # ensure container is created but empty
         container.post()
-        self.assertTrue(storage_utils.isdir(container))
-        self.assertFalse(storage_utils.isfile(container))
-        self.assertTrue(storage_utils.exists(container))
-        self.assertFalse(storage_utils.listdir(container))
+        self.assertTrue(stor.isdir(container))
+        self.assertFalse(stor.isfile(container))
+        self.assertTrue(stor.exists(container))
+        self.assertFalse(stor.listdir(container))
 
-        folder = storage_utils.join(container, 'analysis')
-        subfolder = storage_utils.join(container, 'analysis', 'alignments')
-        file_in_folder = storage_utils.join(container, 'analysis', 'alignments',
-                                            'bam.bam')
-        self.assertFalse(storage_utils.exists(file_in_folder))
-        self.assertFalse(storage_utils.isdir(folder))
-        self.assertFalse(storage_utils.isdir(folder + '/'))
-        with storage_utils.open(file_with_prefix, 'w') as fp:
+        folder = stor.join(container, 'analysis')
+        subfolder = stor.join(container, 'analysis', 'alignments')
+        file_in_folder = stor.join(container, 'analysis', 'alignments',
+                                   'bam.bam')
+        self.assertFalse(stor.exists(file_in_folder))
+        self.assertFalse(stor.isdir(folder))
+        self.assertFalse(stor.isdir(folder + '/'))
+        with stor.open(file_with_prefix, 'w') as fp:
             fp.write('data\n')
-        self.assertFalse(storage_utils.isdir(folder))
-        self.assertTrue(storage_utils.isfile(file_with_prefix))
+        self.assertFalse(stor.isdir(folder))
+        self.assertTrue(stor.isfile(file_with_prefix))
 
-        with storage_utils.open(file_in_folder, 'w') as fp:
+        with stor.open(file_in_folder, 'w') as fp:
             fp.write('blah.txt\n')
 
-        self.assertTrue(storage_utils.isdir(folder))
-        self.assertFalse(storage_utils.isfile(folder))
-        self.assertTrue(storage_utils.isdir(subfolder))
+        self.assertTrue(stor.isdir(folder))
+        self.assertFalse(stor.isfile(folder))
+        self.assertTrue(stor.isdir(subfolder))
 
     def test_metadata_pulling(self):
-        file_in_folder = storage_utils.join(self.test_container,
-                                            'somefile.svg')
-        with storage_utils.open(file_in_folder, 'w') as fp:
+        file_in_folder = stor.join(self.test_container,
+                                   'somefile.svg')
+        with stor.open(file_in_folder, 'w') as fp:
             fp.write('12345\n')
 
-        self.assertEqual(storage_utils.getsize(file_in_folder), 6)
-        stat_data = storage_utils.Path(file_in_folder).stat()
+        self.assertEqual(stor.getsize(file_in_folder), 6)
+        stat_data = stor.Path(file_in_folder).stat()
         self.assertIn('Content-Type', stat_data)
         self.assertEqual(stat_data['Content-Type'], 'image/svg+xml')
 
@@ -333,7 +333,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                 open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
                 os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
-                storage_utils.copytree(
+                stor.copytree(
                     '.',
                     self.test_dir,
                     use_manifest=True)

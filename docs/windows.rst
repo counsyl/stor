@@ -3,5 +3,5 @@
 Windows
 =======
 
-.. autoclass:: storage_utils.windows.WindowsPath
+.. autoclass:: stor.windows.WindowsPath
   :members: copytree, copy, open

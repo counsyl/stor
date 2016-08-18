@@ -6,8 +6,8 @@ import platform
 
 import unittest
 
-from storage_utils import NamedTemporaryDirectory
-from storage_utils import Path
+from stor import NamedTemporaryDirectory
+from stor import Path
 
 
 def p(**choices):
@@ -25,14 +25,14 @@ class TestBasics(unittest.TestCase):
         up = Path(os.pardir)
 
         # basics
-        assert root.relpathto(boz) == Path('foo')/'bar'/'Baz'/'Boz'
-        assert bar.relpathto(boz) == Path('Baz')/'Boz'
-        assert quux.relpathto(boz) == up/'bar'/'Baz'/'Boz'
-        assert boz.relpathto(quux) == up/up/up/'quux'
-        assert boz.relpathto(bar) == up/up
+        assert root.relpathto(boz) == Path('foo') / 'bar' / 'Baz' / 'Boz'
+        assert bar.relpathto(boz) == Path('Baz') / 'Boz'
+        assert quux.relpathto(boz) == up / 'bar' / 'Baz' / 'Boz'
+        assert boz.relpathto(quux) == up / up / up / 'quux'
+        assert boz.relpathto(bar) == up / up
 
         # Path is not the first element in concatenation
-        assert root.relpathto(boz) == 'foo'/Path('bar')/'Baz'/'Boz'
+        assert root.relpathto(boz) == 'foo' / Path('bar') / 'Baz' / 'Boz'
 
         # x.relpathto(x) == curdir
         assert root.relpathto(root) == os.curdir
@@ -81,7 +81,7 @@ class TestBasics(unittest.TestCase):
         # Test p1/p1.
         p1 = Path("foo")
         p2 = Path("bar")
-        assert p1/p2 == p(nt='foo\\bar', posix='foo/bar')
+        assert p1 / p2 == p(nt='foo\\bar', posix='foo/bar')
 
     def test_properties(self):
         # Create sample path object.

@@ -7,7 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
-from storage_utils import exceptions
+from stor import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +61,8 @@ def file_name_to_object_name(p):
             the case of the input path only consisting of absolute
             or relative directory markers (i.e. '/' -> '', './' -> '')
     """
-    from storage_utils import Path
-    from storage_utils.posix import PosixPath
+    from stor import Path
+    from stor.posix import PosixPath
 
     p_parts = Path(p).expand().splitdrive()[1].split(os.path.sep)
     obj_start = next((i for i, part in enumerate(p_parts) if part not in ('', '..', '.')), None)
@@ -146,21 +146,21 @@ def generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
         data_manifest_contents (List[str]): The list of all objects that will
             be part of the manifest.
     """
-    import storage_utils
-    from storage_utils import Path
+    import stor
+    from stor import Path
 
     manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
-    with storage_utils.open(manifest_file_name, 'w') as out_file:
+    with stor.open(manifest_file_name, 'w') as out_file:
         contents = '\n'.join(data_manifest_contents) + '\n'
         out_file.write(contents)
 
 
 def get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
-    import storage_utils
+    import stor
 
     manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
-    with storage_utils.open(manifest, 'r') as manifest_file:
+    with stor.open(manifest, 'r') as manifest_file:
         return [
             f.strip() for f in manifest_file.readlines() if f.strip()
         ]
@@ -186,7 +186,7 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from storage_utils.swift import SwiftPath
+    from stor.swift import SwiftPath
     return p.startswith(SwiftPath.drive)
 
 
@@ -213,7 +213,7 @@ def is_s3_path(p):
     Returns
         bool: True if p is a S3 path, False otherwise.
     """
-    from storage_utils.experimental.s3 import S3Path
+    from stor.experimental.s3 import S3Path
     return p.startswith(S3Path.drive)
 
 
@@ -233,7 +233,7 @@ def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either OBS, posix, or
-    windows paths created with ``storage_utils.Path``.
+    windows paths created with ``stor.Path``.
 
     Args:
         source (path|str): The source directory to copy from
@@ -246,14 +246,14 @@ def copy(source, dest, swift_retry_options=None):
     Examples:
         Copying a swift file to a local path behaves as follows::
 
-            >>> import storage_utils
+            >>> import stor
             >>> swift_p = 'swift://tenant/container/dir/file.txt'
             >>> # file.txt will be copied to other_dir/other_file.txt
-            >>> storage_utils.copy(swift_p, 'other_dir/other_file.txt')
+            >>> stor.copy(swift_p, 'other_dir/other_file.txt')
 
         Copying from a local path to swift behaves as follows::
 
-            >>> from storage_utils import Path
+            >>> from stor import Path
             >>> local_p = Path('my/local/file.txt')
             >>> # File will be uploaded to swift://tenant/container/dir/my_file.txt
             >>> local_p.copy('swift://tenant/container/dir/')
@@ -266,8 +266,8 @@ def copy(source, dest, swift_retry_options=None):
             ...
             ValueError: OBS destination must be file with extension or directory with slash
     """
-    from storage_utils import Path
-    from storage_utils.obs import OBSUploadObject
+    from stor import Path
+    from stor.obs import OBSUploadObject
 
     source = Path(source)
     dest = Path(dest)
@@ -359,13 +359,13 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
         ValueError: if two OBS paths are specified
         OSError: if destination is a posix path and it already exists
     """
-    from storage_utils import Path
+    from stor import Path
 
     source = Path(source)
     dest = Path(dest)
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
-    from storage_utils.windows import WindowsPath
+    from stor.windows import WindowsPath
     if is_obs_path(source) and isinstance(dest, WindowsPath):
         raise ValueError('OBS copytree to windows is not supported')
 
@@ -403,7 +403,7 @@ def walk_files_and_dirs(files_and_dirs):
         ValueError: The provided upload name is not a file or a directory.
 
     Examples:
-        >>> from storage_utils.utils import walk_files_and_dirs
+        >>> from stor.utils import walk_files_and_dirs
         >>> results = walk_files_and_dirs(['file_name', 'dir_name'])
         >>> print results
         ['file_name', 'dir_name/file1', 'dir_name/file2']
@@ -450,11 +450,11 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
         Name is CamelCase to match tempfile.NamedTemporaryFile.
 
     Examples:
-        >>> from storage_utils import NamedTemporaryDirectory
+        >>> from stor import NamedTemporaryDirectory
         >>> with NamedTemporaryDirectory() as d:
         >>>     # Do operations within "d", which will be deleted afterwards
     """
-    from storage_utils import Path
+    from stor import Path
 
     tempdir = Path(tempfile.mkdtemp(suffix, prefix, dir))
     try:
