@@ -1,5 +1,5 @@
 from stor import posix
-from stor.experimental import s3
+from stor import s3
 from stor import swift
 from stor import windows
 import unittest

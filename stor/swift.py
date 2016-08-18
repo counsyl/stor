@@ -70,7 +70,7 @@ progress_logger = logging.getLogger('%s.progress' % __name__)
 # errors. Patch the get_auth_keystone function with one that
 # clears the auth_token parameter on any Exceptions.
 # Note that this behavior is tested in
-# storage_utils.tests.test_integration_swift:SwiftIntegrationTest.test_cached_auth_and_auth_invalidation
+# stor.tests.test_integration_swift:SwiftIntegrationTest.test_cached_auth_and_auth_invalidation
 real_get_auth_keystone = swift_client.get_auth_keystone
 
 

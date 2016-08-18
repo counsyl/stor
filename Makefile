@@ -1,9 +1,8 @@
-# Makefile for packaging and testing this app. Should follow make contract
-# at https://github.counsyl.com/techops/lambda-ci#make-build
+# Makefile utilities for running tests and publishing the package
 
 PACKAGE_NAME=stor
 TEST_OUTPUT?=nosetests.xml
-PIP_INDEX_URL?=https://pypi.counsyl.com/counsyl/prod/+simple/
+PIP_INDEX_URL?=https://pypi.python.org/simple/
 
 ifdef TOX_ENV
 	TOX_ENV_FLAG := -e $(TOX_ENV)

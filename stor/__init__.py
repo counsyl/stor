@@ -10,8 +10,8 @@ you should be able to replace most uses of ``os.path`` and ``open`` with::
     from stor import open
 
 And your code will work either with posix paths or swift paths (defined as
-strings in the format ``swift://<TENANT>/<CONTAINER>/<OBJECT>``).  Storage
-Utils also provides an object-oriented API similar to Python 3's new pathlib,
+strings in the format ``swift://<TENANT>/<CONTAINER>/<OBJECT>``).  Stor
+also provides an object-oriented API similar to Python 3's new pathlib,
 accessible via ``stor.Path``.
 
 stor is heavily inspired by / based on the path.py library, but

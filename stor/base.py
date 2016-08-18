@@ -49,7 +49,7 @@ class Path(text_type):
 
                 cls = SwiftPath
             elif utils.is_s3_path(path):
-                from stor.experimental.s3 import S3Path
+                from stor.s3 import S3Path
 
                 cls = S3Path
             elif os.path == ntpath:
@@ -61,7 +61,7 @@ class Path(text_type):
 
                 cls = PosixPath
             else:  # pragma: no cover
-                assert False, 'path is not compatible with storage utils'
+                assert False, 'path is not compatible with stor'
         return text_type.__new__(cls, path)
 
     @utils.ClassProperty
@@ -77,7 +77,7 @@ class Path(text_type):
         return cls
 
     def _has_incompatible_path_module(self, other):
-        """Returns true if the other path is a storage utils path and has a
+        """Returns true if the other path is a stor path and has a
         compatible path module for path operations"""
         return isinstance(other, Path) and other.path_module != self.path_module
 

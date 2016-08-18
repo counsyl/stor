@@ -1,6 +1,6 @@
 import mock
-from stor.experimental import s3
-from stor.experimental.s3 import S3Path
+from stor import s3
+from stor.s3 import S3Path
 from stor.swift import SwiftPath
 from stor import settings
 import unittest
@@ -151,7 +151,7 @@ class S3TestMixin(object):
         # This is the mock returned by _get_s3_client.
         # User can mock s3 methods on this mock.
         self.mock_s3 = mock.Mock()
-        self._get_s3_client_patcher = mock.patch('stor.experimental.s3._get_s3_client',
+        self._get_s3_client_patcher = mock.patch('stor.s3._get_s3_client',
                                                  autospec=True)
         self.addCleanup(self.disable_get_s3_client_mock)
         self.mock_get_s3_client = self._get_s3_client_patcher.start()
@@ -169,13 +169,13 @@ class S3TestMixin(object):
         # Ensure that an S3Transfer object will never be instantiated in tests.
         # User can mock methods associated with S3Transfer on this mock.
         self.mock_s3_transfer = mock.Mock()
-        s3_transfer_patcher = mock.patch('stor.experimental.s3.S3Transfer', autospec=True)
+        s3_transfer_patcher = mock.patch('stor.s3.S3Transfer', autospec=True)
         self.addCleanup(s3_transfer_patcher.stop)
         self.mock_get_s3_transfer = s3_transfer_patcher.start()
         self.mock_get_s3_transfer.return_value = self.mock_s3_transfer
 
         # Mock the TransferConfig object
-        s3_transfer_config_patcher = mock.patch('stor.experimental.s3.TransferConfig',
+        s3_transfer_config_patcher = mock.patch('stor.s3.TransferConfig',
                                                 autospec=True)
         self.addCleanup(s3_transfer_config_patcher.stop)
         self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()

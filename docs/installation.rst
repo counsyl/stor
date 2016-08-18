@@ -7,7 +7,7 @@ To install the latest release, type::
 
 To install the latest code directly from source, type::
 
-    pip install git+git://github.counsyl.com/dev/stor.git
+    pip install git+git://github.com/counsyl/stor.git
 
 
 ..  _cli_tab_completion_installation:

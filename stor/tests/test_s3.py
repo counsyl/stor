@@ -19,8 +19,8 @@ from stor.obs import OBSUploadObject
 from stor import Path
 from stor import obs
 from stor import settings
-from stor.experimental import s3
-from stor.experimental.s3 import S3Path
+from stor import s3
+from stor.s3 import S3Path
 from stor.test import S3TestCase
 from stor import utils
 from stor.tests.shared import assert_same_data
@@ -110,7 +110,7 @@ class TestResource(unittest.TestCase):
         self.assertEquals(s3_p.resource, 'nested/dir/')
 
 
-@mock.patch('stor.experimental.s3._thread_local', mock.Mock())
+@mock.patch('stor.s3._thread_local', mock.Mock())
 class TestGetS3Client(S3TestCase):
     def test_get_s3_client_exists(self):
         s3._thread_local.s3_client = 'client'
@@ -1076,7 +1076,7 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
-    @mock.patch('stor.experimental.s3.ThreadPool', autospec=True)
+    @mock.patch('stor.s3.ThreadPool', autospec=True)
     def test_upload_object_threads(self, mock_pool, mock_getsize, mock_files):
         mock_files.return_value = {
             'file%s' % i: 20
@@ -1134,13 +1134,13 @@ class TestUpload(S3TestCase):
         mock_getsize.return_value = 20
 
         s3_p = S3Path('s3://bucket')
-        with LogCapture('stor.experimental.s3.progress') as progress_log:
+        with LogCapture('stor.s3.progress') as progress_log:
             s3_p.upload(['upload'])
             progress_log.check(
-                ('stor.experimental.s3.progress', 'INFO', 'starting upload of 20 objects'),  # nopep8
-                ('stor.experimental.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.experimental.s3.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', 'starting upload of 20 objects'),  # nopep8
+                ('stor.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
 
@@ -1267,7 +1267,7 @@ class TestDownload(S3TestCase):
         self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    @mock.patch('stor.experimental.s3.ThreadPool', autospec=True)
+    @mock.patch('stor.s3.ThreadPool', autospec=True)
     def test_download_object_threads(self, mock_pool, mock_list, mock_getsize,
                                      mock_make_dest_dir):
         mock_list.return_value = [
@@ -1331,13 +1331,13 @@ class TestDownload(S3TestCase):
         mock_getsize.return_value = 100
 
         s3_p = S3Path('s3://bucket')
-        with LogCapture('stor.experimental.s3.progress') as progress_log:
+        with LogCapture('stor.s3.progress') as progress_log:
             s3_p.download('output_dir')
             progress_log.check(
-                ('stor.experimental.s3.progress', 'INFO', 'starting download of 20 objects'),  # nopep8
-                ('stor.experimental.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.experimental.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.experimental.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', 'starting download of 20 objects'),  # nopep8
+                ('stor.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
 
