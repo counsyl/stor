@@ -15,4 +15,5 @@ Table of Contents
    testing
    settings
    contributing
+   roadmap
    release_notes
