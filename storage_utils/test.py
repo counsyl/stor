@@ -2,6 +2,7 @@ import mock
 from storage_utils.experimental import s3
 from storage_utils.experimental.s3 import S3Path
 from storage_utils.swift import SwiftPath
+from storage_utils import settings
 import unittest
 
 
@@ -87,19 +88,6 @@ class SwiftTestMixin(object):
         self.addCleanup(self.disable_get_swift_service_mock)
         self.mock_get_swift_service = self._get_swift_patcher.start()
         self.mock_get_swift_service.return_value = self.mock_swift
-
-        # Set settings for swift
-        self._user_patcher = mock.patch('storage_utils.swift.username', '__dummy__')
-        self.addCleanup(self._user_patcher.stop)
-        self.mock_swift_username = self._user_patcher.start()
-
-        self._pass_patcher = mock.patch('storage_utils.swift.password', '__dummy__')
-        self.addCleanup(self._pass_patcher.stop)
-        self.mock_swift_password = self._pass_patcher.start()
-
-        self._auth_patcher = mock.patch('storage_utils.swift.auth_url', '__dummy__')
-        self.addCleanup(self._auth_patcher.stop)
-        self.mock_swift_auth_url = self._auth_patcher.start()
 
         # ensures we never cache data between tests
         _cache_patcher = mock.patch.dict('storage_utils.swift._cached_auth_token_map', clear=True)
@@ -207,6 +195,15 @@ class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
     def setUp(self):
         super(SwiftTestCase, self).setUp()
         self.setup_swift_mocks()
+
+        # make sure swift credentials aren't included
+        settings.update({
+            'swift': {
+                'username': '__dummy__',
+                'password': '__dummy__',
+                'auth_url': '__dummy__'
+            }
+        })
 
 
 class S3TestCase(unittest.TestCase, S3TestMixin):

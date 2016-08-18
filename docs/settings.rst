@@ -1,8 +1,8 @@
 Settings
 ========
 
-Provides global settings and options for methods such as `SwiftPath.upload`
-and `SwiftPath.download`.
+Provides global settings and options for accessing OBS services like swift
+and configuring methods such as `SwiftPath.upload` and `SwiftPath.download`.
 
 Settings are stored internally as nested dictionaries. When using `update` or
 `use`, this dictionary structure should be followed.
@@ -32,6 +32,16 @@ Examples:
                 'use_slo': True
             }
         }
+
+Precedence
+----------
+Settings can be configured in the following ways in order of precedence:
+
+1. When using the :ref:`cli`, a configuration file specified using the ``--config`` flag.
+
+2. Setting environment variables.
+
+3. User-specified configuration in a ``~/stor.cfg`` file.
 
 
 Default Settings

@@ -30,9 +30,12 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         logging.getLogger('swiftclient').setLevel(logging.CRITICAL)
         logging.getLogger('keystoneclient').setLevel(logging.CRITICAL)
 
-        swift.update_settings(username=os.environ.get('SWIFT_TEST_USERNAME'),
-                              password=os.environ.get('SWIFT_TEST_PASSWORD'),
-                              num_retries=5)
+        settings.update({
+            'swift': {
+                'username': os.environ.get('SWIFT_TEST_USERNAME'),
+                'password': os.environ.get('SWIFT_TEST_PASSWORD'),
+                'num_retries': 5
+            }})
 
         self.test_container = Path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
         if self.test_container.exists():
@@ -70,7 +73,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             # when retrying auth (with the bad token) and then called by us without
             # a token after the swiftclient raises an authorization error.
             mock_get_ks.reset_mock()
-            swift._cached_auth_token_map['AUTH_swft_test']['os_auth_token'] = 'bad_auth'
+            swift._cached_auth_token_map['AUTH_swft_test']['creds']['os_auth_token'] = 'bad_auth'
             s = Path(self.test_container).stat()
             self.assertEquals(s['Account'], 'AUTH_swft_test')
             self.assertEquals(len(mock_get_ks.call_args_list), 2)
@@ -171,11 +174,12 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             for which_obj in self.get_dataset_obj_names(num_test_objs + 1)
         }
 
+        num_retries = settings.get()['swift']['num_retries']
         with mock.patch('time.sleep') as mock_sleep:
             with self.assertRaises(swift.ConditionNotMetError):
                 test_dir.list(condition=lambda results: expected_objs == set(results))
-            self.assertTrue(swift.num_retries > 0)
-            self.assertEquals(len(mock_sleep.call_args_list), swift.num_retries)
+            self.assertTrue(num_retries > 0)
+            self.assertEquals(len(mock_sleep.call_args_list), num_retries)
 
         # Verify that the condition passes when excluding the non-extant file
         expected_objs = {

@@ -71,7 +71,7 @@ rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
 
 
-def path(pth):
+def path(pth):  # pragma: no cover
     import warnings
 
     # DeprecationWarnings are hidden by default. We want to get rid of this

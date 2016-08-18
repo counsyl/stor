@@ -416,6 +416,7 @@ def main():
     swift_logger.setLevel(logging.INFO)
     swift_logger.addHandler(handler)
 
+    settings._initialize()
     parser = create_parser()
     args = parser.parse_args()
     results = process_args(args)

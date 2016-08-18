@@ -5,6 +5,24 @@ import os
 import threading
 
 CONFIG_FILE = 'default.cfg'
+USER_CONFIG_FILE = '~/.stor.cfg'
+
+_ENV_VARS = {
+    'swift': {
+        'username': 'OS_USERNAME',
+        'password': 'OS_PASSWORD',
+        'auth_url': 'OS_AUTH_URL',
+        'temp_url_key': 'OS_TEMP_URL_KEY',
+        'num_retries': 'OS_NUM_RETRIES'
+    }
+}
+"""
+A dictionary of options and their corresponding environment variables.
+
+The top-level dictionary is a set of key-value pairs where keys correspond
+to config sections and values are dictionaries where the keys are the option
+names and values are the environment variables.s
+"""
 
 _global_settings = {}
 thread_local = threading.local()
@@ -15,6 +33,22 @@ def _parse_config_val(value):
         return ast.literal_eval(value)
     except (SyntaxError, ValueError):
         return value
+
+
+def _get_env_vars():
+    """
+    Update settings with environment variables, if applicable.
+
+    Currently handles swift credentials.
+    """
+    new_settings = {}
+    for section in _ENV_VARS:
+        options = {}
+        for option in _ENV_VARS[section]:
+            if _ENV_VARS[section][option] in os.environ:
+                options[option] = _parse_config_val(os.environ.get(_ENV_VARS[section][option]))
+        new_settings[section] = options
+    update(new_settings)
 
 
 def parse_config_file(filename):
@@ -43,13 +77,16 @@ def parse_config_file(filename):
     return settings
 
 
-def _initialize(filename=None):
+def _initialize():
     """
     Initialize global settings from configuration file. The configuration file
     **must** define all required settings, otherwise `storage_utils` will not work.
     Every time this function is called it overwrites existing ``_global_settings``.
     When trying to update or change ``_global_settings``, `update` or `use` should
     be called instead.
+
+    Also looks in the user's home directory for a custom configuration
+    specified in ``~/.stor.cfg``.
 
     Defaults to reading from the default configuration file ``default.cfg``.
 
@@ -59,20 +96,32 @@ def _initialize(filename=None):
     Returns:
         None
     """
-    global _global_settings
     _global_settings.clear()
-    filename = filename or os.path.join(os.path.dirname(__file__), CONFIG_FILE)
-    _global_settings.update(parse_config_file(filename))
+    default_cfg = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
+    update(parse_config_file(default_cfg), validate=False)
+    custom_cfg = os.path.expanduser(USER_CONFIG_FILE)
+    if os.path.exists(custom_cfg):
+        update(parse_config_file(custom_cfg))
+    _get_env_vars()
 
 
-def _update(d, updates):
-    """Updates a nested dictionary with given dictionary"""
+def _update(d, updates, validate=True):
+    """
+    Updates a nested dictionary with given dictionary
+
+    If validate is set to True, the key being updated must already exist
+    in the dictionary.
+    """
     for key, value in updates.iteritems():
         if type(value) is dict:
-            if not type(d) is dict or key not in d:
+            if key not in d or not type(d[key]) is dict:
+                if validate:
+                    raise ValueError('\'%s\' is not a valid setting' % key)
                 d[key] = {}
-            _update(d[key], value)
+            _update(d[key], value, validate)
         else:
+            if validate and key not in d:
+                raise ValueError('\'%s\' is not a valid setting' % key)
             d[key] = value
 
 
@@ -89,7 +138,9 @@ def get():
         return copy.deepcopy(_global_settings)
 
 
-def update(settings=None):
+def update(settings=None,
+           # not documented
+           validate=True):
     """
     Updates global settings permanently (in place).
 
@@ -102,7 +153,7 @@ def update(settings=None):
     if hasattr(thread_local, 'settings'):
         raise RuntimeError('update() cannot be called from within a settings context manager')
     if settings:
-        _update(_global_settings, settings)
+        _update(_global_settings, settings, validate=validate)
 
 
 class _Use(object):

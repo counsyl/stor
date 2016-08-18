@@ -2,13 +2,13 @@
 Provides utilities for accessing swift object storage.
 
 Different configuration options are available at the module level, and
-these variables are documented under their module declarations.
+these variables are documented in the default configuration.
 
 For swift authentication, the `auth_url`, `username`, and
 `password` variables are used.
 
 For methods that take conditions, the `initial_retry_sleep`,
-`num_retries`, and `retry_sleep_function` variables are used to
+``num_retries``, and `retry_sleep_function` variables are used to
 configure the logic around retrying when the condition is not met.
 Note that these variables can also be passed to the methods themselves.
 
@@ -18,9 +18,14 @@ Examples:
     and downloading a directory::
 
     >>> from storage_utils import swift
-    >>> swift.update_settings(auth_url='swift_auth_url.com',
-    ...                       username='swift_user',
-    ...                       password='swift_pass')
+    >>> from storage_utils import settings
+    >>> settings.update({
+    ...     'swift': {
+    ...         'auth_url': 'swift_auth_url.com',
+    ...         'username': 'swift_user',
+    ...         'password': 'swift_pass'
+    ...     }
+    ... })
     >>> swift_path = swift.SwiftPath('swift://tenant/container/prefix')
     >>> swift_path.download('dest_dir')
 
@@ -58,7 +63,6 @@ from storage_utils.third_party.backoff import with_backoff
 logger = logging.getLogger(__name__)
 progress_logger = logging.getLogger('%s.progress' % __name__)
 
-
 # python-swiftclient has a subtle bug in get_auth_keystone. If
 # the auth_token is set beforehand and a token refresh happens,
 # the invalid auth_token persists in the os_options argument,
@@ -78,42 +82,9 @@ def patched_get_auth_keystone(auth_url, user, key, os_options, **kwargs):
         raise
 swift_client.get_auth_keystone = patched_get_auth_keystone
 
-
-# Default module-level settings for swift authentication.
-# If None, the OS_AUTH_URL, OS_USERNAME, or OS_PASSWORD
-# environment variables will be used
-auth_url = os.environ.get('OS_AUTH_URL')
-"""The swift authentication URL
-
-If not set, the ``OS_AUTH_URL`` environment variable will be used. If
-that is not set, the ``DEFAULT_AUTH_URL`` global constant will
-be used.
-"""
-
-username = os.environ.get('OS_USERNAME')
-"""The swift username
-
-If not set, the ``OS_USERNAME`` environment variable will be used.
-"""
-
-password = os.environ.get('OS_PASSWORD')
-"""The swift password
-
-If not set, the ``OS_PASSWORD`` environment variable will be used.
-"""
-
 # singleton that collects together auth tokens for storage URLs
 _cached_auth_token_map = {}
 _singleton_lock = threading.Lock()
-
-temp_url_key = os.environ.get('OS_TEMP_URL_KEY')
-"""The key for generating temporary URLs
-
-If not set, the ``OS_TEMP_URL_KEY environment variable will be used.
-"""
-
-# Make the default segment size for static large objects be 1GB
-DEFAULT_SEGMENT_SIZE = 1024 * 1024 * 1024
 
 # Content types that are assigned to empty directories
 DIR_MARKER_TYPES = ('text/directory', 'application/directory')
@@ -122,12 +93,6 @@ DIR_MARKER_TYPES = ('text/directory', 'application/directory')
 # These variables can also be passed to the methods themselves
 initial_retry_sleep = 1
 """The time to sleep before the first retry"""
-
-num_retries = int(os.environ.get('OS_NUM_RETRIES', 0))
-"""The number of times to retry
-
-Uses the ``OS_NUM_RETRIES`` environment variable or defaults to 0
-"""
 
 # Make new Exceptions structure backwards compatible
 SwiftError = stor_exceptions.RemoteError
@@ -149,66 +114,54 @@ return a time to sleep in seconds.
 """
 
 
-def update_settings(**settings):
-    """Updates swift module settings.
-
-    All settings should be updated using this function.
-
-    Args:
-        **settings: keyword arguments for settings. Can
-            include settings for auth_url, username,
-            password, temp_url_key, initial_retry_sleep,
-            num_retries, and retry_sleep_function.
-
-    Examples:
-
-        To update all authentication settings at once, do::
-
-            from storage_utils import swift
-            swift.update_settings(auth_url='swift_auth_url.com',
-                                  username='swift_user',
-                                  password='swift_pass')
-
-        To update every retry setting at once, do::
-
-            from storage_utils import swift
-            swift.update_settings(initial_retry_sleep=5,
-                                  num_retries=5,
-                                  retry_sleep_function=custom_retry_func)
-
-    """
-    for setting, value in settings.items():
-        if setting not in globals():
-            raise ValueError('invalid setting "%s"' % setting)
-        globals()[setting] = value
-
-    _clear_cached_auth_credentials()
-
-
 def get_progress_logger():
     """Returns the swift progress logger"""
     return progress_logger
 
 
 def _get_or_create_auth_credentials(tenant_name):
-    try:
-        return _cached_auth_token_map[tenant_name]
-    except KeyError:
-        storage_url, auth_token = swift_client.get_auth_keystone(
-            auth_url, username, password,
-            {'tenant_name': tenant_name},
-        )
-        creds = {
-            'os_storage_url': storage_url,
-            'os_auth_token': auth_token
-        }
+    """
+    Gets the cached auth credential or creates one if none exists.
 
-        # Note: we are intentionally ignoring the rare race condition where
-        # authentication starts in one thread, then settings are updated, and
-        # then authentication finishes in the other.
-        with _singleton_lock:
-            _cached_auth_token_map[tenant_name] = creds
-        return creds
+    If any auth setting is updated, all cached auth credentials are
+    cleared and new auth credentials are created for the requested tenant.
+    """
+    options = settings.get()['swift']
+    auth_url = options.get('auth_url')
+    username = options.get('username')
+    password = options.get('password')
+
+    if tenant_name in _cached_auth_token_map:
+        cached_params = _cached_auth_token_map[tenant_name]['params']
+        if (auth_url == cached_params['auth_url'] and username == cached_params['username'] and
+                password == cached_params['password']):
+            return _cached_auth_token_map[tenant_name]['creds']
+        else:
+            _clear_cached_auth_credentials()
+
+    storage_url, auth_token = swift_client.get_auth_keystone(
+        auth_url, username, password,
+        {'tenant_name': tenant_name},
+    )
+    creds = {
+        'os_storage_url': storage_url,
+        'os_auth_token': auth_token
+    }
+    cached_result = {
+        'creds': creds,
+        'params': {
+            'auth_url': auth_url,
+            'username': username,
+            'password': password
+        }
+    }
+
+    # Note: we are intentionally ignoring the rare race condition where
+    # authentication starts in one thread, then settings are updated, and
+    # then authentication finishes in the other.
+    with _singleton_lock:
+        _cached_auth_token_map[tenant_name] = cached_result
+    return creds
 
 
 def _clear_cached_auth_credentials():
@@ -274,7 +227,7 @@ def _swift_retry(exceptions=None):
     def decorated(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            retries = kwargs.pop('num_retries', num_retries)
+            retries = kwargs.pop('num_retries', settings.get()['swift']['num_retries'])
             initial_sleep = kwargs.pop('initial_retry_sleep',
                                        initial_retry_sleep)
             sleep_function = kwargs.pop('retry_sleep_function',
@@ -518,13 +471,16 @@ class SwiftPath(OBSPath):
             ConfigurationError: The needed swift environment variables
                 aren't set.
         """
-        global username, password, auth_url
+        global_options = settings.get()['swift']
+        auth_url = global_options.get('auth_url')
+        username = global_options.get('username')
+        password = global_options.get('password')
 
         if not username or not password or not auth_url:
             raise ConfigurationError((
                 'OS_AUTH_URL, OS_USERNAME, and OS_PASSWORD environment vars '
                 'must be set for swift authentication. The username, password '
-                'and auth_url settings variables may also be set with update_settings.'
+                'and auth_url settings variables may also be set with settings.update.'
             ))
 
         # Set additional options on top of what was passed in
@@ -627,7 +583,7 @@ class SwiftPath(OBSPath):
     def read_object(self):
         """Reads an individual object.
 
-        This method retries `num_retries` times if swift is unavailable or if
+        This method retries ``num_retries`` times if swift is unavailable or if
         the object is not found. View
         `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
@@ -652,17 +608,19 @@ class SwiftPath(OBSPath):
             filename (str, optional): A urlencoded filename to use for
                 attachment, otherwise defaults to object name
         """
-        global temp_url_key, auth_url
+        global_options = settings.get()['swift']
+        auth_url = global_options.get('auth_url')
+        temp_url_key = global_options.get('temp_url_key')
 
         if not self.resource:
             raise ValueError('can only create temporary URL on object')
         if not temp_url_key:
             raise ValueError(
-                'a temporary url key must be set with update_settings(temp_url_key=<KEY> '
+                'a temporary url key must be set with settings.update '
                 'or by setting the OS_TEMP_URL_KEY environment variable')
         if not auth_url:
             raise ValueError(
-                'an auth url must be set with update_settings(auth_url=<AUTH_URL> '
+                'an auth url must be set with settings.update '
                 'or by setting the OS_AUTH_URL environment variable')
 
         obj_path = '/v1/%s' % self[len(self.drive):]
@@ -744,7 +702,7 @@ class SwiftPath(OBSPath):
              ignore_dir_markers=False):
         """List contents using the resource of the path as a prefix.
 
-        This method retries `num_retries` times if swift is unavailable
+        This method retries ``num_retries`` times if swift is unavailable
         or if the number of objects returned does not match the
         ``condition`` condition. View
         `module-level documentation <swiftretry>` for more
@@ -845,7 +803,7 @@ class SwiftPath(OBSPath):
         swift://tenant/container/my_dir (without the trailing slash), this
         method will perform a swift query with a prefix of mydir/pattern.
 
-        This method retries `num_retries` times if swift is unavailable or if
+        This method retries ``num_retries`` times if swift is unavailable or if
         the number of globbed patterns does not match the ``condition``
         condition. View `module-level documentation <swiftretry>`
         for more information about configuring retry logic at the module or
@@ -1043,7 +1001,7 @@ class SwiftPath(OBSPath):
                  use_manifest=False):
         """Downloads a directory to a destination.
 
-        This method retries `num_retries` times if swift is unavailable or if
+        This method retries ``num_retries`` times if swift is unavailable or if
         the returned download result does not match the ``condition``
         condition. View `module-level documentation <storage_utils.swift>`
         for more information about configuring retry logic at the module or
@@ -1116,7 +1074,7 @@ class SwiftPath(OBSPath):
                headers=None):
         """Uploads a list of files and directories to swift.
 
-        This method retries `num_retries` times if swift is unavailable or if
+        This method retries ``num_retries`` times if swift is unavailable or if
         the returned upload result does not match the ``condition``
         condition. View `module-level documentation <storage_utils.swift>`
         for more information about configuring retry logic at the module or
@@ -1234,7 +1192,7 @@ class SwiftPath(OBSPath):
     def remove(self):
         """Removes a single object.
 
-        This method retries `num_retries` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.
@@ -1255,7 +1213,7 @@ class SwiftPath(OBSPath):
     def rmtree(self):
         """Removes a resource and all of its contents.
 
-        This method retries `num_retries` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View `module-level documentation <storage_utils.swift>` for more
         information about configuring retry logic at the module or method
         level.
@@ -1473,7 +1431,7 @@ class SwiftPath(OBSPath):
     def post(self, options=None):
         """Post operations on the path.
 
-        This method retries `num_retries` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View `module-level documentation <swiftretry>` for more
         information about configuring retry logic at the module or method
         level.

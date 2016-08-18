@@ -2,7 +2,7 @@ counsyl-storage-utils Documentation
 ===================================
 Counsyl Storage Utils provides a cross-compatible API for doing file manipulation and file access on Posix/Windows file systems and object-based storage (OBS) systems.
 
-A rich command line interface and library is provided as part of Counsyl Storage Utils. Below is a quick start for using the :ref:`cli <CLI>` interface and the core library functionality of this module. Other low-level interfaces are described in the later sections
+A rich command line interface and library is provided as part of Counsyl Storage Utils. Below is a quick start for using the :ref:`cli` interface and the core library functionality of this module. Other low-level interfaces are described in the later sections
 
 CLI Quick Start
 ---------------
@@ -28,7 +28,7 @@ file's contents to ``stdout`` with a ``cat`` command::
   hello world
 
 
-For more details on using the CLI, go to the :ref:`cli <CLI>` section or see ``stor --help`` on the command line after installing.
+For more details on using the CLI, go to the :ref:`cli` section or see ``stor --help`` on the command line after installing.
 
 .. note::  The CLI also has tab completion capabilities that can be installed with instructions :ref:`here <cli_tab_completion_installation>`.
 
