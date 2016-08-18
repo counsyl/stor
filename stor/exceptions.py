@@ -1,5 +1,5 @@
 """
-Provides exceptions classes thrown by various utilities of storage-utils.
+Provides exceptions classes thrown by various utilities of stor
 """
 
 

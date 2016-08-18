@@ -7,7 +7,7 @@ A rich command line interface and library is provided as part of Stor. Below is 
 CLI Quick Start
 ---------------
 
-Storage Utils offers a command line interface for easy use of some common
+Stor offers a command line interface for easy use of some common
 functions provided by the library. Accessing files and paths in object-based storage systems like Swift and S3 is easy: simply prefix the path with ``swift://`` or ``s3://``.
 
 The :ref:`cli` also offers some additional features such as copying from ``stdin``,

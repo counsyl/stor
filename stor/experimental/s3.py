@@ -1,5 +1,5 @@
 """
-An experimental implementation of S3 in storage-utils.
+An experimental implementation of S3 in stor
 """
 from functools import partial
 import logging

@@ -80,7 +80,7 @@ def parse_config_file(filename):
 def _initialize():
     """
     Initialize global settings from configuration file. The configuration file
-    **must** define all required settings, otherwise `storage_utils` will not work.
+    **must** define all required settings, otherwise `stor` will not work.
     Every time this function is called it overwrites existing ``_global_settings``.
     When trying to update or change ``_global_settings``, `update` or `use` should
     be called instead.
