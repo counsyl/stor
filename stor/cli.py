@@ -269,6 +269,9 @@ def create_parser():
                         help='File containing configuration settings.',
                         type=str,
                         metavar='CONFIG_FILE')
+    parser.add_argument('--version', help='Print version',
+                        action='version',
+                        version=stor.__version__)
 
     subparsers = parser.add_subparsers(dest='cmd', metavar='')
 
