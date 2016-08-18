@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v9.0.0
+------
+
+* All swift settings use the settings module now (no more swift.update_settings)
+
 v8.5.0
 ------
 
