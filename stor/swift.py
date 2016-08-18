@@ -1212,7 +1212,7 @@ class SwiftPath(OBSPath):
     @_swift_retry(exceptions=(UnavailableError, ConflictError, ConditionNotMetError))
     def rmtree(self):
         """Removes a resource and all of its contents.
-        This method retries `num_retries` times if swift is unavailable.
+        This method retries ``num_retries`` times if swift is unavailable.
         View `module-level documentation <stor.swift>` for more
         information about configuring retry logic at the module or method
         level.

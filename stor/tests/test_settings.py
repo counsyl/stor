@@ -117,7 +117,7 @@ class TestSettings(unittest.TestCase):
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
-        with mock.patch('storage_utils.settings.USER_CONFIG_FILE', filename):
+        with mock.patch('stor.settings.USER_CONFIG_FILE', filename):
             settings._initialize()
         self.assertEquals(settings._global_settings, expected_settings)
 
@@ -177,7 +177,7 @@ class TestSettings(unittest.TestCase):
         settings.update()
         self.assertEquals(settings._global_settings, test_settings)
 
-    @mock.patch.dict('storage_utils.settings._global_settings',
+    @mock.patch.dict('stor.settings._global_settings',
                      {'foo': 1}, clear=True)
     def test_update_validation_error(self):
         with self.assertRaisesRegexp(ValueError, 'not a valid setting'):

@@ -169,13 +169,13 @@ class S3TestMixin(object):
         # Ensure that an S3Transfer object will never be instantiated in tests.
         # User can mock methods associated with S3Transfer on this mock.
         self.mock_s3_transfer = mock.Mock()
-        s3_transfer_patcher = mock.patch('storage_utils.experimental.s3.S3Transfer', autospec=True)
+        s3_transfer_patcher = mock.patch('stor.experimental.s3.S3Transfer', autospec=True)
         self.addCleanup(s3_transfer_patcher.stop)
         self.mock_get_s3_transfer = s3_transfer_patcher.start()
         self.mock_get_s3_transfer.return_value = self.mock_s3_transfer
 
         # Mock the TransferConfig object
-        s3_transfer_config_patcher = mock.patch('storage_utils.experimental.s3.TransferConfig',
+        s3_transfer_config_patcher = mock.patch('stor.experimental.s3.TransferConfig',
                                                 autospec=True)
         self.addCleanup(s3_transfer_config_patcher.stop)
         self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()
