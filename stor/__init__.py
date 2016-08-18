@@ -20,6 +20,7 @@ functions.
 
 See `stor.swift` for more information on Swift-specific functionality.
 """
+import pkg_resources
 
 from stor.utils import copy
 from stor.utils import copytree
@@ -28,6 +29,10 @@ from stor.utils import is_swift_path
 from stor.utils import NamedTemporaryDirectory
 from stor.base import Path
 from stor import settings
+
+
+# TODO: Compile this - costs ~700us to do this on import
+__version__ = pkg_resources.get_distribution('stor').version
 
 
 settings._initialize()

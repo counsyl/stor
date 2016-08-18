@@ -4,6 +4,7 @@ Release Notes
 v10.0.0
 -------
 * Renamed to stor
+* Added version printing to CLI
 
 v9.0.0
 ------
