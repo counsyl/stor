@@ -1,6 +1,6 @@
 # stor
 
-This project provides a cross-compatible API for accessing Posix and OBS storage systems. The documentation for stor can be viewed at https://github.com/pages/counsyl/stor/
+This project provides a cross-compatible API for accessing Posix and OBS storage systems. The documentation for stor can be viewed at https://counsyl.github.io/stor/
 
 
 ## Running the Tests
