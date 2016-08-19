@@ -289,7 +289,7 @@ def create_parser():
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    parser_list.set_defaults(func=stor.listpath)
+    parser_list.set_defaults(func=stor.list)
 
     ls_msg = 'List path as a directory.'
     parser_ls = subparsers.add_parser('ls',  # noqa
