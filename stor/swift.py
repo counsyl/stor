@@ -677,7 +677,8 @@ class SwiftPath(OBSPath):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
-            swift_upload_options (dict): A dictionary of arguments that will be
+            swift_upload_options (dict): DEPRECATED (use `stor.settings.use()`
+                instead). A dictionary of arguments that will be
                 passed as keyword args to `SwiftPath.upload` if any writes
                 occur on the opened resource.
 
