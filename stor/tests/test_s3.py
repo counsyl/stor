@@ -1287,10 +1287,7 @@ class TestDownload(S3TestCase):
             S3Path('s3://bucket/my/obj2'),
             S3Path('s3://bucket/my/obj3')
         ]
-        self.mock_s3_transfer.download_file.side_effect = [
-            None,
-            RetriesExceededError('failed')
-        ]
+        self.mock_s3_transfer.download_file.side_effect = RetriesExceededError('failed')
 
         with self.assertRaises(exceptions.FailedDownloadError):
             S3Path('s3://bucket/path').download('test')
