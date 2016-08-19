@@ -2,7 +2,7 @@
 
 PACKAGE_NAME=stor
 TEST_OUTPUT?=nosetests.xml
-PIP_INDEX_URL?=https://pypi.python.org/simple/
+PIP_INDEX_URL=https://pypi.python.org/simple/
 
 ifdef TOX_ENV
 	TOX_ENV_FLAG := -e $(TOX_ENV)
