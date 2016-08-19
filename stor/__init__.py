@@ -61,7 +61,7 @@ expand = _delegate_to_path('expand')
 join = _delegate_to_path('joinpath')
 split = _delegate_to_path('splitpath')
 splitext = _delegate_to_path('splitext')
-listpath = _delegate_to_path('list')
+list = _delegate_to_path('list')
 listdir = _delegate_to_path('listdir')
 glob = _delegate_to_path('glob')
 exists = _delegate_to_path('exists')
@@ -74,6 +74,16 @@ getsize = _delegate_to_path('getsize')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
+
+
+def listpath(pth):
+    import warnings
+
+    # DeprecationWarnings are hidden by default. We want to get rid of this
+    # sooner rather than later.
+    warnings.warn('Using the ``stor.listpath()`` function directly is'
+                  ' deprecated, use ``stor.list()`` instead', UserWarning)
+    return list(pth)
 
 
 def path(pth):  # pragma: no cover
