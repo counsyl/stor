@@ -32,7 +32,11 @@ from stor import settings
 
 
 # TODO: Compile this - costs ~700us to do this on import
-__version__ = pkg_resources.get_distribution('stor').version
+try:
+    __version__ = pkg_resources.get_distribution('stor').version
+except pkg_resources.DistributionNotFound:
+    # we are not pip installed in environment
+    __version__ = None
 
 
 settings._initialize()
