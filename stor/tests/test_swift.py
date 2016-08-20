@@ -46,6 +46,19 @@ def _make_stat_response(stat_response=None):
     return [defaults]
 
 
+class TestPathcedGetAuthKeystone(unittest.TestCase):
+    @mock.patch('stor.swift.real_get_auth_keystone', autospec=True)
+    def test_patched_get_auth_keystone(self, mock_get_real_auth_keystone):
+        mock_get_real_auth_keystone.side_effect = Exception
+        os_options = {'auth_token': 'token'}
+        with self.assertRaises(Exception):
+            swift.patched_get_auth_keystone('auth_url', 'user', 'key', os_options)
+        mock_get_real_auth_keystone.assert_called_once_with(
+            'auth_url', 'user', 'key', os_options)
+        # Verify the os_options were modified to pop the auth token
+        self.assertEquals(os_options, {})
+
+
 class TestBasicPathMethods(unittest.TestCase):
     def test_name(self):
         p = Path('swift://tenant/container/path/to/resource')
