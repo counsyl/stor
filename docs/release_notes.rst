@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v1.1.1
+------
+
+* Added .travis.yml for testing against Python 2 and 3
+* Added additional coverage to get to 100%
+* Updated package classifiers
+
 v1.1.0
 ------
 
