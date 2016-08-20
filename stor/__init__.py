@@ -63,7 +63,6 @@ split = _delegate_to_path('splitpath')
 splitext = _delegate_to_path('splitext')
 list = _delegate_to_path('list')
 listdir = _delegate_to_path('listdir')
-glob = _delegate_to_path('glob')
 exists = _delegate_to_path('exists')
 isabs = _delegate_to_path('isabs')
 isdir = _delegate_to_path('isdir')
@@ -74,6 +73,15 @@ getsize = _delegate_to_path('getsize')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
+
+
+def glob(pth, pattern):
+    """ Glob for pattern relative to ``pth``.
+
+    Note that Swift currently only supports a single trailing *"""
+    # TODO(jtratner): support single argument for glob, which is more
+    # comprehensible.
+    return Path(pth).glob(pattern)
 
 
 def listpath(pth):
