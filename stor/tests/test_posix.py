@@ -255,6 +255,13 @@ class TestList(unittest.TestCase):
                                                './dir/dir2/file4.txt']))
 
 
+class TestListpath(unittest.TestCase):
+    @mock.patch('stor.list', autospec=True)
+    def test_deprecated_listpath(self, mock_list):
+        stor.listpath('.')
+        mock_list.assert_called_once_with('.')
+
+
 class TestWalkfiles(unittest.TestCase):
     def test_walkfiles(self):
         with NamedTemporaryDirectory(change_dir=True):
