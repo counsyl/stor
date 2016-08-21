@@ -234,7 +234,7 @@ class TestGlob(unittest.TestCase):
             open('file2.txt', 'w').close()
             open('file3', 'w').close()
 
-            files = Path('.').glob('*.txt')
+            files = stor.glob('.', '*.txt')
             self.assertEquals(set(files), set(['./file.txt', './file2.txt']))
 
 
@@ -253,6 +253,13 @@ class TestList(unittest.TestCase):
                                                './dir/file2.txt',
                                                './dir/dir2/file3',
                                                './dir/dir2/file4.txt']))
+
+
+class TestListpath(unittest.TestCase):
+    @mock.patch('stor.list', autospec=True)
+    def test_deprecated_listpath(self, mock_list):
+        stor.listpath('.')
+        mock_list.assert_called_once_with('.')
 
 
 class TestWalkfiles(unittest.TestCase):

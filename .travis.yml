@@ -1,0 +1,14 @@
+sudo: false
+language: python
+python:
+  - '2.7'
+  - '3.5'
+install:
+  - make setup
+script:
+  # Check build
+  - make
+  # Flake8
+  - make lint
+  # Testing with coverage
+  - make test
