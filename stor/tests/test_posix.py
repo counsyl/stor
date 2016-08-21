@@ -234,7 +234,7 @@ class TestGlob(unittest.TestCase):
             open('file2.txt', 'w').close()
             open('file3', 'w').close()
 
-            files = Path('.').glob('*.txt')
+            files = stor.glob('.', '*.txt')
             self.assertEquals(set(files), set(['./file.txt', './file2.txt']))
 
 
