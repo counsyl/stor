@@ -416,7 +416,7 @@ def walk_files_and_dirs(files_and_dirs):
         except OSError as e:
             if e.errno == errno.ENOENT:
                 return None
-            else:
+            else:  # pragma: no cover
                 raise
 
     walked_upload_names_and_sizes = {}

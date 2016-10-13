@@ -79,7 +79,7 @@ rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
 
 
-def glob(pth, pattern):
+def glob(pth, pattern):  # pragma: no cover
     """ Glob for pattern relative to ``pth``.
 
     Note that Swift currently only supports a single trailing *"""
@@ -88,7 +88,7 @@ def glob(pth, pattern):
     return Path(pth).glob(pattern)
 
 
-def listpath(pth):
+def listpath(pth):  # pragma: no cover
     import warnings
 
     # DeprecationWarnings are hidden by default. We want to get rid of this

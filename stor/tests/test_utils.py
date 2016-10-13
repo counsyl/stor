@@ -120,7 +120,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             # put something in symlink source so that Python doesn't complain
             with stor.open(symlink_source, 'wb') as fp:
                 fp.write('blah')
-            os.link(symlink_source, symlink)
+            os.symlink(symlink_source, symlink)
             uploads = utils.walk_files_and_dirs([swift_dir])
             print uploads
             self.assertEquals(set(uploads), set([
@@ -130,7 +130,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
                 symlink_source,
             ]))
             # NOW: destroy it with fire and we have empty directory
-            symlink_source.remove()
+            os.remove(symlink_source)
             uploads = utils.walk_files_and_dirs([swift_dir])
             print uploads
             self.assertEquals(set(uploads), set([
@@ -148,6 +148,20 @@ class TestWalkFilesAndDirs(unittest.TestCase):
                 subdir,
                 swift_dir / 'data_dir' / 'file2',
             ]))
+            # finally make enough symlinks to trigger log trimming (currently
+            # untested but we want to make sure we don't error) + hits some
+            # issues if path to the test file is so long that even 1 file is >
+            # 50 characters, so we skip coverage check because it's not
+            # worth the hassle to get full branch coverage for big edge case
+            super_long_name = tmp_dir / 'abcdefghijklmnopqrstuvwxyzrsjexcasdfawefawefawefawefaef'
+            for x in range(5):
+                os.symlink(super_long_name, super_long_name + str(x))
+            # have no errors! yay!
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            for x in range(5, 20):
+                os.symlink(super_long_name, super_long_name + str(x))
+            # have no errors! yay!
+            uploads = utils.walk_files_and_dirs([swift_dir])
 
 
 
