@@ -389,6 +389,18 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
                         condition=condition, **retry_args)
 
 
+def _safe_get_size(name):
+    """Get the size of a file, handling weird edge cases like broken
+    symlinks by returning None"""
+    try:
+        return os.path.getsize(name)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            return None
+        else:  # pragma: no cover
+            raise
+
+
 def walk_files_and_dirs(files_and_dirs):
     """Walk all files and directories.
 
@@ -408,17 +420,6 @@ def walk_files_and_dirs(files_and_dirs):
         >>> print results
         ['file_name', 'dir_name/file1', 'dir_name/file2']
     """
-    def _safe_get_size(name):
-        """Get the size of a file, handling weird edge cases like broken
-        symlinks by returning None"""
-        try:
-            return os.path.getsize(name)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                return None
-            else:  # pragma: no cover
-                raise
-
     walked_upload_names_and_sizes = {}
     non_existent_files = []
     for name in files_and_dirs:
@@ -426,22 +427,18 @@ def walk_files_and_dirs(files_and_dirs):
             walked_upload_names_and_sizes[name] = _safe_get_size(name)
         elif os.path.isdir(name):
             for (root_dir, dir_names, file_names) in os.walk(name):
-                if not (dir_names + file_names):
-                    # Ensure that empty directories are uploaded as well
+                sizes = []
+                for file_name in file_names:
+                    full_name = os.path.join(root_dir, file_name)
+                    sz = _safe_get_size(full_name)
+                    if sz is not None:
+                        sizes.append(sz)
+                        walked_upload_names_and_sizes[full_name] = sz
+                    else:
+                        non_existent_files.append(full_name)
+                if not sizes and not dir_names:
+                    # we have an empty directory
                     walked_upload_names_and_sizes[root_dir] = 0
-                else:
-                    sizes = []
-                    for file_name in file_names:
-                        full_name = os.path.join(root_dir, file_name)
-                        sz = _safe_get_size(full_name)
-                        if sz is not None:
-                            sizes.append(sz)
-                            walked_upload_names_and_sizes[full_name] = sz
-                        else:
-                            non_existent_files.append(full_name)
-                    if not sizes and not dir_names:
-                        # now we have an empty directory
-                        walked_upload_names_and_sizes[root_dir] = 0
         else:
             raise ValueError('file "%s" not found' % name)
 
