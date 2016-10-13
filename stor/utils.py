@@ -389,6 +389,18 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
                         condition=condition, **retry_args)
 
 
+def _safe_get_size(name):
+    """Get the size of a file, handling weird edge cases like broken
+    symlinks by returning None"""
+    try:
+        return os.path.getsize(name)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            return None
+        else:  # pragma: no cover
+            raise
+
+
 def walk_files_and_dirs(files_and_dirs):
     """Walk all files and directories.
 
@@ -409,20 +421,34 @@ def walk_files_and_dirs(files_and_dirs):
         ['file_name', 'dir_name/file1', 'dir_name/file2']
     """
     walked_upload_names_and_sizes = {}
+    non_existent_files = []
     for name in files_and_dirs:
         if os.path.isfile(name):
-            walked_upload_names_and_sizes[name] = os.path.getsize(name)
+            walked_upload_names_and_sizes[name] = _safe_get_size(name)
         elif os.path.isdir(name):
             for (root_dir, dir_names, file_names) in os.walk(name):
-                if not (dir_names + file_names):
-                    # Ensure that empty directories are uploaded as well
+                sizes = []
+                for file_name in file_names:
+                    full_name = os.path.join(root_dir, file_name)
+                    sz = _safe_get_size(full_name)
+                    if sz is not None:
+                        sizes.append(sz)
+                        walked_upload_names_and_sizes[full_name] = sz
+                    else:
+                        non_existent_files.append(full_name)
+                if not sizes and not dir_names:
+                    # we have an empty directory
                     walked_upload_names_and_sizes[root_dir] = 0
-                else:
-                    for file_name in file_names:
-                        full_name = os.path.join(root_dir, file_name)
-                        walked_upload_names_and_sizes[full_name] = os.path.getsize(full_name)
         else:
             raise ValueError('file "%s" not found' % name)
+
+    if non_existent_files:
+        file_list = ','.join(non_existent_files[:10])
+        if len(file_list) > 50 or len(non_existent_files) > 10:  # pragma: no cover
+            file_list = file_list[:50] + '...'
+        logger.warn('Skipping %d non existent files in {!r}. Files: %s'.format(
+                    ','.join(files_and_dirs)), len(non_existent_files),
+                    file_list)
 
     return walked_upload_names_and_sizes
 

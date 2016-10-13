@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v1.1.2
+------
+
+* Skip broken symlinks during upload, download and listing of files, allowing
+  ``copytree``, ``list`` to work on folders that contain broken symlinks.
+
 v1.1.1
 ------
 

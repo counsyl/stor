@@ -75,39 +75,91 @@ class TestIsS3Path(unittest.TestCase):
 
 
 class TestWalkFilesAndDirs(unittest.TestCase):
+    swift_dir = (
+        Path(__file__).expand().abspath().parent /
+        'swift_upload'
+    )
+
     def test_w_dir(self):
         # Create an empty directory for this test in ./swift_upload. This
         # is because git doesnt allow a truly empty directory to be checked
         # in
+        with utils.NamedTemporaryDirectory(dir=self.swift_dir) as tmp_dir:
+            uploads = utils.walk_files_and_dirs([self.swift_dir])
+            self.assertEquals(set(uploads), set([
+                self.swift_dir / 'file1',
+                tmp_dir,
+                self.swift_dir / 'data_dir' / 'file2',
+            ]))
+
+    def test_w_file(self):
+        name = self.swift_dir / 'file1'
+
+        uploads = utils.walk_files_and_dirs([name])
+        self.assertEquals(set(uploads), set([name]))
+
+    def test_w_missing_file(self):
+        name = self.swift_dir / 'invalid'
+
+        with self.assertRaises(ValueError):
+            utils.walk_files_and_dirs([name])
+
+    def test_w_broken_symlink(self):
         swift_dir = (
             Path(__file__).expand().abspath().parent /
             'swift_upload'
         )
         with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
+            symlink = tmp_dir / 'broken.symlink'
+            symlink_source = tmp_dir / 'nonexistent'
+            # put something in symlink source so that Python doesn't complain
+            with stor.open(symlink_source, 'wb') as fp:
+                fp.write('blah')
+            os.symlink(symlink_source, symlink)
             uploads = utils.walk_files_and_dirs([swift_dir])
+            print uploads
+            self.assertEquals(set(uploads), set([
+                swift_dir / 'file1',
+                swift_dir / 'data_dir' / 'file2',
+                symlink,
+                symlink_source,
+            ]))
+            # NOW: destroy it with fire and we have empty directory
+            os.remove(symlink_source)
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            print uploads
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 tmp_dir,
                 swift_dir / 'data_dir' / 'file2',
             ]))
+            # but put a sub directory, now tmp_dir doesn't show up
+            subdir = tmp_dir / 'subdir'
+            subdir.makedirs_p()
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            print uploads
+            self.assertEquals(set(uploads), set([
+                swift_dir / 'file1',
+                subdir,
+                swift_dir / 'data_dir' / 'file2',
+            ]))
 
-    def test_w_file(self):
-        name = (
-            Path(__file__).expand().abspath().parent /
-            'swift_upload' / 'file1'
-        )
-
-        uploads = utils.walk_files_and_dirs([name])
-        self.assertEquals(set(uploads), set([name]))
-
-    def test_w_invalid_file(self):
-        name = (
-            Path(__file__).expand().abspath().parent /
-            'swift_upload' / 'invalid'
-        )
-
-        with self.assertRaises(ValueError):
-            utils.walk_files_and_dirs([name])
+    def test_broken_symlink_file_name_truncation(self):
+        with stor.NamedTemporaryDirectory(dir=self.swift_dir) as tmp_dir:
+            # finally make enough symlinks to trigger log trimming (currently
+            # untested but we want to make sure we don't error) + hits some
+            # issues if path to the test file is so long that even 1 file is >
+            # 50 characters, so we skip coverage check because it's not
+            # worth the hassle to get full branch coverage for big edge case
+            super_long_name = tmp_dir / 'abcdefghijklmnopqrstuvwxyzrsjexcasdfawefawefawefawefaef'
+            for x in range(5):
+                os.symlink(super_long_name, super_long_name + str(x))
+            # have no errors! yay!
+            self.assert_(utils.walk_files_and_dirs([self.swift_dir]))
+            for x in range(5, 20):
+                os.symlink(super_long_name, super_long_name + str(x))
+            # have no errors! yay!
+            self.assert_(utils.walk_files_and_dirs([self.swift_dir]))
 
 
 class TestNamedTemporaryDirectory(unittest.TestCase):
