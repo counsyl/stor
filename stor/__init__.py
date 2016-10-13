@@ -34,7 +34,7 @@ from stor import settings
 # TODO: Compile this - costs ~700us to do this on import
 try:
     __version__ = pkg_resources.get_distribution('stor').version
-except pkg_resources.DistributionNotFound:
+except pkg_resources.DistributionNotFound:  # pragma: no cover
     # we are not pip installed in environment
     __version__ = None
 
