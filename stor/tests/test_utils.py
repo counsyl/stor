@@ -109,6 +109,47 @@ class TestWalkFilesAndDirs(unittest.TestCase):
         with self.assertRaises(ValueError):
             utils.walk_files_and_dirs([name])
 
+    def test_w_broken_symlink(self):
+        swift_dir = (
+            Path(__file__).expand().abspath().parent /
+            'swift_upload'
+        )
+        with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
+            symlink = tmp_dir / 'broken.symlink'
+            symlink_source = tmp_dir / 'nonexistent'
+            # put something in symlink source so that Python doesn't complain
+            with stor.open(symlink_source, 'wb') as fp:
+                fp.write('blah')
+            os.link(symlink_source, symlink)
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            print uploads
+            self.assertEquals(set(uploads), set([
+                swift_dir / 'file1',
+                swift_dir / 'data_dir' / 'file2',
+                symlink,
+                symlink_source,
+            ]))
+            # NOW: destroy it with fire and we have empty directory
+            symlink_source.remove()
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            print uploads
+            self.assertEquals(set(uploads), set([
+                swift_dir / 'file1',
+                tmp_dir,
+                swift_dir / 'data_dir' / 'file2',
+            ]))
+            # but put a sub directory, now tmp_dir doesn't show up
+            subdir = tmp_dir / 'subdir'
+            subdir.makedirs_p()
+            uploads = utils.walk_files_and_dirs([swift_dir])
+            print uploads
+            self.assertEquals(set(uploads), set([
+                swift_dir / 'file1',
+                subdir,
+                swift_dir / 'data_dir' / 'file2',
+            ]))
+
+
 
 class TestNamedTemporaryDirectory(unittest.TestCase):
     def test_w_chdir(self):

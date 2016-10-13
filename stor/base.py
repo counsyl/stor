@@ -260,7 +260,9 @@ class Path(text_type):
         raise NotImplementedError
 
     def list(self, *args, **kwargs):
-        """List all contents using the path as a prefix."""
+        """List all contents using the path as a prefix.
+
+        Note: Skips broken symlinks."""
         raise NotImplementedError
 
     def listdir(self):
