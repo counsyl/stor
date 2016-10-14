@@ -1,3 +1,4 @@
+from builtins import str
 import unittest
 
 from stor.s3 import S3Path

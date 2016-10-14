@@ -1,4 +1,10 @@
-import cStringIO
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import str
+from builtins import range
+from builtins import object
+import io
 import datetime
 import gzip
 import ntpath
@@ -1429,7 +1435,7 @@ class TestS3File(S3TestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = cStringIO.StringIO()
+                _buffer = io.StringIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
@@ -1475,8 +1481,8 @@ line4
             self.assertEqual(line, 'line%d\n' % i)
 
         self.assertEqual(next(s3_p.open()), 'line1\n')
-        self.assertEqual(s3_p.open().next(), 'line1\n')
-        self.assertEqual(iter(s3_p.open()).next(), 'line1\n')
+        self.assertEqual(next(s3_p.open()), 'line1\n')
+        self.assertEqual(next(iter(s3_p.open())), 'line1\n')
 
     def test_write_invalid_args(self):
         s3_p = S3Path('s3://bucket/key/obj')

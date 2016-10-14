@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 import errno
 import logging
 import mock
@@ -117,7 +120,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
                 fp.write('blah')
             os.symlink(symlink_source, symlink)
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
+            print(uploads)
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 swift_dir / 'data_dir' / 'file2',
@@ -127,7 +130,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             # NOW: destroy it with fire and we have empty directory
             os.remove(symlink_source)
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
+            print(uploads)
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 tmp_dir,
@@ -137,7 +140,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             subdir = tmp_dir / 'subdir'
             subdir.makedirs_p()
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
+            print(uploads)
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 subdir,

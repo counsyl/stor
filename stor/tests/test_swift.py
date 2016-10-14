@@ -1,4 +1,9 @@
-import cStringIO
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import range
+from builtins import object
+import io
 import gzip
 import logging
 import ntpath
@@ -262,7 +267,7 @@ class TestSwiftFile(SwiftTestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = cStringIO.StringIO()
+                _buffer = io.StringIO()
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
@@ -302,8 +307,8 @@ line4
             self.assertEqual(line, 'line%d\n' % i)
 
         self.assertEqual(next(swift_p.open()), 'line1\n')
-        self.assertEqual(swift_p.open().next(), 'line1\n')
-        self.assertEqual(iter(swift_p.open()).next(), 'line1\n')
+        self.assertEqual(next(swift_p.open()), 'line1\n')
+        self.assertEqual(next(iter(swift_p.open())), 'line1\n')
 
     @mock.patch('time.sleep', autospec=True)
     def test_read_success_on_second_try(self, mock_sleep):

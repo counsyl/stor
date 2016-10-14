@@ -1,3 +1,4 @@
+from builtins import str
 import unittest
 
 from stor.swift import SwiftPath

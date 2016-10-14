@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import map
 from stor import utils
 
 import errno
