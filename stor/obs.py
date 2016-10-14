@@ -25,7 +25,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         func = getattr(self._buffer, attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(io.StringIO(), attr_name).__doc__
+    wrapper.__doc__ = getattr(io.BytesIO(), attr_name).__doc__
     return wrapper
 
 
@@ -280,9 +280,9 @@ class OBSFile(object):
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
         if self.mode in ('r', 'rb'):
-            return io.StringIO(self._path.read_object())
+            return io.BytesIO(self._path.read_object())
         elif self.mode in ('w', 'wb'):
-            return io.StringIO()
+            return io.BytesIO()
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
 

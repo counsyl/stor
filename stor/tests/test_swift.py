@@ -267,7 +267,7 @@ class TestSwiftFile(SwiftTestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = io.StringIO()
+                _buffer = io.BytesIO()
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):

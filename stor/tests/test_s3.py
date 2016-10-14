@@ -1435,7 +1435,7 @@ class TestS3File(S3TestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = io.StringIO()
+                _buffer = io.BytesIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
