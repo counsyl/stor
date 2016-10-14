@@ -1,4 +1,8 @@
-from cStringIO import StringIO
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from past.utils import old_div
+from io import StringIO
 import logging
 import os
 import time
@@ -36,7 +40,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
         self.test_bucket = Path('s3://stor-test-bucket')
-        self.test_dir = self.test_bucket / 'test'
+        self.test_dir = old_div(self.test_bucket, 'test')
 
     def tearDown(self):
         super(S3IntegrationTest, self).tearDown()
@@ -62,7 +66,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         fake_bucket = Path('s3://stor-test-bucket2')
         with self.assertRaises(exceptions.NotFoundError):
             fake_bucket.list()
-        fake_folder = self.test_bucket / 'not_a_dir'
+        fake_folder = old_div(self.test_bucket, 'not_a_dir')
         self.assertEquals([], fake_folder.list())
 
         with NamedTemporaryDirectory(change_dir=True):
@@ -77,16 +81,16 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         starts_with_list = self.test_bucket.list(starts_with='test')
         self.assertEquals(set(file_list), set(starts_with_list))
         self.assertEquals(set(file_list), set([
-            self.test_dir / 'file1.txt',
-            self.test_dir / 'file2.txt',
-            self.test_dir / 'nested_dir/dir/file3.txt'
+            old_div(self.test_dir, 'file1.txt'),
+            old_div(self.test_dir, 'file2.txt'),
+            old_div(self.test_dir, 'nested_dir/dir/file3.txt')
         ]))
 
         dir_list = self.test_dir.listdir()
         self.assertEquals(set(dir_list), set([
-            self.test_dir / 'file1.txt',
-            self.test_dir / 'file2.txt',
-            self.test_dir / 'nested_dir/'
+            old_div(self.test_dir, 'file1.txt'),
+            old_div(self.test_dir, 'file2.txt'),
+            old_div(self.test_dir, 'nested_dir/')
         ]))
 
         self.assertTrue(self.test_dir.listdir() == (self.test_dir + '/').listdir())
@@ -113,7 +117,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.assertFalse(self.test_dir.isfile())
         self.assertEquals(self.test_dir.getsize(), 0)
 
-        test_file = self.test_dir / '0'
+        test_file = old_div(self.test_dir, '0')
         self.assertTrue(test_file.exists())
         self.assertFalse(test_file.isdir())
         self.assertTrue(test_file.isfile())
@@ -141,21 +145,21 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.test_dir.upload(['.'])
 
         for which_obj in self.get_dataset_obj_names(num_test_objs):
-            self.assertTrue((self.test_dir / which_obj).exists())
+            self.assertTrue((old_div(self.test_dir, which_obj)).exists())
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.test_dir.download(tmp_d)
             for which_obj in self.get_dataset_obj_names(num_test_objs):
                 self.assertCorrectObjectContents(which_obj, which_obj, min_obj_size)
-                (self.test_dir / which_obj).remove()
+                (old_div(self.test_dir, which_obj)).remove()
 
                 # consistency check
-                while (self.test_dir / which_obj).exists():
+                while (old_div(self.test_dir, which_obj)).exists():
                     time.sleep(.5)
-                self.assertFalse((self.test_dir / which_obj).exists())
+                self.assertFalse((old_div(self.test_dir, which_obj)).exists())
 
     def test_upload_w_headers(self):
-        test_file = self.test_dir / 'a.txt'
+        test_file = old_div(self.test_dir, 'a.txt')
         with NamedTemporaryDirectory(change_dir=True):
             open('a.txt', 'w').close()
             self.test_dir.upload(['.'], headers={'ContentLanguage': 'en'})
@@ -176,7 +180,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             with self.assertRaises(OSError):
                 self.test_dir.download('.')
             with self.assertRaises(OSError):
-                (self.test_dir / 'dir').download('.')
+                (old_div(self.test_dir, 'dir')).download('.')
 
     def test_condition(self):
         num_test_objs = 20
@@ -188,7 +192,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         # Verify a ConditionNotMet exception is thrown when attempting to list
         # a file that hasn't been uploaded
         expected_objs = {
-            self.test_dir / which_obj
+            old_div(self.test_dir, which_obj)
             for which_obj in self.get_dataset_obj_names(num_test_objs + 1)
         }
 
@@ -197,7 +201,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
 
         # Verify that the condition passes when excluding the non-extant file
         correct_objs = {
-            self.test_dir / which_obj
+            old_div(self.test_dir, which_obj)
             for which_obj in self.get_dataset_obj_names(num_test_objs)
         }
         objs = self.test_dir.list(condition=lambda results: correct_objs == set(results))
@@ -212,15 +216,15 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.test_dir.upload(['.'])
 
         self.assertEquals(set(self.test_dir.list()), {
-            self.test_dir / 'a.txt',
-            self.test_dir / 'dir/b.txt',
-            self.test_dir / 'empty/'
+            old_div(self.test_dir, 'a.txt'),
+            old_div(self.test_dir, 'dir/b.txt'),
+            old_div(self.test_dir, 'empty/')
         })
         self.assertEquals(set(self.test_dir.list(ignore_dir_markers=True)), {
-            self.test_dir / 'a.txt',
-            self.test_dir / 'dir/b.txt'
+            old_div(self.test_dir, 'a.txt'),
+            old_div(self.test_dir, 'dir/b.txt')
         })
-        self.assertTrue((self.test_dir / 'empty').isdir())
+        self.assertTrue((old_div(self.test_dir, 'empty')).isdir())
 
         with NamedTemporaryDirectory(change_dir=True):
             self.test_dir.download('.')
@@ -235,7 +239,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
             # Make a nested file and an empty directory for testing purposes
             tmp_d = Path(tmp_d)
-            os.mkdir(tmp_d / 'my_dir')
+            os.mkdir(old_div(tmp_d, 'my_dir'))
             open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
             os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
@@ -249,7 +253,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
             expected_contents = self.get_dataset_obj_names(num_test_objs)
             expected_contents.extend(['my_dir/empty_file',
                                       'my_dir/empty_dir/'])
-            expected_contents = [Path('test') / c for c in expected_contents]
+            expected_contents = [old_div(Path('test'), c) for c in expected_contents]
             self.assertEquals(set(manifest_contents), set(expected_contents))
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:

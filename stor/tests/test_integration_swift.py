@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import logging
 import os
 import time
@@ -47,7 +49,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.test_container.rmtree()
             raise
 
-        self.test_dir = self.test_container / 'test'
+        self.test_dir = old_div(self.test_container, 'test')
 
     def tearDown(self):
         super(SwiftIntegrationTest, self).tearDown()
@@ -106,10 +108,10 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                                  self.get_dataset_obj_names(1)[0])
             options = {'swift:upload': {'segment_size': segment_size}}
             with settings.use(options):
-                obj_path.copy(self.test_container / 'large_object.txt')
+                obj_path.copy(old_div(self.test_container, 'large_object.txt'))
 
             # Verify there is a segment container and that it can be ignored when listing a dir
-            segment_container = Path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
+            segment_container = old_div(Path(self.test_container.parent), ('.segments_%s' % self.test_container.name))  # nopep8
             containers = Path(self.test_container.parent).listdir(ignore_segment_containers=False)
             self.assertTrue(segment_container in containers)
             self.assertTrue(self.test_container in containers)
@@ -122,8 +124,8 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             self.assertEquals(len(objs), 5)
 
             # Copy back the large object and verify its contents
-            obj_path = Path(tmp_d) / 'large_object.txt'
-            Path(self.test_container / 'large_object.txt').copy(obj_path)
+            obj_path = old_div(Path(tmp_d), 'large_object.txt')
+            Path(old_div(self.test_container, 'large_object.txt')).copy(obj_path)
             self.assertCorrectObjectContents(obj_path, self.get_dataset_obj_names(1)[0], obj_size)
 
     def test_temp_url(self):
@@ -162,7 +164,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def test_condition_failures(self):
         num_test_objs = 20
         test_obj_size = 100
-        test_dir = self.test_container / 'test'
+        test_dir = old_div(self.test_container, 'test')
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
             Path('.').copytree(test_dir)
@@ -170,7 +172,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         # Verify a ConditionNotMet exception is thrown when attempting to list
         # a file that hasn't been uploaded
         expected_objs = {
-            test_dir / which_obj
+            old_div(test_dir, which_obj)
             for which_obj in self.get_dataset_obj_names(num_test_objs + 1)
         }
 
@@ -183,7 +185,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
 
         # Verify that the condition passes when excluding the non-extant file
         expected_objs = {
-            test_dir / which_obj
+            old_div(test_dir, which_obj)
             for which_obj in self.get_dataset_obj_names(num_test_objs)
         }
         objs = test_dir.list(condition=lambda results: expected_objs == set(results))
@@ -192,21 +194,21 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def test_list_glob(self):
         num_test_objs = 20
         test_obj_size = 100
-        test_dir = self.test_container / 'test'
+        test_dir = old_div(self.test_container, 'test')
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.create_dataset(tmp_d, num_test_objs, test_obj_size)
             Path('.').copytree(test_dir)
 
         objs = set(test_dir.list(condition=lambda results: len(results) == num_test_objs))
         expected_objs = {
-            test_dir / obj_name
+            old_div(test_dir, obj_name)
             for obj_name in self.get_dataset_obj_names(num_test_objs)
         }
         self.assertEquals(len(objs), num_test_objs)
         self.assertEquals(objs, expected_objs)
 
         expected_glob = {
-            test_dir / obj_name
+            old_div(test_dir, obj_name)
             for obj_name in self.get_dataset_obj_names(num_test_objs) if obj_name.startswith('1')
         }
         self.assertTrue(len(expected_glob) > 1)
@@ -216,7 +218,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
 
     def test_copytree_w_headers(self):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-            open(tmp_d / 'test_obj', 'w').close()
+            open(old_div(tmp_d, 'test_obj'), 'w').close()
             stor.copytree(
                 '.',
                 self.test_container,
@@ -230,25 +232,25 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             # Make a couple empty test files and nested files
             tmp_d = Path(tmp_d)
-            os.mkdir(tmp_d / 'my_dir')
+            os.mkdir(old_div(tmp_d, 'my_dir'))
             open(tmp_d / 'my_dir' / 'dir_file1', 'w').close()
             open(tmp_d / 'my_dir' / 'dir_file2', 'w').close()
-            open(tmp_d / 'base_file1', 'w').close()
-            open(tmp_d / 'base_file2', 'w').close()
+            open(old_div(tmp_d, 'base_file1'), 'w').close()
+            open(old_div(tmp_d, 'base_file2'), 'w').close()
 
             stor.copytree(
                 '.',
                 self.test_container,
                 use_manifest=True)
 
-            swift_dir = self.test_container / 'my_dir'
+            swift_dir = old_div(self.test_container, 'my_dir')
             self.assertEquals(len(swift_dir.list()), 2)
             swift_dir.rmtree()
             self.assertEquals(len(swift_dir.list()), 0)
 
             base_contents = self.test_container.list()
-            self.assertTrue((self.test_container / 'base_file1') in base_contents)
-            self.assertTrue((self.test_container / 'base_file1') in base_contents)
+            self.assertTrue((old_div(self.test_container, 'base_file1')) in base_contents)
+            self.assertTrue((old_div(self.test_container, 'base_file1')) in base_contents)
 
             self.test_container.rmtree()
 
@@ -303,7 +305,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.assertEqual(stat_data['Content-Type'], 'image/svg+xml')
 
     def test_push_metadata(self):
-        obj = self.test_container / 'object.txt'
+        obj = old_div(self.test_container, 'object.txt')
         with obj.open('w') as fp:
             fp.write('a\n')
         obj.post({'header': ['X-Object-Meta-Custom:text']})
@@ -329,7 +331,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                 self.create_dataset(tmp_d, num_test_objs, test_obj_size)
                 # Make a nested file and an empty directory for testing purposes
                 tmp_d = Path(tmp_d)
-                os.mkdir(tmp_d / 'my_dir')
+                os.mkdir(old_div(tmp_d, 'my_dir'))
                 open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
                 os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
@@ -343,7 +345,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                 expected_contents = self.get_dataset_obj_names(num_test_objs)
                 expected_contents.extend(['my_dir/empty_file',
                                           'my_dir/empty_dir'])
-                expected_contents = [Path('test') / c for c in expected_contents]
+                expected_contents = [old_div(Path('test'), c) for c in expected_contents]
                 self.assertEquals(set(manifest_contents), set(expected_contents))
 
             with NamedTemporaryDirectory(change_dir=True) as tmp_d:

@@ -32,6 +32,11 @@ Examples:
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from past.utils import old_div
 import copy
 from functools import partial
 from functools import wraps
@@ -40,8 +45,8 @@ import logging
 import os
 import tempfile
 import threading
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
@@ -373,8 +378,8 @@ class SwiftDownloadLogger(utils.BaseProgressLogger):
     def get_progress_message(self):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
-        mb = self.downloaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        mb = old_div(self.downloaded_bytes, (1024 * 1024.0))
+        mb_s = old_div(mb, elapsed_time.total_seconds()) if elapsed_time else 0
         return (
             '%s\t'
             '%s\t'
@@ -409,8 +414,8 @@ class SwiftUploadLogger(utils.BaseProgressLogger):
     def get_progress_message(self):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
-        mb = self.uploaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0
+        mb = old_div(self.uploaded_bytes, (1024 * 1024.0))
+        mb_s = old_div(mb, elapsed_time.total_seconds()) if elapsed_time else 0
         return (
             '%s/%s\t'
             '%s\t'
@@ -630,19 +635,19 @@ class SwiftPath(OBSPath):
         obj_url = generate_temp_url(obj_path, lifetime, temp_url_key, method)
         query_begin = obj_url.rfind('temp_url_sig', 0, len(obj_url))
         obj_url_query = obj_url[query_begin:]
-        obj_url_query = dict(urlparse.parse_qsl(obj_url_query))
+        obj_url_query = dict(urllib.parse.parse_qsl(obj_url_query))
 
         query = ['temp_url_sig=%s' % obj_url_query['temp_url_sig'],
                  'temp_url_expires=%s' % obj_url_query['temp_url_expires']]
         if inline:
             query.append('inline')
         if filename:
-            query.append('filename=%s' % urllib.quote(filename))
+            query.append('filename=%s' % urllib.parse.quote(filename))
 
-        auth_url_parts = urlparse.urlparse(auth_url)
-        return urlparse.urlunparse((auth_url_parts.scheme,
+        auth_url_parts = urllib.parse.urlparse(auth_url)
+        return urllib.parse.urlunparse((auth_url_parts.scheme,
                                     auth_url_parts.netloc,
-                                    urllib.quote(obj_path),
+                                    urllib.parse.quote(obj_path),
                                     auth_url_parts.params,
                                     '&'.join(query),
                                     auth_url_parts.fragment))
@@ -744,7 +749,7 @@ class SwiftPath(OBSPath):
         # the user to specify a path like tenant/container/mydir
         # and do an additional glob on a directory-like structure
         if starts_with:
-            prefix = prefix / starts_with if prefix else starts_with
+            prefix = old_div(prefix, starts_with) if prefix else starts_with
 
         list_kwargs = {
             'full_listing': full_listing,
@@ -772,9 +777,9 @@ class SwiftPath(OBSPath):
         if ignore_dir_markers:
             result_objs = [r for r in result_objs if r.get('content_type') not in DIR_MARKER_TYPES]
 
-        path_pre = SwiftPath('%s%s' % (self.drive, tenant)) / (self.container or '')
+        path_pre = old_div(SwiftPath('%s%s' % (self.drive, tenant)), (self.container or ''))
         paths = list({
-            path_pre / (r.get('name') or r['subdir'].rstrip('/'))
+            old_div(path_pre, (r.get('name') or r['subdir'].rstrip('/')))
             for r in result_objs
         })
 
@@ -962,7 +967,7 @@ class SwiftPath(OBSPath):
         # Convert requested download objects to full object paths
         obj_base = self.resource or PosixPath('')
         objs_to_download = {
-            obj: SwiftPath(obj).resource if is_swift_path(obj) else obj_base / obj
+            obj: SwiftPath(obj).resource if is_swift_path(obj) else old_div(obj_base, obj)
             for obj in objects
         }
 
@@ -987,7 +992,7 @@ class SwiftPath(OBSPath):
         results = self._swift_service_call('download',
                                            _service_options=service_options,
                                            container=self.container,
-                                           objects=objs_to_download.values(),
+                                           objects=list(objs_to_download.values()),
                                            options=download_options)
         results = {r['object']: r['path'] for r in results}
 
@@ -1138,13 +1143,13 @@ class SwiftPath(OBSPath):
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results. Ignore the manifest file in the case of
         # since it will be uploaded individually
-        manifest_file_name = (Path(to_upload[0]) / utils.DATA_MANIFEST_FILE_NAME
+        manifest_file_name = (old_div(Path(to_upload[0]), utils.DATA_MANIFEST_FILE_NAME)
                               if use_manifest else None)
         resource_base = utils.with_trailing_slash(self.resource) or PosixPath('')
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
             OBSUploadObject(f,
-                            object_name=resource_base / utils.file_name_to_object_name(f),
+                            object_name=old_div(resource_base, utils.file_name_to_object_name(f)),
                             options=upload_object_options)
             for f in all_files_to_upload if f != manifest_file_name
         ])
@@ -1153,7 +1158,7 @@ class SwiftPath(OBSPath):
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
             utils.generate_and_save_data_manifest(to_upload[0], object_names)
-            manifest_obj_name = resource_base / utils.file_name_to_object_name(manifest_file_name)
+            manifest_obj_name = old_div(resource_base, utils.file_name_to_object_name(manifest_file_name))
             manifest_obj = OBSUploadObject(manifest_file_name,
                                            object_name=manifest_obj_name,
                                            options=upload_object_options)

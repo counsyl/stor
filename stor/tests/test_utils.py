@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import errno
 import logging
 import mock
@@ -76,8 +81,8 @@ class TestIsS3Path(unittest.TestCase):
 
 class TestWalkFilesAndDirs(unittest.TestCase):
     swift_dir = (
-        Path(__file__).expand().abspath().parent /
-        'swift_upload'
+        old_div(Path(__file__).expand().abspath().parent,
+        'swift_upload')
     )
 
     def test_w_dir(self):
@@ -87,39 +92,39 @@ class TestWalkFilesAndDirs(unittest.TestCase):
         with utils.NamedTemporaryDirectory(dir=self.swift_dir) as tmp_dir:
             uploads = utils.walk_files_and_dirs([self.swift_dir])
             self.assertEquals(set(uploads), set([
-                self.swift_dir / 'file1',
+                old_div(self.swift_dir, 'file1'),
                 tmp_dir,
                 self.swift_dir / 'data_dir' / 'file2',
             ]))
 
     def test_w_file(self):
-        name = self.swift_dir / 'file1'
+        name = old_div(self.swift_dir, 'file1')
 
         uploads = utils.walk_files_and_dirs([name])
         self.assertEquals(set(uploads), set([name]))
 
     def test_w_missing_file(self):
-        name = self.swift_dir / 'invalid'
+        name = old_div(self.swift_dir, 'invalid')
 
         with self.assertRaises(ValueError):
             utils.walk_files_and_dirs([name])
 
     def test_w_broken_symlink(self):
         swift_dir = (
-            Path(__file__).expand().abspath().parent /
-            'swift_upload'
+            old_div(Path(__file__).expand().abspath().parent,
+            'swift_upload')
         )
         with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
-            symlink = tmp_dir / 'broken.symlink'
-            symlink_source = tmp_dir / 'nonexistent'
+            symlink = old_div(tmp_dir, 'broken.symlink')
+            symlink_source = old_div(tmp_dir, 'nonexistent')
             # put something in symlink source so that Python doesn't complain
             with stor.open(symlink_source, 'wb') as fp:
                 fp.write('blah')
             os.symlink(symlink_source, symlink)
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
+            print(uploads)
             self.assertEquals(set(uploads), set([
-                swift_dir / 'file1',
+                old_div(swift_dir, 'file1'),
                 swift_dir / 'data_dir' / 'file2',
                 symlink,
                 symlink_source,
@@ -127,19 +132,19 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             # NOW: destroy it with fire and we have empty directory
             os.remove(symlink_source)
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
+            print(uploads)
             self.assertEquals(set(uploads), set([
-                swift_dir / 'file1',
+                old_div(swift_dir, 'file1'),
                 tmp_dir,
                 swift_dir / 'data_dir' / 'file2',
             ]))
             # but put a sub directory, now tmp_dir doesn't show up
-            subdir = tmp_dir / 'subdir'
+            subdir = old_div(tmp_dir, 'subdir')
             subdir.makedirs_p()
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
+            print(uploads)
             self.assertEquals(set(uploads), set([
-                swift_dir / 'file1',
+                old_div(swift_dir, 'file1'),
                 subdir,
                 swift_dir / 'data_dir' / 'file2',
             ]))
@@ -151,7 +156,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             # issues if path to the test file is so long that even 1 file is >
             # 50 characters, so we skip coverage check because it's not
             # worth the hassle to get full branch coverage for big edge case
-            super_long_name = tmp_dir / 'abcdefghijklmnopqrstuvwxyzrsjexcasdfawefawefawefawefaef'
+            super_long_name = old_div(tmp_dir, 'abcdefghijklmnopqrstuvwxyzrsjexcasdfawefawefawefawefaef')
             for x in range(5):
                 os.symlink(super_long_name, super_long_name + str(x))
             # have no errors! yay!

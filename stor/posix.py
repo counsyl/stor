@@ -26,7 +26,7 @@ class PosixPath(base.FileSystemPath):
         Returns:
             List[str]: A list of all files and directories.
         """
-        return utils.walk_files_and_dirs([self]).keys()
+        return list(utils.walk_files_and_dirs([self]).keys())
 
     def walkfiles(self, pattern=None):
         """Iterate over files recursively.

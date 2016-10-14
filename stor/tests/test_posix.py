@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import mock
 import os
 import tempfile
@@ -16,27 +18,27 @@ from stor import windows
 
 class TestDiv(unittest.TestCase):
     def test_success(self):
-        p = posix.PosixPath('my/path') / 'other/path'
+        p = old_div(posix.PosixPath('my/path'), 'other/path')
         self.assertEquals(p, posix.PosixPath('my/path/other/path'))
         self.assertEquals(p, stor.join('my/path', 'other/path'))
 
     def test_rdiv(self):
-        p = 'my/path' / posix.PosixPath('other/path')
+        p = old_div('my/path', posix.PosixPath('other/path'))
         self.assertEquals(p, posix.PosixPath('my/path/other/path'))
 
     def test_w_windows_path(self):
         with self.assertRaisesRegexp(TypeError, 'unsupported operand'):
-            posix.PosixPath('my/path') / windows.WindowsPath(r'other\path')
+            old_div(posix.PosixPath('my/path'), windows.WindowsPath(r'other\path'))
 
     def test_w_swift_component(self):
-        p = posix.PosixPath('my/path') / swift.SwiftPath('swift://t/c/name').name
+        p = old_div(posix.PosixPath('my/path'), swift.SwiftPath('swift://t/c/name').name)
         self.assertEquals(p, posix.PosixPath('my/path/name'))
         self.assertEquals(stor.join('my/path',
                                     swift.SwiftPath('swift://t/c/name').name),
                           p)
 
     def test_w_s3_component(self):
-        p = posix.PosixPath('my/path') / s3.S3Path('s3://b/name').name
+        p = old_div(posix.PosixPath('my/path'), s3.S3Path('s3://b/name').name)
         self.assertEquals(p, posix.PosixPath('my/path/name'))
         self.assertEquals(stor.join('my/path',
                                     s3.S3Path('s3://b/name').name),
@@ -68,33 +70,33 @@ class TestAdd(unittest.TestCase):
 class TestCopy(unittest.TestCase):
     def test_posix_dir_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
+            source = old_div(tmp_d, 'source')
             os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
+            with open(old_div(source, '1'), 'w') as tmp_file:
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
             dest.makedirs_p()
-            utils.copy(source / '1', dest)
-            self.assertTrue((dest / '1').exists())
-            self.assertEquals((dest / '1').open().read(), '1')
+            utils.copy(old_div(source, '1'), dest)
+            self.assertTrue((old_div(dest, '1')).exists())
+            self.assertEquals((old_div(dest, '1')).open().read(), '1')
 
     def test_posix_file_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
+            source = old_div(tmp_d, 'source')
             os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
+            with open(old_div(source, '1'), 'w') as tmp_file:
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest' / '1'
             dest.parent.makedirs_p()
-            utils.copy(source / '1', dest)
+            utils.copy(old_div(source, '1'), dest)
             self.assertTrue(dest.exists())
             self.assertEquals(dest.open().read(), '1')
 
     def test_ambigious_swift_resource_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / '1'
+            source = old_div(tmp_d, '1')
             with open(source, 'w') as tmp_file:
                 tmp_file.write('1')
 
@@ -104,7 +106,7 @@ class TestCopy(unittest.TestCase):
 
     def test_ambigious_swift_container_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / '1'
+            source = old_div(tmp_d, '1')
             with open(source, 'w') as tmp_file:
                 tmp_file.write('1')
 
@@ -114,14 +116,14 @@ class TestCopy(unittest.TestCase):
 
     def test_tenant_swift_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
+            source = old_div(tmp_d, 'source')
             os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
+            with open(old_div(source, '1'), 'w') as tmp_file:
                 tmp_file.write('1')
 
             dest = 'swift://tenant/'
             with self.assertRaisesRegexp(ValueError, 'copy to tenant'):
-                utils.copy(source / '1', dest)
+                utils.copy(old_div(source, '1'), dest)
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
     def test_swift_destination(self, mock_upload):
@@ -147,29 +149,29 @@ class TestCopy(unittest.TestCase):
 class TestCopytree(unittest.TestCase):
     def test_posix_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
+            source = old_div(tmp_d, 'source')
             os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
+            with open(old_div(source, '1'), 'w') as tmp_file:
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
             utils.copytree(source, dest)
-            self.assertTrue((dest / '1').exists())
+            self.assertTrue((old_div(dest, '1')).exists())
 
     def test_posix_destination_w_cmd(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
+            source = old_div(tmp_d, 'source')
             os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
+            with open(old_div(source, '1'), 'w') as tmp_file:
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
             utils.copytree(source, dest, copy_cmd='cp -r')
-            self.assertTrue((dest / '1').exists())
+            self.assertTrue((old_div(dest, '1')).exists())
 
     def test_posix_destination_already_exists(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / '1'
+            source = old_div(tmp_d, '1')
             source.makedirs_p()
 
             with self.assertRaisesRegexp(OSError, 'exists'):
@@ -177,7 +179,7 @@ class TestCopytree(unittest.TestCase):
 
     def test_posix_destination_w_error(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
-            invalid_source = tmp_d / 'source'
+            invalid_source = old_div(tmp_d, 'source')
             dest = tmp_d / 'my' / 'dest'
 
             with self.assertRaises(OSError):
@@ -284,7 +286,7 @@ class TestMisc(unittest.TestCase):
 
     def test_mk_rm_dir(self):
         with NamedTemporaryDirectory(change_dir=True) as tmpdir:
-            dirname = tmpdir / 'blah'
+            dirname = old_div(tmpdir, 'blah')
             dirname.mkdir()
             with self.assertRaises(OSError):
                 dirname.mkdir()
@@ -302,7 +304,7 @@ class TestMisc(unittest.TestCase):
 
     def test_is_methods(self):
         with NamedTemporaryDirectory(change_dir=True) as tmpdir:
-            dirname = tmpdir / 'blah'
+            dirname = old_div(tmpdir, 'blah')
             self.assertFalse(dirname.isdir())
             self.assertFalse(dirname.isfile())
             dirname.mkdir()

@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 import unittest
 
 from stor.s3 import S3Path
@@ -38,7 +41,7 @@ class TestBasics(unittest.TestCase):
         # Test p1/p1.
         p1 = S3Path("s3://foo")
         p2 = "bar"
-        self.assertEqual(p1 / p2, S3Path("s3://foo/bar"))
+        self.assertEqual(old_div(p1, p2), S3Path("s3://foo/bar"))
 
     def test_properties(self):
         # Create sample path object.

@@ -1,6 +1,9 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import ast
 import copy
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import os
 import threading
 
@@ -112,7 +115,7 @@ def _update(d, updates, validate=True):
     If validate is set to True, the key being updated must already exist
     in the dictionary.
     """
-    for key, value in updates.iteritems():
+    for key, value in updates.items():
         if type(value) is dict:
             if key not in d or not type(d[key]) is dict:
                 if validate:

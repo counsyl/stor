@@ -1,3 +1,7 @@
+from __future__ import division
+from builtins import zip
+from builtins import map
+from past.utils import old_div
 from stor import utils
 
 import errno
@@ -388,12 +392,12 @@ class FileSystemPath(Path):
 
         The elements of the list are Path objects.
         """
-        return [self / child
+        return [old_div(self, child)
                 for child in map(self._always_unicode, os.listdir(self))]
 
     def glob(self, pattern):
         cls = self.path_class
-        return [cls(s) for s in glob.glob(self / pattern)]
+        return [cls(s) for s in glob.glob(old_div(self, pattern))]
 
     def exists(self):
         """ See: :func:`os.path.exists` """
