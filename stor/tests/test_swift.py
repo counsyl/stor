@@ -551,12 +551,17 @@ class TestList(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
-        mock_list.side_effect = ClientException('unauthorized',
-                                                http_status=403)
+        mock_list.side_effect = ClientException(
+            'unauthorized', http_status=403, http_response_headers={'X-Trans-Id': 'transactionid'})
 
         swift_p = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(swift.UnauthorizedError):
-            swift_p.list()
+            try:
+                swift_p.list()
+            except swift.UnauthorizedError as exc:
+                self.assertIn('X-Trans-Id: transactionid', str(exc))
+                self.assertIn('X-Trans-Id: transactionid', repr(exc))
+                raise
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_condition_not_met_custom_retry_logic(self, mock_sleep):
