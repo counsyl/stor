@@ -1,6 +1,3 @@
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 import ast
 import copy
 from configparser import SafeConfigParser

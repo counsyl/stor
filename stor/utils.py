@@ -1,6 +1,3 @@
-from builtins import next
-from builtins import str
-from builtins import object
 from contextlib import contextmanager
 import datetime
 import errno

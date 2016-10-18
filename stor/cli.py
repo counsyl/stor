@@ -72,10 +72,7 @@ subcommand::
 Direct file transfer between OBS services or within one OBS service (server-side copy)
 is not yet supported.
 """
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
-from builtins import range
 
 import argparse
 import copy
