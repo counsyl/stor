@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v1.2.0
+------
+
+* Include ``X-Trans-Id`` header in Swift exception messages and reprs if
+  available to facilitate debugging.
+
 v1.1.2
 ------
 
