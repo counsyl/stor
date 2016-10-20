@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v1.2.1
+------
+* Add explicit dependence on six to requirements.txt
+
 v1.2.0
 ------
 
