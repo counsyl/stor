@@ -180,7 +180,14 @@ class FailedUploadError(UnavailableError):
 
 
 class UnauthorizedError(SwiftError):
-    """Thrown when a 403 response is returned from swift"""
+    """Thrown when a 403 response is returned from swift.
+
+    Note:
+        Internal swift connection errors (e.g., when a particular node is
+        unavailable) appear to translate themselves into 403 errors at the
+        proxy layer, thus in general it's a good idea to retry on authorization
+        errors as equivalent to unavailable errors when doing PUT or GET
+        operations (list / stat / etc never hit this issue)."""
     pass
 
 
@@ -584,7 +591,7 @@ class SwiftPath(OBSPath):
         return results
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError,
-                              InconsistentDownloadError))
+                              InconsistentDownloadError, UnauthorizedError))
     def read_object(self):
         """Reads an individual object.
 
@@ -879,7 +886,8 @@ class SwiftPath(OBSPath):
         except NotFoundError:
             return False
 
-    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError,
+                              UnauthorizedError))
     def download_object(self, out_file):
         """Downloads a single object to an output file.
 
@@ -902,7 +910,8 @@ class SwiftPath(OBSPath):
                                  objects=[self.resource],
                                  options={'out_file': out_file})
 
-    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError,
+                              UnauthorizedError))
     def download_objects(self,
                          dest,
                          objects):
@@ -1072,7 +1081,8 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError,
+                              UnauthorizedError))
     def upload(self,
                to_upload,
                condition=None,
@@ -1194,7 +1204,7 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, UnauthorizedError))
     def remove(self):
         """Removes a single object.
 
@@ -1215,7 +1225,8 @@ class SwiftPath(OBSPath):
                                         self.container,
                                         [self.resource])
 
-    @_swift_retry(exceptions=(UnavailableError, ConflictError, ConditionNotMetError))
+    @_swift_retry(exceptions=(UnavailableError, ConflictError,
+                              ConditionNotMetError, UnauthorizedError))
     def rmtree(self):
         """Removes a resource and all of its contents.
         This method retries ``num_retries`` times if swift is unavailable.
@@ -1432,7 +1443,7 @@ class SwiftPath(OBSPath):
         contract)"""
         return int(self.stat().get('Content-Length', 0))
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, UnauthorizedError))
     def post(self, options=None):
         """Post operations on the path.
 
