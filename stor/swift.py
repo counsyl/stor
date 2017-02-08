@@ -442,7 +442,9 @@ class SwiftPath(OBSPath):
         """True if this path is a segment container"""
         container = self.container
         if not self.resource and container:
-            return container.startswith('.segments_') or container.endswith('_segments')
+            return (container.startswith('.segments_') or
+                    container.endswith('_segments') or
+                    container.endswith('+segments'))
         else:
             return False
 
@@ -1286,7 +1288,8 @@ class SwiftPath(OBSPath):
             # do this automatically
             if not deleting_segments:
                 segment_containers = ('%s_segments' % to_delete.container,
-                                      '.segments_%s' % to_delete.container)
+                                      '.segments_%s' % to_delete.container,
+                                      '%s+segments' % to_delete.container)
                 for segment_container in segment_containers:
                     _ignore_not_found(self._swift_service_call)('delete',
                                                                 segment_container,

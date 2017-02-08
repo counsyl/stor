@@ -2293,7 +2293,8 @@ class TestRmtree(SwiftTestCase):
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container'),
                            mock.call('container_segments'),
-                           mock.call('.segments_container')])
+                           mock.call('.segments_container'),
+                           mock.call('container+segments')])
 
     @mock.patch('time.sleep', autospec=True)
     def test_w_list_validation_failing_first_time(self, mock_sleep):
@@ -2314,9 +2315,11 @@ class TestRmtree(SwiftTestCase):
                           [mock.call('container'),
                            mock.call('container_segments'),
                            mock.call('.segments_container'),
+                           mock.call('container+segments'),
                            mock.call('container'),
                            mock.call('container_segments'),
-                           mock.call('.segments_container')])
+                           mock.call('.segments_container'),
+                           mock.call('container+segments')])
         self.assertTrue(len(mock_list.call_args_list), 2)
         self.assertTrue(len(mock_sleep.call_args_list), 1)
 
@@ -2340,6 +2343,7 @@ class TestRmtree(SwiftTestCase):
     def test_w_only_container_no_segment_container(self):
         self.mock_swift.delete.side_effect = [{},
                                               swift.NotFoundError('not found'),
+                                              swift.NotFoundError('not found'),
                                               swift.NotFoundError('not found')]
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.rmtree()
@@ -2347,7 +2351,8 @@ class TestRmtree(SwiftTestCase):
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container'),
                            mock.call('container_segments'),
-                           mock.call('.segments_container')])
+                           mock.call('.segments_container'),
+                           mock.call('container+segments')])
 
     def test_w_container_and_resource(self):
         self.mock_swift.delete.return_value = {}
