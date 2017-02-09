@@ -360,3 +360,18 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                         'test',
                         use_manifest=True,
                         num_retries=0)
+
+    def test_all_segment_container_types_are_deleted(self):
+        segment_containers = [stor.join('swift://' + self.test_container.tenant,
+                                        fmt % self.test_container.name)
+                              for fmt in ('.segments_%s', '%s+segments', '%s_segments')]
+        all_containers = segment_containers + [self.test_container]
+
+        test_files = [stor.join(c, 'test_file_tbdeleted.txt') for c in all_containers]
+        for t in test_files:
+            with stor.open(t, 'w') as fp:
+                fp.write('testtxt\n')
+        assert all(t.exists() for t in test_files)
+        stor.rmtree(self.test_container)
+        for t in test_files:
+            assert not t.exists(), 'Did not delete %s' % t
