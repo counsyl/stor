@@ -877,7 +877,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_w_condition_and_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = (b'header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -897,7 +897,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -917,7 +917,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest_validation_err(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
