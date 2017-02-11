@@ -1,4 +1,5 @@
 import posixpath
+import sys
 
 from cached_property import cached_property
 from six import BytesIO
@@ -299,8 +300,12 @@ class OBSFile(object):
     readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
 
     # In Python 3 it's __next__, in Python 2 it's next()
-    __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)
-    next = _delegate_to_buffer('next', valid_modes=_READ_MODES)
+    #
+    # TODO: Only use in Python 2 context
+    if sys.version_info >= (3, 0):
+        __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)  # pragma: no cover
+    else:
+        next = _delegate_to_buffer('next', valid_modes=_READ_MODES)  # pragma: no cover
 
     write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
     writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)
