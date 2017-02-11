@@ -680,7 +680,6 @@ class SwiftPath(OBSPath):
             fp.write(content)
             fp.flush()
             suo = OBSUploadObject(fp.name, object_name=self.resource)
-            print('SWIFT UPLOAD ARGS ', swift_upload_args)
             return self.upload([suo], **swift_upload_args)
 
     def open(self, mode='r', swift_upload_options=None):

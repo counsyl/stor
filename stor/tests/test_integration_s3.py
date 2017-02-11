@@ -1,8 +1,9 @@
-from io import StringIO
 import logging
 import os
 import time
 import unittest
+
+from six import StringIO
 
 import stor
 from stor import exceptions

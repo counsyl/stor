@@ -1,4 +1,3 @@
-import io
 import datetime
 import gzip
 import ntpath
@@ -10,6 +9,7 @@ from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import ClientError
 import freezegun
 import mock
+from six import BytesIO
 from testfixtures import LogCapture
 
 import stor
@@ -1429,7 +1429,7 @@ class TestS3File(S3TestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = io.BytesIO()
+                _buffer = BytesIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
@@ -1474,7 +1474,6 @@ line4
         for i, line in enumerate(s3_p.open(), 1):
             self.assertEqual(line, 'line%d\n' % i)
 
-        self.assertEqual(next(s3_p.open()), 'line1\n')
         self.assertEqual(next(s3_p.open()), 'line1\n')
         self.assertEqual(next(iter(s3_p.open())), 'line1\n')
 

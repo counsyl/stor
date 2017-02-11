@@ -1,4 +1,3 @@
-import io
 import gzip
 import logging
 import ntpath
@@ -8,6 +7,7 @@ import unittest
 
 import freezegun
 import mock
+from six import BytesIO
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from testfixtures import LogCapture
@@ -262,7 +262,7 @@ class TestSwiftFile(SwiftTestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = io.BytesIO()
+                _buffer = BytesIO()
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
@@ -301,7 +301,6 @@ line4
         for i, line in enumerate(swift_p.open(), 1):
             self.assertEqual(line, 'line%d\n' % i)
 
-        self.assertEqual(next(swift_p.open()), 'line1\n')
         self.assertEqual(next(swift_p.open()), 'line1\n')
         self.assertEqual(next(iter(swift_p.open())), 'line1\n')
 

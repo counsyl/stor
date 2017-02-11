@@ -172,7 +172,6 @@ def validate_manifest_list(expected_objs, list_results):
     verify all expected objects are in the listed results
     """
     listed_objs = {r.resource for r in list_results}
-    print('EXP', expected_objs, listed_objs)
     return set(expected_objs).issubset(listed_objs)
 
 
