@@ -1,3 +1,8 @@
+from __future__ import division
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import gzip
 import os
 import unittest
@@ -10,7 +15,7 @@ from stor import Path
 from stor.tests.shared import assert_same_data
 
 
-class BaseIntegrationTest:
+class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
     own as part of the base test class.
     """
@@ -73,7 +78,7 @@ class BaseIntegrationTest:
 
                 # Verify contents of all downloaded test objects
                 for which_obj in self.get_dataset_obj_names(num_test_objs):
-                    obj_path = Path('test') / which_obj
+                    obj_path = old_div(Path('test'), which_obj)
                     self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
         def test_hidden_file_nested_dir_copytree(self):
@@ -145,8 +150,8 @@ class BaseIntegrationTest:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
 
         def test_file_read_write(self):
-            test_file = self.test_dir / 'test_file.txt'
-            copy_file = self.test_dir / 'copy_file.txt'
+            test_file = old_div(self.test_dir, 'test_file.txt')
+            copy_file = old_div(self.test_dir, 'copy_file.txt')
 
             with test_file.open(mode='wb') as obj:
                 obj.write('this is a test\n')

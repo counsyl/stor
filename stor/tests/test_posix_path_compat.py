@@ -1,6 +1,10 @@
 """
 Tests (from path.py) to ensure compatibility with path.py module.
 """
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import os
 import platform
 
@@ -18,18 +22,18 @@ def p(**choices):
 class TestBasics(unittest.TestCase):
     def test_relpath(self):
         root = Path(p(nt='C:\\', posix='/'))
-        foo = root / 'foo'
-        quux = foo / 'quux'
-        bar = foo / 'bar'
+        foo = old_div(root, 'foo')
+        quux = old_div(foo, 'quux')
+        bar = old_div(foo, 'bar')
         boz = bar / 'Baz' / 'Boz'
         up = Path(os.pardir)
 
         # basics
         assert root.relpathto(boz) == Path('foo') / 'bar' / 'Baz' / 'Boz'
-        assert bar.relpathto(boz) == Path('Baz') / 'Boz'
+        assert bar.relpathto(boz) == old_div(Path('Baz'), 'Boz')
         assert quux.relpathto(boz) == up / 'bar' / 'Baz' / 'Boz'
         assert boz.relpathto(quux) == up / up / up / 'quux'
-        assert boz.relpathto(bar) == up / up
+        assert boz.relpathto(bar) == old_div(up, up)
 
         # Path is not the first element in concatenation
         assert root.relpathto(boz) == 'foo' / Path('bar') / 'Baz' / 'Boz'
@@ -81,7 +85,7 @@ class TestBasics(unittest.TestCase):
         # Test p1/p1.
         p1 = Path("foo")
         p2 = Path("bar")
-        assert p1 / p2 == p(nt='foo\\bar', posix='foo/bar')
+        assert old_div(p1, p2) == p(nt='foo\\bar', posix='foo/bar')
 
     def test_properties(self):
         # Create sample path object.
@@ -131,7 +135,7 @@ class TestScratchDir(unittest.TestCase):
         """Can be used as context manager for chdir."""
         with NamedTemporaryDirectory() as tmpdir:
             d = Path(tmpdir)
-            subdir = d / 'subdir'
+            subdir = old_div(d, 'subdir')
             subdir.makedirs()
             old_dir = os.getcwd()
             with subdir:
@@ -144,7 +148,7 @@ class TestScratchDir(unittest.TestCase):
             assert d.listdir() == []
 
             f = 'testfile.txt'
-            af = d / f
+            af = old_div(d, f)
             assert af == os.path.join(d, f)
             with af.open('wb') as fp:
                 fp.write('blah')
@@ -165,7 +169,7 @@ class TestScratchDir(unittest.TestCase):
                 af.remove()
 
             # Try a test with 20 files
-            files = [d / ('%d.txt' % i) for i in range(20)]
+            files = [old_div(d, ('%d.txt' % i)) for i in range(20)]
             for f in files:
                 fobj = open(f, 'w')
                 fobj.write('some text\n')
@@ -217,11 +221,11 @@ class TestScratchDir(unittest.TestCase):
 
             # Placeholder file so that when removedirs() is called,
             # it doesn't remove the temporary directory itself.
-            tempf = d / 'temp.txt'
+            tempf = old_div(d, 'temp.txt')
             with tempf.open('wb') as fp:
                 fp.write('blah')
             try:
-                foo = d / 'foo'
+                foo = old_div(d, 'foo')
                 boz = foo / 'bar' / 'baz' / 'boz'
                 boz.makedirs()
                 try:
@@ -267,7 +271,7 @@ class TestChdir(unittest.TestCase):
             current = Path(str(tmpdir)).expand()
             os.chdir(str(tmpdir))
             current = Path(os.getcwd())
-            target = (current / 'subdir')
+            target = (old_div(current, 'subdir'))
             target.makedirs_p()
 
             target.chdir()

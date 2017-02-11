@@ -1,6 +1,10 @@
 """
 An experimental implementation of S3 in stor
 """
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from functools import partial
 import logging
 from multiprocessing.pool import ThreadPool
@@ -113,8 +117,8 @@ class S3DownloadLogger(utils.BaseProgressLogger):
     def get_progress_message(self):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
-        mb = self.downloaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0.0
+        mb = old_div(self.downloaded_bytes, (1024 * 1024.0))
+        mb_s = old_div(mb, elapsed_time.total_seconds()) if elapsed_time else 0.0
         return (
             '%s/%s\t'
             '%s\t'
@@ -143,8 +147,8 @@ class S3UploadLogger(utils.BaseProgressLogger):
     def get_progress_message(self):
         elapsed_time = self.get_elapsed_time()
         formatted_elapsed_time = self.format_time(elapsed_time)
-        mb = self.uploaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0.0
+        mb = old_div(self.uploaded_bytes, (1024 * 1024.0))
+        mb_s = old_div(mb, elapsed_time.total_seconds()) if elapsed_time else 0.0
         return (
             '%s/%s\t'
             '%s\t'
@@ -267,7 +271,7 @@ class S3Path(OBSPath):
                          if condition else manifest_cond)
 
         if starts_with:
-            prefix = prefix / starts_with if prefix else starts_with
+            prefix = old_div(prefix, starts_with) if prefix else starts_with
         else:
             prefix = prefix or ''
 
@@ -293,14 +297,14 @@ class S3Path(OBSPath):
             for page in results:
                 if 'Contents' in page:
                     list_results.extend([
-                        path_prefix / result['Key']
+                        old_div(path_prefix, result['Key'])
                         for result in page['Contents']
                         if not ignore_dir_markers or
                         (ignore_dir_markers and not utils.has_trailing_slash(result['Key']))
                     ])
                 if list_as_dir and 'CommonPrefixes' in page:
                     list_results.extend([
-                        path_prefix / result['Prefix']
+                        old_div(path_prefix, result['Prefix'])
                         for result in page['CommonPrefixes']
                     ])
         except botocore_exceptions.ClientError as e:
@@ -465,7 +469,7 @@ class S3Path(OBSPath):
 
         response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
         response = {
-            key: val for key, val in response.iteritems()
+            key: val for key, val in response.items()
             if key is not 'ResponseMetadata'
         }
         return response
@@ -529,7 +533,7 @@ class S3Path(OBSPath):
     def _download_object_worker(self, obj_params, config=None):
         """Downloads a single object. Helper for threaded download."""
         name = self.parts_class(obj_params['source'][len(utils.with_trailing_slash(self)):])
-        return obj_params['source'].download_object(obj_params['dest'] / name, config=config)
+        return obj_params['source'].download_object(old_div(obj_params['dest'], name), config=config)
 
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Downloads a directory from S3 to a destination directory.
@@ -624,8 +628,8 @@ class S3Path(OBSPath):
 
         result = {
             'source': upload_obj.source,
-            'dest': S3Path(self.drive + self.bucket) / (ul_kwargs.get('key') or
-                                                        ul_kwargs.get('Key')),
+            'dest': old_div(S3Path(self.drive + self.bucket), (ul_kwargs.get('key') or
+                                                        ul_kwargs.get('Key'))),
             'success': True
         }
 
@@ -677,14 +681,14 @@ class S3Path(OBSPath):
             obj for obj in source if isinstance(obj, OBSUploadObject)
         ]
 
-        manifest_file_name = (Path(source[0]) / utils.DATA_MANIFEST_FILE_NAME
+        manifest_file_name = (old_div(Path(source[0]), utils.DATA_MANIFEST_FILE_NAME)
                               if use_manifest else None)
         resource_base = self.resource or Path('')
         files_to_upload.extend([
             OBSUploadObject(
                 name,
-                resource_base / (utils.with_trailing_slash(utils.file_name_to_object_name(name))
-                                 if Path(name).isdir() else utils.file_name_to_object_name(name)),
+                old_div(resource_base, (utils.with_trailing_slash(utils.file_name_to_object_name(name))
+                                 if Path(name).isdir() else utils.file_name_to_object_name(name))),
                 options={'headers': headers} if headers else None)
             for name in files_to_convert if name != manifest_file_name
         ])
@@ -693,7 +697,7 @@ class S3Path(OBSPath):
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in files_to_upload]
             utils.generate_and_save_data_manifest(source[0], object_names)
-            manifest_obj_name = resource_base / utils.file_name_to_object_name(manifest_file_name)
+            manifest_obj_name = old_div(resource_base, utils.file_name_to_object_name(manifest_file_name))
             manifest_obj = OBSUploadObject(str(manifest_file_name),
                                            manifest_obj_name,
                                            options={'headers': headers} if headers else None)

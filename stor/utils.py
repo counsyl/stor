@@ -1,3 +1,8 @@
+from __future__ import division
+from builtins import next
+from builtins import str
+from builtins import object
+from past.utils import old_div
 from contextlib import contextmanager
 import datetime
 import errno
@@ -149,7 +154,7 @@ def generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
     import stor
     from stor import Path
 
-    manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
+    manifest_file_name = old_div(Path(manifest_dir), DATA_MANIFEST_FILE_NAME)
     with stor.open(manifest_file_name, 'w') as out_file:
         contents = '\n'.join(data_manifest_contents) + '\n'
         out_file.write(contents)
@@ -159,7 +164,7 @@ def get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
     import stor
 
-    manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
+    manifest = old_div(manifest_dir, DATA_MANIFEST_FILE_NAME)
     with stor.open(manifest, 'r') as manifest_file:
         return [
             f.strip() for f in manifest_file.readlines() if f.strip()
@@ -279,18 +284,18 @@ def copy(source, dest, swift_retry_options=None):
 
     if is_filesystem_path(dest):
         if is_obs_path(source):
-            dest_file = dest if not dest.isdir() else dest / source.name
+            dest_file = dest if not dest.isdir() else old_div(dest, source.name)
             source.download_object(dest_file, **swift_retry_options)
         else:
             shutil.copy(source, dest)
     else:
-        dest_file = dest if not dest.endswith('/') else dest / source.name
+        dest_file = dest if not dest.endswith('/') else old_div(dest, source.name)
         if is_swift_path(dest) and not dest_file.parent.container:
             raise ValueError((
                 'cannot copy to tenant "%s" and file '
                 '"%s"' % (dest_file.parent, dest_file.name)
             ))
-        dest_obj_name = Path(dest_file.parent.resource or '') / dest_file.name
+        dest_obj_name = old_div(Path(dest_file.parent.resource or ''), dest_file.name)
         upload_obj = OBSUploadObject(source, dest_obj_name)
         dest_file.parent.upload([upload_obj],
                                 **swift_retry_options)

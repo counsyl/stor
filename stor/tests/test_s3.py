@@ -1,4 +1,12 @@
-import cStringIO
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
+import io
 import datetime
 import gzip
 import ntpath
@@ -1350,7 +1358,7 @@ class TestCopy(S3TestCase):
         p = S3Path('s3://bucket/key/file_source.txt')
         with NamedTemporaryDirectory() as tmp_d:
             p.copy(tmp_d)
-            mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
+            mockdownload_object.assert_called_once_with(p, old_div(Path(tmp_d), 'file_source.txt'))
 
     def test_copy_swift_destination(self):
         p = S3Path('s3://bucket/key/file_source')
@@ -1429,7 +1437,7 @@ class TestS3File(S3TestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = cStringIO.StringIO()
+                _buffer = io.StringIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
@@ -1475,8 +1483,8 @@ line4
             self.assertEqual(line, 'line%d\n' % i)
 
         self.assertEqual(next(s3_p.open()), 'line1\n')
-        self.assertEqual(s3_p.open().next(), 'line1\n')
-        self.assertEqual(iter(s3_p.open()).next(), 'line1\n')
+        self.assertEqual(next(s3_p.open()), 'line1\n')
+        self.assertEqual(next(iter(s3_p.open())), 'line1\n')
 
     def test_write_invalid_args(self):
         s3_p = S3Path('s3://bucket/key/obj')
