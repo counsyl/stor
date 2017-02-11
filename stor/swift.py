@@ -42,7 +42,7 @@ import tempfile
 import threading
 
 import six
-from six.moves import urllib
+from six.moves.urllib import parse
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -644,22 +644,22 @@ class SwiftPath(OBSPath):
         obj_url = generate_temp_url(obj_path, lifetime, temp_url_key, method)
         query_begin = obj_url.rfind('temp_url_sig', 0, len(obj_url))
         obj_url_query = obj_url[query_begin:]
-        obj_url_query = dict(urllib.parse.parse_qsl(obj_url_query))
+        obj_url_query = dict(parse.parse_qsl(obj_url_query))
 
         query = ['temp_url_sig=%s' % obj_url_query['temp_url_sig'],
                  'temp_url_expires=%s' % obj_url_query['temp_url_expires']]
         if inline:
             query.append('inline')
         if filename:
-            query.append('filename=%s' % urllib.quote(filename))
+            query.append('filename=%s' % parse.quote(filename))
 
-        auth_url_parts = urllib.parse.urlparse(auth_url)
-        return urllib.parse.urlunparse((auth_url_parts.scheme,
-                                        auth_url_parts.netloc,
-                                        urllib.quote(obj_path),
-                                        auth_url_parts.params,
-                                        '&'.join(query),
-                                        auth_url_parts.fragment))
+        auth_url_parts = parse.urlparse(auth_url)
+        return parse.urlunparse((auth_url_parts.scheme,
+                                 auth_url_parts.netloc,
+                                 parse.quote(obj_path),
+                                 auth_url_parts.params,
+                                 '&'.join(query),
+                                 auth_url_parts.fragment))
 
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
