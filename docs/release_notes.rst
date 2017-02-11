@@ -1,6 +1,27 @@
 Release Notes
 =============
 
+v1.3.0
+------
+* When deleting a swift container, also attempt to delete
+  ``$CONTAINER+segments``, which is the format that SwiftStack's S3 emulation
+  layer uses for multipart uploads.  (really tiny perf impact, since it only
+  applies when directly working with containers).
+
+v1.2.2
+------
+* Include ``X-Trans-Id`` on auth failures as well.
+
+v1.2.1
+------
+* Add explicit dependence on six to requirements.txt
+
+v1.2.0
+------
+
+* Include ``X-Trans-Id`` header in Swift exception messages and reprs if
+  available to facilitate debugging.
+
 v1.1.2
 ------
 
