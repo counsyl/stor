@@ -246,7 +246,7 @@ class TestSwiftFile(SwiftTestCase):
         self.assertEquals(obj.name, swift_p)
 
     def test_context_manager_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', b'data')
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         obj.close()
@@ -269,7 +269,7 @@ class TestSwiftFile(SwiftTestCase):
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', b'data')
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         obj.close()
@@ -283,13 +283,13 @@ class TestSwiftFile(SwiftTestCase):
             swift_p.open(mode='wb').read()
 
     def test_read_success(self):
-        self.mock_swift_conn.get_object.return_value = ('header', b'data')
+        self.mock_swift_conn.get_object.return_value = ('header', 'data')
 
         swift_p = SwiftPath('swift://tenant/container/obj')
-        self.assertEquals(swift_p.open().read(), b'data')
+        self.assertEquals(swift_p.open().read(), 'data')
 
     def test_iterating_over_files(self):
-        data = b'''\
+        data = '''\
 line1
 line2
 line3
@@ -300,23 +300,23 @@ line4
         swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), data)
         self.assertEquals(swift_p.open().readlines(),
-                          [l + b'\n' for l in data.split(b'\n')][:-1])
+                          [l + '\n' for l in data.split('\n')][:-1])
         for i, line in enumerate(swift_p.open(), 1):
-            self.assertEqual(line, b'line%d\n' % i)
+            self.assertEqual(line, 'line%d\n' % i)
 
-        self.assertEqual(next(swift_p.open()), b'line1\n')
-        self.assertEqual(next(swift_p.open()), b'line1\n')
-        self.assertEqual(next(iter(swift_p.open())), b'line1\n')
+        self.assertEqual(next(swift_p.open()), 'line1\n')
+        self.assertEqual(next(swift_p.open()), 'line1\n')
+        self.assertEqual(next(iter(swift_p.open())), 'line1\n')
 
     @mock.patch('time.sleep', autospec=True)
     def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
             ClientException('dummy', 'dummy', http_status=404),
-            ('header', b'data')
+            ('header', 'data')
         ]
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
-        self.assertEquals(obj.read(), b'data')
+        self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
     def test_write_invalid_args(self):
@@ -397,12 +397,12 @@ line4
         text = stor.open(gzip_path, 'rb').read()
         with mock.patch.object(SwiftPath, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
-            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')
+            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz', 'rb')
 
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(swift_file_fp, gzip_fp)
-            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')
+            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz', 'rb')
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     # after seeking should still be same

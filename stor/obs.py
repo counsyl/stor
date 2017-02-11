@@ -1,8 +1,14 @@
 from builtins import str
 from builtins import object
-import io
 import posixpath
 import sys
+
+# Use cStringIO for Py2
+from io import BytesIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from cached_property import cached_property
 from swiftclient.service import SwiftError
@@ -24,7 +30,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         func = getattr(self._buffer, attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(io.BytesIO(), attr_name).__doc__
+    wrapper.__doc__ = getattr(BytesIO(), attr_name).__doc__
     return wrapper
 
 
@@ -275,13 +281,18 @@ class OBSFile(object):
         # give users access to underlying buffer)
         return self
 
+    @property
+    def stream_cls(self):
+        """The class used for the IO stream"""
+        return BytesIO if self.mode in ('rb', 'wb') else StringIO
+
     @cached_property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
         if self.mode in ('r', 'rb'):
-            return io.BytesIO(self._path.read_object())
+            return self.stream_cls(self._path.read_object())
         elif self.mode in ('w', 'wb'):
-            return io.BytesIO()
+            return self.stream_cls()
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
 
