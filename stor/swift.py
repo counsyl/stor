@@ -270,7 +270,7 @@ def _swiftclient_error_to_descriptive_exception(exc):
         # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
         # Treat this as a FailedUploadError
         logger.error('upload error in swift put_object operation - %s', str(exc))
-        six.raise_from(FailedUploadError(str(exc), exc), e)
+        six.raise_from(FailedUploadError(str(exc), exc), exc)
     elif 'Unauthorized.' in str(exc):
         # Swiftclient catches keystone auth errors at
         # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
