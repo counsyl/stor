@@ -44,6 +44,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import six
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -269,14 +270,14 @@ def _swiftclient_error_to_descriptive_exception(exc):
         # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
         # Treat this as a FailedUploadError
         logger.error('upload error in swift put_object operation - %s', str(exc))
-        raise FailedUploadError(str(exc), exc)
+        six.raise_from(FailedUploadError(str(exc), exc), e)
     elif 'Unauthorized.' in str(exc):
         # Swiftclient catches keystone auth errors at
         # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
         # Parse the message since they don't bubble the exception or
         # provide more information
         logger.warning('auth error in swift operation - %s', str(exc))
-        raise AuthenticationError(str(exc), exc)
+        six.raise_from(AuthenticationError(str(exc), exc), exc)
     elif 'md5sum != etag' in str(exc) or 'read_length != content_length' in str(exc):
         # We encounter this error when cluster is under heavy
         # replication load (at least that's the theory). So retry and
@@ -298,7 +299,7 @@ def _propagate_swift_exceptions(func):
             return func(*args, **kwargs)
         except (swift_service.SwiftError,
                 swift_exceptions.ClientException) as e:
-            raise _swiftclient_error_to_descriptive_exception(e)
+            six.raise_from(_swiftclient_error_to_descriptive_exception(e), e)
     return wrapper
 
 
