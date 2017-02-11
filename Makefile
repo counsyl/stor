@@ -23,7 +23,7 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
-	# test -f $@ || virtualenv $(VENV_DIR)
+	test -f $@ || virtualenv $(VENV_DIR)
 	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
