@@ -1,6 +1,3 @@
-from builtins import next
-from builtins import range
-from builtins import object
 import io
 import gzip
 import logging

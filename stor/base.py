@@ -1,6 +1,3 @@
-from builtins import zip
-from builtins import map
-from collections import UserString
 import errno
 import fnmatch
 import glob

@@ -1,5 +1,3 @@
-from builtins import str
-from builtins import range
 import errno
 import logging
 import mock

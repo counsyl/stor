@@ -1,4 +1,3 @@
-from builtins import str
 import unittest
 
 from stor.swift import SwiftPath
@@ -39,7 +38,7 @@ class TestBasics(unittest.TestCase):
         # Test p1/p1.
         p1 = SwiftPath("swift://foo")
         p2 = "bar"
-        self.assertEqual(p1/p2, SwiftPath("swift://foo/bar"))
+        self.assertEqual(p1 / p2, SwiftPath("swift://foo/bar"))
 
     def test_properties(self):
         # Create sample path object.

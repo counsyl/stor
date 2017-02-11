@@ -1,8 +1,9 @@
 import ast
 import copy
-from configparser import SafeConfigParser
 import os
 import threading
+
+from six.moves.configparser import SafeConfigParser
 
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'

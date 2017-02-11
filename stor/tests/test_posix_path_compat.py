@@ -1,8 +1,6 @@
 """
 Tests (from path.py) to ensure compatibility with path.py module.
 """
-from builtins import str
-from builtins import range
 import os
 import platform
 

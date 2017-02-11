@@ -1,4 +1,3 @@
-from builtins import range
 import copy
 import mock
 import os

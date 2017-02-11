@@ -74,7 +74,6 @@ is not yet supported.
 """
 import argparse
 import copy
-import configparser
 from functools import partial
 import logging
 import os
@@ -84,6 +83,7 @@ import sys
 import tempfile
 
 import six
+from six.moves import configparser
 
 import stor
 from stor import exceptions
