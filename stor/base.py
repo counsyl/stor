@@ -1,7 +1,6 @@
 from builtins import zip
 from builtins import map
-from stor import utils
-
+from collections import UserString
 import errno
 import fnmatch
 import glob
@@ -16,6 +15,8 @@ from six.moves import builtins
 from six import text_type
 from six import string_types
 from six import PY3
+
+from stor import utils
 
 
 class TreeWalkWarning(Warning):
@@ -65,6 +66,9 @@ class Path(text_type):
             else:  # pragma: no cover
                 assert False, 'path is not compatible with stor'
         return text_type.__new__(cls, path)
+
+    def __init__(self, path):
+        super(Path, self).__init__()
 
     @utils.ClassProperty
     @classmethod

@@ -32,8 +32,6 @@ Examples:
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
 import copy
 from functools import partial
@@ -43,8 +41,9 @@ import logging
 import os
 import tempfile
 import threading
-import urllib.request, urllib.parse, urllib.error
+import urllib.error
 import urllib.parse
+import urllib.request
 
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
@@ -644,11 +643,11 @@ class SwiftPath(OBSPath):
 
         auth_url_parts = urllib.parse.urlparse(auth_url)
         return urllib.parse.urlunparse((auth_url_parts.scheme,
-                                    auth_url_parts.netloc,
-                                    urllib.parse.quote(obj_path),
-                                    auth_url_parts.params,
-                                    '&'.join(query),
-                                    auth_url_parts.fragment))
+                                        auth_url_parts.netloc,
+                                        urllib.parse.quote(obj_path),
+                                        auth_url_parts.params,
+                                        '&'.join(query),
+                                        auth_url_parts.fragment))
 
     def write_object(self, content, **swift_upload_args):
         """Writes an individual object.
@@ -669,6 +668,7 @@ class SwiftPath(OBSPath):
             fp.write(content)
             fp.flush()
             suo = OBSUploadObject(fp.name, object_name=self.resource)
+            print('SWIFT UPLOAD ARGS ', swift_upload_args)
             return self.upload([suo], **swift_upload_args)
 
     def open(self, mode='r', swift_upload_options=None):

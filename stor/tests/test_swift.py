@@ -1,5 +1,3 @@
-from future import standard_library
-standard_library.install_aliases()
 from builtins import next
 from builtins import range
 from builtins import object
@@ -248,7 +246,7 @@ class TestSwiftFile(SwiftTestCase):
         self.assertEquals(obj.name, swift_p)
 
     def test_context_manager_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         obj.close()
@@ -271,7 +269,7 @@ class TestSwiftFile(SwiftTestCase):
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         obj.close()
@@ -285,13 +283,13 @@ class TestSwiftFile(SwiftTestCase):
             swift_p.open(mode='wb').read()
 
     def test_read_success(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
 
         swift_p = SwiftPath('swift://tenant/container/obj')
-        self.assertEquals(swift_p.open().read(), 'data')
+        self.assertEquals(swift_p.open().read(), b'data')
 
     def test_iterating_over_files(self):
-        data = '''\
+        data = b'''\
 line1
 line2
 line3
@@ -302,23 +300,23 @@ line4
         swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), data)
         self.assertEquals(swift_p.open().readlines(),
-                          [l + '\n' for l in data.split('\n')][:-1])
+                          [l + b'\n' for l in data.split(b'\n')][:-1])
         for i, line in enumerate(swift_p.open(), 1):
-            self.assertEqual(line, 'line%d\n' % i)
+            self.assertEqual(line, b'line%d\n' % i)
 
-        self.assertEqual(next(swift_p.open()), 'line1\n')
-        self.assertEqual(next(swift_p.open()), 'line1\n')
-        self.assertEqual(next(iter(swift_p.open())), 'line1\n')
+        self.assertEqual(next(swift_p.open()), b'line1\n')
+        self.assertEqual(next(swift_p.open()), b'line1\n')
+        self.assertEqual(next(iter(swift_p.open())), b'line1\n')
 
     @mock.patch('time.sleep', autospec=True)
     def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
             ClientException('dummy', 'dummy', http_status=404),
-            ('header', 'data')
+            ('header', b'data')
         ]
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
-        self.assertEquals(obj.read(), 'data')
+        self.assertEquals(obj.read(), b'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
     def test_write_invalid_args(self):
@@ -329,22 +327,22 @@ line4
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
-    def test_write_use_slo_multiple_and_close(self, mock_upload, mock_sleep):
+    def test_write_use_manifest_multiple_and_close(self, mock_upload, mock_sleep):
         with NamedTemporaryFile(delete=False) as fp:
             with mock.patch('tempfile.NamedTemporaryFile',
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
                 swift_p = SwiftPath('swift://tenant/container/obj')
                 obj = swift_p.open(mode='wb', swift_upload_options={
-                    'use_slo': 'test_value'
+                    'use_manifest': True
                 })
-                obj.write('hello')
-                obj.write(' world')
+                obj.write(b'hello')
+                obj.write(b' world')
                 obj.close()
             upload, = mock_upload.call_args_list
             self.assertEquals(upload[0][1][0].source, fp.name)
             self.assertEquals(upload[0][1][0].object_name, swift_p.resource)
-            self.assertEquals(upload[1]['use_slo'], 'test_value')
+            self.assertEquals(upload[1]['use_manifest'], True)
             self.assertEqual(open(fp.name).read(), 'hello world')
 
     @mock.patch('time.sleep', autospec=True)
@@ -352,8 +350,8 @@ line4
     def test_write_multiple_w_context_manager(self, mock_upload, mock_sleep):
         swift_p = SwiftPath('swift://tenant/container/obj')
         with swift_p.open(mode='wb') as obj:
-            obj.write('hello')
-            obj.write(' world')
+            obj.write(b'hello')
+            obj.write(b' world')
         upload_call, = mock_upload.call_args_list
 
     @mock.patch('time.sleep', autospec=True)
@@ -367,9 +365,9 @@ line4
             with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
                 ntf.side_effect = [ntf1, ntf2, ntf3]
                 with swift_p.open(mode='wb') as obj:
-                    obj.write('hello')
+                    obj.write(b'hello')
                     obj.flush()
-                    obj.write(' world')
+                    obj.write(b' world')
                     obj.flush()
                 u1, u2, u3 = mock_upload.call_args_list
                 u1[0][1][0].source == ntf1.name
@@ -396,7 +394,7 @@ line4
     def test_works_with_gzip(self):
         gzip_path = stor.join(stor.dirname(__file__),
                               'file_data', 's_3_2126.bcl.gz')
-        text = stor.open(gzip_path).read()
+        text = stor.open(gzip_path, 'rb').read()
         with mock.patch.object(SwiftPath, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
             swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')

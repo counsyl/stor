@@ -1,4 +1,3 @@
-from __future__ import print_function
 from builtins import str
 from builtins import range
 import errno
@@ -116,7 +115,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             symlink = tmp_dir / 'broken.symlink'
             symlink_source = tmp_dir / 'nonexistent'
             # put something in symlink source so that Python doesn't complain
-            with stor.open(symlink_source, 'wb') as fp:
+            with stor.open(symlink_source, 'w') as fp:
                 fp.write('blah')
             os.symlink(symlink_source, symlink)
             uploads = utils.walk_files_and_dirs([swift_dir])
