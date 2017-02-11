@@ -4,9 +4,9 @@ import sys
 from cached_property import cached_property
 from six import BytesIO
 try:
-    from cStringIO import StringIO  # pragma: no cover
-except ImportError:
-    from six import StringIO  # pragma: no cover
+    from cStringIO import StringIO
+except ImportError:  # pragma: no cover
+    from six import StringIO
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 
