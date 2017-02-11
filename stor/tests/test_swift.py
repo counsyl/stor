@@ -877,7 +877,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_w_condition_and_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = (b'header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -897,7 +897,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -917,7 +917,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest_validation_err(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -987,14 +987,12 @@ class TestGlob(SwiftTestCase):
     def test_valid_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.glob('pattern*')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
-                                          num_retries=0)
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
 
     def test_valid_pattern_wo_wildcard(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.glob('pattern')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
-                                          num_retries=0)
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
 
     def test_multi_glob_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
@@ -1013,12 +1011,12 @@ class TestGlob(SwiftTestCase):
             SwiftPath('swift://tenant/container2')
         ]
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(exceptions.ConditionNotMetError):
-            swift_p.glob('pattern*',
-                         condition=lambda results: len(results) > 2,
-                         num_retries=3)
+        with settings.use({'swift': {'num_retries': 3}}):
+            with self.assertRaises(exceptions.ConditionNotMetError):
+                swift_p.glob('pattern*',
+                             condition=lambda results: len(results) > 2)
 
-        # Verify that global was tried three times
+        # Verify that glob was tried three times
         self.assertEquals(len(mock_list.call_args_list), 3)
 
     def test_glob_condition_met(self, mock_list):
@@ -1480,8 +1478,9 @@ class TestDownload(SwiftTestCase):
         }]
 
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(exceptions.ConditionNotMetError):
-            swift_p.download('output_dir', use_manifest=True, num_retries=2)
+        with settings.use({'swift': {'num_retries': 2}}):
+            with self.assertRaises(exceptions.ConditionNotMetError):
+                swift_p.download('output_dir', use_manifest=True)
 
         self.assertEquals(len(mock_sleep.call_args_list), 2)
         # Verify that list was called with a data manifest as well
@@ -1721,7 +1720,8 @@ class TestUpload(SwiftTestCase):
         with NamedTemporaryDirectory(change_dir=True):
             swift_p = SwiftPath('swift://tenant/container/path')
             with self.assertRaises(exceptions.ConditionNotMetError), settings.use(upload_settings):
-                swift_p.upload(['.'], use_manifest=True, num_retries=2)
+                with settings.use({'swift': {'num_retries': 2}}):
+                    swift_p.upload(['.'], use_manifest=True)
         self.assertEquals(len(mock_sleep.call_args_list), 2)
 
     def test_upload_to_container(self, mock_walk_files_and_dirs):
@@ -1953,14 +1953,16 @@ class TestCopytree(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
     def test_copytree_posix_destination(self, mock_download):
         p = SwiftPath('swift://tenant/container')
-        with settings.use({'swift:download': {'object_threads': 100}}):
-            p.copytree('path', num_retries=1)
+        with settings.use({
+            'swift:download': {'object_threads': 100},
+            'swift': {'num_retries': 1}
+        }):
+            p.copytree('path')
         mock_download.assert_called_once_with(
             p,
             Path(u'path'),
             condition=None,
-            use_manifest=False,
-            num_retries=1)
+            use_manifest=False)
 
     def test_copytree_swift_destination(self):
         p = SwiftPath('swift://tenant/container')

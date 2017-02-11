@@ -72,8 +72,6 @@ subcommand::
 Direct file transfer between OBS services or within one OBS service (server-side copy)
 is not yet supported.
 """
-from builtins import str
-
 import argparse
 import copy
 import configparser
@@ -84,6 +82,8 @@ import shutil
 import signal
 import sys
 import tempfile
+
+import six
 
 import stor
 from stor import exceptions
@@ -129,7 +129,7 @@ def _make_stdin_action(func, err_msg):
                 if namespace.func == func:
                     raise argparse.ArgumentError(self, err_msg)
                 else:
-                    ntf = tempfile.NamedTemporaryFile(delete=False)
+                    ntf = tempfile.NamedTemporaryFile(delete=False, mode='w')
                     try:
                         ntf.write(sys.stdin.read())
                     finally:
@@ -170,8 +170,8 @@ def _get_pwd(service=None):
     if service:
         try:
             return utils.with_trailing_slash(parser.get('env', service))
-        except configparser.NoOptionError:
-            raise ValueError('%s is an invalid service' % service)
+        except configparser.NoOptionError as e:
+            six.raise_from(ValueError('%s is an invalid service' % service), e)
     return [utils.with_trailing_slash(value) for name, value in parser.items('env')]
 
 
@@ -397,7 +397,7 @@ def process_args(args):
     except exceptions.RemoteError as exc:
         if type(exc) is exceptions.NotFoundError and pth:
             perror('Not Found: %s' % pth)
-        perror('%s: %s\n' % (exc.__class__.__name__, exc.message))
+        perror('%s: %s\n' % (exc.__class__.__name__, exc))
 
 
 def print_results(results):

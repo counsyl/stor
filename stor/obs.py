@@ -1,16 +1,12 @@
-from builtins import str
-from builtins import object
 import posixpath
 import sys
 
-# Use cStringIO for Py2
-from io import BytesIO
+from cached_property import cached_property
+from six import BytesIO
 try:
     from cStringIO import StringIO
 except ImportError:
-    from io import StringIO
-
-from cached_property import cached_property
+    from six import StringIO
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 

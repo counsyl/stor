@@ -1,4 +1,3 @@
-from builtins import object
 import mock
 from stor import s3
 from stor.s3 import S3Path

@@ -1,8 +1,6 @@
 """
 An experimental implementation of S3 in stor
 """
-from builtins import str
-from builtins import range
 from functools import partial
 import logging
 from multiprocessing.pool import ThreadPool
@@ -486,7 +484,8 @@ class S3Path(OBSPath):
         Args:
             content (str): The content of the object
         """
-        with tempfile.NamedTemporaryFile() as fp:
+        mode = 'wb' if isinstance(content, bytes) else 'w'
+        with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)
             fp.flush()
             self.upload([OBSUploadObject(fp.name, self.resource)])

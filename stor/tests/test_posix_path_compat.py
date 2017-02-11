@@ -148,7 +148,7 @@ class TestScratchDir(unittest.TestCase):
             f = 'testfile.txt'
             af = d / f
             assert af == os.path.join(d, f)
-            with af.open('wb') as fp:
+            with af.open('w') as fp:
                 fp.write('blah')
             try:
                 assert af.exists()
@@ -197,7 +197,7 @@ class TestScratchDir(unittest.TestCase):
 
             filename = 'r\xe9\xf1emi'.encode('latin-1')
             pathname = os.path.join(tmpdir_bytes, filename)
-            with open(pathname, 'wb'):
+            with open(pathname, 'w'):
                 pass
             # first demonstrate that os.listdir works
             assert os.listdir(tmpdir_bytes)
@@ -220,7 +220,7 @@ class TestScratchDir(unittest.TestCase):
             # Placeholder file so that when removedirs() is called,
             # it doesn't remove the temporary directory itself.
             tempf = d / 'temp.txt'
-            with tempf.open('wb') as fp:
+            with tempf.open('w') as fp:
                 fp.write('blah')
             try:
                 foo = d / 'foo'

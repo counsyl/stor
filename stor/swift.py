@@ -32,7 +32,6 @@ Examples:
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
-from builtins import str
 import copy
 from functools import partial
 from functools import wraps
@@ -833,7 +832,8 @@ class SwiftPath(OBSPath):
             raise ValueError('only prefix queries are supported')
         utils.validate_condition(condition)
 
-        paths = self.list(starts_with=pattern.replace('*', ''), num_retries=0)
+        with settings.use({'swift': {'num_retries': 0}}):
+            paths = self.list(starts_with=pattern.replace('*', ''))
 
         utils.check_condition(condition, paths)
         return paths
@@ -847,7 +847,8 @@ class SwiftPath(OBSPath):
         Raises:
             SwiftError: A swift client error occurred.
         """
-        results = self.list(limit=1, num_retries=0)
+        with settings.use({'swift': {'num_retries': 0}}):
+            results = self.list(limit=1)
         return results[0] if results else None
 
     @_swift_retry(exceptions=UnavailableError)
@@ -866,14 +867,16 @@ class SwiftPath(OBSPath):
         """
         try:
             # first see if there is a specific corresponding object
-            self.stat(num_retries=0)
+            with settings.use({'swift': {'num_retries': 0}}):
+                self.stat()
             return True
         except NotFoundError:
             pass
         try:
             # otherwise we could be a directory, so try to grab first
             # file/subfolder
-            return bool(utils.with_trailing_slash(self).first(num_retries=0))
+            with settings.use({'swift': {'num_retries': 0}}):
+                return bool(utils.with_trailing_slash(self).first())
         except NotFoundError:
             return False
 
@@ -1286,8 +1289,8 @@ class SwiftPath(OBSPath):
                                                                   _service_options=service_options)
 
         # Verify that all objects have been deleted before returning. Otherwise try deleting again
-        _ignore_not_found(to_delete.list)(condition=lambda results: len(results) == 0,
-                                          num_retries=0)
+        with settings.use({'swift': {'num_retries': 0}}):
+            _ignore_not_found(to_delete.list)(condition=lambda results: len(results) == 0)
 
         return results
 
@@ -1509,6 +1512,7 @@ class SwiftPath(OBSPath):
             Iter[SwiftPath]: All files that match the optional pattern. Swift directory
                 markers are not returned.
         """
-        for f in self.list(num_retries=0, ignore_dir_markers=True):
-            if pattern is None or f.fnmatch(pattern):
-                yield f
+        with settings.use({'swift': {'num_retries': 0}}):
+            for f in self.list(ignore_dir_markers=True):
+                if pattern is None or f.fnmatch(pattern):
+                    yield f

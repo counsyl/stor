@@ -1,8 +1,10 @@
-from io import StringIO
 import os
 import mock
 import sys
 from tempfile import NamedTemporaryFile
+
+from six import StringIO
+
 from stor.posix import PosixPath
 from stor.s3 import S3Path
 from stor.swift import SwiftPath
