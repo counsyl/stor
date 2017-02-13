@@ -1,6 +1,5 @@
 import datetime
 import gzip
-import io
 import ntpath
 from tempfile import NamedTemporaryFile
 import unittest
@@ -10,6 +9,7 @@ from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import ClientError
 import freezegun
 import mock
+import six
 from testfixtures import LogCapture
 
 import stor
@@ -1429,7 +1429,7 @@ class TestS3File(S3TestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = io.BytesIO()
+                _buffer = six.BytesIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
