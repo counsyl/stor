@@ -1,12 +1,8 @@
+import io
 import posixpath
 import sys
 
 from cached_property import cached_property
-from six import BytesIO
-try:
-    from cStringIO import StringIO
-except ImportError:  # pragma: no cover
-    from six import StringIO
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 
@@ -26,7 +22,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         func = getattr(self._buffer, attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(BytesIO(), attr_name).__doc__
+    wrapper.__doc__ = getattr(io.BytesIO(), attr_name).__doc__
     return wrapper
 
 
@@ -280,7 +276,7 @@ class OBSFile(object):
     @property
     def stream_cls(self):
         """The class used for the IO stream"""
-        return BytesIO if self.mode in ('rb', 'wb') else StringIO
+        return io.BytesIO if self.mode in ('rb', 'wb') else io.StringIO
 
     @cached_property
     def _buffer(self):
