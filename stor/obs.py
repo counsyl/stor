@@ -273,6 +273,9 @@ class OBSFile(object):
         # give users access to underlying buffer)
         return self
 
+    def __del__(self):
+        self.close()
+        
     @property
     def stream_cls(self):
         """The class used for the IO stream"""
@@ -312,6 +315,8 @@ class OBSFile(object):
         return self._path
 
     def close(self):
+        if self.closed:
+            return
         if self.mode in self._WRITE_MODES:
             self.flush()
         self._buffer.close()
