@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v1.3.1
+------
+
+* Ensure OBSFile cleans itself up (commits to remote / deletes local buffer /
+  etc) even when not used in ``with`` statement.
+
 v1.3.0
 ------
 * When deleting a swift container, also attempt to delete
