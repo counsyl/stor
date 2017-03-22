@@ -272,6 +272,9 @@ class OBSFile(object):
         # give users access to underlying buffer)
         return self
 
+    def __del__(self):
+        self.close()
+
     @cached_property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
@@ -302,6 +305,8 @@ class OBSFile(object):
         return self._path
 
     def close(self):
+        if self.closed:
+            return
         if self.mode in self._WRITE_MODES:
             self.flush()
         self._buffer.close()

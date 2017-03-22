@@ -145,8 +145,17 @@ class BaseIntegrationTest:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
 
         def test_file_read_write(self):
+            non_with_file = self.test_dir / 'nonwithfile.txt'
             test_file = self.test_dir / 'test_file.txt'
             copy_file = self.test_dir / 'copy_file.txt'
+
+            fp = stor.open(non_with_file, mode='wb')
+            fp.write('blah')
+            del fp
+
+            self.assertTrue(non_with_file.exists())
+            self.assertTrue(non_with_file.isfile())
+            self.assertFalse(non_with_file.isdir())
 
             with test_file.open(mode='wb') as obj:
                 obj.write('this is a test\n')
