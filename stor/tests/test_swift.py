@@ -1920,15 +1920,77 @@ class TestUpload(SwiftTestCase):
             'checksum': False
         })
 
-    def test_upload_w_use_manifest_multiple_uploads(self, mock_walk_files_and_dirs):
-        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
-            SwiftPath('swift://tenant/container/path').upload(['.', '.'],
-                                                              use_manifest=True)
+    def test_upload_w_use_manifest_multiple_files(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.side_effect = [
+            {
+                'file1': 20,
+                'file2': 30
+            },
+            {
+                '%s' % utils.DATA_MANIFEST_FILE_NAME: 10,
+            },
+        ]
+        self.mock_swift.upload.side_effect = [
+            [{
+                'success': True,
+                'action': 'upload_object',
+                'object': 'path/%s' % utils.DATA_MANIFEST_FILE_NAME,
+                'path': '%s' % utils.DATA_MANIFEST_FILE_NAME
+            }],
+            [{
+                'success': True,
+                'action': 'upload_object',
+                'object': 'path/file1',
+                'path': 'file1'
+            }, {
+                'success': True,
+                'action': 'upload_object',
+                'object': 'path/file2',
+                'path': 'file2'
+            }],
+        ]
+        upload_settings = {
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'checksum': False,
+                'skip_identical': True
+            }
+        }
 
-    def test_upload_w_use_manifest_single_file(self, mock_walk_files_and_dirs):
-        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
-            SwiftPath('swift://tenant/container/path').upload(['file'],
-                                                              use_manifest=True)
+        with NamedTemporaryDirectory(change_dir=True), settings.use(upload_settings):
+            swift_p = SwiftPath('swift://tenant/container/path')
+            swift_p.upload(['file1', 'file2'], use_manifest=True)
+
+        manifest_upload_args = self.mock_swift.upload.call_args_list[0][0]
+        self.assertEquals(len(manifest_upload_args), 2)
+        self.assertEquals(manifest_upload_args[0], 'container')
+        self.assertEquals([o.source for o in manifest_upload_args[1]],
+                          ['./%s' % utils.DATA_MANIFEST_FILE_NAME])
+        self.assertEquals([o.object_name for o in manifest_upload_args[1]],
+                          ['path/%s' % utils.DATA_MANIFEST_FILE_NAME])
+
+        upload_args = self.mock_swift.upload.call_args_list[1][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[1][1]
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['file1', 'file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['path/file1', 'path/file2']))
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'use_slo': True,
+            'segment_container': '.segments_container',
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True,
+            'skip_identical': True,
+            'checksum': False
+        })
 
 
 class TestCopy(SwiftTestCase):
