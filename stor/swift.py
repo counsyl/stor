@@ -1132,7 +1132,8 @@ class SwiftPath(OBSPath):
                 Alternatively, when multiple directories are uploaded, manifest file will
                 be created in the current directory. For example::
 
-                    stor.Path('swift://AUTH_foo/bar').upload(['logs', 'test.txt'], use_manifest=True)
+                    stor.Path('swift://AUTH_foo/bar').upload(
+                        ['logs', 'test.txt'], use_manifest=True)
 
                 The manifest will be located at
                 ``swift://AUTH_foo/bar/.data_manifest.csv``
