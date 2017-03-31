@@ -1121,7 +1121,22 @@ class SwiftPath(OBSPath):
                 results will not be deleted. Note that users are not expected to write
                 conditions for upload without an understanding of the structure of the results.
             use_manifest (bool): Generate a data manifest and validate the upload results
-                are in the manifest.
+                are in the manifest. In case of a single directory being uploaded, the
+                manifest file will be created inside this directory. For example::
+
+                    stor.Path('swift://AUTH_foo/bar').upload(['logs'], use_manifest=True)
+
+                The manifest will be located at
+                ``swift://AUTH_foo/bar/logs/.data_manifest.csv``
+
+                Alternatively, when multiple directories are uploaded, manifest file will
+                be created in the current directory. For example::
+
+                    stor.Path('swift://AUTH_foo/bar').upload(['logs', 'test.txt'], use_manifest=True)
+
+                The manifest will be located at
+                ``swift://AUTH_foo/bar/.data_manifest.csv``
+
             headers (List[str]): A list of object headers to apply to every object. Note
                 that these are not applied if passing OBSUploadObjects directly to upload.
                 Headers must be specified as a list of colon-delimited strings,
