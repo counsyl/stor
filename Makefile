@@ -36,13 +36,13 @@ develop: venv
 .PHONY: docs
 docs: venv clean-docs
 	$(WITH_VENV) cd docs && make html
-	
+
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
 ifdef ARGS
- 	$(WITH_PBR) python setup.py ${ARGS}
+	$(WITH_PBR) python setup.py ${ARGS}
 else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
@@ -114,4 +114,3 @@ version:
 .PHONY: fullname
 fullname:
 	python setup.py --fullname
-
