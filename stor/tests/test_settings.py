@@ -1,3 +1,7 @@
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import copy
 import mock
 import os
@@ -126,11 +130,11 @@ class TestSettings(unittest.TestCase):
     @mock.patch.dict(os.environ, {'OS_NUM_RETRIES': '2'})
     @mock.patch.dict(os.environ, {'OS_AUTH_URL': 'http://test_auth_url.com'})
     def test_env_vars_loaded(self):
-        print os.environ
-        print settings.get()
+        print(os.environ)
+        print(settings.get())
         settings._initialize()
-        print settings.get()
-        print os.environ
+        print(settings.get())
+        print(os.environ)
         initial_settings = settings.get()['swift']
         self.assertEquals(initial_settings['username'], 'test_username')
         self.assertEquals(initial_settings['password'], 'test_password')

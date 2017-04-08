@@ -32,6 +32,9 @@ Examples:
 More examples and documentations for swift methods can be found under
 the `SwiftPath` class.
 """
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import copy
 from functools import partial
 from functools import wraps
@@ -40,8 +43,8 @@ import logging
 import os
 import tempfile
 import threading
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
@@ -644,19 +647,19 @@ class SwiftPath(OBSPath):
         obj_url = generate_temp_url(obj_path, lifetime, temp_url_key, method)
         query_begin = obj_url.rfind('temp_url_sig', 0, len(obj_url))
         obj_url_query = obj_url[query_begin:]
-        obj_url_query = dict(urlparse.parse_qsl(obj_url_query))
+        obj_url_query = dict(urllib.parse.parse_qsl(obj_url_query))
 
         query = ['temp_url_sig=%s' % obj_url_query['temp_url_sig'],
                  'temp_url_expires=%s' % obj_url_query['temp_url_expires']]
         if inline:
             query.append('inline')
         if filename:
-            query.append('filename=%s' % urllib.quote(filename))
+            query.append('filename=%s' % urllib.parse.quote(filename))
 
-        auth_url_parts = urlparse.urlparse(auth_url)
-        return urlparse.urlunparse((auth_url_parts.scheme,
+        auth_url_parts = urllib.parse.urlparse(auth_url)
+        return urllib.parse.urlunparse((auth_url_parts.scheme,
                                     auth_url_parts.netloc,
-                                    urllib.quote(obj_path),
+                                    urllib.parse.quote(obj_path),
                                     auth_url_parts.params,
                                     '&'.join(query),
                                     auth_url_parts.fragment))
@@ -1003,7 +1006,7 @@ class SwiftPath(OBSPath):
         results = self._swift_service_call('download',
                                            _service_options=service_options,
                                            container=self.container,
-                                           objects=objs_to_download.values(),
+                                           objects=list(objs_to_download.values()),
                                            options=download_options)
         results = {r['object']: r['path'] for r in results}
 

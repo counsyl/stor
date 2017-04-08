@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 import gzip
 import os
 import unittest
@@ -10,7 +13,7 @@ from stor import Path
 from stor.tests.shared import assert_same_data
 
 
-class BaseIntegrationTest:
+class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
     own as part of the base test class.
     """

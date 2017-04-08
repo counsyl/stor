@@ -1,6 +1,8 @@
 """
 An experimental implementation of S3 in stor
 """
+from builtins import str
+from builtins import range
 from functools import partial
 import logging
 from multiprocessing.pool import ThreadPool
@@ -465,7 +467,7 @@ class S3Path(OBSPath):
 
         response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
         response = {
-            key: val for key, val in response.iteritems()
+            key: val for key, val in response.items()
             if key is not 'ResponseMetadata'
         }
         return response
