@@ -323,43 +323,43 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                          '.r:example.com')
 
     def test_copytree_to_from_dir_w_manifest(self):
-            num_test_objs = 10
-            test_obj_size = 100
-            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-                self.create_dataset(tmp_d, num_test_objs, test_obj_size)
-                # Make a nested file and an empty directory for testing purposes
-                tmp_d = Path(tmp_d)
-                os.mkdir(tmp_d / 'my_dir')
-                open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
-                os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
+        num_test_objs = 10
+        test_obj_size = 100
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            self.create_dataset(tmp_d, num_test_objs, test_obj_size)
+            # Make a nested file and an empty directory for testing purposes
+            tmp_d = Path(tmp_d)
+            os.mkdir(tmp_d / 'my_dir')
+            open(tmp_d / 'my_dir' / 'empty_file', 'w').close()
+            os.mkdir(tmp_d / 'my_dir' / 'empty_dir')
 
-                stor.copytree(
-                    '.',
-                    self.test_dir,
-                    use_manifest=True)
+            stor.copytree(
+                '.',
+                self.test_dir,
+                use_manifest=True)
 
-                # Validate the contents of the manifest file
-                manifest_contents = utils.get_data_manifest_contents(self.test_dir)
-                expected_contents = self.get_dataset_obj_names(num_test_objs)
-                expected_contents.extend(['my_dir/empty_file',
-                                          'my_dir/empty_dir'])
-                expected_contents = [Path('test') / c for c in expected_contents]
-                self.assertEquals(set(manifest_contents), set(expected_contents))
+            # Validate the contents of the manifest file
+            manifest_contents = utils.get_data_manifest_contents(self.test_dir)
+            expected_contents = self.get_dataset_obj_names(num_test_objs)
+            expected_contents.extend(['my_dir/empty_file',
+                                      'my_dir/empty_dir'])
+            expected_contents = [Path('test') / c for c in expected_contents]
+            self.assertEquals(set(manifest_contents), set(expected_contents))
 
-            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
-                # Download the results successfully
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            # Download the results successfully
+            Path(self.test_dir).copytree(
+                'test',
+                use_manifest=True)
+
+            # Now delete one of the objects from swift. A second download
+            # will fail with a condition error
+            Path(self.test_dir / 'my_dir' / 'empty_dir').remove()
+            with self.assertRaises(exceptions.ConditionNotMetError):
                 Path(self.test_dir).copytree(
                     'test',
-                    use_manifest=True)
-
-                # Now delete one of the objects from swift. A second download
-                # will fail with a condition error
-                Path(self.test_dir / 'my_dir' / 'empty_dir').remove()
-                with self.assertRaises(exceptions.ConditionNotMetError):
-                    Path(self.test_dir).copytree(
-                        'test',
-                        use_manifest=True,
-                        num_retries=0)
+                    use_manifest=True,
+                    num_retries=0)
 
     def test_all_segment_container_types_are_deleted(self):
         segment_containers = [stor.join('swift://' + self.test_container.tenant,
@@ -375,3 +375,50 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         stor.rmtree(self.test_container)
         for t in test_files:
             assert not t.exists(), 'Did not delete %s' % t
+
+    def test_upload_multiple_dirs(self):
+        with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+            num_test_objs = 10
+            tmp_d = Path(tmp_d)
+
+            # Create files filled with random data.
+            path1 = tmp_d / 'dir1'
+            os.mkdir(path1)
+            self.create_dataset(path1, num_test_objs, 10)
+
+            # Create empty dir and file.
+            path2 = tmp_d / 'dir2'
+            os.mkdir(path2)
+            os.mkdir(path2 / 'my_dir')
+            open(path2 / 'my_dir' / 'included_file', 'w').close()
+            open(path2 / 'my_dir' / 'excluded_file', 'w').close()
+            os.mkdir(path2 / 'my_dir' / 'included_dir')
+            os.mkdir(path2 / 'my_dir' / 'excluded_dir')
+
+            # Create file in the top level directory.
+            open(tmp_d / 'top_level_file', 'w').close()
+
+            to_upload = [
+                'dir1',
+                'dir2/my_dir/included_file',
+                'dir2/my_dir/included_dir',
+                'top_level_file',
+            ]
+            with tmp_d:
+                swift_path = self.test_dir / 'subdir'
+                swift_path.upload(to_upload, use_manifest=True)
+
+            # Validate the contents of the manifest file
+            manifest_contents = utils.get_data_manifest_contents(swift_path)
+            expected_contents = [
+                Path('dir1') / name
+                for name in self.get_dataset_obj_names(num_test_objs)
+            ]
+            expected_contents.extend([
+                'dir2/my_dir/included_file',
+                'dir2/my_dir/included_dir',
+                'top_level_file',
+            ])
+
+            expected_contents = [Path('test/subdir') / c for c in expected_contents]
+            self.assertEquals(set(manifest_contents), set(expected_contents))

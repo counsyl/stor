@@ -1125,7 +1125,23 @@ class SwiftPath(OBSPath):
                 results will not be deleted. Note that users are not expected to write
                 conditions for upload without an understanding of the structure of the results.
             use_manifest (bool): Generate a data manifest and validate the upload results
-                are in the manifest.
+                are in the manifest. In case of a single directory being uploaded, the
+                manifest file will be created inside this directory. For example::
+
+                    stor.Path('swift://AUTH_foo/bar').upload(['logs'], use_manifest=True)
+
+                The manifest will be located at
+                ``swift://AUTH_foo/bar/logs/.data_manifest.csv``
+
+                Alternatively, when multiple directories are uploaded, manifest file will
+                be created in the current directory. For example::
+
+                    stor.Path('swift://AUTH_foo/bar').upload(
+                        ['logs', 'test.txt'], use_manifest=True)
+
+                The manifest will be located at
+                ``swift://AUTH_foo/bar/.data_manifest.csv``
+
             headers (List[str]): A list of object headers to apply to every object. Note
                 that these are not applied if passing OBSUploadObjects directly to upload.
                 Headers must be specified as a list of colon-delimited strings,
@@ -1143,8 +1159,6 @@ class SwiftPath(OBSPath):
         """
         if not self.container:
             raise ValueError('must specify container when uploading')
-        if use_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
-            raise ValueError('can only upload one directory with use_manifest=True')
         utils.validate_condition(condition)
 
         swift_upload_objects = [
@@ -1159,8 +1173,15 @@ class SwiftPath(OBSPath):
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results. Ignore the manifest file in the case of
         # since it will be uploaded individually
-        manifest_file_name = (Path(to_upload[0]) / utils.DATA_MANIFEST_FILE_NAME
-                              if use_manifest else None)
+        if use_manifest:
+            if len(to_upload) == 1 and os.path.isdir(to_upload[0]):
+                manifest_path_prefix = Path(to_upload[0])
+            else:
+                manifest_path_prefix = Path('.')
+            manifest_file_name = manifest_path_prefix / utils.DATA_MANIFEST_FILE_NAME
+        else:
+            manifest_path_prefix = None
+            manifest_file_name = None
         resource_base = utils.with_trailing_slash(self.resource) or PosixPath('')
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
@@ -1173,7 +1194,7 @@ class SwiftPath(OBSPath):
         if use_manifest:
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
-            utils.generate_and_save_data_manifest(to_upload[0], object_names)
+            utils.generate_and_save_data_manifest(manifest_path_prefix, object_names)
             manifest_obj_name = resource_base / utils.file_name_to_object_name(manifest_file_name)
             manifest_obj = OBSUploadObject(manifest_file_name,
                                            object_name=manifest_obj_name,
