@@ -183,7 +183,14 @@ class FailedUploadError(UnavailableError):
 
 
 class UnauthorizedError(SwiftError):
-    """Thrown when a 403 response is returned from swift"""
+    """Thrown when a 403 response is returned from swift.
+
+    Note:
+        Internal swift connection errors (e.g., when a particular node is
+        unavailable) appear to translate themselves into 403 errors at the
+        proxy layer, thus in general it's a good idea to retry on authorization
+        errors as equivalent to unavailable errors when doing PUT or GET
+        operations (list / stat / etc never hit this issue)."""
     pass
 
 
@@ -246,7 +253,8 @@ def _swift_retry(exceptions=None):
 
 
 def _swiftclient_error_to_descriptive_exception(exc):
-    """Converts swiftclient errors to more descriptive exceptions"""
+    """Converts swiftclient errors to more descriptive exceptions with
+    transaction ID"""
     # SwiftErrors catch Client exceptions and store them in the
     # 'exception' attribute. Try to get the client exception
     # here if there is one so that its http status can be
@@ -254,41 +262,45 @@ def _swiftclient_error_to_descriptive_exception(exc):
     client_exception = getattr(exc, 'exception', exc)
 
     http_status = getattr(client_exception, 'http_status', None)
+    exc_str = str(exc)
+    exc_headers = getattr(client_exception, 'http_response_headers', None)
+    if exc_headers and exc_headers.get('X-Trans-Id'):
+        exc_str += ' X-Trans-Id: %s' % exc_headers['X-Trans-Id']
     if http_status == 403:
-        logger.error('unauthorized error in swift operation - %s', str(exc))
-        return UnauthorizedError(str(exc), exc)
+        logger.error('unauthorized error in swift operation - %s', exc_str)
+        return UnauthorizedError(exc_str, exc)
     elif http_status == 404:
-        return NotFoundError(str(exc), exc)
+        return NotFoundError(exc_str, exc)
     elif http_status == 409:
-        return ConflictError(str(exc), exc)
+        return ConflictError(exc_str, exc)
     elif http_status == 503:
-        logger.error('unavailable error in swift operation - %s', str(exc))
-        return UnavailableError(str(exc), exc)
-    elif 'reset contents for reupload' in str(exc):
+        logger.error('unavailable error in swift operation - %s', exc_str)
+        return UnavailableError(exc_str, exc)
+    elif 'reset contents for reupload' in exc_str:
         # When experiencing HA issues, we sometimes encounter a
         # ClientException from swiftclient during upload. The exception
         # is thrown here -
         # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
         # Treat this as a FailedUploadError
-        logger.error('upload error in swift put_object operation - %s', str(exc))
-        raise FailedUploadError(str(exc), exc)
-    elif 'Unauthorized.' in str(exc):
+        logger.error('upload error in swift put_object operation - %s', exc_str)
+        raise FailedUploadError(exc_str, exc)
+    elif 'Unauthorized.' in exc_str:
         # Swiftclient catches keystone auth errors at
         # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
         # Parse the message since they don't bubble the exception or
         # provide more information
-        logger.warning('auth error in swift operation - %s', str(exc))
-        raise AuthenticationError(str(exc), exc)
-    elif 'md5sum != etag' in str(exc) or 'read_length != content_length' in str(exc):
+        logger.warning('auth error in swift operation - %s', exc_str)
+        raise AuthenticationError(exc_str, exc)
+    elif 'md5sum != etag' in exc_str or 'read_length != content_length' in exc_str:
         # We encounter this error when cluster is under heavy
         # replication load (at least that's the theory). So retry and
         # ensure we track consistency errors
         logger.error('Hit consistency issue. Likely related to'
-                     ' cluster load: %s', str(exc))
-        return InconsistentDownloadError(str(exc), exc)
+                     ' cluster load: %s', exc_str)
+        return InconsistentDownloadError(exc_str, exc)
     else:
-        logger.error('unexpected swift error - %s', str(exc))
-        return SwiftError(str(exc), exc)
+        logger.error('unexpected swift error - %s', exc_str)
+        return SwiftError(exc_str, exc)
 
 
 def _propagate_swift_exceptions(func):
@@ -433,7 +445,9 @@ class SwiftPath(OBSPath):
         """True if this path is a segment container"""
         container = self.container
         if not self.resource and container:
-            return container.startswith('.segments_') or container.endswith('_segments')
+            return (container.startswith('.segments_') or
+                    container.endswith('_segments') or
+                    container.endswith('+segments'))
         else:
             return False
 
@@ -582,7 +596,7 @@ class SwiftPath(OBSPath):
         return results
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError,
-                              InconsistentDownloadError))
+                              InconsistentDownloadError, UnauthorizedError))
     def read_object(self):
         """Reads an individual object.
 
@@ -877,7 +891,8 @@ class SwiftPath(OBSPath):
         except NotFoundError:
             return False
 
-    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError,
+                              UnauthorizedError))
     def download_object(self, out_file):
         """Downloads a single object to an output file.
 
@@ -900,7 +915,8 @@ class SwiftPath(OBSPath):
                                  objects=[self.resource],
                                  options={'out_file': out_file})
 
-    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError))
+    @_swift_retry(exceptions=(UnavailableError, InconsistentDownloadError,
+                              UnauthorizedError))
     def download_objects(self,
                          dest,
                          objects):
@@ -1070,7 +1086,8 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
+    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError,
+                              UnauthorizedError))
     def upload(self,
                to_upload,
                condition=None,
@@ -1107,7 +1124,23 @@ class SwiftPath(OBSPath):
                 results will not be deleted. Note that users are not expected to write
                 conditions for upload without an understanding of the structure of the results.
             use_manifest (bool): Generate a data manifest and validate the upload results
-                are in the manifest.
+                are in the manifest. In case of a single directory being uploaded, the
+                manifest file will be created inside this directory. For example::
+
+                    stor.Path('swift://AUTH_foo/bar').upload(['logs'], use_manifest=True)
+
+                The manifest will be located at
+                ``swift://AUTH_foo/bar/logs/.data_manifest.csv``
+
+                Alternatively, when multiple directories are uploaded, manifest file will
+                be created in the current directory. For example::
+
+                    stor.Path('swift://AUTH_foo/bar').upload(
+                        ['logs', 'test.txt'], use_manifest=True)
+
+                The manifest will be located at
+                ``swift://AUTH_foo/bar/.data_manifest.csv``
+
             headers (List[str]): A list of object headers to apply to every object. Note
                 that these are not applied if passing OBSUploadObjects directly to upload.
                 Headers must be specified as a list of colon-delimited strings,
@@ -1125,8 +1158,6 @@ class SwiftPath(OBSPath):
         """
         if not self.container:
             raise ValueError('must specify container when uploading')
-        if use_manifest and not (len(to_upload) == 1 and os.path.isdir(to_upload[0])):
-            raise ValueError('can only upload one directory with use_manifest=True')
         utils.validate_condition(condition)
 
         swift_upload_objects = [
@@ -1141,8 +1172,15 @@ class SwiftPath(OBSPath):
         # Convert everything to swift upload objects and prepend the relative
         # resource directory to uploaded results. Ignore the manifest file in the case of
         # since it will be uploaded individually
-        manifest_file_name = (Path(to_upload[0]) / utils.DATA_MANIFEST_FILE_NAME
-                              if use_manifest else None)
+        if use_manifest:
+            if len(to_upload) == 1 and os.path.isdir(to_upload[0]):
+                manifest_path_prefix = Path(to_upload[0])
+            else:
+                manifest_path_prefix = Path('.')
+            manifest_file_name = manifest_path_prefix / utils.DATA_MANIFEST_FILE_NAME
+        else:
+            manifest_path_prefix = None
+            manifest_file_name = None
         resource_base = utils.with_trailing_slash(self.resource) or PosixPath('')
         upload_object_options = {'header': headers or []}
         swift_upload_objects.extend([
@@ -1155,7 +1193,7 @@ class SwiftPath(OBSPath):
         if use_manifest:
             # Generate the data manifest and save it remotely
             object_names = [o.object_name for o in swift_upload_objects]
-            utils.generate_and_save_data_manifest(to_upload[0], object_names)
+            utils.generate_and_save_data_manifest(manifest_path_prefix, object_names)
             manifest_obj_name = resource_base / utils.file_name_to_object_name(manifest_file_name)
             manifest_obj = OBSUploadObject(manifest_file_name,
                                            object_name=manifest_obj_name,
@@ -1192,7 +1230,7 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, UnauthorizedError))
     def remove(self):
         """Removes a single object.
 
@@ -1213,7 +1251,8 @@ class SwiftPath(OBSPath):
                                         self.container,
                                         [self.resource])
 
-    @_swift_retry(exceptions=(UnavailableError, ConflictError, ConditionNotMetError))
+    @_swift_retry(exceptions=(UnavailableError, ConflictError,
+                              ConditionNotMetError, UnauthorizedError))
     def rmtree(self):
         """Removes a resource and all of its contents.
         This method retries ``num_retries`` times if swift is unavailable.
@@ -1273,7 +1312,8 @@ class SwiftPath(OBSPath):
             # do this automatically
             if not deleting_segments:
                 segment_containers = ('%s_segments' % to_delete.container,
-                                      '.segments_%s' % to_delete.container)
+                                      '.segments_%s' % to_delete.container,
+                                      '%s+segments' % to_delete.container)
                 for segment_container in segment_containers:
                     _ignore_not_found(self._swift_service_call)('delete',
                                                                 segment_container,
@@ -1430,7 +1470,7 @@ class SwiftPath(OBSPath):
         contract)"""
         return int(self.stat().get('Content-Length', 0))
 
-    @_swift_retry(exceptions=UnavailableError)
+    @_swift_retry(exceptions=(UnavailableError, UnauthorizedError))
     def post(self, options=None):
         """Post operations on the path.
 

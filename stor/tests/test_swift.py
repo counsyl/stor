@@ -556,12 +556,17 @@ class TestList(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
         mock_list = self.mock_swift_conn.get_container
-        mock_list.side_effect = ClientException('unauthorized',
-                                                http_status=403)
+        mock_list.side_effect = ClientException(
+            'unauthorized', http_status=403, http_response_headers={'X-Trans-Id': 'transactionid'})
 
         swift_p = SwiftPath('swift://tenant/container/path')
         with self.assertRaises(swift.UnauthorizedError):
-            swift_p.list()
+            try:
+                swift_p.list()
+            except swift.UnauthorizedError as exc:
+                self.assertIn('X-Trans-Id: transactionid', str(exc))
+                self.assertIn('X-Trans-Id: transactionid', repr(exc))
+                raise
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_condition_not_met_custom_retry_logic(self, mock_sleep):
@@ -1920,15 +1925,77 @@ class TestUpload(SwiftTestCase):
             'checksum': False
         })
 
-    def test_upload_w_use_manifest_multiple_uploads(self, mock_walk_files_and_dirs):
-        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
-            SwiftPath('swift://tenant/container/path').upload(['.', '.'],
-                                                              use_manifest=True)
+    def test_upload_w_use_manifest_multiple_files(self, mock_walk_files_and_dirs):
+        mock_walk_files_and_dirs.side_effect = [
+            {
+                'file1': 20,
+                'file2': 30
+            },
+            {
+                '%s' % utils.DATA_MANIFEST_FILE_NAME: 10,
+            },
+        ]
+        self.mock_swift.upload.side_effect = [
+            [{
+                'success': True,
+                'action': 'upload_object',
+                'object': 'path/%s' % utils.DATA_MANIFEST_FILE_NAME,
+                'path': '%s' % utils.DATA_MANIFEST_FILE_NAME
+            }],
+            [{
+                'success': True,
+                'action': 'upload_object',
+                'object': 'path/file1',
+                'path': 'file1'
+            }, {
+                'success': True,
+                'action': 'upload_object',
+                'object': 'path/file2',
+                'path': 'file2'
+            }],
+        ]
+        upload_settings = {
+            'swift:upload': {
+                'segment_size': 1000,
+                'use_slo': True,
+                'leave_segments': True,
+                'changed': True,
+                'checksum': False,
+                'skip_identical': True
+            }
+        }
 
-    def test_upload_w_use_manifest_single_file(self, mock_walk_files_and_dirs):
-        with self.assertRaisesRegexp(ValueError, 'can only upload one directory'):
-            SwiftPath('swift://tenant/container/path').upload(['file'],
-                                                              use_manifest=True)
+        with NamedTemporaryDirectory(change_dir=True), settings.use(upload_settings):
+            swift_p = SwiftPath('swift://tenant/container/path')
+            swift_p.upload(['file1', 'file2'], use_manifest=True)
+
+        manifest_upload_args = self.mock_swift.upload.call_args_list[0][0]
+        self.assertEquals(len(manifest_upload_args), 2)
+        self.assertEquals(manifest_upload_args[0], 'container')
+        self.assertEquals([o.source for o in manifest_upload_args[1]],
+                          ['./%s' % utils.DATA_MANIFEST_FILE_NAME])
+        self.assertEquals([o.object_name for o in manifest_upload_args[1]],
+                          ['path/%s' % utils.DATA_MANIFEST_FILE_NAME])
+
+        upload_args = self.mock_swift.upload.call_args_list[1][0]
+        upload_kwargs = self.mock_swift.upload.call_args_list[1][1]
+        self.assertEquals(len(upload_args), 2)
+        self.assertEquals(upload_args[0], 'container')
+        self.assertEquals(set([o.source for o in upload_args[1]]),
+                          set(['file1', 'file2']))
+        self.assertEquals(set([o.object_name for o in upload_args[1]]),
+                          set(['path/file1', 'path/file2']))
+
+        self.assertEquals(len(upload_kwargs), 1)
+        self.assertEquals(upload_kwargs['options'], {
+            'use_slo': True,
+            'segment_container': '.segments_container',
+            'leave_segments': True,
+            'segment_size': 1000,
+            'changed': True,
+            'skip_identical': True,
+            'checksum': False
+        })
 
 
 class TestCopy(SwiftTestCase):
@@ -2293,7 +2360,8 @@ class TestRmtree(SwiftTestCase):
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container'),
                            mock.call('container_segments'),
-                           mock.call('.segments_container')])
+                           mock.call('.segments_container'),
+                           mock.call('container+segments')])
 
     @mock.patch('time.sleep', autospec=True)
     def test_w_list_validation_failing_first_time(self, mock_sleep):
@@ -2314,9 +2382,11 @@ class TestRmtree(SwiftTestCase):
                           [mock.call('container'),
                            mock.call('container_segments'),
                            mock.call('.segments_container'),
+                           mock.call('container+segments'),
                            mock.call('container'),
                            mock.call('container_segments'),
-                           mock.call('.segments_container')])
+                           mock.call('.segments_container'),
+                           mock.call('container+segments')])
         self.assertTrue(len(mock_list.call_args_list), 2)
         self.assertTrue(len(mock_sleep.call_args_list), 1)
 
@@ -2340,6 +2410,7 @@ class TestRmtree(SwiftTestCase):
     def test_w_only_container_no_segment_container(self):
         self.mock_swift.delete.side_effect = [{},
                                               swift.NotFoundError('not found'),
+                                              swift.NotFoundError('not found'),
                                               swift.NotFoundError('not found')]
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.rmtree()
@@ -2347,7 +2418,8 @@ class TestRmtree(SwiftTestCase):
         self.assertEquals(self.mock_swift.delete.call_args_list,
                           [mock.call('container'),
                            mock.call('container_segments'),
-                           mock.call('.segments_container')])
+                           mock.call('.segments_container'),
+                           mock.call('container+segments')])
 
     def test_w_container_and_resource(self):
         self.mock_swift.delete.return_value = {}

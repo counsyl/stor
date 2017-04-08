@@ -1,5 +1,8 @@
 # stor
 
+[![Build Status](https://travis-ci.org/counsyl/stor.svg?branch=master)](https://travis-ci.org/counsyl/stor)
+
+
 `stor` provides a cross-compatible CLI and Python API for accessing block and
 object storage. `stor` was created so you could write one piece of code to work
 with local or remote files, without needing to write specialized code to handle
@@ -21,7 +24,7 @@ pip install stor
 with a single, cross-compatible API.
 
 
-## Quickstart - CLI 
+## Quickstart - CLI
 
 ```
 usage: stor [-h] [-c CONFIG_FILE] [--version]  ...
@@ -146,4 +149,3 @@ make test
 
 We use semantic versioning to communicate when we make API changes to the
 library. See CONTRIBUTING.md for more details on contributing to stor.
-

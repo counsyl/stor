@@ -397,7 +397,7 @@ def process_args(args):
     except exceptions.RemoteError as exc:
         if type(exc) is exceptions.NotFoundError and pth:
             perror('Not Found: %s' % pth)
-        perror('%s: %s\n' % (exc.__class__.__name__, exc.message))
+        perror('%s: %s\n' % (exc.__class__.__name__, str(exc)))
 
 
 def print_results(results):
