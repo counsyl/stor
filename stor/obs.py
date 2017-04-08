@@ -275,7 +275,7 @@ class OBSFile(object):
 
     def __del__(self):
         self.close()
-        
+
     @property
     def stream_cls(self):
         """The class used for the IO stream"""
