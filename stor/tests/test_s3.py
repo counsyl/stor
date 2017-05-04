@@ -1,4 +1,3 @@
-import cStringIO
 import datetime
 import gzip
 import ntpath
@@ -10,6 +9,7 @@ from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import ClientError
 import freezegun
 import mock
+import six
 from testfixtures import LogCapture
 
 import stor
@@ -1429,7 +1429,7 @@ class TestS3File(S3TestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = cStringIO.StringIO()
+                _buffer = six.BytesIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
@@ -1475,8 +1475,7 @@ line4
             self.assertEqual(line, 'line%d\n' % i)
 
         self.assertEqual(next(s3_p.open()), 'line1\n')
-        self.assertEqual(s3_p.open().next(), 'line1\n')
-        self.assertEqual(iter(s3_p.open()).next(), 'line1\n')
+        self.assertEqual(next(iter(s3_p.open())), 'line1\n')
 
     def test_write_invalid_args(self):
         s3_p = S3Path('s3://bucket/key/obj')
@@ -1485,12 +1484,12 @@ line4
             obj.write('hello')
 
     @mock.patch('time.sleep', autospec=True)
-    def test_write_multiple_w_context_manager(self, mock_sleep):
+    def test_binary_write_multiple_w_context_manager(self, mock_sleep):
         mock_upload = self.mock_s3_transfer.upload_file
         s3_p = S3Path('s3://bucket/key/obj')
         with s3_p.open(mode='wb') as obj:
-            obj.write('hello')
-            obj.write(' world')
+            obj.write(b'hello')
+            obj.write(b' world')
         upload_call, = mock_upload.call_args_list
         self.assertTrue(upload_call[1]['bucket'] == s3_p.bucket)
         self.assertTrue(upload_call[1]['key'] == s3_p.resource)
@@ -1499,12 +1498,12 @@ line4
     def test_write_multiple_flush_multiple_upload(self, mock_sleep):
         mock_upload = self.mock_s3_transfer.upload_file
         s3_p = S3Path('s3://bucket/key/obj')
-        with NamedTemporaryFile(delete=False) as ntf1,\
-                NamedTemporaryFile(delete=False) as ntf2,\
-                NamedTemporaryFile(delete=False) as ntf3:
+        with NamedTemporaryFile('w', delete=False) as ntf1,\
+                NamedTemporaryFile('w', delete=False) as ntf2,\
+                NamedTemporaryFile('w', delete=False) as ntf3:
             with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
                 ntf.side_effect = [ntf1, ntf2, ntf3]
-                with s3_p.open(mode='wb') as obj:
+                with s3_p.open(mode='w') as obj:
                     obj.write('hello')
                     obj.flush()
                     obj.write(' world')
@@ -1537,15 +1536,15 @@ line4
     def test_works_with_gzip(self):
         gzip_path = stor.join(stor.dirname(__file__),
                               'file_data', 's_3_2126.bcl.gz')
-        text = stor.open(gzip_path).read()
+        text = stor.open(gzip_path, 'rb').read()
         with mock.patch.object(S3Path, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
-            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz')
+            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz', 'rb')
 
             with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(s3_file_fp, gzip_fp)
-            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz')
+            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz', 'rb')
             with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     # after seeking should still be same

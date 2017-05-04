@@ -72,10 +72,8 @@ subcommand::
 Direct file transfer between OBS services or within one OBS service (server-side copy)
 is not yet supported.
 """
-
 import argparse
 import copy
-import ConfigParser
 from functools import partial
 import logging
 import os
@@ -83,6 +81,9 @@ import shutil
 import signal
 import sys
 import tempfile
+
+import six
+from six.moves import configparser
 
 import stor
 from stor import exceptions
@@ -128,7 +129,7 @@ def _make_stdin_action(func, err_msg):
                 if namespace.func == func:
                     raise argparse.ArgumentError(self, err_msg)
                 else:
-                    ntf = tempfile.NamedTemporaryFile(delete=False)
+                    ntf = tempfile.NamedTemporaryFile(delete=False, mode='w')
                     try:
                         ntf.write(sys.stdin.read())
                     finally:
@@ -151,7 +152,7 @@ def _get_env():
 
     Returns a ConfigParser.
     """
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.SafeConfigParser()
     # if env file doesn't exist, copy over the package default
     if not os.path.exists(ENV_FILE):
         shutil.copyfile(PKG_ENV_FILE, ENV_FILE)
@@ -169,8 +170,8 @@ def _get_pwd(service=None):
     if service:
         try:
             return utils.with_trailing_slash(parser.get('env', service))
-        except ConfigParser.NoOptionError:
-            raise ValueError('%s is an invalid service' % service)
+        except configparser.NoOptionError as e:
+            six.raise_from(ValueError('%s is an invalid service' % service), e)
     return [utils.with_trailing_slash(value) for name, value in parser.items('env')]
 
 
@@ -377,7 +378,7 @@ def process_args(args):
         settings.update(settings.parse_config_file(config))
     func_kwargs = {
         key: Path(val) if type(val) is TempPath else val
-        for key, val in args_copy.iteritems() if val
+        for key, val in args_copy.items() if val
     }
     try:
         if pth:
@@ -387,7 +388,7 @@ def process_args(args):
         if pth:
             value = pth
         elif len(func_kwargs) > 0:
-            value = func_kwargs.values()[0]
+            value = list(func_kwargs.values())[0]
         else:
             perror('%s is not a valid command for the given input\n' % cmd)
         perror('%s is not a valid command for %s\n' % (cmd, value))

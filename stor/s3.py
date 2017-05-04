@@ -13,6 +13,7 @@ from boto3 import exceptions as boto3_exceptions
 from boto3.s3.transfer import S3Transfer
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exceptions
+import six
 
 from stor import exceptions
 from stor import settings
@@ -184,7 +185,7 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except botocore_exceptions.ClientError as e:
-            raise _parse_s3_error(e, **kwargs)
+            six.raise_from(_parse_s3_error(e, **kwargs), e)
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
         """
@@ -205,9 +206,9 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except boto3_exceptions.S3UploadFailedError as e:
-            raise exceptions.FailedUploadError(str(e), e)
+            six.raise_from(exceptions.FailedUploadError(str(e), e), e)
         except boto3_exceptions.RetriesExceededError as e:
-            raise exceptions.FailedDownloadError(str(e), e)
+            six.raise_from(exceptions.FailedDownloadError(str(e), e), e)
 
     def open(self, mode='r'):
         """
@@ -304,7 +305,7 @@ class S3Path(OBSPath):
                         for result in page['CommonPrefixes']
                     ])
         except botocore_exceptions.ClientError as e:
-            raise _parse_s3_error(e)
+            six.raise_from(_parse_s3_error(e), e)
 
         utils.check_condition(condition, list_results)
         return list_results
@@ -465,7 +466,7 @@ class S3Path(OBSPath):
 
         response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
         response = {
-            key: val for key, val in response.iteritems()
+            key: val for key, val in response.items()
             if key is not 'ResponseMetadata'
         }
         return response
@@ -484,7 +485,8 @@ class S3Path(OBSPath):
         Args:
             content (str): The content of the object
         """
-        with tempfile.NamedTemporaryFile() as fp:
+        mode = 'wb' if isinstance(content, bytes) else 'w'
+        with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)
             fp.flush()
             self.upload([OBSUploadObject(fp.name, self.resource)])
