@@ -2,15 +2,13 @@ import gzip
 import os
 import unittest
 
-from six.moves import builtins
-
 import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.tests.shared import assert_same_data
 
 
-class BaseIntegrationTest:
+class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
     own as part of the base test class.
     """
@@ -33,7 +31,7 @@ class BaseIntegrationTest:
             """
             with Path(directory):
                 for name in self.get_dataset_obj_names(num_objects):
-                    with builtins.open(name, 'w') as f:
+                    with open(name, 'w') as f:
                         f.write(self.get_dataset_obj_contents(name, min_object_size))
 
         def assertCorrectObjectContents(self, test_obj_path, which_test_obj, min_obj_size):
@@ -41,7 +39,7 @@ class BaseIntegrationTest:
             Given a test object and the minimum object size used with create_dataset, assert
             that a file exists with the correct contents
             """
-            with builtins.open(test_obj_path, 'r') as test_obj:
+            with open(test_obj_path, 'r') as test_obj:
                 contents = test_obj.read()
                 expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
                 self.assertEquals(contents, expected)
@@ -78,12 +76,12 @@ class BaseIntegrationTest:
 
         def test_hidden_file_nested_dir_copytree(self):
             with NamedTemporaryDirectory(change_dir=True):
-                builtins.open('.hidden_file', 'w').close()
+                open('.hidden_file', 'w').close()
                 os.symlink('.hidden_file', 'symlink')
                 os.mkdir('.hidden_dir')
                 os.mkdir('.hidden_dir/nested')
-                builtins.open('.hidden_dir/nested/file1', 'w').close()
-                builtins.open('.hidden_dir/nested/file2', 'w').close()
+                open('.hidden_dir/nested/file1', 'w').close()
+                open('.hidden_dir/nested/file2', 'w').close()
                 Path('.').copytree(self.test_dir)
 
             with NamedTemporaryDirectory(change_dir=True):

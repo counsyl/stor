@@ -23,7 +23,7 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
-	test -f $@ || virtualenv --python=python2.7 $(VENV_DIR)
+	test -f $@ || virtualenv $(VENV_DIR)
 	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
@@ -83,6 +83,15 @@ unit-test: venv
 
 .PHONY: test
 test: venv docs unit-test
+
+# setting this up so that we can use virtualenv, coverage, etc
+.PHONY: travis-test
+travis-test: venv
+	$(WITH_VENV) \
+	coverage erase; \
+	coverage run setup.py test; \
+	status=$$?; \
+	coverage report && exit $$status;
 
 # Distribution
 

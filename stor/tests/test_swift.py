@@ -1,4 +1,3 @@
-import cStringIO
 import gzip
 import logging
 import ntpath
@@ -8,6 +7,7 @@ import unittest
 
 import freezegun
 import mock
+import six
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from testfixtures import LogCapture
@@ -262,7 +262,7 @@ class TestSwiftFile(SwiftTestCase):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = cStringIO.StringIO()
+                _buffer = six.BytesIO()
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
@@ -302,8 +302,7 @@ line4
             self.assertEqual(line, 'line%d\n' % i)
 
         self.assertEqual(next(swift_p.open()), 'line1\n')
-        self.assertEqual(swift_p.open().next(), 'line1\n')
-        self.assertEqual(iter(swift_p.open()).next(), 'line1\n')
+        self.assertEqual(next(iter(swift_p.open())), 'line1\n')
 
     @mock.patch('time.sleep', autospec=True)
     def test_read_success_on_second_try(self, mock_sleep):
@@ -324,22 +323,22 @@ line4
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
-    def test_write_use_slo_multiple_and_close(self, mock_upload, mock_sleep):
+    def test_write_use_manifest_multiple_and_close(self, mock_upload, mock_sleep):
         with NamedTemporaryFile(delete=False) as fp:
             with mock.patch('tempfile.NamedTemporaryFile',
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
                 swift_p = SwiftPath('swift://tenant/container/obj')
                 obj = swift_p.open(mode='wb', swift_upload_options={
-                    'use_slo': 'test_value'
+                    'use_manifest': True
                 })
-                obj.write('hello')
-                obj.write(' world')
+                obj.write(b'hello')
+                obj.write(b' world')
                 obj.close()
             upload, = mock_upload.call_args_list
             self.assertEquals(upload[0][1][0].source, fp.name)
             self.assertEquals(upload[0][1][0].object_name, swift_p.resource)
-            self.assertEquals(upload[1]['use_slo'], 'test_value')
+            self.assertEquals(upload[1]['use_manifest'], True)
             self.assertEqual(open(fp.name).read(), 'hello world')
 
     @mock.patch('time.sleep', autospec=True)
@@ -347,8 +346,8 @@ line4
     def test_write_multiple_w_context_manager(self, mock_upload, mock_sleep):
         swift_p = SwiftPath('swift://tenant/container/obj')
         with swift_p.open(mode='wb') as obj:
-            obj.write('hello')
-            obj.write(' world')
+            obj.write(b'hello')
+            obj.write(b' world')
         upload_call, = mock_upload.call_args_list
 
     @mock.patch('time.sleep', autospec=True)
@@ -362,9 +361,9 @@ line4
             with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
                 ntf.side_effect = [ntf1, ntf2, ntf3]
                 with swift_p.open(mode='wb') as obj:
-                    obj.write('hello')
+                    obj.write(b'hello')
                     obj.flush()
-                    obj.write(' world')
+                    obj.write(b' world')
                     obj.flush()
                 u1, u2, u3 = mock_upload.call_args_list
                 u1[0][1][0].source == ntf1.name
@@ -391,15 +390,15 @@ line4
     def test_works_with_gzip(self):
         gzip_path = stor.join(stor.dirname(__file__),
                               'file_data', 's_3_2126.bcl.gz')
-        text = stor.open(gzip_path).read()
+        text = stor.open(gzip_path, 'rb').read()
         with mock.patch.object(SwiftPath, 'read_object', autospec=True) as read_mock:
             read_mock.return_value = text
-            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')
+            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz', 'rb')
 
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(swift_file_fp, gzip_fp)
-            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz')
+            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz', 'rb')
             with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     # after seeking should still be same
@@ -989,14 +988,12 @@ class TestGlob(SwiftTestCase):
     def test_valid_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.glob('pattern*')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
-                                          num_retries=0)
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
 
     def test_valid_pattern_wo_wildcard(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
         swift_p.glob('pattern')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern',
-                                          num_retries=0)
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
 
     def test_multi_glob_pattern(self, mock_list):
         swift_p = SwiftPath('swift://tenant/container')
@@ -1015,12 +1012,12 @@ class TestGlob(SwiftTestCase):
             SwiftPath('swift://tenant/container2')
         ]
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(exceptions.ConditionNotMetError):
-            swift_p.glob('pattern*',
-                         condition=lambda results: len(results) > 2,
-                         num_retries=3)
+        with settings.use({'swift': {'num_retries': 3}}):
+            with self.assertRaises(exceptions.ConditionNotMetError):
+                swift_p.glob('pattern*',
+                             condition=lambda results: len(results) > 2)
 
-        # Verify that global was tried three times
+        # Verify that glob was tried three times
         self.assertEquals(len(mock_list.call_args_list), 3)
 
     def test_glob_condition_met(self, mock_list):
@@ -1482,8 +1479,9 @@ class TestDownload(SwiftTestCase):
         }]
 
         swift_p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(exceptions.ConditionNotMetError):
-            swift_p.download('output_dir', use_manifest=True, num_retries=2)
+        with settings.use({'swift': {'num_retries': 2}}):
+            with self.assertRaises(exceptions.ConditionNotMetError):
+                swift_p.download('output_dir', use_manifest=True)
 
         self.assertEquals(len(mock_sleep.call_args_list), 2)
         # Verify that list was called with a data manifest as well
@@ -1723,7 +1721,8 @@ class TestUpload(SwiftTestCase):
         with NamedTemporaryDirectory(change_dir=True):
             swift_p = SwiftPath('swift://tenant/container/path')
             with self.assertRaises(exceptions.ConditionNotMetError), settings.use(upload_settings):
-                swift_p.upload(['.'], use_manifest=True, num_retries=2)
+                with settings.use({'swift': {'num_retries': 2}}):
+                    swift_p.upload(['.'], use_manifest=True)
         self.assertEquals(len(mock_sleep.call_args_list), 2)
 
     def test_upload_to_container(self, mock_walk_files_and_dirs):
@@ -2017,14 +2016,16 @@ class TestCopytree(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
     def test_copytree_posix_destination(self, mock_download):
         p = SwiftPath('swift://tenant/container')
-        with settings.use({'swift:download': {'object_threads': 100}}):
-            p.copytree('path', num_retries=1)
+        with settings.use({
+            'swift:download': {'object_threads': 100},
+            'swift': {'num_retries': 1}
+        }):
+            p.copytree('path')
         mock_download.assert_called_once_with(
             p,
             Path(u'path'),
             condition=None,
-            use_manifest=False,
-            num_retries=1)
+            use_manifest=False)
 
     def test_copytree_swift_destination(self):
         p = SwiftPath('swift://tenant/container')

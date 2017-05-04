@@ -1,7 +1,8 @@
-import cStringIO
 import posixpath
+import sys
 
 from cached_property import cached_property
+import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 
@@ -21,7 +22,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         func = getattr(self._buffer, attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(cStringIO.StringIO(), attr_name).__doc__
+    wrapper.__doc__ = getattr(six.BytesIO(), attr_name).__doc__
     return wrapper
 
 
@@ -275,13 +276,18 @@ class OBSFile(object):
     def __del__(self):
         self.close()
 
+    @property
+    def stream_cls(self):
+        """The class used for the IO stream"""
+        return six.BytesIO if self.mode in ('rb', 'wb') else six.StringIO
+
     @cached_property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
         if self.mode in ('r', 'rb'):
-            return cStringIO.StringIO(self._path.read_object())
+            return self.stream_cls(self._path.read_object())
         elif self.mode in ('w', 'wb'):
-            return cStringIO.StringIO()
+            return self.stream_cls()
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
 
@@ -291,10 +297,14 @@ class OBSFile(object):
     read = _delegate_to_buffer('read', valid_modes=_READ_MODES)
     readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
     readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
+
     # In Python 3 it's __next__, in Python 2 it's next()
-    # __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)
+    #
     # TODO: Only use in Python 2 context
-    next = _delegate_to_buffer('next', valid_modes=_READ_MODES)
+    if sys.version_info >= (3, 0):
+        __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)  # pragma: no cover
+    else:
+        next = _delegate_to_buffer('next', valid_modes=_READ_MODES)  # pragma: no cover
 
     write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
     writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)
