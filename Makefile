@@ -84,6 +84,15 @@ unit-test: venv
 .PHONY: test
 test: venv docs unit-test
 
+# setting this up so that we can use virtualenv, coverage, etc
+.PHONY: travis-test
+travis-test: venv
+	$(WITH_VENV) \
+	coverage erase; \
+	coverage run setup.py test; \
+	status=$$?; \
+	coverage report && exit $$status;
+
 # Distribution
 
 VERSION=$(shell $(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/')

@@ -13,5 +13,7 @@ script:
   - make
   # Flake8
   - make lint
+  # confirm doc builds look good
+  - make docs
   # Testing with coverage
-  - make test
+  - make travis-test
