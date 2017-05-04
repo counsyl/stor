@@ -113,11 +113,10 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             symlink = tmp_dir / 'broken.symlink'
             symlink_source = tmp_dir / 'nonexistent'
             # put something in symlink source so that Python doesn't complain
-            with stor.open(symlink_source, 'wb') as fp:
+            with stor.open(symlink_source, 'w') as fp:
                 fp.write('blah')
             os.symlink(symlink_source, symlink)
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 swift_dir / 'data_dir' / 'file2',
@@ -127,7 +126,6 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             # NOW: destroy it with fire and we have empty directory
             os.remove(symlink_source)
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 tmp_dir,
@@ -137,7 +135,6 @@ class TestWalkFilesAndDirs(unittest.TestCase):
             subdir = tmp_dir / 'subdir'
             subdir.makedirs_p()
             uploads = utils.walk_files_and_dirs([swift_dir])
-            print uploads
             self.assertEquals(set(uploads), set([
                 swift_dir / 'file1',
                 subdir,

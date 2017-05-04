@@ -23,7 +23,7 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
-	test -f $@ || virtualenv --python=python2.7 $(VENV_DIR)
+	test -f $@ || virtualenv $(VENV_DIR)
 	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
@@ -36,13 +36,13 @@ develop: venv
 .PHONY: docs
 docs: venv clean-docs
 	$(WITH_VENV) cd docs && make html
-	
+
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
 ifdef ARGS
- 	$(WITH_PBR) python setup.py ${ARGS}
+	$(WITH_PBR) python setup.py ${ARGS}
 else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
@@ -114,4 +114,3 @@ version:
 .PHONY: fullname
 fullname:
 	python setup.py --fullname
-

@@ -214,7 +214,7 @@ class TestOpen(unittest.TestCase):
 
     def test_functional_open(self):
         with tempfile.NamedTemporaryFile() as f:
-            with stor.open(f.name, 'wb', swift_upload_kwargs={}) as f:
+            with stor.open(f.name, 'w', swift_upload_kwargs={}) as f:
                 f.write('blah')
 
     def test_open_works_wo_swift_params(self):
@@ -310,7 +310,7 @@ class TestMisc(unittest.TestCase):
             self.assertFalse(dirname.isfile())
             filename = os.path.join(dirname, 'test.txt')
             with filename.open('wb') as fp:
-                fp.write('somedata')
+                fp.write(b'somedata')
             self.assertFalse(filename.isdir())
             self.assertTrue(filename.isfile())
             self.assertFalse(filename.islink())
@@ -319,7 +319,7 @@ class TestMisc(unittest.TestCase):
             self.assertEqual(dirname.listdir(), [filename])
 
     def test_getsize(self):
-        with tempfile.NamedTemporaryFile() as tmp:
+        with tempfile.NamedTemporaryFile('w') as tmp:
             tmp.write('blah')
             tmp.flush()
             self.assertEqual(Path(tmp.name).getsize(), 4)

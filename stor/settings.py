@@ -1,8 +1,9 @@
 import ast
 import copy
-from ConfigParser import SafeConfigParser
 import os
 import threading
+
+from six.moves.configparser import SafeConfigParser
 
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'
@@ -112,7 +113,7 @@ def _update(d, updates, validate=True):
     If validate is set to True, the key being updated must already exist
     in the dictionary.
     """
-    for key, value in updates.iteritems():
+    for key, value in updates.items():
         if type(value) is dict:
             if key not in d or not type(d[key]) is dict:
                 if validate:
