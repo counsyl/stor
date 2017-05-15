@@ -1,6 +1,28 @@
 Release Notes
 =============
 
+v1.4.1
+------
+
+* Support source-only releases in PyPI to allow pip installing from Python 3
+  (python 3 wheels are still a TODO)
+
+v1.4.0
+------
+
+* Python 3 compatibility :D
+
+v1.3.3
+------
+
+* New-style exception messages
+
+v1.3.2
+------
+
+* Support multiple files with ``use_manifest=True``
+
+
 v1.3.1
 ------
 
