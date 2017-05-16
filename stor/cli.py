@@ -274,7 +274,8 @@ def create_parser():
                         action='version',
                         version=stor.__version__)
 
-    subparsers = parser.add_subparsers(dest='cmd', metavar='')
+    subparsers = parser.add_subparsers(dest='cmd')
+    subparsers.required = True
 
     list_msg = 'List contents using the path as a prefix.'
     parser_list = subparsers.add_parser('list',
