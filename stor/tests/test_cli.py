@@ -102,6 +102,14 @@ class TestCliBasics(BaseCliTest):
             self.parse_args('stor list some_path')
         self.assertIn('not a valid command', sys.stderr.getvalue())
 
+    @mock.patch('sys.stderr', new=six.StringIO())
+    def test_no_cmd_provided(self):
+        with mock.patch.object(sys, 'argv', ['stor']):
+            with self.assertRaisesRegexp(SystemExit, '2'):
+                cli.main()
+        self.assertIn('stor: error:', sys.stderr.getvalue())
+        self.assertIn('arguments', sys.stderr.getvalue())
+
 
 @mock.patch('stor.cli._get_pwd', autospec=True)
 class TestGetPath(BaseCliTest):
