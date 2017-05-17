@@ -266,17 +266,19 @@ def is_writeable(path):
     else:  # pragma: no cover
         raise ValueError('Path type not supported: {}'.format(path))
 
-    try:
-        if is_filesystem_path(path):
-            make_dest_dir(path)
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        try:
+            if is_filesystem_path(path):
+                make_dest_dir(path)
 
-        # Attempt to create a file in the `path`.
-        with tempfile.NamedTemporaryFile() as tmpfile:
+            # Attempt to create a file in the `path`.
             copy(tmpfile.name, path)
+            answer = True
+        except (UnauthorizedError, IOError, OSError):
+            answer = False
+        else:
+            # Remove the file that was created.
             join(path, basename(tmpfile.name)).remove()
-        answer = True
-    except (UnauthorizedError, IOError, OSError):
-        answer = False
 
     # Remove the base directory if it didn't exist when calling this function. This
     # way the underlying directories should remain untouched.
