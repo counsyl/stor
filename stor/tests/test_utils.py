@@ -323,30 +323,59 @@ class TestFileNameToObjectName(unittest.TestCase):
                           'home/wes/path/file')
 
 
-class TestIsWriteable(unittest.TestCase):
-    def test_existing_posix_path(self):
+class TestIsWriteablePOSIX(unittest.TestCase):
+    def test_existing_path(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             self.assertTrue(utils.is_writeable(tmp_d))
 
-    def test_non_existing_posix_path(self):
+    def test_non_existing_path(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             non_existing_path = tmp_d / 'does' / 'not' / 'exist'
             self.assertTrue(utils.is_writeable(non_existing_path))
 
-    def test_posix_path_unchanged(self):
+    def test_path_unchanged(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             non_existing_path = tmp_d / 'does' / 'not' / 'exist'
             self.assertFalse(non_existing_path.exists())
             utils.is_writeable(non_existing_path)
             self.assertFalse(non_existing_path.exists())
 
-    def test_existing_posix_path_not_removed(self):
+    def test_existing_path_not_removed(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             self.assertTrue(tmp_d.exists())
             utils.is_writeable(tmp_d)
             self.assertTrue(tmp_d.exists())
 
-    def test_posix_path_no_perms(self):
+    def test_path_no_perms(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             os.chmod(tmp_d, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
             self.assertFalse(utils.is_writeable(tmp_d))
+
+
+@mock.patch('stor.swift.SwiftPath.exists')
+@mock.patch('stor.utils.copy')
+@mock.patch('stor.rmtree')
+@mock.patch('stor.swift.SwiftPath.listdir', mock.Mock(return_value=[]))
+@mock.patch('stor.swift.SwiftPath.remove', mock.Mock())
+class TestIsWriteableSwift(unittest.TestCase):
+    def test_existing_path(self, _rm, _cp, mock_exists):
+        mock_exists.return_value = True
+        self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test'))
+
+    def test_non_existing_path(self, _rm, _cp, mock_exists):
+        mock_exists.return_value = False
+        self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test'))
+
+    def test_path_unchanged(self, mock_rmtree, _cp, mock_exists):
+        mock_exists.return_value = False
+        utils.is_writeable('swift://AUTH_stor_test/container/test')
+        mock_rmtree.assert_called_once_with(SwiftPath('swift://AUTH_stor_test/container'))
+
+    def test_existing_path_not_removed(self, mock_rmtree, _, mock_exists):
+        mock_exists.return_value = True
+        utils.is_writeable('swift://AUTH_stor_test/container/test')
+        mock_rmtree.assert_not_called()
+
+    def test_path_no_perms(self, _rm, mock_copy, _ex):
+        mock_copy.side_effect = stor.swift.UnauthorizedError('foo')
+        self.assertFalse(utils.is_writeable('swift://AUTH_stor_test/container/test'))
