@@ -7,6 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+
 from stor import exceptions
 
 logger = logging.getLogger(__name__)
@@ -242,6 +243,7 @@ def is_writeable(path):
     from stor import basename
     from stor import join
     from stor import Path
+    from stor import remove
     from stor import rmtree
     from stor.swift import SwiftPath
     from stor.swift import UnauthorizedError
@@ -253,10 +255,18 @@ def is_writeable(path):
     # were not present when it was called. The `base_path_existed` defined below will
     # store whether the directory that we're checking existed when calling this function,
     # so that we know if it should be removed at the end.
-    if is_filesystem_path(path) or is_s3_path(path):
+    if is_filesystem_path(path):
+        # Need to remove the path, once the test is completed.
         base_path = path
         base_path_existed = path.exists()
+    elif is_s3_path(path):
+        # No need to remove anything in S3, since there's no actual hierarchical structure
+        # there. The bucket has to exist before this function is called.
+        base_path = None
+        base_path_existed = None
     elif is_swift_path(path):
+        # Need to remove container after the test if it didn't exist before this function
+        # was called.
         base_path = Path('{}{}/{}'.format(
             SwiftPath.drive,
             path.tenant,
@@ -274,14 +284,14 @@ def is_writeable(path):
             # Attempt to create a file in the `path`.
             copy(tmpfile.name, path)
             answer = True
-        except (UnauthorizedError, IOError, OSError):
+        except (UnauthorizedError, IOError, OSError, exceptions.FailedUploadError):
             answer = False
         else:
             # Remove the file that was created.
-            join(path, basename(tmpfile.name)).remove()
+            remove(join(path, basename(tmpfile.name)))
 
-    # Remove the base directory if it didn't exist when calling this function. This
-    # way the underlying directories should remain untouched.
+    # Remove the base directory if it didn't exist when calling this function, but exists
+    # now. This way the underlying directories should remain untouched.
     if base_path_existed is False and base_path.exists():
         assert not base_path.listdir()
         rmtree(base_path)
