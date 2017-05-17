@@ -367,7 +367,13 @@ class TestIsWriteableSwift(unittest.TestCase):
         self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test'))
 
     def test_path_unchanged(self, mock_rmtree, _cp, mock_exists):
-        mock_exists.return_value = False
+        # Make the first call to exists() return False and the second return True.
+        return_values = [False, True]
+
+        def side_effect(*args):
+            return return_values.pop(0)
+        mock_exists.side_effect = side_effect
+
         utils.is_writeable('swift://AUTH_stor_test/container/test')
         mock_rmtree.assert_called_once_with(SwiftPath('swift://AUTH_stor_test/container'))
 

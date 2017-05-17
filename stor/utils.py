@@ -256,7 +256,6 @@ def is_writeable(path):
     if is_filesystem_path(path) or is_s3_path(path):
         base_path = path
         base_path_existed = path.exists()
-        make_dest_dir(path)
     elif is_swift_path(path):
         base_path = Path('{}{}/{}'.format(
             SwiftPath.drive,
@@ -268,20 +267,24 @@ def is_writeable(path):
         raise ValueError('Path type not supported: {}'.format(path))
 
     try:
+        if is_filesystem_path(path):
+            make_dest_dir(path)
+
         # Attempt to create a file in the `path`.
         with tempfile.NamedTemporaryFile() as tmpfile:
             copy(tmpfile.name, path)
             join(path, basename(tmpfile.name)).remove()
+        answer = True
+    except (UnauthorizedError, IOError, OSError):
+        answer = False
 
-        # Remove the base directory if it didn't exist when calling this function. This
-        # way the underlying directories should remain untouched.
-        if base_path_existed is False:
-            assert not base_path.listdir()
-            rmtree(base_path)
+    # Remove the base directory if it didn't exist when calling this function. This
+    # way the underlying directories should remain untouched.
+    if base_path_existed is False and base_path.exists():
+        assert not base_path.listdir()
+        rmtree(base_path)
 
-        return True
-    except (UnauthorizedError, IOError):
-        return False
+    return answer
 
 
 def copy(source, dest, swift_retry_options=None):
