@@ -355,18 +355,23 @@ class TestIsWriteablePOSIX(unittest.TestCase):
 @mock.patch('stor.swift.SwiftPath.exists')
 @mock.patch('stor.utils.copy')
 @mock.patch('stor.rmtree')
+@mock.patch('stor.remove')
 @mock.patch('stor.swift.SwiftPath.listdir', mock.Mock(return_value=[]))
-@mock.patch('stor.swift.SwiftPath.remove', mock.Mock())
+@mock.patch('stor.utils.tempfile.NamedTemporaryFile')
 class TestIsWriteableSwift(unittest.TestCase):
-    def test_existing_path(self, _rm, _cp, mock_exists):
+    def test_existing_path(self, tmpfile, mock_remove, _rm, _cp, mock_exists):
+        filename = 'test-file'
+        tmpfile.return_value.__enter__.return_value.name = filename
         mock_exists.return_value = True
-        self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test'))
+        path = 'swift://AUTH_stor_test/container/test'
+        self.assertTrue(utils.is_writeable(path))
+        mock_remove.assert_called_with(SwiftPath('{}/{}'.format(path, filename)))
 
-    def test_non_existing_path(self, _rm, _cp, mock_exists):
+    def test_non_existing_path(self, _tmp, _remove, _rm, _cp, mock_exists):
         mock_exists.return_value = False
         self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test'))
 
-    def test_path_unchanged(self, mock_rmtree, _cp, mock_exists):
+    def test_path_unchanged(self, _tmp, _remove, mock_rmtree, _cp, mock_exists):
         # Make the first call to exists() return False and the second return True.
         return_values = [False, True]
 
@@ -377,12 +382,12 @@ class TestIsWriteableSwift(unittest.TestCase):
         utils.is_writeable('swift://AUTH_stor_test/container/test')
         mock_rmtree.assert_called_once_with(SwiftPath('swift://AUTH_stor_test/container'))
 
-    def test_existing_path_not_removed(self, mock_rmtree, _, mock_exists):
+    def test_existing_path_not_removed(self, _tmp, _remove, mock_rmtree, _, mock_exists):
         mock_exists.return_value = True
         utils.is_writeable('swift://AUTH_stor_test/container/test')
         mock_rmtree.assert_not_called()
 
-    def test_path_no_perms(self, _rm, mock_copy, _ex):
+    def test_path_no_perms(self, _tmp, _remove, _rm, mock_copy, _ex):
         mock_copy.side_effect = stor.swift.UnauthorizedError('foo')
         self.assertFalse(utils.is_writeable('swift://AUTH_stor_test/container/test'))
 
