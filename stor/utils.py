@@ -242,6 +242,7 @@ def is_writeable(path):
     from stor import basename
     from stor import join
     from stor import Path
+    from stor import rmtree
     from stor.swift import SwiftPath
     from stor.swift import UnauthorizedError
 
@@ -251,6 +252,7 @@ def is_writeable(path):
     if is_filesystem_path(path):
         base_path = path
         base_path_existed = path.exists()
+        make_dest_dir(path)
     elif is_swift_path(path):
         base_path = Path('{}{}/{}'.format(
             SwiftPath.drive,
@@ -260,15 +262,13 @@ def is_writeable(path):
         base_path_existed = base_path.exists()
 
     try:
-        make_dest_dir(path)
-
         with tempfile.NamedTemporaryFile() as tmpfile:
             copy(tmpfile.name, path)
             join(path, basename(tmpfile.name)).remove()
 
         if base_path_existed is False:
             assert not base_path.listdir()
-            base_path.rmtree()
+            rmtree(base_path)
 
         return True
     except (UnauthorizedError, IOError):
