@@ -248,7 +248,11 @@ def is_writeable(path):
 
     path = Path(path)
 
-    base_path_existed = None
+    # We want this function to behave as a no-op with regards to the underlying directory
+    # structure. Therefore we need to remove any directories created by this function that
+    # were not present when it was called. The `base_path_existed` defined below will
+    # store whether the directory that we're checking existed when calling this function,
+    # so that we know if it should be removed at the end.
     if is_filesystem_path(path):
         base_path = path
         base_path_existed = path.exists()
@@ -260,12 +264,17 @@ def is_writeable(path):
             path.container
         ))
         base_path_existed = base_path.exists()
+    else:
+        base_path_existed = None
 
     try:
+        # Attempt to create a file in the `path`.
         with tempfile.NamedTemporaryFile() as tmpfile:
             copy(tmpfile.name, path)
             join(path, basename(tmpfile.name)).remove()
 
+        # Remove the base directory if it didn't exist when calling this function. This
+        # way the underlying directories should remain untouched.
         if base_path_existed is False:
             assert not base_path.listdir()
             rmtree(base_path)
