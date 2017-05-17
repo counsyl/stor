@@ -234,6 +234,16 @@ def is_writeable(path):
     """
     Determine whether we have permission to write to path.
 
+    Behavior of this method is slightly different for different storage types when the
+    directory doesn't exist:
+    1. For local file systems, this function will return True if the target directory can
+       be created and a file written to it.
+    2. For AWS S3, this function will return True only if the target bucket is already
+       present and we have write access to the bucket.
+    3. For Swift, this function will return True, only if the target tenant is already
+       present and we have write access to the tenant and container. The container doesn't
+       have to be present.
+
     This is function is useful, because `stor.stat()` will succeed if we have read-only
     permissions to `path`, but the eventual attempt to upload will fail.
 
