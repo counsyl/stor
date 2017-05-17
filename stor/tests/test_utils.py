@@ -3,6 +3,7 @@ import logging
 import mock
 import ntpath
 import os
+import stat
 import unittest
 
 from testfixtures import LogCapture
@@ -320,3 +321,32 @@ class TestFileNameToObjectName(unittest.TestCase):
     def test_path_w_env_var(self):
         self.assertEquals(utils.file_name_to_object_name('$HOME/path//file'),
                           'home/wes/path/file')
+
+
+class TestIsWriteable(unittest.TestCase):
+    def test_existing_posix_path(self):
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            self.assertTrue(utils.is_writeable(tmp_d))
+
+    def test_non_existing_posix_path(self):
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            non_existing_path = tmp_d / 'does' / 'not' / 'exist'
+            self.assertTrue(utils.is_writeable(non_existing_path))
+
+    def test_posix_path_unchanged(self):
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            non_existing_path = tmp_d / 'does' / 'not' / 'exist'
+            self.assertFalse(non_existing_path.exists())
+            utils.is_writeable(non_existing_path)
+            self.assertFalse(non_existing_path.exists())
+
+    def test_existing_posix_path_not_removed(self):
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            self.assertTrue(tmp_d.exists())
+            utils.is_writeable(tmp_d)
+            self.assertTrue(tmp_d.exists())
+
+    def test_posix_path_no_perms(self):
+        with utils.NamedTemporaryDirectory() as tmp_d:
+            os.chmod(tmp_d, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
+            self.assertFalse(utils.is_writeable(tmp_d))
