@@ -229,6 +229,52 @@ def is_obs_path(p):
     return is_s3_path(p) or is_swift_path(p)
 
 
+def is_writeable(path):
+    """
+    Determine whether we have permission to write to path.
+
+    This is function is useful, because `stor.stat()` will succeed if we have read-only
+    permissions to `path`, but the eventual attempt to upload will fail.
+
+    Secondly, `path` might not exist yet. If the intent of the caller is to create it, ,
+    stor.stat() will fail, however the eventual upload attempt would succeed.
+    """
+    from stor import basename
+    from stor import join
+    from stor import Path
+    from stor.swift import SwiftPath
+    from stor.swift import UnauthorizedError
+
+    path = Path(path)
+
+    base_path_existed = None
+    if is_filesystem_path(path):
+        base_path = path
+        base_path_existed = path.exists()
+    elif is_swift_path(path):
+        base_path = Path('{}{}/{}'.format(
+            SwiftPath.drive,
+            path.tenant,
+            path.container
+        ))
+        base_path_existed = base_path.exists()
+
+    try:
+        make_dest_dir(path)
+
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            copy(tmpfile.name, path)
+            join(path, basename(tmpfile.name)).remove()
+
+        if base_path_existed is False:
+            assert not base_path.listdir()
+            base_path.rmtree()
+
+        return True
+    except (UnauthorizedError, IOError):
+        return False
+
+
 def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
