@@ -253,7 +253,7 @@ def is_writeable(path):
     # were not present when it was called. The `base_path_existed` defined below will
     # store whether the directory that we're checking existed when calling this function,
     # so that we know if it should be removed at the end.
-    if is_filesystem_path(path):
+    if is_filesystem_path(path) or is_s3_path(path):
         base_path = path
         base_path_existed = path.exists()
         make_dest_dir(path)
@@ -264,8 +264,8 @@ def is_writeable(path):
             path.container
         ))
         base_path_existed = base_path.exists()
-    else:
-        base_path_existed = None
+    else:  # pragma: no cover
+        raise ValueError('Path type not supported: {}'.format(path))
 
     try:
         # Attempt to create a file in the `path`.
