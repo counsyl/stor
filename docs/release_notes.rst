@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v1.4.2
+------
+
+* Fix error message output when specifying ``stor`` without a command under Python 3.
+
 v1.4.1
 ------
 
