@@ -268,6 +268,7 @@ def is_writeable(path, swift_retry_options=None):
     from stor import rmtree
     from stor.swift import SwiftPath
     from stor.swift import UnauthorizedError
+    from stor.swift import UnavailableError
 
     path = with_trailing_slash(Path(path))
 
@@ -294,7 +295,7 @@ def is_writeable(path, swift_retry_options=None):
             # Attempt to create a file in the `path`.
             copy(tmpfile.name, path, swift_retry_options=swift_retry_options)
             answer = True
-        except (UnauthorizedError, IOError, OSError, exceptions.FailedUploadError):
+        except (UnauthorizedError, UnavailableError, IOError, OSError, exceptions.FailedUploadError):  # nopep8
             answer = False
         else:
             # Remove the file that was created.
