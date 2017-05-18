@@ -424,7 +424,9 @@ class TestIsWriteableSwift(unittest.TestCase):
         )
 
     def test_container_created_in_another_client(self):
-        self.mock_exists.return_value = False
+        # Simulate that container doesn't exist at the beginning, but is created after the
+        # is_writeable is called.
+        self.mock_exists.side_effect = [False, True]
         self.mock_remove_container.side_effect = stor.swift.ConflictError('foo')
         self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/'))
 
