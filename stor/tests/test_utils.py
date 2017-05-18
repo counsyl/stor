@@ -387,6 +387,14 @@ class TestIsWriteableSwift(unittest.TestCase):
         mock_copy.side_effect = stor.swift.UnauthorizedError('foo')
         self.assertFalse(utils.is_writeable('swift://AUTH_stor_test/container/test'))
 
+    def test_disable_backoff(self, tmpfile, _remove, _rm, mock_copy, _ex):
+        filename = 'test_file'
+        path = Path('swift://AUTH_stor_test/container/test')
+        swift_opts = {'num_retries': 0}
+        tmpfile.return_value.__enter__.return_value.name = filename
+        utils.is_writeable(path, swift_opts)
+        mock_copy.assert_called_with(filename, path, swift_retry_options=swift_opts)
+
 
 @mock.patch('stor.utils.copy')
 @mock.patch('stor.rmtree')
