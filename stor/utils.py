@@ -265,7 +265,7 @@ def is_writeable(path, swift_retry_options=None):
     from stor import join
     from stor import Path
     from stor import remove
-    from stor import rmtree
+    from stor.swift import ConflictError
     from stor.swift import SwiftPath
     from stor.swift import UnauthorizedError
     from stor.swift import UnavailableError
@@ -303,8 +303,11 @@ def is_writeable(path, swift_retry_options=None):
     # Remove the Swift container if it didn't exist when calling this function, but exists
     # now. This way this function remains a no-op with regards to container structure.
     if container_existed is False and container_path.exists():
-        assert not container_path.listdir()
-        rmtree(container_path)
+        try:
+            container_path.remove_container()
+        except ConflictError:
+            # Ignore if some other thread/user created the container in the meantime.
+            pass
 
     return answer
 
