@@ -431,23 +431,32 @@ class TestIsWriteableSwift(unittest.TestCase):
         self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/'))
 
 
-@mock.patch('stor.utils.copy')
-@mock.patch('stor.rmtree')
-@mock.patch('stor.remove')
-@mock.patch('stor.utils.tempfile.NamedTemporaryFile')
 class TestIsWriteableS3(unittest.TestCase):
-    def test_success(self, tmpfile, mock_remove, _rmtree, mock_copy):
-        filename = 'test-file'
-        tmpfile.return_value.__enter__.return_value.name = filename
+    def setUp(self):
+        super(TestIsWriteableS3, self).setUp()
+
+        mock_copy_patcher = mock.patch('stor.utils.copy')
+        self.mock_copy = mock_copy_patcher.start()
+        self.addCleanup(mock_copy_patcher.stop)
+
+        mock_remove_patcher = mock.patch('stor.remove', autospec=True)
+        self.mock_remove = mock_remove_patcher.start()
+        self.addCleanup(mock_remove_patcher.stop)
+
+        mock_tmpfile_patcher = mock.patch(
+            'stor.utils.tempfile.NamedTemporaryFile', autospec=True)
+        self.filename = 'test_file'
+        self.mock_tmpfile = mock_tmpfile_patcher.start()
+        self.mock_tmpfile.return_value.__enter__.return_value.name = self.filename
+        self.addCleanup(mock_tmpfile_patcher.stop)
+
+    def test_success(self):
         path = 's3://stor-test/foo/bar'
         self.assertTrue(utils.is_writeable(path))
-        mock_remove.assert_called_with(S3Path('{}/{}'.format(path, filename)))
+        self.mock_remove.assert_called_with(
+            S3Path('{}/{}'.format(path, self.filename)))
 
-    def test_existing_path_not_removed(self, _tmp, _remove, mock_rmtree, mock_copy):
-        utils.is_writeable('s3://stor-test/foo/bar')
-        mock_rmtree.assert_not_called()
-
-    def test_path_no_perms(self, _tmp, mock_remove, mock_rmtree, mock_copy):
-        mock_copy.side_effect = stor.exceptions.FailedUploadError('foo')
+    def test_path_no_perms(self):
+        self.mock_copy.side_effect = stor.exceptions.FailedUploadError('foo')
         self.assertFalse(utils.is_writeable('s3://stor-test/foo/bar'))
-        mock_remove.assert_not_called()
+        self.assertFalse(self.mock_remove.called)
