@@ -2443,6 +2443,36 @@ class TestRmtree(SwiftTestCase):
         ])
 
 
+class TestRemoveContainer(SwiftTestCase):
+    def test_w_only_tenant(self):
+        self.mock_swift.delete_container.return_value = None
+        swift_p = SwiftPath('swift://tenant')
+        with self.assertRaisesRegexp(ValueError, 'include container'):
+            swift_p.remove_container()
+
+    def test_w_resource(self):
+        self.mock_swift.delete_container.return_value = None
+        swift_p = SwiftPath('swift://tenant/container/foo')
+        with self.assertRaisesRegexp(ValueError, 'include resource'):
+            swift_p.remove_container()
+
+    def test_non_empty(self):
+        self.mock_swift_conn.delete_container.side_effect = ClientException(
+            'conflict', http_status=409)
+
+        swift_p = SwiftPath('swift://tenant/container/')
+        with self.assertRaises(swift.ConflictError):
+            swift_p.remove_container()
+
+    def test_not_found(self):
+        self.mock_swift_conn.delete_container.side_effect = ClientException(
+            'not_found', http_status=404)
+
+        swift_p = SwiftPath('swift://tenant/container/')
+        with self.assertRaises(swift.NotFoundError):
+            swift_p.remove_container()
+
+
 class TestPost(SwiftTestCase):
     def test_only_tenant(self):
         self.mock_swift.post.return_value = {}
