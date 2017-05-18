@@ -230,14 +230,14 @@ def is_obs_path(p):
     return is_s3_path(p) or is_swift_path(p)
 
 
-def is_writeable(path):
+def is_writeable(path, swift_retry_options=None):
     """
     Determine whether we have permission to write to path.
 
     Behavior of this method is slightly different for different storage types when the
     directory doesn't exist:
-    1. For local file systems, this function will return True if the target directory can
-       be created and a file written to it.
+    1. For local file systems, this function will return True if the target directory
+       exists and a file written to it.
     2. For AWS S3, this function will return True only if the target bucket is already
        present and we have write access to the bucket.
     3. For Swift, this function will return True, only if the target tenant is already
@@ -249,6 +249,17 @@ def is_writeable(path):
 
     Secondly, `path` might not exist yet. If the intent of the caller is to create it, ,
     stor.stat() will fail, however the eventual upload attempt would succeed.
+
+    Args:
+        path (stor.Path|str): The path to check.
+        swift_retry_options (dict): Optional retry arguments to use for swift
+            upload or download. View the
+            `swift module-level documentation <swiftretry>` for more
+            information on retry arguments. If the goal is to not use
+            exponential backoff, pass ``{'num_retries': 0}`` here.
+
+    Returns:
+        bool: Whether ``path`` is writeable or not.
     """
     from stor import basename
     from stor import join
@@ -281,7 +292,7 @@ def is_writeable(path):
     with tempfile.NamedTemporaryFile() as tmpfile:
         try:
             # Attempt to create a file in the `path`.
-            copy(tmpfile.name, path)
+            copy(tmpfile.name, path, swift_retry_options=swift_retry_options)
             answer = True
         except (UnauthorizedError, IOError, OSError, exceptions.FailedUploadError):
             answer = False
