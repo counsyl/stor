@@ -423,8 +423,10 @@ class TestIsWriteableSwift(unittest.TestCase):
             swift_retry_options=None
         )
 
-    # def test_container_created(self, tmpfile, _remove, _rm, mock_copy, _ex):
-        
+    def test_container_created_in_another_client(self):
+        self.mock_exists.return_value = False
+        self.mock_remove_container.side_effect = stor.swift.ConflictError('foo')
+        self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/'))
 
 
 @mock.patch('stor.utils.copy')
