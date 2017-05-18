@@ -269,7 +269,7 @@ def is_writeable(path, swift_retry_options=None):
     from stor.swift import SwiftPath
     from stor.swift import UnauthorizedError
 
-    path = Path(path)
+    path = with_trailing_slash(Path(path))
 
     if is_filesystem_path(path):
         return os.access(path, os.W_OK)
@@ -282,7 +282,7 @@ def is_writeable(path, swift_retry_options=None):
         # function that were not present when it was called. The `container_existed`
         # defined below will store whether the container that we're checking existed when
         # calling this function, so that we know if it should be removed at the end.
-        container_path = Path('{}{}/{}'.format(
+        container_path = Path('{}{}/{}/'.format(
             SwiftPath.drive,
             path.tenant,
             path.container

@@ -364,36 +364,47 @@ class TestIsWriteableSwift(unittest.TestCase):
         filename = 'test-file'
         tmpfile.return_value.__enter__.return_value.name = filename
         mock_exists.return_value = True
-        path = 'swift://AUTH_stor_test/container/test'
+        path = SwiftPath('swift://AUTH_stor_test/container/test/')
         self.assertTrue(utils.is_writeable(path))
-        mock_remove.assert_called_with(SwiftPath('{}/{}'.format(path, filename)))
+        mock_remove.assert_called_with(path / filename)
 
     def test_non_existing_path(self, _tmp, _remove, _rm, _cp, mock_exists):
         mock_exists.return_value = False
-        self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test'))
+        self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/test/'))
 
     def test_path_unchanged(self, _tmp, _remove, mock_rmtree, _cp, mock_exists):
         # Make the first call to exists() return False and the second return True.
         mock_exists.side_effect = [False, True]
-        utils.is_writeable('swift://AUTH_stor_test/container/test')
-        mock_rmtree.assert_called_once_with(SwiftPath('swift://AUTH_stor_test/container'))
+        utils.is_writeable('swift://AUTH_stor_test/container/test/')
+        mock_rmtree.assert_called_once_with(SwiftPath('swift://AUTH_stor_test/container/'))
 
     def test_existing_path_not_removed(self, _tmp, _remove, mock_rmtree, _, mock_exists):
         mock_exists.return_value = True
-        utils.is_writeable('swift://AUTH_stor_test/container/test')
+        utils.is_writeable('swift://AUTH_stor_test/container/test/')
         mock_rmtree.assert_not_called()
 
     def test_path_no_perms(self, _tmp, _remove, _rm, mock_copy, _ex):
         mock_copy.side_effect = stor.swift.UnauthorizedError('foo')
-        self.assertFalse(utils.is_writeable('swift://AUTH_stor_test/container/test'))
+        self.assertFalse(utils.is_writeable('swift://AUTH_stor_test/container/test/'))
 
     def test_disable_backoff(self, tmpfile, _remove, _rm, mock_copy, _ex):
         filename = 'test_file'
-        path = Path('swift://AUTH_stor_test/container/test')
+        path = Path('swift://AUTH_stor_test/container/test/')
         swift_opts = {'num_retries': 0}
         tmpfile.return_value.__enter__.return_value.name = filename
         utils.is_writeable(path, swift_opts)
         mock_copy.assert_called_with(filename, path, swift_retry_options=swift_opts)
+
+    def test_no_trailing_slash(self, tmpfile, _remove, _rm, mock_copy, _ex):
+        filename = 'test_file'
+        path = SwiftPath('swift://AUTH_stor_test/container')
+        tmpfile.return_value.__enter__.return_value.name = filename
+        utils.is_writeable(path)  # no trailing slash
+        mock_copy.assert_called_with(
+            filename,
+            utils.with_trailing_slash(path),
+            swift_retry_options=None
+        )
 
 
 @mock.patch('stor.utils.copy')
