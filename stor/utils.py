@@ -260,37 +260,26 @@ def is_writeable(path):
 
     path = Path(path)
 
-    # We want this function to behave as a no-op with regards to the underlying directory
-    # structure. Therefore we need to remove any directories created by this function that
-    # were not present when it was called. The `base_path_existed` defined below will
-    # store whether the directory that we're checking existed when calling this function,
-    # so that we know if it should be removed at the end.
     if is_filesystem_path(path):
-        # Need to remove the path, once the test is completed.
-        base_path = path
-        base_path_existed = path.exists()
-    elif is_s3_path(path):
-        # No need to remove anything in S3, since there's no actual hierarchical structure
-        # there. The bucket has to exist before this function is called.
-        base_path = None
-        base_path_existed = None
-    elif is_swift_path(path):
-        # Need to remove container after the test if it didn't exist before this function
-        # was called.
-        base_path = Path('{}{}/{}'.format(
+        return os.access(path, os.W_OK)
+
+    container_path = None
+    container_existed = None
+    if is_swift_path(path):
+        # We want this function to behave as a no-op with regards to the underlying
+        # container structure. Therefore we need to remove any containers created by this
+        # function that were not present when it was called. The `container_existed`
+        # defined below will store whether the container that we're checking existed when
+        # calling this function, so that we know if it should be removed at the end.
+        container_path = Path('{}{}/{}'.format(
             SwiftPath.drive,
             path.tenant,
             path.container
         ))
-        base_path_existed = base_path.exists()
-    else:  # pragma: no cover
-        raise ValueError('Path type not supported: {}'.format(path))
+        container_existed = container_path.exists()
 
     with tempfile.NamedTemporaryFile() as tmpfile:
         try:
-            if is_filesystem_path(path):
-                make_dest_dir(path)
-
             # Attempt to create a file in the `path`.
             copy(tmpfile.name, path)
             answer = True
@@ -300,11 +289,11 @@ def is_writeable(path):
             # Remove the file that was created.
             remove(join(path, basename(tmpfile.name)))
 
-    # Remove the base directory if it didn't exist when calling this function, but exists
-    # now. This way the underlying directories should remain untouched.
-    if base_path_existed is False and base_path.exists():
-        assert not base_path.listdir()
-        rmtree(base_path)
+    # Remove the Swift container if it didn't exist when calling this function, but exists
+    # now. This way this function remains a no-op with regards to container structure.
+    if container_existed is False and container_path.exists():
+        assert not container_path.listdir()
+        rmtree(container_path)
 
     return answer
 

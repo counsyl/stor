@@ -331,7 +331,7 @@ class TestIsWriteablePOSIX(unittest.TestCase):
     def test_non_existing_path(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
             non_existing_path = tmp_d / 'does' / 'not' / 'exist'
-            self.assertTrue(utils.is_writeable(non_existing_path))
+            self.assertFalse(utils.is_writeable(non_existing_path))
 
     def test_path_unchanged(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
@@ -339,6 +339,7 @@ class TestIsWriteablePOSIX(unittest.TestCase):
             self.assertFalse(non_existing_path.exists())
             utils.is_writeable(non_existing_path)
             self.assertFalse(non_existing_path.exists())
+            self.assertFalse((tmp_d / 'does').exists())
 
     def test_existing_path_not_removed(self):
         with utils.NamedTemporaryDirectory() as tmp_d:
