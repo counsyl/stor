@@ -1332,6 +1332,18 @@ class SwiftPath(OBSPath):
 
         return results
 
+    @_swift_retry(exceptions=(UnavailableError, UnauthorizedError))
+    def remove_container(self):
+        """
+        Remove swift container if it's not empty.
+        """
+        if not self.container:
+            raise ValueError('swift path must include container for remove_container')
+        if self.resource:
+            raise ValueError('swift path must not include resource for remove_container')
+
+        return self._swift_connection_call('delete_container', self.container)
+
     @_swift_retry(exceptions=UnavailableError)
     def stat(self):
         """Performs a stat on the path.
