@@ -1,3 +1,4 @@
+import os
 import posixpath
 import sys
 
@@ -73,6 +74,14 @@ class OBSPath(Path):
 
     copy = utils.copy
     copytree = utils.copytree
+
+    def dirname(self):
+        """
+        Return the directory name of self.
+        """
+        assert self.startswith(self.drive)
+        rest = self[len(self.drive):]
+        return type(self)(self.drive + os.path.dirname(rest))
 
     def __repr__(self):
         return '%s("%s")' % (type(self).__name__, self)
