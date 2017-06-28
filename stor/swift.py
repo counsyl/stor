@@ -438,6 +438,14 @@ class SwiftPath(OBSPath):
     """
     drive = 'swift://'
 
+    def dirname(self):
+        """
+        Return the directory name of self.
+        """
+        assert self.startswith(self.drive)
+        rest = self[len(self.drive):]
+        return SwiftPath(self.drive + os.path.dirname(rest))
+
     def is_segment_container(self):
         """True if this path is a segment container"""
         container = self.container
