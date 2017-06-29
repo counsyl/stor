@@ -81,7 +81,7 @@ class OBSPath(Path):
         """
         assert self.startswith(self.drive)
         rest = self[len(self.drive):]
-        return self.path_class(self.drive + os.path.dirname(rest))
+        return self.path_class(self.drive + self.path_module.dirname(rest))
 
     def __repr__(self):
         return '%s("%s")' % (type(self).__name__, self)
