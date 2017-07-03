@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v1.4.3
+------
+
+* Fix ``dirname()`` for top-level Swift paths, like ``swift://``.
+* Fix ``dirname()`` for top-level S3 paths, like ``s3://``.
+
+
 v1.4.2
 ------
 

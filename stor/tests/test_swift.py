@@ -72,6 +72,13 @@ class TestBasicPathMethods(unittest.TestCase):
         p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.dirname(), 'swift://tenant/container/path/to')
 
+    def test_dirname_top_level(self):
+        p1 = Path('swift://')
+        self.assertEquals(p1.dirname(), 'swift://')
+
+        p2 = Path('swift://a')
+        self.assertEquals(p2.dirname(), 'swift://')
+
     def test_basename(self):
         p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.basename(), 'resource')

@@ -39,6 +39,13 @@ class TestBasicPathMethods(unittest.TestCase):
         p = Path('s3://bucket/path/to/resource')
         self.assertEquals(p.dirname(), 's3://bucket/path/to')
 
+    def test_dirname_top_level(self):
+        p1 = Path('s3://')
+        self.assertEquals(p1.dirname(), 's3://')
+
+        p2 = Path('s3://a')
+        self.assertEquals(p2.dirname(), 's3://')
+
     def test_basename(self):
         p = Path('s3://bucket/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
