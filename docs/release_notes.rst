@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v1.4.5
+------
+
+* Fixed release notes.
+
 v1.4.4
 ------
 
