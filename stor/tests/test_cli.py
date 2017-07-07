@@ -329,7 +329,6 @@ class TestLs(BaseCliTest):
 @mock.patch('stor.copy_multiple', autospec=True)
 class TestCopy(BaseCliTest):
     def mock_copy_source(self, sources, dest, *args, **kwargs):
-        print sources, dest
         with open(dest, 'w') as outfile, open(sources) as infile:
             outfile.write(infile.read())
 
@@ -349,7 +348,6 @@ class TestCopy(BaseCliTest):
             test_file = ntf.name
             self.parse_args('stor cp - %s' % test_file)
         self.assertEquals(open(test_file).read(), 'some stdin input\n')
-        print mock_copy.call_args_list
         temp_file = mock_copy.call_args_list[0][1]['sources']
         self.assertFalse(os.path.exists(temp_file))
         os.remove(test_file)
@@ -473,6 +471,14 @@ class TestCat(BaseCliTest):
         self.parse_args('stor cat swift://some/test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
         mock_read.assert_called_once_with(SwiftPath('swift://some/test/file'))
+
+    @mock.patch.object(SwiftPath, 'read_object', autospec=True)
+    def test_cat_swift_multiple(self, mock_read):
+        mock_read.side_effect = ['hello world A', 'hello world B', 'hello world A']
+        self.parse_args('stor cat swift://some/test/fileA'
+                        ' swift://some/test/fileB swift://some/test/fileA')
+        self.assertEquals(sys.stdout.getvalue(),
+                          'hello world Ahello world Bhello world A\n')
 
 
 class TestCd(BaseCliTest):

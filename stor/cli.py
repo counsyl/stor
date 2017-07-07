@@ -201,9 +201,12 @@ def _clear_env(service=None):
             _env_chdir(name + '://')
 
 
-def _cat(pth):
+def _cat(pths):
     """Return the contents of a given path."""
-    return pth.open().read()
+    contents = []
+    for pth in pths:
+        contents.append(pth.open().read())
+    return "".join(contents)
 
 
 def _obs_relpath_service(pth):
@@ -365,7 +368,7 @@ def create_parser():
 
     cat_msg = 'Output file contents to stdout.'
     parser_cat = subparsers.add_parser('cat', help=cat_msg, description=cat_msg)
-    parser_cat.add_argument('path', type=partial(get_path, mode='r'), metavar='PATH')
+    parser_cat.add_argument('path', type=partial(get_path, mode='r'), metavar='PATH', nargs='+')
     parser_cat.set_defaults(func=_cat)
 
     cd_msg = 'Change directory to a given OBS path.'
