@@ -23,7 +23,9 @@ See `stor.swift` for more information on Swift-specific functionality.
 import pkg_resources
 
 from stor.utils import copy
+from stor.utils import copy_multiple
 from stor.utils import copytree
+from stor.utils import copytree_multiple
 from stor.utils import is_filesystem_path
 from stor.utils import is_swift_path
 from stor.utils import NamedTemporaryDirectory
@@ -132,7 +134,9 @@ __all__ = [
     'ismount',
     'getsize',
     'copy',
+    'copy_multiple',
     'copytree',
+    'copytree_multiple',
     'remove',
     'rmtree',
     'walkfiles',

@@ -8,7 +8,7 @@ To run all tests, type::
 
     make test
 
-In order to run swift integration tests, create a swift tenant called ``AUTH_swft_test`` and provide environment variables for a user that has permissions to write to that tenant (``SWIFT_TEST_USERNAME`` and ``SWIFT_TEST_PASSWORD``). Also set the swift auth url environment variable (``OS_AUTH_URL``)
+In order to run swift integration tests, create a swift tenant called ``AUTH_swft_test`` (override with the ``SWIFT_TEST_TENANT`` environment variable) and provide environment variables for a user that has permissions to write to that tenant (``SWIFT_TEST_USERNAME`` and ``SWIFT_TEST_PASSWORD``). Also set the swift auth url environment variable (``OS_AUTH_URL``). You can set the prefix of the temporary test container via the ``SWIFT_TEST_CONTAINER_PREFIX`` environment variable.
 
 In order to run S3 integration tests, create a ``stor-test-bucket`` S3 bucket and provide environment variables for an AWS user that has permissions to write to it (``AWS_TEST_ACCESS_KEY_ID`` and ``AWS_ACCESS_KEY_ID``).
 

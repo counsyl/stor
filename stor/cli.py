@@ -125,7 +125,7 @@ def _make_stdin_action(func, err_msg):
     """
     class StdinAction(argparse._StoreAction):
         def __call__(self, parser, namespace, values, option_string=None):
-            if values == '-':
+            if '-' in values:
                 if namespace.func == func:
                     raise argparse.ArgumentError(self, err_msg)
                 else:
@@ -300,8 +300,7 @@ def create_parser():
     parser_ls.add_argument('path', type=get_path, metavar='PATH')
     parser_ls.set_defaults(func=stor.listdir)
 
-    cp_msg = 'Copy a source to a destination path.'
-    cp_msg = 'Alias for copy.'
+    cp_msg = 'Copy source(s) to a destination path.'
     parser_cp = subparsers.add_parser('cp',  # noqa
                                       help=cp_msg,
                                       description='%s\n \'-\' is a special character that allows'
@@ -311,14 +310,35 @@ def create_parser():
                                 ' Must be specified before any other flags.',
                            action='store_const',
                            dest='func',
-                           const=stor.copytree,
-                           default=stor.copy)
-    parser_cp.add_argument('source',
+                           const=stor.copytree_multiple,
+                           default=stor.copy_multiple)
+    parser_cp.add_argument('sources',
                            type=get_path,
                            metavar='SOURCE',
-                           action=_make_stdin_action(stor.copytree,
+                           nargs='+',
+                           action=_make_stdin_action(stor.copytree_multiple,
                                                      '- cannot be used with -r'))
     parser_cp.add_argument('dest', type=get_path, metavar='DEST')
+
+    parser_cpto = subparsers.add_parser(
+        'cpto',
+        help=cp_msg + ' Note that here DEST comes before SOURCE(s).',
+        description='%s\n \'-\' is a special character that allows'
+                    ' for using stdin as the source.' % cp_msg)
+    parser_cpto.add_argument('-r',
+                             help='Copy a directory and its subtree to the destination directory.'
+                                  ' Must be specified before any other flags.',
+                             action='store_const',
+                             dest='func',
+                             const=stor.copytree_multiple,
+                             default=stor.copy_multiple)
+    parser_cpto.add_argument('dest', type=get_path, metavar='DEST')
+    parser_cpto.add_argument('sources',
+                             type=get_path,
+                             metavar='SOURCE',
+                             nargs='+',
+                             action=_make_stdin_action(stor.copytree_multiple,
+                                                       '- cannot be used with -r'))
 
     rm_msg = 'Remove file at a path.'
     parser_rm = subparsers.add_parser('rm',

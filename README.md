@@ -35,7 +35,9 @@ positional arguments:
 
     list                List contents using the path as a prefix.
     ls                  List path as a directory.
-    cp                  Alias for copy.
+    cp                  Copy a source to a destination path.
+    cpto                Copy a source to a destination path. Note that here
+                        DEST comes before SOURCE(s).
     rm                  Remove file at a path.
     walkfiles           List all files under a path that match an optional
                         pattern.

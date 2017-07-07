@@ -32,12 +32,14 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
 
         settings.update({
             'swift': {
+                'auth_url': os.environ.get('OS_AUTH_URL'),
                 'username': os.environ.get('SWIFT_TEST_USERNAME'),
                 'password': os.environ.get('SWIFT_TEST_PASSWORD'),
                 'num_retries': 5
             }})
-
-        self.test_container = Path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
+        self.test_tenant = os.environ.get('SWIFT_TEST_TENANT', 'AUTH_swft_test')
+        self.test_container = Path('swift://%s/%s%s' % (
+            self.test_tenant, os.environ.get('SWIFT_TEST_CONTAINER_PREFIX', ''), uuid.uuid4()))
         if self.test_container.exists():
             raise ValueError('test container %s already exists.' % self.test_container)
 
@@ -59,13 +61,13 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         with mock.patch('swiftclient.client.get_auth_keystone', autospec=True) as mock_get_ks:
             mock_get_ks.side_effect = real_get_keystone
             s = Path(self.test_container).stat()
-            self.assertEquals(s['Account'], 'AUTH_swft_test')
+            self.assertEquals(s['Account'], self.test_tenant)
             self.assertEquals(len(mock_get_ks.call_args_list), 1)
 
             # The keystone auth should not be called on another stat
             mock_get_ks.reset_mock()
             s = Path(self.test_container).stat()
-            self.assertEquals(s['Account'], 'AUTH_swft_test')
+            self.assertEquals(s['Account'], self.test_tenant)
             self.assertEquals(len(mock_get_ks.call_args_list), 0)
 
             # Set the auth cache to something bad. The auth keystone should
@@ -73,9 +75,9 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             # when retrying auth (with the bad token) and then called by us without
             # a token after the swiftclient raises an authorization error.
             mock_get_ks.reset_mock()
-            swift._cached_auth_token_map['AUTH_swft_test']['creds']['os_auth_token'] = 'bad_auth'
+            swift._cached_auth_token_map[self.test_tenant]['creds']['os_auth_token'] = 'bad_auth'
             s = Path(self.test_container).stat()
-            self.assertEquals(s['Account'], 'AUTH_swft_test')
+            self.assertEquals(s['Account'], self.test_tenant)
             self.assertEquals(len(mock_get_ks.call_args_list), 2)
             # Note that the auth_token is passed into the keystone client but then popped
             # from the kwargs. Assert that an auth token is no longer part of the retry calls
