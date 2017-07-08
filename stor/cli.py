@@ -91,7 +91,7 @@ from stor import settings
 from stor import Path
 from stor import utils
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles')
+PRINT_CMDS = ('list', 'listdir', 'cat', 'pwd', 'walkfiles')
 SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -301,7 +301,29 @@ def create_parser():
                                       help=ls_msg,
                                       description=ls_msg)
     parser_ls.add_argument('path', default='./', nargs='?', type=get_path, metavar='PATH')
-    parser_ls.set_defaults(func=stor.listdir)
+    parser_ls.add_argument('-l', '--long-format',
+                           help='Show long format listing',
+                           action='store_true')
+    parser_ls.add_argument('-H', '--human-readable',
+                           help='Use human-readable file sizes with long format',
+                           action='store_true')
+    parser_ls.add_argument('-S', '--sort-by-file-size',
+                           help='Sort files by size, smallest first',
+                           action='store_true')
+    parser_ls.add_argument('-t', '--sort-by-time',
+                           help='Sort files by modification time, newest first',
+                           action='store_true')
+    parser_ls.add_argument('-U', '--sort-by-directory-order',
+                           help=("Don't apply a particular sorting. With no sorting "
+                                 "flags, sorting is alphabetical"),
+                           action='store_true')
+    parser_ls.add_argument('-r', '--reverse',
+                           help='Reverse the order',
+                           action='store_true')
+    parser_ls.add_argument('-u', '--url',
+                           help='Display URL rather than filename',
+                           action='store_true')
+    parser_ls.set_defaults(func=_print_ls_output)
 
     cp_msg = 'Copy source(s) to a destination path.'
     parser_cp = subparsers.add_parser('cp',  # noqa
@@ -432,6 +454,51 @@ def print_results(results):
     else:
         for result in results:
             sys.stdout.write('%s\n' % str(result))
+
+
+def _human_size(size_bytes):
+    size_kib = size_bytes / 1024.
+    if size_kib < 1:
+        return "{} B".format(size_bytes)
+    size_mib = size_kib / 1024.
+    if size_mib < 1:
+        return "{:.1f} KiB".format(size_kib)
+    size_gib = size_mib / 1024.
+    if size_gib < 1:
+        return "{:.1f} MiB".format(size_mib)
+    size_tib = size_gib / 1024.
+    if size_tib < 1:
+        return "{:.1f} GiB".format(size_gib)
+    return "{:.1f} TiB".format(size_tib)
+
+
+def _print_ls_output(path, long_format=False, human_readable=False,
+                     sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
+                     reverse=False, url=False):
+    out_lines = []
+    paths = Path(path).listdir()
+    if sort_by_directory_order:
+        pass
+    elif sort_by_file_size:
+        paths = sorted(paths, key=lambda p: p.getsize())
+    elif sort_by_time:
+        pass
+    else:
+        paths = sorted(paths)
+    if reverse:
+        paths = paths[::-1]
+    for path in paths:
+        if long_format:
+            size = path.getsize()
+            out_lines.append("{size}\t{mod}\t{ctype}\t{name}".format(
+                size=size if not human_readable else _human_size(size),
+                mod="TODO",
+                ctype="TODO",
+                name=str(path) if not url else "TODO"))
+        else:
+            out_lines.append(str(path))
+    sys.stdout.write('\n'.join(out_lines))
+    sys.stdout.write('\n')
 
 
 def main():
