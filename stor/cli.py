@@ -478,13 +478,14 @@ def _human_size(size_bytes):
 
 def _get_swift_metadata_factory(auth_url):
     swift_prefix = auth_url.split('auth')[0]
+
     def get_metadata(path):
         metadata = {
             'last_modified': None,
             'url': "{}v1/{}/{}/{}".format(
                 swift_prefix, path.tenant, path.container, path.resource),
             'size_bytes': None,
-            'ctype': '',
+            'ctype': None,
         }
         try:
             info = path.stat()
@@ -492,7 +493,8 @@ def _get_swift_metadata_factory(auth_url):
         except exceptions.NotFoundError:
             isfile = False
         if isfile:
-            metadata['last_modified'] = dt.fromtimestamp(float(info['headers']['x-object-meta-mtime']))
+            metadata['last_modified'] = dt.fromtimestamp(float(
+                info['headers']['x-object-meta-mtime']))
             metadata['size_bytes'] = int(info['Content-Length'])
             metadata['ctype'] = info['Content-Type']
         return metadata
@@ -500,13 +502,19 @@ def _get_swift_metadata_factory(auth_url):
 
 
 def _get_s3_metadata(path):
-    # TODO new_path = stor.join('s3://', pth.container, pth.resource)
     metadata = {
-        'last_modified': None,  # TODO
-        'url': str(path),  # TODO
-        'size_bytes': 0,  # TODO
-        'ctype': '',  # TODO
+        'last_modified': None,
+        'url': stor.join('s3://', path.container, path.resource),
+        'size_bytes': None,
+        'ctype': None,
     }
+    try:
+        info = path.stat()
+        metadata['last_modified'] = info['LastModified']
+        metadata['size_bytes'] = info['ContentLength']
+        metadata['ctype'] = info['ContentType']
+    except exceptions.NotFoundError:
+        pass
     return metadata
 
 
