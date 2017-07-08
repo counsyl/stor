@@ -351,9 +351,9 @@ def create_parser():
                            help='Remove a path and all its contents.',
                            action='store_const',
                            dest='func',
-                           const=stor.rmtree,
-                           default=stor.remove)
-    parser_rm.add_argument('path', type=get_path, metavar='PATH')
+                           const=stor.rmtree_multiple,
+                           default=stor.remove_multiple)
+    parser_rm.add_argument('path', type=get_path, metavar='PATH', nargs="+")
 
     walkfiles_msg = 'List all files under a path that match an optional pattern.'
     parser_walkfiles = subparsers.add_parser('walkfiles',

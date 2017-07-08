@@ -26,6 +26,8 @@ from stor.utils import copy
 from stor.utils import copy_multiple
 from stor.utils import copytree
 from stor.utils import copytree_multiple
+from stor.utils import remove_multiple
+from stor.utils import rmtree_multiple
 from stor.utils import is_filesystem_path
 from stor.utils import is_swift_path
 from stor.utils import NamedTemporaryDirectory
@@ -138,7 +140,9 @@ __all__ = [
     'copytree',
     'copytree_multiple',
     'remove',
+    'remove_multiple',
     'rmtree',
+    'rmtree_multiple',
     'walkfiles',
     'is_filesystem_path',
     'is_swift_path',

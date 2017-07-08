@@ -496,6 +496,18 @@ def copytree_multiple(sources, dest, copy_cmd=None, use_manifest=False,
                  headers=headers, condition=condition, **retry_args)
 
 
+def remove_multiple(paths):
+    from stor import Path
+    for path in paths:
+        Path(path).remove()
+
+
+def rmtree_multiple(paths):
+    from stor import Path
+    for path in paths:
+        Path(path).rmtree()
+
+
 def _safe_get_size(name):
     """Get the size of a file, handling weird edge cases like broken
     symlinks by returning None"""

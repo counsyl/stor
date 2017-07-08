@@ -376,25 +376,37 @@ class TestCopytree(BaseCliTest):
 
 
 class TestRemove(BaseCliTest):
-    @mock.patch.object(S3Path, 'remove', autospec=True)
+    @mock.patch('stor.remove_multiple', autospec=True)
     def test_remove_s3(self, mock_remove):
         self.parse_args('stor rm s3://bucket/file1')
-        mock_remove.assert_called_once_with(S3Path('s3://bucket/file1'))
+        mock_remove.assert_called_once_with([S3Path('s3://bucket/file1')])
 
-    @mock.patch.object(SwiftPath, 'remove', autospec=True)
+    @mock.patch('stor.remove_multiple', autospec=True)
     def test_remove_swift(self, mock_remove):
         self.parse_args('stor rm swift://t/c/file1')
-        mock_remove.assert_called_once_with(SwiftPath('swift://t/c/file1'))
+        mock_remove.assert_called_once_with([SwiftPath('swift://t/c/file1')])
 
-    @mock.patch.object(S3Path, 'rmtree', autospec=True)
+    @mock.patch('stor.remove_multiple', autospec=True)
+    def test_remove_multiple_swift(self, mock_remove):
+        self.parse_args('stor rm swift://t/c/file1 swift://t/c/file2')
+        mock_remove.assert_called_once_with([SwiftPath('swift://t/c/file1'),
+                                             SwiftPath('swift://t/c/file2')])
+
+    @mock.patch('stor.rmtree_multiple', autospec=True)
     def test_rmtree_s3(self, mock_rmtree):
         self.parse_args('stor rm -r s3://bucket/dir')
-        mock_rmtree.assert_called_once_with(S3Path('s3://bucket/dir'))
+        mock_rmtree.assert_called_once_with([S3Path('s3://bucket/dir')])
 
-    @mock.patch.object(SwiftPath, 'rmtree', autospec=True)
+    @mock.patch('stor.rmtree_multiple', autospec=True)
     def test_rmtree_swift(self, mock_rmtree):
         self.parse_args('stor rm -r swift://t/c/dir')
-        mock_rmtree.assert_called_once_with(SwiftPath('swift://t/c/dir'))
+        mock_rmtree.assert_called_once_with([SwiftPath('swift://t/c/dir')])
+
+    @mock.patch('stor.rmtree_multiple', autospec=True)
+    def test_rmtree_multiple_swift(self, mock_rmtree):
+        self.parse_args('stor rm -r swift://t/c/dir1 swift://t/c/dir2')
+        mock_rmtree.assert_called_once_with([SwiftPath('swift://t/c/dir1'),
+                                             SwiftPath('swift://t/c/dir2')])
 
 
 class TestWalkfiles(BaseCliTest):
