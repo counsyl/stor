@@ -414,8 +414,11 @@ def create_parser():
 
     swift_msg = 'Get Swift-specific information.'
     parser_swift = subparsers.add_parser('swift', help=swift_msg, description=swift_msg)
-    parser_swift.add_argument('get', choices=['get-tenant', 'get-container', 'get-object', 'get-resource'],
-                              help="Which part of swift://tenant/container/object-or-resource to return")
+    parser_swift.add_argument(
+        'get', choices=['get-tenant', 'get-container', 'get-object', 'get-resource',
+                        'get-url'],
+            help=("Which part of swift://tenant/container/object-or-resource to return; "
+                  "get-url returns the https:// URL"))
     parser_swift.add_argument('path', type=get_path, metavar='PATH')
     parser_swift.set_defaults(func=_swift)
 
@@ -472,6 +475,10 @@ def _swift(path, get):
         return str(path.container)
     if get == 'get-object' or get == 'get-resource':
         return str(path.resource)
+    if get == 'get-url':
+        auth_url = settings.get()['swift']['auth_url']
+        swift_prefix = auth_url.split('auth')[0]
+        return _swift_url(swift_prefix, path)
     raise RuntimeError("Invalid thing to get for a swift path: {}".format(get))
 
 
@@ -493,14 +500,18 @@ def _human_size(size_bytes):
     return "{:.1f} TiB".format(size_tib)
 
 
+def _swift_url(swift_prefix, path):
+    return "{}v1/{}/{}/{}".format(
+        swift_prefix, path.tenant, path.container, path.resource)
+
+
 def _get_swift_metadata_factory(auth_url):
     swift_prefix = auth_url.split('auth')[0]
 
     def get_metadata(path):
         metadata = {
             'last_modified': None,
-            'url': "{}v1/{}/{}/{}".format(
-                swift_prefix, path.tenant, path.container, path.resource),
+            'url': _swift_url(swift_prefix, path),
             'size_bytes': None,
             'ctype': None,
         }
