@@ -300,7 +300,7 @@ def create_parser():
     parser_ls = subparsers.add_parser('ls',  # noqa
                                       help=ls_msg,
                                       description=ls_msg)
-    parser_ls.add_argument('path', type=get_path, metavar='PATH')
+    parser_ls.add_argument('path', default='./', nargs='?', type=get_path, metavar='PATH')
     parser_ls.set_defaults(func=stor.listdir)
 
     cp_msg = 'Copy source(s) to a destination path.'
