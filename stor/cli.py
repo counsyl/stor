@@ -81,6 +81,8 @@ import shutil
 import signal
 import sys
 import tempfile
+from datetime import datetime as dt
+import mimetypes
 
 import six
 from six.moves import configparser
@@ -457,6 +459,8 @@ def print_results(results):
 
 
 def _human_size(size_bytes):
+    if size_bytes is None:  # e.g. a directory
+        return ""
     size_kib = size_bytes / 1024.
     if size_kib < 1:
         return "{} B".format(size_bytes)
@@ -472,31 +476,83 @@ def _human_size(size_bytes):
     return "{:.1f} TiB".format(size_tib)
 
 
+def _get_swift_metadata_factory(auth_url):
+    swift_prefix = auth_url.split('auth')[0]
+    def get_metadata(path):
+        metadata = {
+            'last_modified': None,
+            'url': "{}v1/{}/{}/{}".format(
+                swift_prefix, path.tenant, path.container, path.resource),
+            'size_bytes': None,
+            'ctype': '',
+        }
+        if path.isfile():
+            info = path.stat()
+            metadata['last_modified'] = dt.fromtimestamp(float(info['headers']['x-object-meta-mtime']))
+            metadata['size_bytes'] = int(info['Content-Length'])
+            metadata['ctype'] = info['Content-Type']
+        return metadata
+    return get_metadata
+
+
+def _get_s3_metadata(path):
+    # TODO new_path = stor.join('s3://', pth.container, pth.resource)
+    metadata = {
+        'last_modified': None,  # TODO
+        'url': str(path),  # TODO
+        'size_bytes': 0,  # TODO
+        'ctype': '',  # TODO
+    }
+    return metadata
+
+
+def _get_file_metadata(path):
+    info = os.stat(path)
+    isfile = path.isfile()
+    metadata = {
+        'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
+        'url': "file://" + str(path.abspath()).replace("\\", "/"),  # TODO
+        'size_bytes': info.st_size if isfile else None,
+        'ctype': mimetypes.guess_type(path)[0] if isfile else None,
+    }
+    return metadata
+
+
 def _print_ls_output(path, long_format=False, human_readable=False,
                      sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
                      reverse=False, url=False):
+    path = Path(path)
     out_lines = []
-    paths = Path(path).listdir()
+    paths = path.listdir()
+    if utils.is_swift_path(path):
+        get_metadata = _get_swift_metadata_factory(settings.get()['swift']['auth_url'])
+    elif utils.is_s3_path(path):
+        get_metadata = _get_s3_metadata
+    else:
+        get_metadata = _get_file_metadata
+    metadata = dict((p, get_metadata(p)) for p in paths)
     if sort_by_directory_order:
+        # no particular ordering
         pass
     elif sort_by_file_size:
-        paths = sorted(paths, key=lambda p: p.getsize())
+        paths = sorted(paths, key=lambda p: metadata[p]['size_bytes'])
     elif sort_by_time:
-        pass
+        paths = sorted(paths, key=lambda p: metadata[p]['last_modified'])
     else:
         paths = sorted(paths)
     if reverse:
         paths = paths[::-1]
-    for path in paths:
+    for p in paths:
         if long_format:
-            size = path.getsize()
+            m = metadata[p]
+            mod = m['last_modified'].strftime('%Y-%m-%d %H:%M:%S') if m['last_modified'] else ''
             out_lines.append("{size}\t{mod}\t{ctype}\t{name}".format(
-                size=size if not human_readable else _human_size(size),
-                mod="TODO",
-                ctype="TODO",
-                name=str(path) if not url else "TODO"))
+                size=m['size_bytes'] if not human_readable else _human_size(m['size_bytes']),
+                mod=mod,
+                ctype=m['ctype'] or '',
+                name=str(p) if not url else m['url']))
         else:
-            out_lines.append(str(path))
+            out_lines.append(str(p))
     sys.stdout.write('\n'.join(out_lines))
     sys.stdout.write('\n')
 
