@@ -93,7 +93,7 @@ from stor import settings
 from stor import Path
 from stor import utils
 
-PRINT_CMDS = ('list', 'listdir', 'cat', 'pwd', 'walkfiles', 'swift')
+PRINT_CMDS = ('cat', 'pwd', 'swift')
 SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -267,6 +267,33 @@ def get_path(pth, mode=None):
     return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
+def add_listing_parser_args(subparser):
+    subparser.add_argument('-l', '--long-format',
+                           help='Show long format listing',
+                           action='store_true')
+    subparser.add_argument('-H', '--human-readable',
+                           help='Use human-readable file sizes with long format',
+                           action='store_true')
+    subparser.add_argument('-S', '--sort-by-file-size',
+                           help='Sort files by size, smallest first',
+                           action='store_true')
+    subparser.add_argument('-t', '--sort-by-time',
+                           help='Sort files by modification time, newest first',
+                           action='store_true')
+    subparser.add_argument('-U', '--sort-by-directory-order',
+                           help=("Don't apply a particular sorting. With no sorting "
+                                 "flags, sorting is alphabetical"),
+                           action='store_true')
+    subparser.add_argument('-r', '--reverse',
+                           help='Reverse the order',
+                           action='store_true')
+    subparser.add_argument('-u', '--url',
+                           help='Display URL rather than filename',
+                           action='store_true')
+    subparser.add_argument('path', default='./', nargs='?', type=get_path, metavar='PATH')
+    subparser.set_defaults(func=_print_ls_output)
+
+
 def create_parser():
     parser = argparse.ArgumentParser(description='A command line interface for stor.')
 
@@ -286,46 +313,35 @@ def create_parser():
     parser_list = subparsers.add_parser('list',
                                         help=list_msg,
                                         description=list_msg)
-    parser_list.add_argument('path', type=get_path, metavar='PATH')
     parser_list.add_argument('-s', '--starts-with',
                              help='Append an additional path to the search path.',
                              type=str,
                              dest='starts_with',
                              metavar='PREFIX')
-    parser_list.add_argument('-l', '--limit',
+    parser_list.add_argument('-L', '--limit',
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    parser_list.set_defaults(func=stor.list)
+    add_listing_parser_args(parser_list)
+    parser_list.set_defaults(list_func=stor.list)
 
     ls_msg = 'List path as a directory.'
     parser_ls = subparsers.add_parser('ls',  # noqa
                                       help=ls_msg,
                                       description=ls_msg)
-    parser_ls.add_argument('path', default='./', nargs='?', type=get_path, metavar='PATH')
-    parser_ls.add_argument('-l', '--long-format',
-                           help='Show long format listing',
-                           action='store_true')
-    parser_ls.add_argument('-H', '--human-readable',
-                           help='Use human-readable file sizes with long format',
-                           action='store_true')
-    parser_ls.add_argument('-S', '--sort-by-file-size',
-                           help='Sort files by size, smallest first',
-                           action='store_true')
-    parser_ls.add_argument('-t', '--sort-by-time',
-                           help='Sort files by modification time, newest first',
-                           action='store_true')
-    parser_ls.add_argument('-U', '--sort-by-directory-order',
-                           help=("Don't apply a particular sorting. With no sorting "
-                                 "flags, sorting is alphabetical"),
-                           action='store_true')
-    parser_ls.add_argument('-r', '--reverse',
-                           help='Reverse the order',
-                           action='store_true')
-    parser_ls.add_argument('-u', '--url',
-                           help='Display URL rather than filename',
-                           action='store_true')
-    parser_ls.set_defaults(func=_print_ls_output)
+    add_listing_parser_args(parser_ls)
+    parser_ls.set_defaults(list_func=stor.listdir)
+
+    walkfiles_msg = 'List all files under a path that match an optional pattern.'
+    parser_walkfiles = subparsers.add_parser('walkfiles',
+                                             help=walkfiles_msg,
+                                             description=walkfiles_msg)
+    parser_walkfiles.add_argument('-p', '--pattern',
+                                  help='A regex pattern to match file names on.',
+                                  type=str,
+                                  metavar='REGEX')
+    add_listing_parser_args(parser_walkfiles)
+    parser_walkfiles.set_defaults(list_func=stor.walkfiles)
 
     cp_msg = 'Copy source(s) to a destination path.'
     parser_cp = subparsers.add_parser('cp',  # noqa
@@ -378,17 +394,6 @@ def create_parser():
                            const=stor.rmtree_multiple,
                            default=stor.remove_multiple)
     parser_rm.add_argument('path', type=get_path, metavar='PATH', nargs="+")
-
-    walkfiles_msg = 'List all files under a path that match an optional pattern.'
-    parser_walkfiles = subparsers.add_parser('walkfiles',
-                                             help=walkfiles_msg,
-                                             description=walkfiles_msg)
-    parser_walkfiles.add_argument('-p', '--pattern',
-                                  help='A regex pattern to match file names on.',
-                                  type=str,
-                                  metavar='REGEX')
-    parser_walkfiles.add_argument('path', type=get_path, metavar='PATH')
-    parser_walkfiles.set_defaults(func=stor.walkfiles)
 
     cat_msg = 'Output file contents to stdout.'
     parser_cat = subparsers.add_parser('cat', help=cat_msg, description=cat_msg)
@@ -562,10 +567,10 @@ def _get_file_metadata(path):
 
 def _print_ls_output(path, long_format=False, human_readable=False,
                      sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
-                     reverse=False, url=False):
+                     reverse=False, url=False, list_func=stor.listdir, **kwargs):
     path = Path(path)
     out_lines = []
-    paths = path.listdir()
+    paths = list(list_func(path, **kwargs))
     if utils.is_swift_path(path):
         get_metadata = _get_swift_metadata_factory(settings.get()['swift']['auth_url'])
     elif utils.is_s3_path(path):
