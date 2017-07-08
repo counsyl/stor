@@ -549,7 +549,7 @@ def _print_ls_output(path, long_format=False, human_readable=False,
     elif sort_by_file_size:
         paths = sorted(paths, key=lambda p: metadata[p]['size_bytes'])
     elif sort_by_time:
-        paths = sorted(paths, key=lambda p: metadata[p]['last_modified'])
+        paths = sorted(paths, key=lambda p: metadata[p]['last_modified'] or dt.min)
     else:
         paths = sorted(paths)
     if reverse:
