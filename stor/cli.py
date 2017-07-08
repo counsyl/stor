@@ -417,8 +417,8 @@ def create_parser():
     parser_swift.add_argument(
         'get', choices=['get-tenant', 'get-container', 'get-object', 'get-resource',
                         'get-url'],
-            help=("Which part of swift://tenant/container/object-or-resource to return; "
-                  "get-url returns the https:// URL"))
+        help=("Which part of swift://tenant/container/object-or-resource to return; "
+              "get-url returns the https:// URL"))
     parser_swift.add_argument('path', type=get_path, metavar='PATH')
     parser_swift.set_defaults(func=_swift)
 
