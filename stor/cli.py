@@ -486,8 +486,12 @@ def _get_swift_metadata_factory(auth_url):
             'size_bytes': None,
             'ctype': '',
         }
-        if path.isfile():
+        try:
             info = path.stat()
+            isfile = path.resource and 'directory' not in info.get('Content-Type', '')
+        except exceptions.NotFoundError:
+            isfile = False
+        if isfile:
             metadata['last_modified'] = dt.fromtimestamp(float(info['headers']['x-object-meta-mtime']))
             metadata['size_bytes'] = int(info['Content-Length'])
             metadata['ctype'] = info['Content-Type']
@@ -511,7 +515,7 @@ def _get_file_metadata(path):
     isfile = path.isfile()
     metadata = {
         'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
-        'url': "file://" + str(path.abspath()).replace("\\", "/"),  # TODO
+        'url': "file://" + str(path.abspath()).replace("\\", "/"),  # TODO Windows paths?
         'size_bytes': info.st_size if isfile else None,
         'ctype': mimetypes.guess_type(path)[0] if isfile else None,
     }
