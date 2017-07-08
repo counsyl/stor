@@ -482,9 +482,11 @@ def _swift(path, get):
     raise RuntimeError("Invalid thing to get for a swift path: {}".format(get))
 
 
-def _human_size(size_bytes):
+def _format_size(size_bytes, human_readable=True):
     if size_bytes is None:  # e.g. a directory
         return ""
+    if not human_readable:
+        return str(size_bytes)
     size_kib = size_bytes / 1024.
     if size_kib < 1:
         return "{} B".format(size_bytes)
@@ -582,17 +584,21 @@ def _print_ls_output(path, long_format=False, human_readable=False,
         paths = sorted(paths)
     if reverse:
         paths = paths[::-1]
+    total_bytes = 0
     for p in paths:
         if long_format:
             m = metadata[p]
             mod = m['last_modified'].strftime('%Y-%m-%d %H:%M:%S') if m['last_modified'] else ''
             out_lines.append("{size}\t{mod}\t{ctype}\t{name}".format(
-                size=m['size_bytes'] if not human_readable else _human_size(m['size_bytes']),
+                size=_format_size(m['size_bytes'], human_readable),
                 mod=mod,
                 ctype=m['ctype'] or '',
                 name=str(p) if not url else m['url']))
+            total_bytes += m['size_bytes'] or 0
         else:
             out_lines.append(str(p))
+    if long_format and sys.stdout.isatty():  # mimic ls
+        out_lines = ['Total: {}'.format(_format_size(total_bytes, human_readable))] + out_lines
     sys.stdout.write('\n'.join(out_lines))
     sys.stdout.write('\n')
 
