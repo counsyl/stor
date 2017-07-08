@@ -46,6 +46,7 @@ positional arguments:
     pwd                 Get the present working directory of a service or all
                         current directories.
     clear               Clear current directories of a specified service.
+    swift               Get Swift-specific information.
 ```
 
 You can `ls` local and remote directories

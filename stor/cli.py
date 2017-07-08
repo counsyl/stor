@@ -93,7 +93,7 @@ from stor import settings
 from stor import Path
 from stor import utils
 
-PRINT_CMDS = ('list', 'listdir', 'cat', 'pwd', 'walkfiles')
+PRINT_CMDS = ('list', 'listdir', 'cat', 'pwd', 'walkfiles', 'swift')
 SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -412,6 +412,13 @@ def create_parser():
     parser_clear.add_argument('service', nargs='?', type=str, metavar='SERVICE')
     parser_clear.set_defaults(func=_clear_env)
 
+    swift_msg = 'Get Swift-specific information.'
+    parser_swift = subparsers.add_parser('swift', help=swift_msg, description=swift_msg)
+    parser_swift.add_argument('get', choices=['get-tenant', 'get-container', 'get-object', 'get-resource'],
+                              help="Which part of swift://tenant/container/object-or-resource to return")
+    parser_swift.add_argument('path', type=get_path, metavar='PATH')
+    parser_swift.set_defaults(func=_swift)
+
     return parser
 
 
@@ -456,6 +463,16 @@ def print_results(results):
     else:
         for result in results:
             sys.stdout.write('%s\n' % str(result))
+
+
+def _swift(path, get):
+    if get == 'get-tenant':
+        return str(path.tenant)
+    if get == 'get-container':
+        return str(path.container)
+    if get == 'get-object' or get == 'get-resource':
+        return str(path.resource)
+    raise RuntimeError("Invalid thing to get for a swift path: {}".format(get))
 
 
 def _human_size(size_bytes):
