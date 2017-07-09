@@ -539,7 +539,7 @@ def _get_swift_metadata_factory(auth_url):
 def _get_s3_metadata(path):
     metadata = {
         'last_modified': None,
-        'url': stor.join('s3://', path.container, path.resource),
+        'url': "TODO",  # TODO
         'size_bytes': None,
         'ctype': None,
     }
