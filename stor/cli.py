@@ -267,7 +267,7 @@ def get_path(pth, mode=None):
     return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
-def add_listing_parser_args(subparser):
+def _add_listing_parser_args(subparser):
     subparser.add_argument('-l', '--long-format',
                            help='Show long format listing',
                            action='store_true')
@@ -289,6 +289,12 @@ def add_listing_parser_args(subparser):
                            action='store_true')
     subparser.add_argument('-u', '--url',
                            help='Display URL rather than filename',
+                           action='store_true')
+    subparser.add_argument('-T', '--tabs',
+                           help='Use tabs as separators rather than fixed-width columns',
+                           action='store_true')
+    subparser.add_argument('--relative-time',
+                           help='In long format use relative time',
                            action='store_true')
     subparser.add_argument('path', default='./', nargs='?', type=get_path, metavar='PATH')
     subparser.set_defaults(func=_print_ls_output)
@@ -322,14 +328,14 @@ def create_parser():
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    add_listing_parser_args(parser_list)
+    _add_listing_parser_args(parser_list)
     parser_list.set_defaults(list_func=stor.list)
 
     ls_msg = 'List path as a directory.'
     parser_ls = subparsers.add_parser('ls',  # noqa
                                       help=ls_msg,
                                       description=ls_msg)
-    add_listing_parser_args(parser_ls)
+    _add_listing_parser_args(parser_ls)
     parser_ls.set_defaults(list_func=stor.listdir)
 
     walkfiles_msg = 'List all files under a path that match an optional pattern.'
@@ -340,7 +346,7 @@ def create_parser():
                                   help='A regex pattern to match file names on.',
                                   type=str,
                                   metavar='REGEX')
-    add_listing_parser_args(parser_walkfiles)
+    _add_listing_parser_args(parser_walkfiles)
     parser_walkfiles.set_defaults(list_func=stor.walkfiles)
 
     cp_msg = 'Copy source(s) to a destination path.'
@@ -565,9 +571,39 @@ def _get_file_metadata(path):
     return metadata
 
 
+def _format_time(timestamp, relative_to=None):
+    if timestamp is None:
+        return ''
+    if relative_to is not None:
+        secs = (relative_to - timestamp).total_seconds()
+        mins = secs / 60.
+        if mins < 1:
+            return "{:.0f} s".format(secs)
+        hours = mins / 60.
+        if hours < 1:
+            return "{:.2g} mins".format(mins)
+        days = hours / 24.
+        if days < 1:
+            return "{:.2g} hrs".format(hours)
+        weeks = days / 7.
+        if weeks < 1:
+            return "{:.2g} d".format(days)
+        months = weeks / 4.
+        if months < 1:
+            return "{:.2g} w".format(weeks)
+        years = months / 12.
+        if years < 1:
+            return "{:.2g} mo".format(months)
+        return "{:.2g} yrs".format(years)
+    return timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+
 def _print_ls_output(path, long_format=False, human_readable=False,
                      sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
-                     reverse=False, url=False, list_func=stor.listdir, **kwargs):
+                     reverse=False, url=False, tabs=False, relative_time=False,
+                     list_func=stor.listdir, **kwargs):
+    # TODO: --tree
+    # TODO: --depth
     path = Path(path)
     out_lines = []
     paths = list(list_func(path, **kwargs))
@@ -590,18 +626,29 @@ def _print_ls_output(path, long_format=False, human_readable=False,
     if reverse:
         paths = paths[::-1]
     total_bytes = 0
+    now = dt.now()
     for p in paths:
         if long_format:
             m = metadata[p]
-            mod = m['last_modified'].strftime('%Y-%m-%d %H:%M:%S') if m['last_modified'] else ''
-            out_lines.append("{size}\t{mod}\t{ctype}\t{name}".format(
-                size=_format_size(m['size_bytes'], human_readable),
-                mod=mod,
-                ctype=m['ctype'] or '',
-                name=str(p) if not url else m['url']))
+            mod = _format_time(m['last_modified'], now if relative_time else None)
+            out_lines.append({'size': _format_size(m['size_bytes'], human_readable),
+                              'mod': mod,
+                              'ctype': m['ctype'] or '',
+                              'name': str(p) if not url else m['url']})
             total_bytes += m['size_bytes'] or 0
         else:
             out_lines.append(str(p))
+    if long_format:
+        if tabs:
+            fmt = "{size}\t{mod}\t{ctype}\t{name}"
+        else:
+            max_lens = {'size': 0, 'mod': 0, 'ctype': 0}
+            for line in out_lines:
+                for k in max_lens:
+                    max_lens[k] = max(max_lens[k], len(line[k]))
+            fmt = "{{size: >{}}}  {{mod: >{}}}  {{ctype: >{}}}  {{name}}".format(
+                max_lens['size'], max_lens['mod'], max_lens['ctype'])
+        out_lines = [fmt.format(**line) for line in out_lines]
     if long_format and sys.stdout.isatty():  # mimic ls
         out_lines = ['Total: {}'.format(_format_size(total_bytes, human_readable))] + out_lines
     sys.stdout.write('\n'.join(out_lines))
