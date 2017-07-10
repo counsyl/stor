@@ -442,7 +442,7 @@ class SwiftPath(OBSPath):
         """True if this path is a segment container"""
         container = self.container
         if not self.resource and container:
-            return (container.startswith('.segments_') or
+            return (container.startswith('.segments') or
                     container.endswith('_segments') or
                     container.endswith('+segments'))
         else:

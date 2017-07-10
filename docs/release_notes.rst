@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v1.4.6
+------
+
+* Tweak segment container hiding regex to be ``.segments`` instead of
+  ``.segments_`` (more flexible in general).
+
+
 v1.4.5
 ------
 
