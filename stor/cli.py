@@ -544,6 +544,7 @@ def _get_swift_metadata_factory(auth_url):
             raw_metadata['hash'] = info.get('ETag', None)
         else:
             raw_metadata['ctype'] = 'DIR'
+        raw_metadata['isfile'] = isfile
         display_metadata = {
             'name': raw_metadata['url'] if url else raw_metadata['name'],
             'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
@@ -563,6 +564,7 @@ def _get_s3_metadata(path, use_bytes, url, relative_to):
         'ctype': 'DIR',
         'storage_class': None,
         'hash': None,
+        'isfile': False,
     }
     try:
         info = path.stat()
@@ -571,6 +573,7 @@ def _get_s3_metadata(path, use_bytes, url, relative_to):
         raw_metadata['ctype'] = info['ContentType']
         raw_metadata['storage_class'] = info['StorageClass']
         raw_metadata['hash'] = info['ETag']
+        raw_metadata['isfile'] = True
     except exceptions.NotFoundError:
         pass
     display_metadata = {
@@ -593,6 +596,7 @@ def _get_file_metadata(path, use_bytes, url, relative_to):
         'size_bytes': info.st_size if isfile else None,
         'ctype': mimetypes.guess_type(path)[0] if isfile else 'DIR',
         'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
+        'isfile': isfile,
     }
     display_metadata = {
         'name': raw_metadata['url'] if url else raw_metadata['name'],
@@ -663,7 +667,8 @@ def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
                      "{{last_modified: >{max_lens[last_modified]}}}  "
                      "{{ctype: >{max_lens[ctype]}}}  "
                      "{{name}}")
-    metadata = dict((p, get_metadata(p, use_bytes, url, dt.now() if relative_time else None)) for p in paths)
+    metadata = dict((p, get_metadata(p, use_bytes, url, dt.now()
+                                     if relative_time else None)) for p in paths)
     if sort_by_directory_order:
         # no particular ordering
         pass
@@ -676,14 +681,12 @@ def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
     if reverse:
         paths = paths[::-1]
     total_bytes = 0
-    now = dt.now()
     for p in paths:
-        if simple_list:
-            out_lines.append(str(p))
-        else:
-            out_lines.append(metadata[p]['display'])
-            total_bytes += metadata[p]['raw']['size_bytes'] or 0
-    if not simple_list:
+        out_lines.append(metadata[p]['display'])
+        total_bytes += metadata[p]['raw']['size_bytes'] or 0
+    if simple_list:
+        out_lines = ["{}".format(line['name']) for line in out_lines]
+    else:
         if tabs:
             fmt = tabs_fmt
         else:
