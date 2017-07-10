@@ -598,7 +598,7 @@ def _format_time(timestamp, relative_to=None):
     return timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def _print_ls_output(path, long_format=False, human_readable=False,
+def _print_ls_output(path, long_format=False, human_readable=False,  # noqa: C901
                      sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
                      reverse=False, url=False, tabs=False, relative_time=False,
                      list_func=stor.listdir, **kwargs):
@@ -649,8 +649,8 @@ def _print_ls_output(path, long_format=False, human_readable=False,
             fmt = "{{size: >{}}}  {{mod: >{}}}  {{ctype: >{}}}  {{name}}".format(
                 max_lens['size'], max_lens['mod'], max_lens['ctype'])
         out_lines = [fmt.format(**line) for line in out_lines]
-    if long_format and sys.stdout.isatty():  # mimic ls
-        out_lines = ['Total: {}'.format(_format_size(total_bytes, human_readable))] + out_lines
+        if sys.stdout.isatty():  # mimic ls
+            out_lines = ['Total: {}'.format(_format_size(total_bytes, human_readable))] + out_lines
     sys.stdout.write('\n'.join(out_lines))
     sys.stdout.write('\n')
 
