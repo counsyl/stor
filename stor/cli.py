@@ -82,6 +82,7 @@ import signal
 import sys
 import tempfile
 from datetime import datetime as dt
+from collections import defaultdict
 import mimetypes
 
 import six
@@ -278,7 +279,7 @@ def _add_listing_parser_args(subparser):
                            help='Sort files by size, smallest first',
                            action='store_true')
     subparser.add_argument('-t', '--sort-by-time',
-                           help='Sort files by modification time, newest first',
+                           help='Sort files by modification time, oldest first',
                            action='store_true')
     subparser.add_argument('-U', '--sort-by-directory-order',
                            help=("Don't apply a particular sorting. With no sorting "
@@ -521,12 +522,14 @@ def _swift_url(swift_prefix, path):
 def _get_swift_metadata_factory(auth_url):
     swift_prefix = auth_url.split('auth')[0]
 
-    def get_metadata(path):
-        metadata = {
-            'last_modified': None,
+    def get_metadata(path, use_bytes, url, relative_to):
+        raw_metadata = {
+            'name': str(path),
             'url': _swift_url(swift_prefix, path),
             'size_bytes': None,
             'ctype': None,
+            'last_modified': None,
+            'hash': None,
         }
         try:
             info = path.stat()
@@ -534,43 +537,67 @@ def _get_swift_metadata_factory(auth_url):
         except exceptions.NotFoundError:
             isfile = False
         if isfile:
-            metadata['last_modified'] = dt.fromtimestamp(float(
+            raw_metadata['last_modified'] = dt.fromtimestamp(float(
                 info['headers']['x-object-meta-mtime']))
-            metadata['size_bytes'] = int(info['Content-Length'])
-            metadata['ctype'] = info['Content-Type']
+            raw_metadata['size_bytes'] = int(info['Content-Length'])
+            raw_metadata['ctype'] = info['Content-Type']
+            raw_metadata['hash'] = info.get('ETag', None)
         else:
-            metadata['ctype'] = 'DIR'
-        return metadata
+            raw_metadata['ctype'] = 'DIR'
+        display_metadata = {
+            'name': raw_metadata['url'] if url else raw_metadata['name'],
+            'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
+            'ctype': raw_metadata['ctype'] or '',
+            'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
+            'hash': raw_metadata['hash'] or '',
+        }
+        return {'raw': raw_metadata, 'display': display_metadata}
     return get_metadata
 
 
-def _get_s3_metadata(path):
-    metadata = {
+def _get_s3_metadata(path, use_bytes, url, relative_to):
+    raw_metadata = {
         'last_modified': None,
         'url': "TODO",  # TODO
         'size_bytes': None,
         'ctype': 'DIR',
+        'storage_class': None,
     }
     try:
         info = path.stat()
-        metadata['last_modified'] = info['LastModified']
-        metadata['size_bytes'] = info['ContentLength']
-        metadata['ctype'] = info['ContentType']
+        raw_metadata['last_modified'] = info['LastModified']
+        raw_metadata['size_bytes'] = info['ContentLength']
+        raw_metadata['ctype'] = info['ContentType']
+        raw_metadata['storage_class'] = info['StorageClass']
     except exceptions.NotFoundError:
         pass
-    return metadata
+    display_metadata = {
+        'name': raw_metadata['url'] if url else raw_metadata['name'],
+        'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
+        'ctype': raw_metadata['ctype'] or '',
+        'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
+        'storage_class': raw_metadata['storage_class']
+    }
+    return {'raw': raw_metadata, 'display': display_metadata}
 
 
-def _get_file_metadata(path):
+def _get_file_metadata(path, use_bytes, url, relative_to):
     info = os.stat(path)
     isfile = path.isfile()
-    metadata = {
-        'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
-        'url': "file://" + str(path.abspath()).replace("\\", "/"),  # TODO Windows paths?
+    raw_metadata = {
+        'name': str(path),
+        'url': "file://" + str(path.abspath()).replace("\\", "/"),
         'size_bytes': info.st_size if isfile else None,
         'ctype': mimetypes.guess_type(path)[0] if isfile else 'DIR',
+        'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
     }
-    return metadata
+    display_metadata = {
+        'name': raw_metadata['url'] if url else raw_metadata['name'],
+        'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
+        'ctype': raw_metadata['ctype'] or '',
+        'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
+    }
+    return {'raw': raw_metadata, 'display': display_metadata}
 
 
 def _format_time(timestamp, relative_to=None):
@@ -611,18 +638,35 @@ def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
     paths = list(list_func(path, **kwargs))
     if utils.is_swift_path(path):
         get_metadata = _get_swift_metadata_factory(settings.get()['swift']['auth_url'])
+        tabs_fmt = "{size}\t{last_modified}\t{ctype}\t{hash}\t{name}"
+        fixed_fmt = ("{{size: >{max_lens[size]}}}  "
+                     "{{last_modified: >{max_lens[last_modified]}}}  "
+                     "{{ctype: >{max_lens[ctype]}}}  "
+                     "{{hash: >{max_lens[hash]}}}  "
+                     "{{name}}")
     elif utils.is_s3_path(path):
         get_metadata = _get_s3_metadata
+        tabs_fmt = "{size}\t{last_modified}\t{ctype}\t{storage_class}\t{name}"
+        fixed_fmt = ("{{size: >{max_lens[size]}}}  "
+                     "{{last_modified: >{max_lens[last_modified]}}}  "
+                     "{{ctype: >{max_lens[ctype]}}}  "
+                     "{{storage_class: >{max_lens[storage_class]}}}  "
+                     "{{name}}")
     else:
         get_metadata = _get_file_metadata
-    metadata = dict((p, get_metadata(p)) for p in paths)
+        tabs_fmt = "{size}\t{last_modified}\t{ctype}\t{name}"
+        fixed_fmt = ("{{size: >{max_lens[size]}}}  "
+                     "{{last_modified: >{max_lens[last_modified]}}}  "
+                     "{{ctype: >{max_lens[ctype]}}}  "
+                     "{{name}}")
+    metadata = dict((p, get_metadata(p, use_bytes, url, dt.now() if relative_time else None)) for p in paths)
     if sort_by_directory_order:
         # no particular ordering
         pass
     elif sort_by_file_size:
-        paths = sorted(paths, key=lambda p: metadata[p]['size_bytes'])
+        paths = sorted(paths, key=lambda p: metadata[p]['raw']['size_bytes'])
     elif sort_by_time:
-        paths = sorted(paths, key=lambda p: metadata[p]['last_modified'] or dt.min)
+        paths = sorted(paths, key=lambda p: metadata[p]['raw']['last_modified'] or dt.min)
     else:
         paths = sorted(paths)
     if reverse:
@@ -633,23 +677,17 @@ def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
         if simple_list:
             out_lines.append(str(p))
         else:
-            m = metadata[p]
-            mod = _format_time(m['last_modified'], now if relative_time else None)
-            out_lines.append({'size': _format_size(m['size_bytes'], not use_bytes),
-                              'mod': mod,
-                              'ctype': m['ctype'] or '',
-                              'name': str(p) if not url else m['url']})
-            total_bytes += m['size_bytes'] or 0
+            out_lines.append(metadata[p]['display'])
+            total_bytes += metadata[p]['raw']['size_bytes'] or 0
     if not simple_list:
         if tabs:
-            fmt = "{size}\t{mod}\t{ctype}\t{name}"
+            fmt = tabs_fmt
         else:
-            max_lens = {'size': 0, 'mod': 0, 'ctype': 0}
+            max_lens = defaultdict(int)
             for line in out_lines:
-                for k in max_lens:
+                for k in line:
                     max_lens[k] = max(max_lens[k], len(line[k]))
-            fmt = "{{size: >{}}}  {{mod: >{}}}  {{ctype: >{}}}  {{name}}".format(
-                max_lens['size'], max_lens['mod'], max_lens['ctype'])
+            fmt = fixed_fmt.format(max_lens=max_lens)
         out_lines = [fmt.format(**line) for line in out_lines]
         if sys.stdout.isatty():  # mimic ls
             out_lines = ['Total: {}'.format(_format_size(total_bytes, not use_bytes))] + out_lines
