@@ -268,11 +268,11 @@ def get_path(pth, mode=None):
 
 
 def _add_listing_parser_args(subparser):
-    subparser.add_argument('-l', '--long-format',
-                           help='Show long format listing',
+    subparser.add_argument('-l', '--simple-list',
+                           help='Show short, simple list format rather than the long format',
                            action='store_true')
-    subparser.add_argument('-H', '--human-readable',
-                           help='Use human-readable file sizes with long format',
+    subparser.add_argument('-b', '--use-bytes',
+                           help='In long format use bytes rather than human readable file sizes',
                            action='store_true')
     subparser.add_argument('-S', '--sort-by-file-size',
                            help='Sort files by size, smallest first',
@@ -598,7 +598,7 @@ def _format_time(timestamp, relative_to=None):
     return timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
 
-def _print_ls_output(path, long_format=False, human_readable=False,  # noqa: C901
+def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
                      sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
                      reverse=False, url=False, tabs=False, relative_time=False,
                      list_func=stor.listdir, **kwargs):
@@ -628,17 +628,17 @@ def _print_ls_output(path, long_format=False, human_readable=False,  # noqa: C90
     total_bytes = 0
     now = dt.now()
     for p in paths:
-        if long_format:
+        if simple_list:
+            out_lines.append(str(p))
+        else:
             m = metadata[p]
             mod = _format_time(m['last_modified'], now if relative_time else None)
-            out_lines.append({'size': _format_size(m['size_bytes'], human_readable),
+            out_lines.append({'size': _format_size(m['size_bytes'], not use_bytes),
                               'mod': mod,
                               'ctype': m['ctype'] or '',
                               'name': str(p) if not url else m['url']})
             total_bytes += m['size_bytes'] or 0
-        else:
-            out_lines.append(str(p))
-    if long_format:
+    if not simple_list:
         if tabs:
             fmt = "{size}\t{mod}\t{ctype}\t{name}"
         else:
@@ -650,7 +650,7 @@ def _print_ls_output(path, long_format=False, human_readable=False,  # noqa: C90
                 max_lens['size'], max_lens['mod'], max_lens['ctype'])
         out_lines = [fmt.format(**line) for line in out_lines]
         if sys.stdout.isatty():  # mimic ls
-            out_lines = ['Total: {}'.format(_format_size(total_bytes, human_readable))] + out_lines
+            out_lines = ['Total: {}'.format(_format_size(total_bytes, not use_bytes))] + out_lines
     sys.stdout.write('\n'.join(out_lines))
     sys.stdout.write('\n')
 
