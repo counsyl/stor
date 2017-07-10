@@ -538,6 +538,8 @@ def _get_swift_metadata_factory(auth_url):
                 info['headers']['x-object-meta-mtime']))
             metadata['size_bytes'] = int(info['Content-Length'])
             metadata['ctype'] = info['Content-Type']
+        else:
+            metadata['ctype'] = 'DIR'
         return metadata
     return get_metadata
 
@@ -547,7 +549,7 @@ def _get_s3_metadata(path):
         'last_modified': None,
         'url': "TODO",  # TODO
         'size_bytes': None,
-        'ctype': None,
+        'ctype': 'DIR',
     }
     try:
         info = path.stat()
@@ -566,7 +568,7 @@ def _get_file_metadata(path):
         'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
         'url': "file://" + str(path.abspath()).replace("\\", "/"),  # TODO Windows paths?
         'size_bytes': info.st_size if isfile else None,
-        'ctype': mimetypes.guess_type(path)[0] if isfile else None,
+        'ctype': mimetypes.guess_type(path)[0] if isfile else 'DIR',
     }
     return metadata
 
