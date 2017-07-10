@@ -12,6 +12,7 @@ Table of Contents
    s3
    posix
    windows
+   exceptions
    testing
    settings
    contributing

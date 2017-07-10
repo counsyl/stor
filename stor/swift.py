@@ -253,8 +253,12 @@ def _swiftclient_error_to_descriptive_exception(exc):
     if exc_headers and exc_headers.get('X-Trans-Id'):
         exc_str += ' X-Trans-Id: %s' % exc_headers['X-Trans-Id']
     if http_status == 403:
-        logger.error('unauthorized error in swift operation - %s', exc_str)
-        return UnauthorizedError(exc_str, exc)
+        # pass through of the InvalidObjectState error from S3 (but we only get exception message)
+        if "storage class" in exc_str:
+            raise stor_exceptions.ObjectInColdStorageError(exc_str, exc)
+        else:
+            logger.error('unauthorized error in swift operation - %s', exc_str)
+            return UnauthorizedError(exc_str, exc)
     elif http_status == 404:
         return NotFoundError(exc_str, exc)
     elif http_status == 409:
