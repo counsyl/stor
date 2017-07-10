@@ -562,6 +562,7 @@ def _get_s3_metadata(path, use_bytes, url, relative_to):
         'size_bytes': None,
         'ctype': 'DIR',
         'storage_class': None,
+        'hash': None,
     }
     try:
         info = path.stat()
@@ -569,6 +570,7 @@ def _get_s3_metadata(path, use_bytes, url, relative_to):
         raw_metadata['size_bytes'] = info['ContentLength']
         raw_metadata['ctype'] = info['ContentType']
         raw_metadata['storage_class'] = info['StorageClass']
+        raw_metadata['hash'] = info['ETag']
     except exceptions.NotFoundError:
         pass
     display_metadata = {
@@ -576,7 +578,8 @@ def _get_s3_metadata(path, use_bytes, url, relative_to):
         'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
         'ctype': raw_metadata['ctype'] or '',
         'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
-        'storage_class': raw_metadata['storage_class']
+        'storage_class': raw_metadata['storage_class'],
+        'hash': raw_metadata['hash'] or '',
     }
     return {'raw': raw_metadata, 'display': display_metadata}
 
@@ -651,6 +654,7 @@ def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
                      "{{last_modified: >{max_lens[last_modified]}}}  "
                      "{{ctype: >{max_lens[ctype]}}}  "
                      "{{storage_class: >{max_lens[storage_class]}}}  "
+                     "{{hash: >{max_lens[hash]}}}  "
                      "{{name}}")
     else:
         get_metadata = _get_file_metadata
