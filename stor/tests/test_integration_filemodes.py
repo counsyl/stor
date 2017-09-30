@@ -1,4 +1,6 @@
 from nose.tools import raises
+from unittest import skipIf
+import six
 import stor
 import os
 
@@ -27,11 +29,13 @@ class BaseTest(object):
         fp = self.open(self.test_filename, mode='wb')
         fp.write(byte_string)
 
+    @skipIf(not six.PY3, "Only tested on py3")
     @raises(TypeError)
     def test_write_string_to_binary(self):
         fp = self.open(self.test_filename, mode='wb')
         fp.write(string_string)
 
+    @skipIf(not six.PY3, "Only tested on py3")
     @raises(TypeError)
     def test_write_bytes_to_text(self):
         fp = self.open(self.test_filename, mode='w')
