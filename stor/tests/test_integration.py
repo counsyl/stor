@@ -137,7 +137,7 @@ class BaseIntegrationTest(object):
             remote_gzip = stor.join(self.test_dir,
                                     stor.basename(local_gzip))
             stor.copy(local_gzip, remote_gzip)
-            with stor.open(remote_gzip) as fp:
+            with stor.open(remote_gzip, mode='rb') as fp:
                 with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
                     with gzip.open(local_gzip) as local_gzip_fp:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
@@ -148,7 +148,7 @@ class BaseIntegrationTest(object):
             copy_file = self.test_dir / 'copy_file.txt'
 
             fp = stor.open(non_with_file, mode='wb')
-            fp.write('blah')
+            fp.write('blah'.encode())  # File opened in wb mode requires: bytes on py3k, str on py27
             del fp
 
             self.assertTrue(non_with_file.exists())
@@ -156,8 +156,8 @@ class BaseIntegrationTest(object):
             self.assertFalse(non_with_file.isdir())
 
             with test_file.open(mode='wb') as obj:
-                obj.write('this is a test\n')
-                obj.write('this is another line.\n')
+                obj.write('this is a test\n'.encode())
+                obj.write('this is another line.\n'.encode())
 
             self.assertTrue(test_file.exists())
             self.assertTrue(test_file.isfile())
@@ -173,5 +173,5 @@ class BaseIntegrationTest(object):
 
             test_contents = test_file.open(mode='rb').read()
             copy_contents = copy_file.open(mode='rb').read()
-            self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
+            self.assertEquals(test_contents, 'this is a test\nthis is another line.\n'.encode())
             self.assertEquals(test_contents, copy_contents)
