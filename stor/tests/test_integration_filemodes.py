@@ -77,5 +77,5 @@ class StorPosixTest(BaseTest):
 
 
 class StorSwiftTest(StorPosixTest):
-    __test__ = True
     basepath = os.environ.get("TEST_SWIFTPATH")
+    __test__ = True if basepath is not None else False
