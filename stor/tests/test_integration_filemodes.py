@@ -31,13 +31,13 @@ class BaseTest(object):
 
     @skipIf(not six.PY3, "Only tested on py3")
     @raises(TypeError)
-    def test_write_string_to_binary(self):
+    def test_write_string_to_binary(self):   # pragma: no cover
         fp = self.open(self.test_filename, mode='wb')
         fp.write(string_string)
 
     @skipIf(not six.PY3, "Only tested on py3")
     @raises(TypeError)
-    def test_write_bytes_to_text(self):
+    def test_write_bytes_to_text(self):   # pragma: no cover
         fp = self.open(self.test_filename, mode='w')
         fp.write(byte_string)
 
