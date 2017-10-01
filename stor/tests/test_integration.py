@@ -148,7 +148,8 @@ class BaseIntegrationTest(object):
             copy_file = self.test_dir / 'copy_file.txt'
 
             fp = stor.open(non_with_file, mode='wb')
-            fp.write('blah'.encode())  # File opened in wb mode requires: bytes on py3k, str on py27
+            # File opened in wb mode requires: bytes on py3k, str on py27
+            fp.write('blah'.encode())
             del fp
 
             self.assertTrue(non_with_file.exists())
