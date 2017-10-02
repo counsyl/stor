@@ -293,7 +293,7 @@ class OBSFile(object):
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
         if self.mode in ('r', 'rb'):
-            try:
+            try:  # Catch possible bytes / str issues on py3k
                 return self.stream_cls(self._path.read_object())
             except TypeError:
                 return self.stream_cls(self._path.read_object().decode("utf-8"))
