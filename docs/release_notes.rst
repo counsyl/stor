@@ -1,5 +1,10 @@
 Release Notes
 =============
+Latest
+------
+* Auto-create parent directories on the filesystem for `stor.copy`, `stor.open`, and `stor.copytree`.
+* Allow `stor.copytree` to work if it targets an empty target directory (removes the other directory first)
+
 
 v1.4.5
 ------
