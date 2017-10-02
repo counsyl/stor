@@ -37,7 +37,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                 'num_retries': 5
             }})
 
-        self.test_container = Path('swift://%s/%s' % ('AUTH_swft_test', uuid.uuid4()))
+        self.test_container = Path('swift://%s/%s' % ('AUTH_%s' % os.environ['SWIFT_TEST_USERNAME'], uuid.uuid4()))
         if self.test_container.exists():
             raise ValueError('test container %s already exists.' % self.test_container)
 
