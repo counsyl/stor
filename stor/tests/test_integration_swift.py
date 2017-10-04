@@ -309,7 +309,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
 
     def test_push_metadata(self):
         if self.test_container.tenant != 'AUTH_swft_test':
-            raise unittest.Skip('test only works with admin rights')
+            raise unittest.SkipTest('test only works with admin rights')
         obj = self.test_container / 'object.txt'
         with obj.open('w') as fp:
             fp.write('a\n')
