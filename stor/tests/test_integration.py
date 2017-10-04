@@ -12,7 +12,7 @@ from stor import Path
 from stor.tests.shared import assert_same_data
 
 BYTE_STRING = b"hey"
-STRING_STRING = b"hey"
+STRING_STRING = "hey"
 
 class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
@@ -205,21 +205,26 @@ class BaseIntegrationTest(object):
                 fp.write(BYTE_STRING)
 
         def test_write_string_to_text(self):
-            fp = self.open(self.test_filename, mode='w')
-            fp.write(STRING_STRING)
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(STRING_STRING)
 
         def test_read_bytes_from_binary(self):
-            fp = generate_file(self.open, self.test_filename, mode='b')
-            fp.close()
-            fp = self.open(self.test_filename, mode='rb')
-            result = fp.read()
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(BYTE_STRING)
+
+            with stor.open(test_file, mode='rb') as fp:
+                result = fp.read()
             print(type(result), result)
             assert result == BYTE_STRING, "Strings don't match!"
 
         def test_read_string_from_text(self):
-            fp = generate_file(self.open, self.test_filename, mode='t')
-            fp.close()
-            fp = self.open(self.test_filename, mode='r')
-            result = fp.read()
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(STRING_STRING)
+
+            with stor.open(test_file, mode='r') as fp:
+                result = fp.read()
             print(type(result), result)
             assert result == STRING_STRING, "Strings don't match!"
