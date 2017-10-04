@@ -361,6 +361,7 @@ def copy(source, dest, swift_retry_options=None):
         raise ValueError('OBS destination must be file with extension or directory with slash')
 
     if is_filesystem_path(dest):
+        dest.parent.makedirs_p()
         if is_obs_path(source):
             dest_file = dest if not dest.isdir() else dest / source.name
             source.download_object(dest_file, **swift_retry_options)
