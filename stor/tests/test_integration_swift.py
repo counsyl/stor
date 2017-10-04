@@ -39,6 +39,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         # fall back on to swiftstack auth for tenant
         tenant = os.environ.get('SWIFT_TEST_TENANT', 'AUTH_%s' % os.environ['SWIFT_TEST_USERNAME'])
 
+        tenant = 'AUTH_%s' % os.environ.get('SWIFT_TEST_USERNAME')
         self.test_container = Path('swift://%s/%s' % (tenant, uuid.uuid4()))
         if self.test_container.exists():
             raise ValueError('test container %s already exists.' % self.test_container)
@@ -58,7 +59,11 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def test_cached_auth_and_auth_invalidation(self):
         from swiftclient.client import get_auth_keystone as real_get_keystone
         swift._clear_cached_auth_credentials()
+<<<<<<< HEAD
         tenant = 'AUTH_%s' % os.environ.get('SWIFT_TEST_USERNAME')
+=======
+        tenant = self.test_container.tenant
+>>>>>>> jtratner/filemodes
         with mock.patch('swiftclient.client.get_auth_keystone', autospec=True) as mock_get_ks:
             mock_get_ks.side_effect = real_get_keystone
             s = Path(self.test_container).stat()

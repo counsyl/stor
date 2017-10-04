@@ -3,12 +3,16 @@ import os
 import unittest
 
 import six
+from nose.tools import raises
+from unittest import skipIf
 
 import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.tests.shared import assert_same_data
 
+BYTE_STRING = b"hey"
+STRING_STRING = b"hey"
 
 class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
@@ -46,12 +50,6 @@ class BaseIntegrationTest(object):
                 contents = test_obj.read()
                 expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
                 self.assertEquals(contents, expected)
-
-        def _skip_if_filesystem_python3(self, dirname, explanation='needs bytes/str fix'):
-            if six.PY2:
-                return
-            if stor.is_filesystem_path(dirname):
-                raise unittest.SkipTest('Skipping filesystem test on Python 3: %s' % explanation)
 
         def test_copy_to_from_dir(self):
             num_test_objs = 5
@@ -142,7 +140,6 @@ class BaseIntegrationTest(object):
             ]))
 
         def test_gzip_on_remote(self):
-            self._skip_if_filesystem_python3(self.test_dir)
             local_gzip = os.path.join(os.path.dirname(__file__),
                                       'file_data/s_3_2126.bcl.gz')
             remote_gzip = stor.join(self.test_dir,
@@ -154,7 +151,6 @@ class BaseIntegrationTest(object):
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
 
         def test_file_read_write(self):
-            self._skip_if_filesystem_python3(self.test_dir)
             non_with_file = self.test_dir / 'nonwithfile.txt'
             test_file = self.test_dir / 'test_file.txt'
             copy_file = self.test_dir / 'copy_file.txt'
@@ -188,3 +184,42 @@ class BaseIntegrationTest(object):
             copy_contents = copy_file.open(mode='rb').read()
             self.assertEquals(test_contents, 'this is a test\nthis is another line.\n'.encode())
             self.assertEquals(test_contents, copy_contents)
+
+        def test_write_bytes_to_binary(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(BYTE_STRING)
+
+        @skipIf(not six.PY3, "Only tested on py3")
+        @raises(TypeError)
+        def test_write_string_to_binary(self):   # pragma: no cover
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(STRING_STRING)
+
+        @skipIf(not six.PY3, "Only tested on py3")
+        @raises(TypeError)
+        def test_write_bytes_to_text(self):   # pragma: no cover
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(BYTE_STRING)
+
+        def test_write_string_to_text(self):
+            fp = self.open(self.test_filename, mode='w')
+            fp.write(STRING_STRING)
+
+        def test_read_bytes_from_binary(self):
+            fp = generate_file(self.open, self.test_filename, mode='b')
+            fp.close()
+            fp = self.open(self.test_filename, mode='rb')
+            result = fp.read()
+            print(type(result), result)
+            assert result == BYTE_STRING, "Strings don't match!"
+
+        def test_read_string_from_text(self):
+            fp = generate_file(self.open, self.test_filename, mode='t')
+            fp.close()
+            fp = self.open(self.test_filename, mode='r')
+            result = fp.read()
+            print(type(result), result)
+            assert result == STRING_STRING, "Strings don't match!"
