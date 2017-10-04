@@ -14,6 +14,7 @@ from stor.tests.shared import assert_same_data
 BYTE_STRING = b"hey"
 STRING_STRING = "hey"
 
+
 class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
     own as part of the base test class.
