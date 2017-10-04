@@ -359,8 +359,11 @@ class FileSystemPath(Path):
         Opens a path and retains interface compatibility with
         `SwiftPath` by popping the unused ``swift_upload_args`` keyword
         argument.
+
+        Creates parent directory if it does not exist.
         """
         kwargs.pop('swift_upload_kwargs', None)
+        self.parent.makedirs_p()
         return builtins.open(self, *args, **kwargs)
 
     def __enter__(self):
@@ -441,6 +444,9 @@ class FileSystemPath(Path):
     def makedirs_p(self, mode=0o777):
         """ Like :meth:`makedirs`, but does not raise an exception if the
         directory already exists. """
+        if not self:
+            # no point in trying to make an empty relative path :)
+            return
         try:
             self.makedirs(mode)
         except OSError:

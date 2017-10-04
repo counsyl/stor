@@ -2,6 +2,8 @@ import gzip
 import os
 import unittest
 
+import six
+
 import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
@@ -29,6 +31,7 @@ class BaseIntegrationTest(object):
             dependent on the object name and should be taken into consideration
             when testing.
             """
+            Path(directory).makedirs_p()
             with Path(directory):
                 for name in self.get_dataset_obj_names(num_objects):
                     with open(name, 'w') as f:
@@ -43,6 +46,12 @@ class BaseIntegrationTest(object):
                 contents = test_obj.read()
                 expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
                 self.assertEquals(contents, expected)
+
+        def _skip_if_filesystem_python3(self, dirname, explanation='needs bytes/str fix'):
+            if six.PY2:
+                return
+            if stor.is_filesystem_path(dirname):
+                raise unittest.SkipTest('Skipping filesystem test on Python 3: %s' % explanation)
 
         def test_copy_to_from_dir(self):
             num_test_objs = 5
@@ -113,6 +122,7 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'b/c.sh'),
                 stor.join(self.test_dir, 'b/d'),
                 stor.join(self.test_dir, 'b/abbbc'),
+                stor.join(self.test_dir, 'empty'),
             ]))
             prefix_files = list(self.test_dir.walkfiles('*.sh'))
             self.assertEquals(set(prefix_files), set([
@@ -132,6 +142,7 @@ class BaseIntegrationTest(object):
             ]))
 
         def test_gzip_on_remote(self):
+            self._skip_if_filesystem_python3(self.test_dir)
             local_gzip = os.path.join(os.path.dirname(__file__),
                                       'file_data/s_3_2126.bcl.gz')
             remote_gzip = stor.join(self.test_dir,
@@ -143,6 +154,7 @@ class BaseIntegrationTest(object):
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
 
         def test_file_read_write(self):
+            self._skip_if_filesystem_python3(self.test_dir)
             non_with_file = self.test_dir / 'nonwithfile.txt'
             test_file = self.test_dir / 'test_file.txt'
             copy_file = self.test_dir / 'copy_file.txt'
