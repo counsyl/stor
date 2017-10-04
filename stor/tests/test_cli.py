@@ -16,6 +16,11 @@ from stor import test
 
 @mock.patch('sys.stdout', new=six.StringIO())
 class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
+    def setUp(self):
+        patcher = mock.patch.object(sys, 'stdout', six.StringIO())
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
