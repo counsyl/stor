@@ -17,6 +17,8 @@ def generate_file(opener, test_filename, mode='b'):
         fp = opener(test_filename, 'w')
         fp.write(string_string)
 
+    return fp
+
 
 class BaseTest(object):
     __test__ = False
@@ -46,14 +48,16 @@ class BaseTest(object):
         fp.write(string_string)
 
     def test_read_bytes_from_binary(self):
-        generate_file(self.open, self.test_filename, mode='b')
+        fp = generate_file(self.open, self.test_filename, mode='b')
+        fp.close()
         fp = self.open(self.test_filename, mode='rb')
         result = fp.read()
         print(type(result), result)
         assert result == byte_string, "Strings don't match!"
 
     def test_read_string_from_text(self):
-        generate_file(self.open, self.test_filename, mode='t')
+        fp = generate_file(self.open, self.test_filename, mode='t')
+        fp.close()
         fp = self.open(self.test_filename, mode='r')
         result = fp.read()
         print(type(result), result)
