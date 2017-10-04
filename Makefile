@@ -83,11 +83,11 @@ unit-test: venv
 
 .PHONY: test
 test: venv docs unit-test
-ifndef(SWIFT_TEST_USERNAME)
-	echo "Please set SWIFT_TEST_USERNAME and SWIFT_TEST_PASSWORD to run swift integration tests"
+ifndef SWIFT_TEST_USERNAME
+	echo "Please set SWIFT_TEST_USERNAME and SWIFT_TEST_PASSWORD to run swift integration tests" 1>&2
 endif
-ifndef(AWS_TEST_ACCESS_KEY_ID)
-	echo "Please set AWS_TEST_ACCESS_KEY_ID and AWS_TEST_SECRET_ACCESS_KEY to run s3 integration tests"
+ifndef AWS_TEST_ACCESS_KEY_ID
+	echo "Please set AWS_TEST_ACCESS_KEY_ID and AWS_TEST_SECRET_ACCESS_KEY to run s3 integration tests" 1>&2
 endif
 
 # setting this up so that we can use virtualenv, coverage, etc
