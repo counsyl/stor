@@ -10,7 +10,6 @@ from stor import Path
 from stor.tests.shared import assert_same_data
 
 
-
 class BaseIntegrationTest(object):
     """A wrapper class for common test cases so they aren't executed on their
     own as part of the base test class.
@@ -47,7 +46,6 @@ class BaseIntegrationTest(object):
                 contents = test_obj.read()
                 expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
                 self.assertEquals(contents, expected)
-
 
         def _skip_if_filesystem_python3(self, dirname, explanation='needs bytes/str fix'):
             if six.PY2:

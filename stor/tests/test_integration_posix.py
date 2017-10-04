@@ -2,6 +2,7 @@ from stor.tests.test_integration import BaseIntegrationTest
 import stor
 import six
 
+
 class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def setUp(self):
         super(FilesystemIntegrationTest, self).setUp()
@@ -24,4 +25,3 @@ class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):
             except exc_type as e:
                 assert e.errno == 17
                 raise
-
