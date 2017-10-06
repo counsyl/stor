@@ -1,7 +1,6 @@
 import gzip
 import os
 import unittest
-
 import six
 from nose.tools import raises
 from unittest import skipIf
