@@ -676,7 +676,8 @@ class SwiftPath(OBSPath):
             **swift_upload_args: Keyword arguments to pass to
                 `SwiftPath.upload`
         """
-        with tempfile.NamedTemporaryFile() as fp:
+        mode = 'wb' if type(content) == bytes else 'wt'
+        with tempfile.NamedTemporaryFile(mode=mode) as fp:
             fp.write(content)
             fp.flush()
             suo = OBSUploadObject(fp.name, object_name=self.resource)

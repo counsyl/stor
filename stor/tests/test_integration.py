@@ -1,13 +1,17 @@
 import gzip
 import os
 import unittest
-
 import six
+from nose.tools import raises
+from unittest import skipIf
 
 import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.tests.shared import assert_same_data
+
+BYTE_STRING = b"hey"
+STRING_STRING = "hey"
 
 
 class BaseIntegrationTest(object):
@@ -148,7 +152,7 @@ class BaseIntegrationTest(object):
             remote_gzip = stor.join(self.test_dir,
                                     stor.basename(local_gzip))
             stor.copy(local_gzip, remote_gzip)
-            with stor.open(remote_gzip) as fp:
+            with stor.open(remote_gzip, mode='rb') as fp:
                 with gzip.GzipFile(fileobj=fp) as remote_gzip_fp:
                     with gzip.open(local_gzip) as local_gzip_fp:
                         assert_same_data(remote_gzip_fp, local_gzip_fp)
@@ -160,7 +164,8 @@ class BaseIntegrationTest(object):
             copy_file = self.test_dir / 'copy_file.txt'
 
             fp = stor.open(non_with_file, mode='wb')
-            fp.write('blah')
+            # File opened in wb mode requires: bytes on py3k, str on py27
+            fp.write('blah'.encode())
             del fp
 
             self.assertTrue(non_with_file.exists())
@@ -168,8 +173,8 @@ class BaseIntegrationTest(object):
             self.assertFalse(non_with_file.isdir())
 
             with test_file.open(mode='wb') as obj:
-                obj.write('this is a test\n')
-                obj.write('this is another line.\n')
+                obj.write('this is a test\n'.encode())
+                obj.write('this is another line.\n'.encode())
 
             self.assertTrue(test_file.exists())
             self.assertTrue(test_file.isfile())
@@ -185,5 +190,49 @@ class BaseIntegrationTest(object):
 
             test_contents = test_file.open(mode='rb').read()
             copy_contents = copy_file.open(mode='rb').read()
-            self.assertEquals(test_contents, 'this is a test\nthis is another line.\n')
+            self.assertEquals(test_contents, 'this is a test\nthis is another line.\n'.encode())
             self.assertEquals(test_contents, copy_contents)
+
+        def test_write_bytes_to_binary(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(BYTE_STRING)
+
+        @skipIf(not six.PY3, "Only tested on py3")
+        @raises(TypeError)
+        def test_write_string_to_binary(self):   # pragma: no cover
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(STRING_STRING)
+
+        @skipIf(not six.PY3, "Only tested on py3")
+        @raises(TypeError)
+        def test_write_bytes_to_text(self):   # pragma: no cover
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(BYTE_STRING)
+
+        def test_write_string_to_text(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(STRING_STRING)
+
+        def test_read_bytes_from_binary(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(BYTE_STRING)
+
+            with stor.open(test_file, mode='rb') as fp:
+                result = fp.read()
+            print(type(result), result)
+            assert result == BYTE_STRING, "Strings don't match!"
+
+        def test_read_string_from_text(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(STRING_STRING)
+
+            with stor.open(test_file, mode='r') as fp:
+                result = fp.read()
+            print(type(result), result)
+            assert result == STRING_STRING, "Strings don't match!"
