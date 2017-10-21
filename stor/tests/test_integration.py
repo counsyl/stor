@@ -126,7 +126,6 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'b/c.sh'),
                 stor.join(self.test_dir, 'b/d'),
                 stor.join(self.test_dir, 'b/abbbc'),
-                stor.join(self.test_dir, 'empty'),
             ]))
             prefix_files = list(self.test_dir.walkfiles('*.sh'))
             self.assertEquals(set(prefix_files), set([
@@ -144,6 +143,7 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'aabc'),
                 stor.join(self.test_dir, 'b/abbbc'),
             ]))
+            assert stor.exists(stor.join(self.test_dir, 'empty'))
 
         def test_gzip_on_remote(self):
             self._skip_if_filesystem_python3(self.test_dir)
