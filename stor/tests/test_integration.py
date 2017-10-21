@@ -198,14 +198,28 @@ class BaseIntegrationTest(object):
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(BYTE_STRING)
 
-        @skipIf(not six.PY3, "Only tested on py3")
+        # python 2 is absurdly lenient about types
+
+        @skipIf(not six.PY2, "Only tested on py2")
+        def test_write_string_to_binary_py2(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(STRING_STRING)
+
+        @skipIf(not six.PY2, "Only tested on py2")
+        def test_write_bytes_to_text_py2(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(BYTE_STRING)
+
+        @skipIf(six.PY2, "Only tested on py3")
         @raises(TypeError)
         def test_write_string_to_binary(self):   # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(STRING_STRING)
 
-        @skipIf(not six.PY3, "Only tested on py3")
+        @skipIf(six.PY2, "Only tested on py3")
         @raises(TypeError)
         def test_write_bytes_to_text(self):   # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
