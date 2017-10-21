@@ -20,24 +20,29 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
     bucket on S3.
 
     In order to run the tests, you must have valid AWS S3 credentials set in the
-    following environment variables: AWS_DEFAULT_REGION, AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY. In order to have the tests actually run, you also need
-    to additionally set the AWS_TEST_ACCESS_KEY_ID environment variable. For now,
-    it can simply be set to any value.
+    following environment variables: AWS_TEST_ACCESS_KEY_ID,
+    AWS_TEST_SECRET_ACCESS_KEY (and optionally AWS_DEFUALT_REGION).
     """
     def setUp(self):
         super(S3IntegrationTest, self).setUp()
 
         if not (os.environ.get('AWS_TEST_ACCESS_KEY_ID') and
-                os.environ.get('AWS_ACCESS_KEY_ID')):
+                os.environ.get('AWS_TEST_SECRET_ACCESS_KEY')):
             raise unittest.SkipTest(
-                'AWS_TEST_ACCESS_KEY_ID env var not set. Skipping integration test')
+                'AWS_TEST_ACCESS_KEY_ID / AWS_TEST_SECRET_ACCESS_KEY env var not set.'
+                ' Skipping integration test')
 
         # Disable loggers so nose output is clean
         logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
         self.test_bucket = Path('s3://stor-test-bucket')
         self.test_dir = self.test_bucket / 'test'
+        stor.settings.update({
+            's3': {
+                'aws_access_key_id': os.environ['AWS_TEST_ACCESS_KEY_ID'],
+                'aws_secret_access_key': os.environ['AWS_TEST_SECRET_ACCESS_KEY']
+            }
+        })
 
     def tearDown(self):
         super(S3IntegrationTest, self).tearDown()
@@ -286,4 +291,4 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.assertIn("CompleteMultipartUploadResult", logger.getvalue())
         # Check for multipart download by checking for multiple 206 GET requests
         # to the object
-        self.assertRegexpMatches(logger.getvalue(), '"GET /test/0 HTTP/1.1" 206')
+        self.assertRegexpMatches(logger.getvalue(), '"GET (/stor-test-bucket)?/test/0 HTTP/1.1" 206')

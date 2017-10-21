@@ -1558,3 +1558,36 @@ line4
                     s3_file_fp.seek(3)
                     gzip_fp.seek(3)
                     assert_same_data(s3_file_fp, gzip_fp)
+
+
+@mock.patch('boto3.session.Session')
+class TestSessionSettings(unittest.TestCase):
+    def setUp(self):
+        self._clear_s3_cache()
+
+    def tearDown(self):
+        self._clear_s3_cache()
+
+    def _clear_s3_cache(self):
+        if hasattr(s3._thread_local, 's3_client'):
+            del s3._thread_local.s3_client
+        if hasattr(s3._thread_local, 's3_transfer'):
+            del s3._thread_local.s3_transfer
+
+    def test_only_non_empty_settings_passed_through(self, mock_session):
+        s3_keys = stor.settings.get()['s3'].keys()
+        s3_settings = {k: '' for k in s3_keys}
+        with stor.settings.use({'s3': s3_settings}):
+            s3._get_s3_client()
+            assert mock_session.called
+            assert len(mock_session.call_args_list) == 1
+            assert mock_session.call_args_list[0] == ((), {})
+        mock_session.reset_mock()
+        self._clear_s3_cache()
+
+        s3_settings['aws_access_key_id'] = 'blah'
+        with stor.settings.use({'s3': s3_settings}):
+            s3._get_s3_client()
+            assert mock_session.called
+            assert len(mock_session.call_args_list) == 1
+            assert mock_session.call_args_list[0] == ((), {'aws_access_key_id': 'blah'})
