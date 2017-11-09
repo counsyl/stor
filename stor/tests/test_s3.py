@@ -1568,7 +1568,7 @@ class TestSessionSettings(unittest.TestCase):
     def tearDown(self):
         self._clear_s3_cache()
 
-    def _clear_s3_cache(self):
+    def _clear_s3_cache(self):  # pragma: no cover
         if hasattr(s3._thread_local, 's3_client'):
             del s3._thread_local.s3_client
         if hasattr(s3._thread_local, 's3_transfer'):
