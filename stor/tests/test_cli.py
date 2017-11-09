@@ -41,7 +41,13 @@ class TestCliBasics(BaseCliTest):
     def test_cli_config(self, mock_copytree):
         expected_settings = {
             'stor': {},
-            's3': {},
+            's3': {
+                'aws_access_key_id': '',
+                'aws_secret_access_key': '',
+                'aws_session_token': '',
+                'profile_name': '',
+                'region_name': ''
+            },
             's3:upload': {
                 'segment_size': 8388608,
                 'object_threads': 10,
