@@ -21,7 +21,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
 
     In order to run the tests, you must have valid AWS S3 credentials set in the
     following environment variables: AWS_TEST_ACCESS_KEY_ID,
-    AWS_TEST_SECRET_ACCESS_KEY (and optionally AWS_DEFUALT_REGION).
+    AWS_TEST_SECRET_ACCESS_KEY (and optionally AWS_DEFAULT_REGION).
     """
     def setUp(self):
         super(S3IntegrationTest, self).setUp()
