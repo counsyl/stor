@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-v1.5.0
+v1.5.1
 ------
 
 Summary
@@ -37,6 +37,8 @@ Deprecations
 
 * Using text data with ``read_object()`` and ``write_object()`` is deprecated. These functions
   ought to only work with ``bytes`` (and will have unexpected behavior otherwise).
+
+(v1.5.0 was a premature release and was removed from PyPI)
 
 v1.4.6
 ------
