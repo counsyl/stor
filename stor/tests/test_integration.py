@@ -107,7 +107,6 @@ class BaseIntegrationTest(object):
                 self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
 
         def test_walkfiles(self):
-            from stor.tests.test_integration_posix import FilesystemIntegrationTest
             with NamedTemporaryDirectory(change_dir=True):
                 # Make a dataset with files that will match a particular pattern (*.sh)
                 # and also empty directories that should be ignored when calling walkfiles

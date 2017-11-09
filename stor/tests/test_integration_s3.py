@@ -291,4 +291,5 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.assertIn("CompleteMultipartUploadResult", logger.getvalue())
         # Check for multipart download by checking for multiple 206 GET requests
         # to the object
-        self.assertRegexpMatches(logger.getvalue(), '"GET (/stor-test-bucket)?/test/0 HTTP/1.1" 206')
+        self.assertRegexpMatches(logger.getvalue(),
+                                 '"GET (/stor-test-bucket)?/test/0 HTTP/1.1" 206')
