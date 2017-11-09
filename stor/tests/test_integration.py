@@ -198,19 +198,21 @@ class BaseIntegrationTest(object):
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(BYTE_STRING)
 
-        # python 2 is absurdly lenient about types
+        # python 2 is quite lenient about string types on I/O
 
         @skipIf(not six.PY2, "Only tested on py2")
-        def test_write_string_to_binary_py2(self):
+        def test_write_string_to_binary_py2(self):  # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(STRING_STRING)
 
         @skipIf(not six.PY2, "Only tested on py2")
-        def test_write_bytes_to_text_py2(self):
+        def test_write_bytes_to_text_py2(self):  # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='w') as fp:
                 fp.write(BYTE_STRING)
+
+        # whereas Python 3 is quite strict
 
         @skipIf(six.PY2, "Only tested on py3")
         @raises(TypeError)
