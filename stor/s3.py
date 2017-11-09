@@ -66,7 +66,13 @@ def _get_s3_client():
         boto3.Client: An instance of the S3 client.
     """
     if not hasattr(_thread_local, 's3_client'):
-        session = boto3.session.Session()
+        kwargs = {}
+        for k, v in settings.get()['s3'].items():
+            # only pass through keyword arguments that are set to avoid
+            # overriding Boto3's default lookup behavior
+            if v:
+                kwargs[k] = v
+        session = boto3.session.Session(**kwargs)
         _thread_local.s3_client = session.client('s3')
     return _thread_local.s3_client
 

@@ -126,7 +126,6 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'b/c.sh'),
                 stor.join(self.test_dir, 'b/d'),
                 stor.join(self.test_dir, 'b/abbbc'),
-                stor.join(self.test_dir, 'empty'),
             ]))
             prefix_files = list(self.test_dir.walkfiles('*.sh'))
             self.assertEquals(set(prefix_files), set([
@@ -144,6 +143,8 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'aabc'),
                 stor.join(self.test_dir, 'b/abbbc'),
             ]))
+            # should still *make* an empty directory
+            assert stor.exists(stor.join(self.test_dir, 'empty'))
 
         def test_gzip_on_remote(self):
             self._skip_if_filesystem_python3(self.test_dir)
@@ -198,14 +199,30 @@ class BaseIntegrationTest(object):
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(BYTE_STRING)
 
-        @skipIf(not six.PY3, "Only tested on py3")
+        # python 2 is quite lenient about string types on I/O
+
+        @skipIf(not six.PY2, "Only tested on py2")
+        def test_write_string_to_binary_py2(self):  # pragma: no cover
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(STRING_STRING)
+
+        @skipIf(not six.PY2, "Only tested on py2")
+        def test_write_bytes_to_text_py2(self):  # pragma: no cover
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(BYTE_STRING)
+
+        # whereas Python 3 is quite strict
+
+        @skipIf(six.PY2, "Only tested on py3")
         @raises(TypeError)
         def test_write_string_to_binary(self):   # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(STRING_STRING)
 
-        @skipIf(not six.PY3, "Only tested on py3")
+        @skipIf(six.PY2, "Only tested on py3")
         @raises(TypeError)
         def test_write_bytes_to_text(self):   # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
