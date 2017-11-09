@@ -8,6 +8,8 @@ v1.5.0
 * Allow ``stor.copytree`` to work if it targets an empty target directory (removes the other directory first)
 * Fix file read/write behavior in Python 3.
 * Fix S3 integration tests so they are easier to run.
+* Fix inconsistency with ``walkfiles()`` on ``PosixPath`` so that it does not
+  return empty directories (causes a small potential perf hit).
 
 
 v1.4.6
