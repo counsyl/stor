@@ -1,6 +1,7 @@
 """
 Provides functionality for accessing resources on Posix file systems.
 """
+import os
 import posixpath
 
 from stor import base
@@ -39,7 +40,9 @@ class PosixPath(base.FileSystemPath):
 
         Returns:
             Iter[Path]: Files recursively under the path
+        Note:
+            This may be much slower than list() because it checks twice that everything is a file.
         """
         for f in self.list():
-            if pattern is None or f.fnmatch(pattern):
+            if os.path.isfile(f) and (pattern is None or f.fnmatch(pattern)):
                 yield f

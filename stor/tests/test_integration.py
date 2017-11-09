@@ -107,6 +107,7 @@ class BaseIntegrationTest(object):
                 self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
 
         def test_walkfiles(self):
+            from stor.tests.test_integration_posix import FilesystemIntegrationTest
             with NamedTemporaryDirectory(change_dir=True):
                 # Make a dataset with files that will match a particular pattern (*.sh)
                 # and also empty directories that should be ignored when calling walkfiles
@@ -127,6 +128,9 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'b/d'),
                 stor.join(self.test_dir, 'b/abbbc'),
             ]))
+            if isinstance(self, FilesystemIntegrationTest):
+                # should still copy the files even if it does not come from walkfiles
+                assert os.path.exists(stor.join(self.test_dir, 'empty'))
             prefix_files = list(self.test_dir.walkfiles('*.sh'))
             self.assertEquals(set(prefix_files), set([
                 stor.join(self.test_dir, 'aabc.sh'),

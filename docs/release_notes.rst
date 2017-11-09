@@ -7,6 +7,7 @@ v1.5.0
 * Auto-create parent directories on the filesystem for ``stor.copy``, ``stor.open``, and ``stor.copytree``.
 * Allow ``stor.copytree`` to work if it targets an empty target directory (removes the other directory first)
 * Fix file read/write behavior in Python 3.
+* Fix S3 integration tests so they are easier to run.
 
 
 v1.4.6
