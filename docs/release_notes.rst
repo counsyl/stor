@@ -10,6 +10,9 @@ v1.5.0
 * Fix S3 integration tests so they are easier to run.
 * Fix inconsistency with ``walkfiles()`` on ``PosixPath`` so that it does not
   return empty directories (causes a small potential perf hit).
+* Add ``encoding`` keyword argument (supported only in Python 3) to ``open()`` and ``OBSFile``.
+  This keyword arg overrides default encoding, otherwise, ``encoding`` for text data is pulled from
+  ``locale.getpreferredencoding(False)`` the same as Python 3.
 
 
 v1.4.6

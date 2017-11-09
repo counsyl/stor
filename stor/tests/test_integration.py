@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import gzip
 import os
 import unittest
@@ -5,13 +6,17 @@ import six
 from nose.tools import raises
 from unittest import skipIf
 
+import mock
+import pytest
+
 import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.tests.shared import assert_same_data
 
-BYTE_STRING = b"hey"
-STRING_STRING = "hey"
+# UTF-8 encoding
+BYTE_STRING = b"\xf0\x9f\x98\xb8"
+STRING_STRING = u"hey😸"
 
 
 class BaseIntegrationTest(object):
@@ -205,13 +210,13 @@ class BaseIntegrationTest(object):
         def test_write_string_to_binary_py2(self):  # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='wb') as fp:
-                fp.write(STRING_STRING)
+                fp.write(u'myasciistring')
 
         @skipIf(not six.PY2, "Only tested on py2")
         def test_write_bytes_to_text_py2(self):  # pragma: no cover
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='w') as fp:
-                fp.write(BYTE_STRING)
+                fp.write(b'myasciistring')
 
         # whereas Python 3 is quite strict
 
@@ -241,8 +246,7 @@ class BaseIntegrationTest(object):
 
             with stor.open(test_file, mode='rb') as fp:
                 result = fp.read()
-            print(type(result), result)
-            assert result == BYTE_STRING, "Strings don't match!"
+            assert result == BYTE_STRING
 
         def test_read_string_from_text(self):
             test_file = self.test_dir / 'test_file.txt'
@@ -251,5 +255,40 @@ class BaseIntegrationTest(object):
 
             with stor.open(test_file, mode='r') as fp:
                 result = fp.read()
-            print(type(result), result)
-            assert result == STRING_STRING, "Strings don't match!"
+            assert result == STRING_STRING
+
+        @skipIf(six.PY2, 'explicit encoding currently only supported on Python 3')
+        def test_custom_encoding_text(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with stor.open(test_file, mode='w', encoding='utf-16') as fp:
+                fp.write(STRING_STRING)
+
+            with stor.open(test_file, mode='r', encoding='utf-16') as fp:
+                result = fp.read()
+            assert result == STRING_STRING
+
+            with pytest.raises(UnicodeDecodeError):
+                with stor.open(test_file, mode='r', encoding='utf-8') as fp:
+                    result = fp.read()
+
+        @skipIf(not six.PY2, 'only check for encoding typeerrors on python 2')
+        def test_custom_encoding_py2(self):
+            test_file = self.test_dir / 'test_file.txt'
+            with pytest.raises(TypeError, regex='encoding'):
+                stor.open(test_file, mode='r', encoding='utf-8')
+            with pytest.raises(TypeError, regex='encoding'):
+                stor.Path(test_file).open(mode='r', encoding='utf-8')
+
+            with mock.patch('locale.getpreferredencoding') as mocker:
+                mocker.return_value = 'utf-16'
+                with stor.open(test_file, mode='w') as fp:
+                    fp.write(STRING_STRING)
+
+                with stor.open(test_file, mode='r') as fp:
+                    result = fp.read()
+                assert result == STRING_STRING
+                mocker.return_value = 'utf-8'
+
+                with pytest.raises(UnicodeDecodeError):
+                    with stor.open(test_file, mode='r') as fp:
+                        result = fp.read()
