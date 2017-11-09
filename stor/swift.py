@@ -680,7 +680,7 @@ class SwiftPath(OBSPath):
             **swift_upload_args: Keyword arguments to pass to
                 `SwiftPath.upload`
         """
-        if not isinstance(content, bytes):
+        if not isinstance(content, bytes):  # pragma: no cover
             warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
         mode = 'wb' if type(content) == bytes else 'wt'
         with tempfile.NamedTemporaryFile(mode=mode) as fp:

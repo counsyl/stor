@@ -168,10 +168,9 @@ def _get_pwd(service=None):
     or all services if none specified.
     """
     def to_text(data):
-        if six.PY2:
-            return data.decode(locale.getpreferredencoding(False))
-        else:
-            return data
+        if six.PY2:  # pragma: no cover
+            data = data.decode(locale.getpreferredencoding(False))
+        return data
 
     parser = _get_env()
     if service:
