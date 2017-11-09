@@ -167,12 +167,12 @@ def _get_pwd(service=None):
     Returns the present working directory for the given service,
     or all services if none specified.
     """
-    if six.PY2:
-        # have to hack around text/bytes here because Python 2
-        to_text = lambda x: x.decode(locale.getpreferredencoding(False))
-    else:
-        to_text = lambda x: x
-    # encoding = locale.getpreferredencoding(False)
+    def to_text(data):
+        if six.PY2:
+            return data.decode(locale.getpreferredencoding(False))
+        else:
+            return data
+
     parser = _get_env()
     if service:
         try:

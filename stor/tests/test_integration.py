@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import contextlib
 import gzip
 import os
 import unittest
@@ -7,7 +6,6 @@ import six
 from nose.tools import raises
 from unittest import skipIf
 
-import mock
 import pytest
 
 import stor
