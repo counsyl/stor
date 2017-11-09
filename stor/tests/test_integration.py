@@ -128,9 +128,7 @@ class BaseIntegrationTest(object):
                 stor.join(self.test_dir, 'b/d'),
                 stor.join(self.test_dir, 'b/abbbc'),
             ]))
-            if isinstance(self, FilesystemIntegrationTest):
-                # should still copy the files even if it does not come from walkfiles
-                assert os.path.exists(stor.join(self.test_dir, 'empty'))
+            assert stor.exists(stor.join(self.test_dir, 'empty'))
             prefix_files = list(self.test_dir.walkfiles('*.sh'))
             self.assertEquals(set(prefix_files), set([
                 stor.join(self.test_dir, 'aabc.sh'),
