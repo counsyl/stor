@@ -259,7 +259,16 @@ class Path(text_type):
         """
         return self.path_class(self.path_module.join(self, *others))
 
-    def open(self, **kwargs):
+    def open(self, *args, **kwargs):
+        """Open a file-like object.
+
+        The only cross-compatible arguments for this function are listed below.
+
+        Args:
+            mode (str): first positional arg, mode of file descriptor
+            encoding (str): text encoding to use (Python 3 only)
+        """
+
         raise NotImplementedError
 
     def list(self, *args, **kwargs):
