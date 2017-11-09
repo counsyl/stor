@@ -280,36 +280,9 @@ class BaseIntegrationTest(object):
                     result = fp.read()
 
         @skipIf(not six.PY2, 'only check for encoding typeerrors on python 2')
-        def test_custom_encoding_py2(self):
+        def test_encoding_typeerror_py2(self):
             test_file = self.test_dir / 'test_file.txt'
             with pytest.raises(TypeError, regex='encoding'):
                 stor.open(test_file, mode='r', encoding='utf-8')
             with pytest.raises(TypeError, regex='encoding'):
                 stor.Path(test_file).open(mode='r', encoding='utf-8')
-
-            @contextlib.contextmanager
-            def temp_encoding(encoding):
-                import sys
-                original_encoding = sys.getdefaultencoding()
-
-                reload(sys)
-                try:
-                    sys.setdefaultencoding(encoding)
-                    with mock.patch('locale.getpreferredencoding') as mocker:
-                        mocker.return_value = original_encoding
-                        yield
-                finally:
-                    sys.setdefaultencoding(original_encoding)
-
-            with temp_encoding('utf-16'):
-                with stor.open(test_file, mode='w') as fp:
-                    fp.write(STRING_STRING)
-
-                with stor.open(test_file, mode='r') as fp:
-                    result = fp.read()
-                assert result == STRING_STRING
-
-            with temp_encoding('utf-8'):
-                with pytest.raises(UnicodeDecodeError):
-                    with stor.open(test_file, mode='r') as fp:
-                        result = fp.read()
