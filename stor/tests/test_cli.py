@@ -458,14 +458,14 @@ class TestWalkfiles(BaseCliTest):
 class TestCat(BaseCliTest):
     @mock.patch.object(S3Path, 'read_object', autospec=True)
     def test_cat_s3(self, mock_read):
-        mock_read.return_value = 'hello world\n'
+        mock_read.return_value = b'hello world\n'
         self.parse_args('stor cat s3://test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
         mock_read.assert_called_once_with(S3Path('s3://test/file'))
 
     @mock.patch.object(SwiftPath, 'read_object', autospec=True)
     def test_cat_swift(self, mock_read):
-        mock_read.return_value = 'hello world'
+        mock_read.return_value = b'hello world'
         self.parse_args('stor cat swift://some/test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
         mock_read.assert_called_once_with(SwiftPath('swift://some/test/file'))

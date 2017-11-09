@@ -11,7 +11,6 @@ import warnings
 from six.moves import builtins
 from six import text_type
 from six import string_types
-from six import PY2
 from six import PY3
 
 from stor import utils
