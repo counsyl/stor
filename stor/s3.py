@@ -7,6 +7,7 @@ from multiprocessing.pool import ThreadPool
 import os
 import tempfile
 import threading
+import warnings
 
 import boto3
 from boto3 import exceptions as boto3_exceptions
@@ -497,6 +498,8 @@ class S3Path(OBSPath):
         Args:
             content (bytes): raw bytes to write to OBS
         """
+        if not isinstance(content, bytes):  # pragma: no cover
+            warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
         mode = 'wb' if isinstance(content, bytes) else 'w'
         with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)
