@@ -3,6 +3,7 @@
 PACKAGE_NAME=stor
 TEST_OUTPUT?=nosetests.xml
 PIP_INDEX_URL=https://pypi.python.org/simple/
+PYTHON?=$(shell which python)
 
 ifdef TOX_ENV
 	TOX_ENV_FLAG := -e $(TOX_ENV)
@@ -23,7 +24,8 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
-	test -f $@ || virtualenv $(VENV_DIR)
+	test -f $@ || virtualenv --python=$(PYTHON) $(VENV_DIR)
+	$(WITH_VENV) echo "Within venv, running $$(python --version)"
 	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
 	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
@@ -49,7 +51,7 @@ endif
 
 .PHONY: clean
 clean:
-	python setup.py clean
+	$(PYTHON) setup.py clean
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg*/
@@ -128,4 +130,4 @@ version:
 
 .PHONY: fullname
 fullname:
-	python setup.py --fullname
+	$(PYTHON) setup.py --fullname
