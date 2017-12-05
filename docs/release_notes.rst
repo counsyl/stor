@@ -13,7 +13,7 @@ should be completely backwards-compatible (any new behaviors would have raised a
 earlier versions of stor).
 
 This release also includes some consistency fixes for certain rare edge cases relating to empty or
-non/existent files and directories.
+non/existent files and directories. Drops testing for Python 3.3.
 
 API additions
 ^^^^^^^^^^^^^
@@ -37,6 +37,8 @@ Deprecations
 
 * Using text data with ``read_object()`` and ``write_object()`` is deprecated. These functions
   ought to only work with ``bytes`` (and will have unexpected behavior otherwise).
+* Python 3.3 is no longer tested in the test suite (but we still think stor
+  will run correctly in Python 3.3 - but this was never explicitly supported)
 
 (v1.5.0 was a premature release and was removed from PyPI)
 
