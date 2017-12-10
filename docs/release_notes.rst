@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Latest
+------
+
+* Build universal wheels by default
+
 v1.5.1
 ------
 
