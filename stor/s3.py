@@ -7,6 +7,7 @@ from multiprocessing.pool import ThreadPool
 import os
 import tempfile
 import threading
+import warnings
 
 import boto3
 from boto3 import exceptions as boto3_exceptions
@@ -66,7 +67,13 @@ def _get_s3_client():
         boto3.Client: An instance of the S3 client.
     """
     if not hasattr(_thread_local, 's3_client'):
-        session = boto3.session.Session()
+        kwargs = {}
+        for k, v in settings.get()['s3'].items():
+            # only pass through keyword arguments that are set to avoid
+            # overriding Boto3's default lookup behavior
+            if v:
+                kwargs[k] = v
+        session = boto3.session.Session(**kwargs)
         _thread_local.s3_client = session.client('s3')
     return _thread_local.s3_client
 
@@ -210,7 +217,7 @@ class S3Path(OBSPath):
         except boto3_exceptions.RetriesExceededError as e:
             six.raise_from(exceptions.FailedDownloadError(str(e), e), e)
 
-    def open(self, mode='r'):
+    def open(self, mode='r', encoding=None):
         """
         Opens a S3File that can be read or written to.
 
@@ -220,6 +227,8 @@ class S3Path(OBSPath):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
+            encoding (str): text encoding to use. Defaults to
+                ``locale.getpreferredencoding(False)`` (Python 3 only).
 
         Returns:
             S3File: The s3 object.
@@ -227,7 +236,7 @@ class S3Path(OBSPath):
         Raises:
             RemoteError: A s3 client error occurred.
         """
-        return S3File(self, mode=mode)
+        return S3File(self, mode=mode, encoding=encoding)
 
     def list(self,
              starts_with=None,
@@ -472,7 +481,11 @@ class S3Path(OBSPath):
         return response
 
     def read_object(self):
-        """"Reads an individual object."""
+        """Read an individual object from OBS.
+
+        Returns:
+            bytes: the raw bytes from the object on OBS.
+        """
         body = self._s3_client_call('get_object', Bucket=self.bucket, Key=self.resource)['Body']
         return body.read()
 
@@ -483,8 +496,10 @@ class S3Path(OBSPath):
         file before uploading.
 
         Args:
-            content (str): The content of the object
+            content (bytes): raw bytes to write to OBS
         """
+        if not isinstance(content, bytes):  # pragma: no cover
+            warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
         mode = 'wb' if isinstance(content, bytes) else 'w'
         with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)

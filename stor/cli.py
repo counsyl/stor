@@ -75,6 +75,7 @@ is not yet supported.
 import argparse
 import copy
 from functools import partial
+import locale
 import logging
 import os
 import shutil
@@ -169,13 +170,18 @@ def _get_pwd(service=None):
     Returns the present working directory for the given service,
     or all services if none specified.
     """
+    def to_text(data):
+        if six.PY2:  # pragma: no cover
+            data = data.decode(locale.getpreferredencoding(False))
+        return data
+
     parser = _get_env()
     if service:
         try:
-            return utils.with_trailing_slash(parser.get('env', service))
+            return to_text(utils.with_trailing_slash(parser.get('env', service)))
         except configparser.NoOptionError as e:
             six.raise_from(ValueError('%s is an invalid service' % service), e)
-    return [utils.with_trailing_slash(value) for name, value in parser.items('env')]
+    return [to_text(utils.with_trailing_slash(value)) for name, value in parser.items('env')]
 
 
 def _env_chdir(pth):
@@ -471,7 +477,8 @@ def process_args(args):
 
 
 def print_results(results):
-    if type(results) is str:
+    assert not isinstance(results, six.binary_type), 'did not coerce to text'
+    if isinstance(results, six.text_type):
         sys.stdout.write(results)
         if not results.endswith('\n'):
             sys.stdout.write('\n')

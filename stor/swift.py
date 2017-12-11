@@ -40,6 +40,7 @@ import logging
 import os
 import tempfile
 import threading
+import warnings
 
 import six
 from six.moves.urllib import parse
@@ -442,7 +443,7 @@ class SwiftPath(OBSPath):
         """True if this path is a segment container"""
         container = self.container
         if not self.resource and container:
-            return (container.startswith('.segments_') or
+            return (container.startswith('.segments') or
                     container.endswith('_segments') or
                     container.endswith('+segments'))
         else:
@@ -595,7 +596,10 @@ class SwiftPath(OBSPath):
     @_swift_retry(exceptions=(NotFoundError, UnavailableError,
                               InconsistentDownloadError, UnauthorizedError))
     def read_object(self):
-        """Reads an individual object.
+        """Reads an individual object from OBS.
+
+        Returns:
+            bytes: the raw bytes from the object on OBS.
 
         This method retries ``num_retries`` times if swift is unavailable or if
         the object is not found. View
@@ -672,17 +676,20 @@ class SwiftPath(OBSPath):
         `SwiftPath.upload`.
 
         Args:
-            content (str): The content of the object
+            content (bytes): raw bytes to write to OBS
             **swift_upload_args: Keyword arguments to pass to
                 `SwiftPath.upload`
         """
-        with tempfile.NamedTemporaryFile() as fp:
+        if not isinstance(content, bytes):  # pragma: no cover
+            warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
+        mode = 'wb' if type(content) == bytes else 'wt'
+        with tempfile.NamedTemporaryFile(mode=mode) as fp:
             fp.write(content)
             fp.flush()
             suo = OBSUploadObject(fp.name, object_name=self.resource)
             return self.upload([suo], **swift_upload_args)
 
-    def open(self, mode='r', swift_upload_options=None):
+    def open(self, mode='r', encoding=None, swift_upload_options=None):
         """Opens a `SwiftFile` that can be read or written to.
 
         For examples of reading and writing opened objects, view
@@ -691,6 +698,8 @@ class SwiftPath(OBSPath):
         Args:
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
+            encoding (str): text encoding to use. Defaults to
+                ``locale.getpreferredencoding(False)`` (Python 3 only)
             swift_upload_options (dict): DEPRECATED (use `stor.settings.use()`
                 instead). A dictionary of arguments that will be
                 passed as keyword args to `SwiftPath.upload` if any writes
@@ -703,7 +712,7 @@ class SwiftPath(OBSPath):
             SwiftError: A swift client error occurred.
         """
         swift_upload_options = swift_upload_options or {}
-        return SwiftFile(self, mode=mode, **swift_upload_options)
+        return SwiftFile(self, mode=mode, encoding=encoding, **swift_upload_options)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self,

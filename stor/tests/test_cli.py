@@ -16,6 +16,11 @@ from stor import test
 
 @mock.patch('sys.stdout', new=six.StringIO())
 class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
+    def setUp(self):
+        patcher = mock.patch.object(sys, 'stdout', six.StringIO())
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
@@ -36,7 +41,13 @@ class TestCliBasics(BaseCliTest):
     def test_cli_config(self, mock_copytree):
         expected_settings = {
             'stor': {},
-            's3': {},
+            's3': {
+                'aws_access_key_id': '',
+                'aws_secret_access_key': '',
+                'aws_session_token': '',
+                'profile_name': '',
+                'region_name': ''
+            },
             's3:upload': {
                 'segment_size': 8388608,
                 'object_threads': 10,
@@ -472,14 +483,14 @@ class TestWalkfiles(BaseCliTest):
 class TestCat(BaseCliTest):
     @mock.patch.object(S3Path, 'read_object', autospec=True)
     def test_cat_s3(self, mock_read):
-        mock_read.return_value = 'hello world\n'
+        mock_read.return_value = b'hello world\n'
         self.parse_args('stor cat s3://test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
         mock_read.assert_called_once_with(S3Path('s3://test/file'))
 
     @mock.patch.object(SwiftPath, 'read_object', autospec=True)
     def test_cat_swift(self, mock_read):
-        mock_read.return_value = 'hello world'
+        mock_read.return_value = b'hello world'
         self.parse_args('stor cat swift://some/test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
         mock_read.assert_called_once_with(SwiftPath('swift://some/test/file'))

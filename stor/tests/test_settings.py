@@ -33,7 +33,13 @@ class TestSettings(unittest.TestCase):
     def test_initialize_default(self):
         expected_settings = {
             'stor': {},
-            's3': {},
+            's3': {
+                'aws_access_key_id': '',
+                'aws_secret_access_key': '',
+                'aws_session_token': '',
+                'profile_name': '',
+                'region_name': ''
+            },
             's3:upload': {
                 'segment_size': 8388608,
                 'object_threads': 10,
@@ -72,13 +78,19 @@ class TestSettings(unittest.TestCase):
             }
         }
         settings._initialize()
-        self.assertEquals(settings._global_settings, expected_settings)
+        assert settings._global_settings == expected_settings
 
     @mock.patch.dict(os.environ, {}, clear=True)
     def test_initialize_w_user_file(self):
         expected_settings = {
             'stor': {},
-            's3': {},
+            's3': {
+                'aws_access_key_id': '',
+                'aws_secret_access_key': '',
+                'aws_session_token': '',
+                'profile_name': '',
+                'region_name': ''
+            },
             's3:upload': {
                 'segment_size': 8388608,
                 'object_threads': 10,

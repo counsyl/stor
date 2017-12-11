@@ -1,3 +1,4 @@
+import locale
 import posixpath
 import sys
 
@@ -127,13 +128,22 @@ class OBSPath(Path):
         return self.path_class(self.drive + normed)
 
     def read_object(self):
+        """Reads an individual object from OBS.
+
+        Returns:
+            bytes: the raw bytes from the object on OBS.
+        """
         raise NotImplementedError
 
     def write_object(self, content):
-        """Writes an individual object."""
+        """Writes an individual object.
+
+        Args:
+            content (bytes): raw bytes to write to OBS
+        """
         raise NotImplementedError
 
-    def open(self, mode='r'):
+    def open(self, mode='r', encoding=None):
         """
         Opens a OBSFile that can be read or written to and is uploaded to
         the remote service.
@@ -252,7 +262,7 @@ class OBSFile(object):
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
 
-    def __init__(self, pth, mode='r', **kwargs):
+    def __init__(self, pth, mode='r', encoding=None, **kwargs):
         """Initializes a file object
 
         Args:
@@ -261,12 +271,20 @@ class OBSFile(object):
             mode (str): The mode of the resource. Can be "r" and "rb" for
                 reading the resource and "w" and "wb" for writing the
                 resource.
+            encoding (str): the text encoding to use on read/write, defaults to
+                ``locale.getpreferredencoding(False)`` if not set. We *strongly* encourage you to
+                use binary mode OR explicitly set an encoding when reading/writing text (because
+                writers from different computers may store data on OBS in different ways).
+                Python 3 only.
         """
         if mode not in self._VALID_MODES:
             raise ValueError('invalid mode for file: %r' % mode)
+        if six.PY2 and encoding:  # pragma: no cover
+            raise TypeError('encoding not supported in Python 2')
         self._path = pth
         self.mode = mode
         self._kwargs = kwargs
+        self.encoding = encoding or locale.getpreferredencoding(False)
 
     def __enter__(self):
         if self.closed:
@@ -292,7 +310,9 @@ class OBSFile(object):
     @cached_property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
-        if self.mode in ('r', 'rb'):
+        if self.mode == 'r':
+            return self.stream_cls(self._path.read_object().decode(self.encoding))
+        if self.mode == 'rb':
             return self.stream_cls(self._path.read_object())
         elif self.mode in ('w', 'wb'):
             return self.stream_cls()
@@ -337,5 +357,8 @@ class OBSFile(object):
             raise TypeError("File must be in modes %s to 'flush'" %
                             (self._WRITE_MODES,))
         if self._buffer.tell():
-            self._path.write_object(self._buffer.getvalue(),
-                                    **self._kwargs)
+            if self.mode == 'w':
+                self._path.write_object(self._buffer.getvalue().encode(self.encoding))
+            else:
+                self._path.write_object(self._buffer.getvalue(),
+                                        **self._kwargs)

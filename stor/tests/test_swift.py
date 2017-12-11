@@ -238,7 +238,7 @@ class TestSwiftFile(SwiftTestCase):
             swift_f._buffer
 
     def test_invalid_flush_mode(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         with self.assertRaisesRegexp(TypeError, 'flush'):
@@ -250,7 +250,7 @@ class TestSwiftFile(SwiftTestCase):
         self.assertEquals(obj.name, swift_p)
 
     def test_context_manager_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         obj.close()
@@ -273,7 +273,7 @@ class TestSwiftFile(SwiftTestCase):
                 invalid = swift._delegate_to_buffer('invalid')
 
     def test_read_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
         obj.close()
@@ -287,13 +287,13 @@ class TestSwiftFile(SwiftTestCase):
             swift_p.open(mode='wb').read()
 
     def test_read_success(self):
-        self.mock_swift_conn.get_object.return_value = ('header', 'data')
+        self.mock_swift_conn.get_object.return_value = ('header', b'data')
 
         swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.open().read(), 'data')
 
     def test_iterating_over_files(self):
-        data = '''\
+        data = b'''\
 line1
 line2
 line3
@@ -302,9 +302,12 @@ line4
         self.mock_swift_conn.get_object.return_value = ('header', data)
 
         swift_p = SwiftPath('swift://tenant/container/obj')
-        self.assertEquals(swift_p.open().read(), data)
+        # open().read() should return str for r
+        self.assertEquals(swift_p.open('r').read(), data.decode('ascii'))
+        # open().read() should return bytes for rb
+        self.assertEquals(swift_p.open('rb').read(), data)
         self.assertEquals(swift_p.open().readlines(),
-                          [l + '\n' for l in data.split('\n')][:-1])
+                          [l + '\n' for l in data.decode('ascii').split('\n')][:-1])
         for i, line in enumerate(swift_p.open(), 1):
             self.assertEqual(line, 'line%d\n' % i)
 
@@ -315,7 +318,7 @@ line4
     def test_read_success_on_second_try(self, mock_sleep):
         self.mock_swift_conn.get_object.side_effect = [
             ClientException('dummy', 'dummy', http_status=404),
-            ('header', 'data')
+            ('header', b'data')
         ]
         swift_p = SwiftPath('swift://tenant/container/obj')
         obj = swift_p.open()
@@ -885,7 +888,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_w_condition_and_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -905,7 +908,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -925,7 +928,7 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest_validation_err(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
             'name': 'my/obj1'
@@ -1406,7 +1409,7 @@ class TestDownload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
     def test_download_w_condition_and_use_manifest(self, mock_list, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
             'object': 'my/obj1',
@@ -1441,7 +1444,7 @@ class TestDownload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
     def test_download_w_use_manifest(self, mock_list, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
             'object': 'my/obj1',
@@ -1474,7 +1477,7 @@ class TestDownload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
     def test_download_w_use_manifest_validation_err(self, mock_list, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', 'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
             'object': 'my/obj1',

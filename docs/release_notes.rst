@@ -1,6 +1,54 @@
 Release Notes
 =============
 
+v1.5.1
+------
+
+Summary
+^^^^^^^
+
+Many changes to correctly handle binary and text data in both Python 2 and Python 3. Overall, falls
+back on ``locale.getpreferredencoding(False)`` to handle this behavior correctly.  This change
+should be completely backwards-compatible (any new behaviors would have raised an exception in
+earlier versions of stor).
+
+This release also includes some consistency fixes for certain rare edge cases relating to empty or
+non/existent files and directories. Drops testing for Python 3.3.
+
+API additions
+^^^^^^^^^^^^^
+
+* Add ``encoding`` keyword argument (supported only in Python 3) to ``open()`` and ``OBSFile``.
+  This keyword arg overrides default encoding, otherwise, ``encoding`` for text data is pulled from
+  ``locale.getpreferredencoding(False)`` the same as Python 3.
+* File reading and writing now works in Python 3 in both text and binary modes.
+
+Consistency Fixes
+^^^^^^^^^^^^^^^^^
+
+* Fix inconsistency with ``walkfiles()`` on ``PosixPath`` so that it does not
+  return empty directories (causes a small potential perf hit).
+* Auto-create parent directories on the filesystem for ``stor.copy``, ``stor.open``, and ``stor.copytree``.
+* Allow ``stor.copytree`` to work if it targets an empty target directory (removes the other directory first)
+* Fix S3 integration tests so they are easier to run.
+
+Deprecations
+^^^^^^^^^^^^
+
+* Using text data with ``read_object()`` and ``write_object()`` is deprecated. These functions
+  ought to only work with ``bytes`` (and will have unexpected behavior otherwise).
+* Python 3.3 is no longer tested in the test suite (but we still think stor
+  will run correctly in Python 3.3 - but this was never explicitly supported)
+
+(v1.5.0 was a premature release and was removed from PyPI)
+
+v1.4.6
+------
+
+* Tweak segment container hiding regex to be ``.segments`` instead of
+  ``.segments_`` (more flexible in general).
+
+
 v1.4.5
 ------
 

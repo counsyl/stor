@@ -37,9 +37,10 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                 'password': os.environ.get('SWIFT_TEST_PASSWORD'),
                 'num_retries': 5
             }})
-        self.test_tenant = os.environ.get('SWIFT_TEST_TENANT', 'AUTH_swft_test')
-        self.test_container = Path('swift://%s/%s%s' % (
-            self.test_tenant, os.environ.get('SWIFT_TEST_CONTAINER_PREFIX', ''), uuid.uuid4()))
+        # fall back on to swiftstack auth for tenant
+        tenant = os.environ.get('SWIFT_TEST_TENANT', 'AUTH_%s' % os.environ['SWIFT_TEST_USERNAME'])
+        container_prefix = os.environ.get('SWIFT_TEST_CONTAINER_PREFIX', '')
+        self.test_container = Path('swift://%s/%s%s' % (tenant, uuid.uuid4()))
         if self.test_container.exists():
             raise ValueError('test container %s already exists.' % self.test_container)
 
@@ -58,16 +59,17 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
     def test_cached_auth_and_auth_invalidation(self):
         from swiftclient.client import get_auth_keystone as real_get_keystone
         swift._clear_cached_auth_credentials()
+        tenant = self.test_container.tenant
         with mock.patch('swiftclient.client.get_auth_keystone', autospec=True) as mock_get_ks:
             mock_get_ks.side_effect = real_get_keystone
             s = Path(self.test_container).stat()
-            self.assertEquals(s['Account'], self.test_tenant)
+            self.assertEquals(s['Account'], tenant)
             self.assertEquals(len(mock_get_ks.call_args_list), 1)
 
             # The keystone auth should not be called on another stat
             mock_get_ks.reset_mock()
             s = Path(self.test_container).stat()
-            self.assertEquals(s['Account'], self.test_tenant)
+            self.assertEquals(s['Account'], tenant)
             self.assertEquals(len(mock_get_ks.call_args_list), 0)
 
             # Set the auth cache to something bad. The auth keystone should
@@ -75,9 +77,9 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             # when retrying auth (with the bad token) and then called by us without
             # a token after the swiftclient raises an authorization error.
             mock_get_ks.reset_mock()
-            swift._cached_auth_token_map[self.test_tenant]['creds']['os_auth_token'] = 'bad_auth'
+            swift._cached_auth_token_map[tenant]['creds']['os_auth_token'] = 'bad_auth'
             s = Path(self.test_container).stat()
-            self.assertEquals(s['Account'], self.test_tenant)
+            self.assertEquals(s['Account'], tenant)
             self.assertEquals(len(mock_get_ks.call_args_list), 2)
             # Note that the auth_token is passed into the keystone client but then popped
             # from the kwargs. Assert that an auth token is no longer part of the retry calls
@@ -128,6 +130,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             Path(self.test_container / 'large_object.txt').copy(obj_path)
             self.assertCorrectObjectContents(obj_path, self.get_dataset_obj_names(1)[0], obj_size)
 
+    @unittest.skipIf(not os.environ.get('OS_TEMP_URL_KEY'), 'No temp url key set')
     def test_temp_url(self):
         basic_file = 'test.txt'
         complex_file = 'my test?file=special_chars.txt'
@@ -305,6 +308,8 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.assertEqual(stat_data['Content-Type'], 'image/svg+xml')
 
     def test_push_metadata(self):
+        if self.test_container.tenant != 'AUTH_swft_test':
+            raise unittest.SkipTest('test only works with admin rights')
         obj = self.test_container / 'object.txt'
         with obj.open('w') as fp:
             fp.write('a\n')
