@@ -1,10 +1,11 @@
 Release Notes
 =============
 
-Latest
+v1.5.2
 ------
 
-* Build universal wheels by default
+* Build universal wheels for both Python 2 and Python 3.
+  (no actual code changes)
 
 v1.5.1
 ------
