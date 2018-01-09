@@ -25,7 +25,15 @@ class NotFoundError(RemoteError):
 
 
 class UnauthorizedError(RemoteError):
-    """Thrown when a 403 response is returned."""
+    """Thrown when a 403 response is returned.
+
+    Note:
+        Internal swift connection errors (e.g., when a particular node is
+        unavailable) appear to translate themselves into 403 errors at the
+        proxy layer, thus in general it's a good idea to retry on authorization
+        errors as equivalent to unavailable errors when doing PUT or GET
+        operations (list / stat / etc never hit this issue).
+    """
     pass
 
 
