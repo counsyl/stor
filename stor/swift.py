@@ -99,6 +99,8 @@ initial_retry_sleep = 1
 SwiftError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
 ConditionNotMetError = stor_exceptions.ConditionNotMetError
+UnavailableError = stor_exceptions.UnavailableError
+UnauthorizedError = stor_exceptions.UnauthorizedError
 SwiftFile = OBSFile
 SwiftUploadObject = OBSUploadObject
 
@@ -170,25 +172,11 @@ def _clear_cached_auth_credentials():
         _cached_auth_token_map.clear()
 
 
-class UnavailableError(SwiftError):
-    """Thrown when a 503 response is returned from swift"""
-    pass
+class FailedUploadError(stor_exceptions.FailedUploadError, UnavailableError):
+    """Thrown when an upload fails because of availability issues.
 
-
-class FailedUploadError(UnavailableError):
-    """Thrown when an upload fails because of availability issues"""
-    pass
-
-
-class UnauthorizedError(SwiftError):
-    """Thrown when a 403 response is returned from swift.
-
-    Note:
-        Internal swift connection errors (e.g., when a particular node is
-        unavailable) appear to translate themselves into 403 errors at the
-        proxy layer, thus in general it's a good idea to retry on authorization
-        errors as equivalent to unavailable errors when doing PUT or GET
-        operations (list / stat / etc never hit this issue)."""
+    The exception hierarchy is different for swift because FailedUploadError is nearly always a 503
+    in Swift world (and thus almost always retry-able)"""
     pass
 
 
