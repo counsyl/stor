@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v1.5.3
+------
+
+* Hoist ``stor.utils.is_obs_path`` --> ``stor.is_obs_path``
+
 v1.5.2
 ------
 
