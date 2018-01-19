@@ -8,21 +8,41 @@ To run all tests, type::
 
     make test
 
-In order to run swift integration tests, create a swift tenant called ``AUTH_swft_test`` and provide environment variables for a user that has permissions to write to that tenant (``SWIFT_TEST_USERNAME`` and ``SWIFT_TEST_PASSWORD``). Also set the swift auth url environment variable (``OS_AUTH_URL``)
+Run Swift Integration Tests
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to run S3 integration tests, create a ``stor-test-bucket`` S3 bucket and provide environment variables for an AWS user that has permissions to write to it (``AWS_TEST_ACCESS_KEY_ID`` and ``AWS_ACCESS_KEY_ID``).
+Set the following env vars:
+
+* ``SWIFT_TEST_USERNAME`` - username for test (will also set test tenant)
+* ``SWIFT_TEST_PASSWORD`` - password to run tests
+* ``OS_AUTH_URL`` - url that runs tests
+
+Run S3 Integration Tests
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Set following environment variables for an AWS IAM user that has
+read/write/list permissions:
+
+* ``AWS_TEST_ACCESS_KEY_ID``
+* ``AWS_TEST_SECRET_ACCESS_KEY_ID``
+* (optional) ``AWS_TEST_BUCKET`` - overrides ``s3://stor-test-bucket`` as target.
+
+Run Swift -> S3 and S3 -> Swift Integration Tests
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Set both sets of env vars!
 
 Code Quality
 ------------
 
-For code quality, please run flake8::
+We use flake8 for code quality, which you can run easily with::
 
-    pip install flake8
-    flake8 .
+    make lint
 
 Code Styling
 ------------
-Please follow `Google's python style`_ guide wherever possible.
+Please follow `Google's python style`_ guide wherever possible, particularly
+for docstrings. We use 4 spaces to indent and a 99 character max line limit.
 
 .. _Google's python style: http://google-styleguide.googlecode.com/svn/trunk/pyguide.html
 
@@ -33,3 +53,11 @@ When in the project directory::
 
     make docs
     open docs/_build/html/index.html
+
+
+Running Integration Tests
+-------------------------
+
+
+.. automodule:: stor.tests.integration
+    :members:

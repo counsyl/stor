@@ -10,10 +10,33 @@ from stor import exceptions
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor import utils
-from stor.tests.test_integration import BaseIntegrationTest
+from stor.tests import integration
 
 
-class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
+def set_up_integration_s3(test_case):
+    """Set up integraton test case to point at S3.
+
+    Handles updating stor settings and creating/cleaning up test data"""
+    if not (os.environ.get('AWS_TEST_ACCESS_KEY_ID') and
+            os.environ.get('AWS_TEST_SECRET_ACCESS_KEY')):
+        raise unittest.SkipTest(
+            'AWS_TEST_ACCESS_KEY_ID / AWS_TEST_SECRET_ACCESS_KEY env var not set.'
+            ' Skipping integration test')
+
+    # Disable loggers so nose output is clean
+    logging.getLogger('botocore').setLevel(logging.CRITICAL)
+
+    test_case.test_bucket = Path('s3://stor-test-bucket')
+    test_case.test_dir = test_case.test_bucket / 'test'
+    stor.settings.update({
+        's3': {
+            'aws_access_key_id': os.environ['AWS_TEST_ACCESS_KEY_ID'],
+            'aws_secret_access_key': os.environ['AWS_TEST_SECRET_ACCESS_KEY']
+        }
+    })
+
+
+class S3IntegrationTest(integration.FromFilesystemTestCase):
     """
     Integration tests for S3. Note that for now, while upload/download/remove
     methods are not implemented, tests will use the existing stor-test-bucket
@@ -25,28 +48,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
     """
     def setUp(self):
         super(S3IntegrationTest, self).setUp()
-
-        if not (os.environ.get('AWS_TEST_ACCESS_KEY_ID') and
-                os.environ.get('AWS_TEST_SECRET_ACCESS_KEY')):
-            raise unittest.SkipTest(
-                'AWS_TEST_ACCESS_KEY_ID / AWS_TEST_SECRET_ACCESS_KEY env var not set.'
-                ' Skipping integration test')
-
-        # Disable loggers so nose output is clean
-        logging.getLogger('botocore').setLevel(logging.CRITICAL)
-
-        self.test_bucket = Path('s3://stor-test-bucket')
-        self.test_dir = self.test_bucket / 'test'
-        stor.settings.update({
-            's3': {
-                'aws_access_key_id': os.environ['AWS_TEST_ACCESS_KEY_ID'],
-                'aws_secret_access_key': os.environ['AWS_TEST_SECRET_ACCESS_KEY']
-            }
-        })
-
-    def tearDown(self):
-        super(S3IntegrationTest, self).tearDown()
-        self.test_dir.rmtree()
+        set_up_integration_s3(self)
 
     def test_over_1000_files(self):
         num_test_objs = 1234
