@@ -231,6 +231,10 @@ class TestSwiftFile(SwiftTestCase):
         super(TestSwiftFile, self).setUp()
         settings.update({'swift': {'num_retries': 5}})
 
+    def test_makedirs_p_does_nothing(self):
+        # dumb test... but why not?
+        SwiftPath('swift://tenant/container/obj').makedirs_p()
+
     def test_invalid_buffer_mode(self):
         swift_f = SwiftPath('swift://tenant/container/obj').open()
         swift_f.mode = 'invalid'

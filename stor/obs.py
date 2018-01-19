@@ -186,6 +186,12 @@ class OBSPath(Path):
     def ismount(self):
         return True
 
+    # NOTE: we only have makedirs_p() because the other mkdir/mkdir_p/makedirs methods are expected
+    # to raise errors if directories exist or intermediate directories don't exist.
+    def makedirs_p(self, mode=0o777):
+        """No-op (no directories on OBS)"""
+        return
+
     def getsize(self):
         """Returns size, in bytes of path."""
         raise NotImplementedError
