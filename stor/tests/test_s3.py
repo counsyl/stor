@@ -1359,16 +1359,6 @@ class TestCopy(S3TestCase):
             p.copy(tmp_d)
             mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
 
-    def test_copy_swift_destination(self):
-        p = S3Path('s3://bucket/key/file_source')
-        with self.assertRaisesRegexp(ValueError, 'OBS path'):
-            p.copy('swift://tenant/container/file_dest')
-
-    def test_copy_s3_destination(self):
-        p = S3Path('s3://bucket/key/file_source')
-        with self.assertRaisesRegexp(ValueError, 'OBS path'):
-            p.copy('s3://bucket/key/file_dest')
-
 
 class TestCopytree(S3TestCase):
     @mock.patch.object(S3Path, 'download', autospec=True)
@@ -1380,11 +1370,6 @@ class TestCopytree(S3TestCase):
             Path(u'path'),
             condition=None,
             use_manifest=False)
-
-    def test_copytree_swift_destination(self):
-        p = S3Path('s3://bucket/key')
-        with self.assertRaises(ValueError):
-            p.copytree('s3://s3/path')
 
     @mock.patch('os.path', ntpath)
     def test_copytree_windows_destination(self):

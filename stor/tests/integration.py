@@ -89,11 +89,11 @@ class BaseIntegrationTest(unittest.TestCase):
 
     def get_dataset_obj_names(self, num_test_files):
         """Returns the name of objects in a test dataset generated with create_dataset"""
-        return [str(name) for name in range(num_test_files)]
+        return ['%s.txt' % str(name) for name in range(num_test_files)]
 
     def get_dataset_obj_contents(self, which_test_file, min_object_size):
         """Returns the object contents from a test file generated with create_dataset"""
-        return str(which_test_file) * min_object_size
+        return str(stor.splitext(which_test_file)[0]) * min_object_size
 
     def create_dataset(self, directory, num_objects, min_object_size):
         """Creates a test dataset with predicatable names and contents
@@ -113,7 +113,7 @@ class BaseIntegrationTest(unittest.TestCase):
         Given a test object and the minimum object size used with create_dataset, assert
         that a file exists with the correct contents
         """
-        with open(test_obj_path, 'r') as test_obj:
+        with stor.open(test_obj_path, 'r') as test_obj:
             contents = test_obj.read()
             expected = self.get_dataset_obj_contents(which_test_obj, min_obj_size)
             self.assertEquals(contents, expected)
@@ -138,9 +138,8 @@ class SourceDestTestCase(BaseIntegrationTest):
         download_to = stor.join(self.src_dir, 'download')
         self.create_dataset(upload_from, num_test_objs, test_obj_size)
         stor.copytree(upload_from, self.test_dir)
-        self.test_dir.copytree(
-            download_to,
-            condition=lambda results: len(results) == num_test_objs)  # pragma: no cover
+        stor.copytree(self.test_dir, download_to,
+                      condition=lambda results: len(results) == num_test_objs)  # pragma: no cover
 
         # Verify contents of all downloaded test objects
         for which_obj in self.get_dataset_obj_names(num_test_objs):

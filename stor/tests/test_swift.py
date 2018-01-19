@@ -2020,11 +2020,6 @@ class TestCopy(SwiftTestCase):
             p.copy(tmp_d)
             mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
 
-    def test_copy_swift_destination(self):
-        p = SwiftPath('swift://tenant/container/file_source')
-        with self.assertRaisesRegexp(ValueError, 'OBS path'):
-            p.copy('swift://tenant/container/file_dest')
-
 
 class TestCopytree(SwiftTestCase):
     @mock.patch.object(swift.SwiftPath, 'download', autospec=True)
@@ -2040,11 +2035,6 @@ class TestCopytree(SwiftTestCase):
             Path(u'path'),
             condition=None,
             use_manifest=False)
-
-    def test_copytree_swift_destination(self):
-        p = SwiftPath('swift://tenant/container')
-        with self.assertRaises(ValueError):
-            p.copytree('swift://swift/path')
 
     @mock.patch('os.path', ntpath)
     def test_copytree_windows_destination(self):

@@ -432,3 +432,19 @@ class SwiftIntegrationTest(integration.FromFilesystemTestCase):
 
             expected_contents = [Path('test/subdir') / c for c in expected_contents]
             self.assertEquals(set(manifest_contents), set(expected_contents))
+
+
+class SwiftContainerToSwiftContainerIntegrationTest(integration.SourceDestTestCase):
+    def setUp(self):
+        super(SwiftContainerToSwiftContainerIntegrationTest, self).setUp()
+        set_up_integration_swift(self)
+        self.src_dir = Path('swift://%s/%s' % (self.tenant, uuid.uuid4()))
+        self.addCleanup(self.src_dir.rmtree)
+
+
+class SwiftSubpathToSwiftSubpathIntegrationTest(integration.SourceDestTestCase):
+    def setUp(self):
+        super(SwiftSubpathToSwiftSubpathIntegrationTest, self).setUp()
+        set_up_integration_swift(self)
+        self.src_dir = self.test_dir / 'src'
+        self.test_dir = self.test_dir / 'test'

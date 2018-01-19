@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import unittest
+import uuid
 
 import six
 
@@ -27,7 +28,7 @@ def set_up_integration_s3(test_case):
     logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
     test_case.test_bucket = Path('s3://stor-test-bucket')
-    test_case.test_dir = test_case.test_bucket / 'test'
+    test_case.test_dir = test_case.test_bucket / str(uuid.uuid4()) / 'test'
     stor.settings.update({
         's3': {
             'aws_access_key_id': os.environ['AWS_TEST_ACCESS_KEY_ID'],
@@ -295,3 +296,11 @@ class S3IntegrationTest(integration.FromFilesystemTestCase):
         # to the object
         self.assertRegexpMatches(logger.getvalue(),
                                  '"GET (/stor-test-bucket)?/test/0 HTTP/1.1" 206')
+
+
+class S3WithinBucketIntegrationTest(integration.SourceDestTestCase):
+    def setUp(self):
+        super(S3WithinBucketIntegrationTest, self).setUp()
+        set_up_integration_s3(self)
+        self.src_dir = self.test_dir / 'src'
+        self.test_dir = self.test_dir / 'test'
