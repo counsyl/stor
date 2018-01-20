@@ -268,6 +268,8 @@ class Path(text_type):
         Args:
             mode (str): first positional arg, mode of file descriptor
             encoding (str): text encoding to use (Python 3 only)
+        Raises:
+            ValueError: if ambiguous path - see ``stor.utils.validate_file_path`` for more.
         """
 
         raise NotImplementedError
@@ -371,14 +373,17 @@ class FileSystemPath(Path):
     """
     def open(self, *args, **kwargs):
         """
-        Opens a path and retains interface compatibility with
-        `SwiftPath` by popping the unused ``swift_upload_args`` keyword
-        argument.
+        Opens a path.
 
         Creates parent directory if it does not exist.
+
+        Raises:
+            ValueError: if ambiguous path - see ``stor.utils.validate_file_path`` for more.
         """
-        kwargs.pop('swift_upload_kwargs', None)
+        if kwargs.pop('swift_upload_kwargs', None):
+            warnings.warn('swift_upload_kwargs will be removed in stor 2.0')
         self.parent.makedirs_p()
+        utils.validate_file_path(self)
         return builtins.open(self, *args, **kwargs)
 
     def __enter__(self):

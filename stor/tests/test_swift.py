@@ -99,7 +99,7 @@ class TestBasicPathMethods(unittest.TestCase):
 class TestManifestUtilities(unittest.TestCase):
     def test_generate_save_and_read_manifest(self):
         with NamedTemporaryDirectory() as tmp_d:
-            manifest_contents = ['obj1', 'dir/obj2']
+            manifest_contents = ['obj1', 'dir/obj2.ext']
             utils.generate_and_save_data_manifest(tmp_d, manifest_contents)
             read_contents = utils.get_data_manifest_contents(tmp_d)
 
@@ -174,8 +174,8 @@ class TestResource(SwiftTestCase):
         self.assertIsNone(swift_p.resource)
 
     def test_resource_single_object(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        self.assertEquals(swift_p.resource, 'obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
+        self.assertEquals(swift_p.resource, 'obj.ext')
 
     def test_resource_single_dir_w_slash(self):
         swift_p = SwiftPath('swift://tenant/container/dir/')
@@ -245,29 +245,29 @@ class TestSwiftFile(SwiftTestCase):
 
     def test_makedirs_p_does_nothing(self):
         # dumb test... but why not?
-        SwiftPath('swift://tenant/container/obj').makedirs_p()
+        SwiftPath('swift://tenant/container/obj.ext').makedirs_p()
 
     def test_invalid_buffer_mode(self):
-        swift_f = SwiftPath('swift://tenant/container/obj').open()
+        swift_f = SwiftPath('swift://tenant/container/obj.ext').open()
         swift_f.mode = 'invalid'
         with self.assertRaisesRegexp(ValueError, 'buffer'):
             swift_f._buffer
 
     def test_invalid_flush_mode(self):
         self.mock_swift_conn.get_object.return_value = ('header', b'data')
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open()
         with self.assertRaisesRegexp(TypeError, 'flush'):
             obj.flush()
 
     def test_name(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open()
         self.assertEquals(obj.name, swift_p)
 
     def test_context_manager_on_closed_file(self):
         self.mock_swift_conn.get_object.return_value = ('header', b'data')
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open()
         obj.close()
 
@@ -276,7 +276,7 @@ class TestSwiftFile(SwiftTestCase):
                 pass  # pragma: no cover
 
     def test_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         with self.assertRaisesRegexp(ValueError, 'invalid mode'):
             swift_p.open(mode='invalid')
 
@@ -290,7 +290,7 @@ class TestSwiftFile(SwiftTestCase):
 
     def test_read_on_closed_file(self):
         self.mock_swift_conn.get_object.return_value = ('header', b'data')
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open()
         obj.close()
 
@@ -298,14 +298,14 @@ class TestSwiftFile(SwiftTestCase):
             obj.read()
 
     def test_read_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         with self.assertRaisesRegexp(TypeError, 'mode.*read'):
             swift_p.open(mode='wb').read()
 
     def test_read_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', b'data')
 
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         self.assertEquals(swift_p.open().read(), 'data')
 
     def test_iterating_over_files(self):
@@ -317,7 +317,7 @@ line4
 '''
         self.mock_swift_conn.get_object.return_value = ('header', data)
 
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         # open().read() should return str for r
         self.assertEquals(swift_p.open('r').read(), data.decode('ascii'))
         # open().read() should return bytes for rb
@@ -336,13 +336,13 @@ line4
             ClientException('dummy', 'dummy', http_status=404),
             ('header', b'data')
         ]
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open()
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
 
     def test_write_invalid_args(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open(mode='r')
         with self.assertRaisesRegexp(TypeError, 'mode.*write'):
             obj.write('hello')
@@ -354,7 +354,7 @@ line4
             with mock.patch('tempfile.NamedTemporaryFile',
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
-                swift_p = SwiftPath('swift://tenant/container/obj')
+                swift_p = SwiftPath('swift://tenant/container/obj.ext')
                 obj = swift_p.open(mode='wb', swift_upload_options={
                     'use_manifest': True
                 })
@@ -370,7 +370,7 @@ line4
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_write_multiple_w_context_manager(self, mock_upload, mock_sleep):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         with swift_p.open(mode='wb') as obj:
             obj.write(b'hello')
             obj.write(b' world')
@@ -380,7 +380,7 @@ line4
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_write_multiple_flush_multiple_upload(self, mock_upload,
                                                   mock_sleep):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         with NamedTemporaryFile(delete=False) as ntf1,\
                 NamedTemporaryFile(delete=False) as ntf2,\
                 NamedTemporaryFile(delete=False) as ntf3:
@@ -407,7 +407,7 @@ line4
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
     def test_close_no_writes(self, mock_upload, mock_sleep):
-        swift_p = SwiftPath('swift://tenant/container/obj')
+        swift_p = SwiftPath('swift://tenant/container/obj.ext')
         obj = swift_p.open(mode='wb')
         obj.close()
 
@@ -496,7 +496,7 @@ class TestTempURL(SwiftTestCase):
         }
         with settings.use(temp_settings):
             with self.assertRaisesRegexp(ValueError, 'auth url'):
-                SwiftPath('swift://tenant/container/obj').temp_url()
+                SwiftPath('swift://tenant/container/obj.ext').temp_url()
 
     def test_no_temp_url_key(self):
         temp_settings = {
@@ -507,7 +507,7 @@ class TestTempURL(SwiftTestCase):
         }
         with settings.use(temp_settings):
             with self.assertRaisesRegexp(ValueError, 'temporary url key'):
-                SwiftPath('swift://tenant/container/obj').temp_url()
+                SwiftPath('swift://tenant/container/obj.ext').temp_url()
 
 
 class TestList(SwiftTestCase):
@@ -904,52 +904,52 @@ class TestList(SwiftTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_w_condition_and_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
-            'name': 'my/obj1'
+            'name': 'my/obj1.ext'
         }, {
-            'name': 'my/obj2'
+            'name': 'my/obj2.ext'
         }, {
-            'name': 'my/obj3'
+            'name': 'my/obj3.ext'
         }])
 
         swift_p = SwiftPath('swift://tenant/container/')
         results = swift_p.list(use_manifest=True, condition=lambda results: len(results) == 3)
         self.assertEquals(set(results), set([
-            'swift://tenant/container/my/obj1',
-            'swift://tenant/container/my/obj2',
-            'swift://tenant/container/my/obj3'
+            'swift://tenant/container/my/obj1.ext',
+            'swift://tenant/container/my/obj2.ext',
+            'swift://tenant/container/my/obj3.ext'
         ]))
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
-            'name': 'my/obj1'
+            'name': 'my/obj1.ext'
         }, {
-            'name': 'my/obj2'
+            'name': 'my/obj2.ext'
         }, {
-            'name': 'my/obj3'
+            'name': 'my/obj3.ext'
         }])
 
         swift_p = SwiftPath('swift://tenant/container/')
         results = swift_p.list(use_manifest=True)
         self.assertEquals(set(results), set([
-            'swift://tenant/container/my/obj1',
-            'swift://tenant/container/my/obj2',
-            'swift://tenant/container/my/obj3'
+            'swift://tenant/container/my/obj1.ext',
+            'swift://tenant/container/my/obj2.ext',
+            'swift://tenant/container/my/obj3.ext'
         ]))
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_use_manifest_validation_err(self, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n')
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
-            'name': 'my/obj1'
+            'name': 'my/obj1.ext'
         }, {
-            'name': 'my/obj2'
+            'name': 'my/obj2.ext'
         }])
 
         swift_p = SwiftPath('swift://tenant/container/')
@@ -961,35 +961,35 @@ class TestWalkFiles(SwiftTestCase):
     def test_no_pattern_w_dir_markers(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
-            'name': 'my/obj1',
+            'name': 'my/obj1.ext',
             'content_type': 'application/directory'
         }, {
-            'name': 'my/obj2',
+            'name': 'my/obj2.ext',
             'content_type': 'text/directory'
         }, {
-            'name': 'my/obj3',
+            'name': 'my/obj3.ext',
             'content_type': 'application/octet-stream'
         }, {
-            'name': 'my/obj4',
+            'name': 'my/obj4.ext',
             'content_type': 'application/octet-stream'
         }])
 
         f = list(SwiftPath('swift://tenant/container').walkfiles())
         self.assertEquals(set(f), set([
-            SwiftPath('swift://tenant/container/my/obj3'),
-            SwiftPath('swift://tenant/container/my/obj4')
+            SwiftPath('swift://tenant/container/my/obj3.ext'),
+            SwiftPath('swift://tenant/container/my/obj4.ext')
         ]))
 
     def test_w_pattern_w_dir_markers(self):
         mock_list = self.mock_swift_conn.get_container
         mock_list.return_value = ({}, [{
-            'name': 'my/obj1',
+            'name': 'my/obj1.ext',
             'content_type': 'application/directory'
         }, {
-            'name': 'my/obj2',
+            'name': 'my/obj2.ext',
             'content_type': 'text/directory'
         }, {
-            'name': 'my/obj3',
+            'name': 'my/obj3.ext',
             'content_type': 'application/octet-stream'
         }, {
             'name': 'my/obj4.sh',
@@ -998,7 +998,7 @@ class TestWalkFiles(SwiftTestCase):
             'name': 'my/other/obj5.sh',
             'content_type': 'application/octet-stream'
         }, {
-            'name': 'my/dirwithpattern.sh/obj6',
+            'name': 'my/dirwithpattern.sh/obj6.ext',
             'content_type': 'application/octet-stream'
         }])
 
@@ -1425,18 +1425,18 @@ class TestDownload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
     def test_download_w_condition_and_use_manifest(self, mock_list, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
-            'object': 'my/obj1',
+            'object': 'my/obj1.ext',
             'success': True
         }, {
             'action': 'download_object',
-            'object': 'my/obj2',
+            'object': 'my/obj2.ext',
             'success': True
         }, {
             'action': 'download_object',
-            'object': 'my/obj3',
+            'object': 'my/obj3.ext',
             'success': True
         }]
 
@@ -1460,18 +1460,18 @@ class TestDownload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
     def test_download_w_use_manifest(self, mock_list, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
-            'object': 'my/obj1',
+            'object': 'my/obj1.ext',
             'success': True
         }, {
             'action': 'download_object',
-            'object': 'my/obj2',
+            'object': 'my/obj2.ext',
             'success': True
         }, {
             'action': 'download_object',
-            'object': 'my/obj3',
+            'object': 'my/obj3.ext',
             'success': True
         }]
 
@@ -1493,14 +1493,16 @@ class TestDownload(SwiftTestCase):
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'list', autospec=True)
     def test_download_w_use_manifest_validation_err(self, mock_list, mock_sleep):
-        self.mock_swift_conn.get_object.return_value = ('header', b'my/obj1\nmy/obj2\nmy/obj3\n')
+        self.mock_swift_conn.get_object.return_value = (
+                'header',
+                b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n')
         self.mock_swift.download.return_value = [{
             'action': 'download_object',
-            'object': 'my/obj1',
+            'object': 'my/obj1.ext',
             'success': True
         }, {
             'action': 'download_object',
-            'object': 'my/obj2',
+            'object': 'my/obj2.ext',
             'success': True
         }]
 
@@ -2033,9 +2035,9 @@ class TestCopy(SwiftTestCase):
             mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
 
     def test_copy_swift_destination(self):
-        p = SwiftPath('swift://tenant/container/file_source')
+        p = SwiftPath('swift://tenant/container/file_source.txt')
         with self.assertRaisesRegexp(ValueError, 'OBS path'):
-            p.copy('swift://tenant/container/file_dest')
+            p.copy('swift://tenant/container/file_dest.txt')
 
 
 class TestCopytree(SwiftTestCase):

@@ -688,11 +688,7 @@ class SwiftPath(OBSPath):
                 ("r" or "rb") and writing ("w", "wb")
             encoding (str): text encoding to use. Defaults to
                 ``locale.getpreferredencoding(False)`` (Python 3 only)
-            swift_upload_options (dict): DEPRECATED (use `stor.settings.use()`
-                instead). A dictionary of arguments that will be
-                passed as keyword args to `SwiftPath.upload` if any writes
-                occur on the opened resource.
-
+            swift_upload_options (dict): DEPRECATED (use `stor.settings.use()` instead).
         Returns:
             SwiftFile: The swift object.
 
@@ -700,6 +696,8 @@ class SwiftPath(OBSPath):
             SwiftError: A swift client error occurred.
         """
         swift_upload_options = swift_upload_options or {}
+        if swift_upload_options:
+            warnings.warn('swift_upload_options will be removed in stor 2.0')
         return SwiftFile(self, mode=mode, encoding=encoding, **swift_upload_options)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))

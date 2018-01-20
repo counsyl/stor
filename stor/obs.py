@@ -1,6 +1,7 @@
 import locale
 import posixpath
 import sys
+import warnings
 
 from cached_property import cached_property
 import six
@@ -90,6 +91,7 @@ class OBSPath(Path):
         """Returns true if it cannot be determined if the path is a
         file or directory
         """
+        warnings.warn('this function is deprecated and will be removed in stor 2.0')
         return not self.endswith('/') and not self.ext
 
     def _get_parts(self):
@@ -286,11 +288,17 @@ class OBSFile(object):
                 use binary mode OR explicitly set an encoding when reading/writing text (because
                 writers from different computers may store data on OBS in different ways).
                 Python 3 only.
+        Raises:
+            ValueError: if the mode is not valid or the path is ambiguous (see ``stor.copy``)
         """
         if mode not in self._VALID_MODES:
             raise ValueError('invalid mode for file: %r' % mode)
         if six.PY2 and encoding:  # pragma: no cover
             raise TypeError('encoding not supported in Python 2')
+        # TODO (jtratner): in stor 2.0 remove this explicit check and the warning
+        if pth.endswith('/'):
+            raise ValueError('file paths may not end with trailing slash')
+        utils.validate_file_path(pth, _warn=True)
         self._path = pth
         self.mode = mode
         self._kwargs = kwargs
