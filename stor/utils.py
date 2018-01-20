@@ -312,6 +312,17 @@ def is_writeable(path, swift_retry_options=None):
     return answer
 
 
+def _handle_obs_to_obs_copying(source, dest, copy_func, **params):
+    """Copy between an OBS source and dest by staging on to local scratch"""
+    with NamedTemporaryDirectory() as ntd:
+        tmp_dest = ntd / source.name
+        logger.info('Using %s as intermediary to copy %s -> %s', tmp_dest, source, dest)
+        logger.info('Staging %s -> %s', source, tmp_dest)
+        copy_func(source, tmp_dest, **params)
+        logger.info('Uploading %s -> %s', tmp_dest, dest)
+        copy_func(tmp_dest, dest, **params)
+
+
 def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
@@ -348,6 +359,9 @@ def copy(source, dest, swift_retry_options=None):
             Traceback (most recent call last):
             ...
             ValueError: OBS destination must be file with extension or directory with slash
+
+    Note:
+        Copying from OBS path to OBS path will always download to local and then upload.
     """
     from stor import Path
     from stor.obs import OBSUploadObject
@@ -355,10 +369,10 @@ def copy(source, dest, swift_retry_options=None):
     source = Path(source)
     dest = Path(dest)
     swift_retry_options = swift_retry_options or {}
-    if is_obs_path(source) and is_obs_path(dest):
-        raise ValueError('cannot copy one OBS path to another OBS path')
     if is_obs_path(dest) and dest.is_ambiguous():
         raise ValueError('OBS destination must be file with extension or directory with slash')
+    if (is_obs_path(source) and is_obs_path(dest)) and source.is_ambiguous():
+        raise ValueError('OBS source must be file with extension or directory with slash')
 
     if is_filesystem_path(dest):
         dest.parent.makedirs_p()
@@ -367,6 +381,8 @@ def copy(source, dest, swift_retry_options=None):
             source.download_object(dest_file, **swift_retry_options)
         else:
             shutil.copy(source, dest)
+    elif is_obs_path(source) and is_obs_path(dest):
+        _handle_obs_to_obs_copying(source, dest, copy, swift_retry_options=swift_retry_options)
     else:
         dest_file = dest if not dest.endswith('/') else dest / source.name
         if is_swift_path(dest) and not dest_file.parent.container:
@@ -447,8 +463,6 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
 
     source = Path(source)
     dest = Path(dest)
-    if is_obs_path(source) and is_obs_path(dest):
-        raise ValueError('cannot copy one OBS path to another OBS path')
     from stor.windows import WindowsPath
     if is_obs_path(source) and isinstance(dest, WindowsPath):
         raise ValueError('OBS copytree to windows is not supported')
@@ -467,6 +481,11 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
                 check_call(copy_cmd)
             else:
                 shutil.copytree(source, dest)
+    elif is_obs_path(source) and is_obs_path(dest):
+        _handle_obs_to_obs_copying(source, dest, copytree,
+                                   copy_cmd=copy_cmd, use_manifest=use_manifest,
+                                   headers=headers, condition=condition,
+                                   **retry_args)
     else:
         with source:
             dest.upload(['.'], use_manifest=use_manifest, headers=headers,

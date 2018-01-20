@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+v1.6.0
+------
+
+* Support OBS -> OBS ``copy`` and ``copytree`` (implemented by copying to a
+  local temp directory and then re-uploading). We hope to support server-side
+  copying in a future version of stor.
+
 v1.5.4
 ------
 

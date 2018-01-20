@@ -1,15 +1,15 @@
-from stor.tests.test_integration import BaseIntegrationTest
+from stor.tests import integration
 import stor
 import six
 
 
-class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):
+class FilesystemIntegrationTest(integration.FromFilesystemTestCase):
     def setUp(self):
         super(FilesystemIntegrationTest, self).setUp()
-        ntp_obj = stor.NamedTemporaryDirectory()
+        ntd_obj = stor.NamedTemporaryDirectory()
         # ensure that it's empty and does not exist to start
-        self.test_dir = stor.join(ntp_obj.__enter__(), 'parent')
-        self.addCleanup(ntp_obj.__exit__, None, None, None)
+        self.test_dir = stor.join(ntd_obj.__enter__(), 'parent')
+        self.addCleanup(ntd_obj.__exit__, None, None, None)
 
     def test_non_empty_directory_errors(self):
         example_dir = stor.join(self.test_dir, 'example')
