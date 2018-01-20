@@ -14,6 +14,7 @@ Table of Contents
    windows
    testing
    settings
+   extensions
    contributing
    roadmap
    release_notes

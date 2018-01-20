@@ -4,6 +4,8 @@ Release Notes
 v1.6.0
 ------
 
+* Add ``stor.extensions.swiftstack`` module for translating swift paths to s3.
+* Add ``convert-swiftstack`` cli tool.
 * Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
 * Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
   nothing on OBS-paths (just there for convenience).

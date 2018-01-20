@@ -91,8 +91,9 @@ from stor import exceptions
 from stor import settings
 from stor import Path
 from stor import utils
+from stor.extensions import swiftstack
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'url')
+PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'url', 'convert-swiftstack')
 SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -274,6 +275,16 @@ def _to_url(path):
     return stor.Path(path).to_url()
 
 
+def _convert_swiftstack(path, bucket=None):
+    path = stor.Path(path)
+    if utils.is_swift_path(path):
+        return swiftstack.swift_to_s3(path, bucket=bucket)
+    elif utils.is_s3_path(path):
+        return swiftstack.s3_to_swift(path)
+    else:
+        raise ValueError('invalid path for conversion: %r' % path)
+
+
 def create_parser():
     parser = argparse.ArgumentParser(description='A command line interface for stor.')
 
@@ -379,6 +390,11 @@ def create_parser():
     url_parser = subparsers.add_parser('url', help='generate URI for path')
     url_parser.add_argument('path')
     url_parser.set_defaults(func=_to_url)
+    parser_swiftstack = subparsers.add_parser('convert-swiftstack',
+                                              help='convert swiftstack paths')
+    parser_swiftstack.add_argument('path')
+    parser_swiftstack.add_argument('--bucket', default=None)
+    parser_swiftstack.set_defaults(func=_convert_swiftstack)
 
     return parser
 
