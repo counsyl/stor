@@ -455,6 +455,12 @@ class TestWalkfiles(BaseCliTest):
         mock_walkfiles.assert_called_once_with(PosixPath('.'))
 
 
+class TestToUrl(BaseCliTest):
+    def test_url(self):
+        self.parse_args('stor url s3://test/file')
+        self.assertEquals(sys.stdout.getvalue(), 'https://test.s3.amazonaws.com/file\n')
+
+
 class TestCat(BaseCliTest):
     @mock.patch.object(S3Path, 'read_object', autospec=True)
     def test_cat_s3(self, mock_read):

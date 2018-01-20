@@ -1563,3 +1563,14 @@ class SwiftPath(OBSPath):
             for f in self.list(ignore_dir_markers=True):
                 if pattern is None or f.fnmatch(pattern):
                     yield f
+
+    def to_url(self):
+        """Returns path for object (based on storage URL)
+
+        Returns:
+            str: the http path
+        Raises:
+            UnauthorizedError: if we cannot authenticate to get a storage URL"""
+        storage_url = _get_or_create_auth_credentials(self.tenant)['os_storage_url']
+        return six.text_type(os.path.join(*filter(None,
+                                                  [storage_url, self.container, self.resource])))
