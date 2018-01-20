@@ -7,6 +7,11 @@ v1.6.0
 * Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
 * Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
   nothing on OBS-paths (just there for convenience).
+* ``stor`` no longer depends on ``cached-property``.
+* Fix bug with buffers that attempted to load buffers on close even if we'd
+  never actually loaded the underlying data. (and led to lots of ``Exception
+  ignored in OBSFile.__del__`` messages). This should reduce hangs on garbage
+  collection or closing python terminal.
 
 v1.5.2
 ------

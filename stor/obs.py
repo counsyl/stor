@@ -2,7 +2,6 @@ import locale
 import posixpath
 import sys
 
-from cached_property import cached_property
 import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
@@ -257,16 +256,25 @@ class OBSFile(object):
         obj.close()
 
     Note that the writes will not be commited until the object has been
-    closed. It is recommended to use `OBSPath.open` as a context manager
-    to avoid forgetting to close the resource::
+    closed or garbage collected (meaning that an exception within a block will still generate a
+    partial file).
+
+    Just like with Python file objects, it's good practice to use it in a contextmanager::
 
         with Path('swift://tenant/container/object').open(mode='r') as obj:
             obj.write('Hello world!')
+
+    .. note::
+        Unlike python file objects, OBSFile does not create an empty sentinel file if you
+        call open and then do not close it.
     """
     closed = False
     _READ_MODES = ('r', 'rb')
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
+    # we have to know whether we've generated a buffer at all
+    # to know whether we need to close the underlying buffer
+    __buffer = None
 
     def __init__(self, pth, mode='r', encoding=None, **kwargs):
         """Initializes a file object
@@ -313,17 +321,22 @@ class OBSFile(object):
         """The class used for the IO stream"""
         return six.BytesIO if self.mode in ('rb', 'wb') else six.StringIO
 
-    @cached_property
+    @property
     def _buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
+        if self.__buffer:
+            return self.__buffer
+
         if self.mode == 'r':
-            return self.stream_cls(self._path.read_object().decode(self.encoding))
-        if self.mode == 'rb':
-            return self.stream_cls(self._path.read_object())
+            buf = self.stream_cls(self._path.read_object().decode(self.encoding))
+        elif self.mode == 'rb':
+            buf = self.stream_cls(self._path.read_object())
         elif self.mode in ('w', 'wb'):
-            return self.stream_cls()
+            buf = self.stream_cls()
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
+        self.__buffer = buf
+        return self.__buffer
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
     tell = _delegate_to_buffer('tell', valid_modes=_VALID_MODES)
@@ -351,11 +364,17 @@ class OBSFile(object):
     def close(self):
         if self.closed:
             return
+        # do NOT try to create a buffer in close() method
+        if not self.__buffer:
+            self.closed = True
+            return
         if self.mode in self._WRITE_MODES:
             self.flush()
-        self._buffer.close()
+        if self.__buffer:
+            self.__buffer.close()
         self.closed = True
-        del self.__dict__['_buffer']
+        # free reference to underlying data
+        del self.__buffer
 
     def flush(self):
         """Flushes the write buffer to the OBS path (if it exists)"""
