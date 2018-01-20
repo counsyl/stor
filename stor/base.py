@@ -342,6 +342,11 @@ class Path(text_type):
         See shutil.rmtree"""
         raise NotImplementedError
 
+    def makedirs_p(self, mode=0o777):
+        """ Like :func:`os.makedirs`, but does not raise an exception if the
+        directory already exists. """
+        raise NotImplementedError
+
     def walkfiles(self, pattern=None):
         """Iterate over files recursively.
 

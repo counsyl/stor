@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v1.5.4
+------
+
+* Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
+  nothing on OBS-paths (just there for convenience).
+
 v1.5.3
 ------
 
