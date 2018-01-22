@@ -459,6 +459,8 @@ class TestToUrl(BaseCliTest):
     def test_url(self):
         self.parse_args('stor url s3://test/file')
         self.assertEquals(sys.stdout.getvalue(), 'https://test.s3.amazonaws.com/file\n')
+        with self.assertRaisesRegexp(ValueError, 'must be swift or s3 path'):
+            self.parse_args('stor url /test/file')
 
 
 class TestCat(BaseCliTest):
