@@ -380,6 +380,23 @@ def copy(source, dest, swift_retry_options=None):
                                 **swift_retry_options)
 
 
+def copy_multiple(sources, dest, swift_retry_options=None):
+    """Copies many sources to the same destination.
+
+    See ``stor.copy``.
+
+    Args:
+        source (list of path|str): The list of source files.
+        dest (path|str): The destination directory to copy to.
+        swift_retry_options (dict): Optional retry arguments to use for swift
+            upload or download. View the
+            `swift module-level documentation <swiftretry>` for more
+            information on retry arguments
+    """
+    for source in sources:
+        copy(source, dest, swift_retry_options=swift_retry_options)
+
+
 def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
              condition=None, **retry_args):
     """Copies a source directory to a destination directory. Assumes that
@@ -471,6 +488,25 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
         with source:
             dest.upload(['.'], use_manifest=use_manifest, headers=headers,
                         condition=condition, **retry_args)
+
+
+def copytree_multiple(sources, dest, copy_cmd=None, use_manifest=False,
+                      headers=None, condition=None, **retry_args):
+    for source in sources:
+        copytree(source, dest, copy_cmd=copy_cmd, use_manifest=use_manifest,
+                 headers=headers, condition=condition, **retry_args)
+
+
+def remove_multiple(paths):
+    from stor import Path
+    for path in paths:
+        Path(path).remove()
+
+
+def rmtree_multiple(paths):
+    from stor import Path
+    for path in paths:
+        Path(path).rmtree()
 
 
 def _safe_get_size(name):

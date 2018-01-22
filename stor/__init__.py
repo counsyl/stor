@@ -23,7 +23,11 @@ See `stor.swift` for more information on Swift-specific functionality.
 import pkg_resources
 
 from stor.utils import copy
+from stor.utils import copy_multiple
 from stor.utils import copytree
+from stor.utils import copytree_multiple
+from stor.utils import remove_multiple
+from stor.utils import rmtree_multiple
 from stor.utils import is_filesystem_path
 from stor.utils import is_swift_path
 from stor.utils import is_obs_path
@@ -134,9 +138,13 @@ __all__ = [
     'ismount',
     'getsize',
     'copy',
+    'copy_multiple',
     'copytree',
+    'copytree_multiple',
     'remove',
+    'remove_multiple',
     'rmtree',
+    'rmtree_multiple',
     'walkfiles',
     'is_filesystem_path',
     'is_swift_path',

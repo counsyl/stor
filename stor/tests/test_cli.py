@@ -36,7 +36,7 @@ class TestCliBasics(BaseCliTest):
 
     @mock.patch.dict('stor.settings._global_settings', {}, clear=True)
     @mock.patch.dict(os.environ, {}, clear=True)
-    @mock.patch('stor.copytree', autospec=True)
+    @mock.patch('stor.copytree_multiple', autospec=True)
     @mock.patch('stor.settings.USER_CONFIG_FILE', '')
     def test_cli_config(self, mock_copytree):
         expected_settings = {
@@ -89,7 +89,7 @@ class TestCliBasics(BaseCliTest):
         self.parse_args('stor --config %s cp -r source dest' % filename)
         self.assertEquals(settings._global_settings, expected_settings)
 
-    @mock.patch('stor.copy', autospec=True)
+    @mock.patch('stor.copy_multiple', autospec=True)
     @mock.patch('sys.stderr', new=six.StringIO())
     def test_not_implemented_error(self, mock_copy):
         mock_copy.side_effect = NotImplementedError
@@ -337,15 +337,20 @@ class TestLs(BaseCliTest):
         mock_listdir.assert_called_once_with(SwiftPath('swift://t/c'))
 
 
-@mock.patch('stor.copy', autospec=True)
+@mock.patch('stor.copy_multiple', autospec=True)
 class TestCopy(BaseCliTest):
-    def mock_copy_source(self, source, dest, *args, **kwargs):
-        with open(dest, 'w') as outfile, open(source) as infile:
+    def mock_copy_source(self, sources, dest, *args, **kwargs):
+        with open(dest, 'w') as outfile, open(sources) as infile:
             outfile.write(infile.read())
 
     def test_copy(self, mock_copy):
         self.parse_args('stor cp s3://bucket/file.txt ./file1')
-        mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
+        mock_copy.assert_called_once_with(sources=['s3://bucket/file.txt'], dest='./file1')
+
+    def test_copy_multiple(self, mock_copy):
+        self.parse_args('stor cp s3://bucket/file.txt ./file2.txt ./dir1/')
+        mock_copy.assert_called_once_with(sources=['s3://bucket/file.txt', './file2.txt'],
+                                          dest='./dir1/')
 
     @mock.patch('sys.stdin', new=six.StringIO('some stdin input\n'))
     def test_copy_stdin(self, mock_copy):
@@ -354,17 +359,25 @@ class TestCopy(BaseCliTest):
             test_file = ntf.name
             self.parse_args('stor cp - %s' % test_file)
         self.assertEquals(open(test_file).read(), 'some stdin input\n')
-        temp_file = mock_copy.call_args_list[0][1]['source']
+        temp_file = mock_copy.call_args_list[0][1]['sources']
         self.assertFalse(os.path.exists(temp_file))
         os.remove(test_file)
         self.assertFalse(os.path.exists(test_file))
 
 
-@mock.patch('stor.copytree', autospec=True)
+@mock.patch('stor.copytree_multiple', autospec=True)
 class TestCopytree(BaseCliTest):
     def test_copytree(self, mock_copytree):
         self.parse_args('stor cp -r s3://bucket .')
-        mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
+        mock_copytree.assert_called_once_with(sources=['s3://bucket'], dest='.')
+
+    def test_copytree_dash(self, mock_copytree):
+        self.parse_args('stor cp -r s3://bucket-with-dash .')
+        mock_copytree.assert_called_once_with(sources=['s3://bucket-with-dash'], dest='.')
+
+    def test_copytree_multiple(self, mock_copytree):
+        self.parse_args('stor cp -r s3://bucket directory .')
+        mock_copytree.assert_called_once_with(sources=['s3://bucket', 'directory'], dest='.')
 
     @mock.patch('sys.stderr', new=six.StringIO())
     def test_copytree_stdin_error(self, mock_copytree):
@@ -374,25 +387,37 @@ class TestCopytree(BaseCliTest):
 
 
 class TestRemove(BaseCliTest):
-    @mock.patch.object(S3Path, 'remove', autospec=True)
+    @mock.patch('stor.remove_multiple', autospec=True)
     def test_remove_s3(self, mock_remove):
         self.parse_args('stor rm s3://bucket/file1')
-        mock_remove.assert_called_once_with(S3Path('s3://bucket/file1'))
+        mock_remove.assert_called_once_with([S3Path('s3://bucket/file1')])
 
-    @mock.patch.object(SwiftPath, 'remove', autospec=True)
+    @mock.patch('stor.remove_multiple', autospec=True)
     def test_remove_swift(self, mock_remove):
         self.parse_args('stor rm swift://t/c/file1')
-        mock_remove.assert_called_once_with(SwiftPath('swift://t/c/file1'))
+        mock_remove.assert_called_once_with([SwiftPath('swift://t/c/file1')])
 
-    @mock.patch.object(S3Path, 'rmtree', autospec=True)
+    @mock.patch('stor.remove_multiple', autospec=True)
+    def test_remove_multiple_swift(self, mock_remove):
+        self.parse_args('stor rm swift://t/c/file1 swift://t/c/file2')
+        mock_remove.assert_called_once_with([SwiftPath('swift://t/c/file1'),
+                                             SwiftPath('swift://t/c/file2')])
+
+    @mock.patch('stor.rmtree_multiple', autospec=True)
     def test_rmtree_s3(self, mock_rmtree):
         self.parse_args('stor rm -r s3://bucket/dir')
-        mock_rmtree.assert_called_once_with(S3Path('s3://bucket/dir'))
+        mock_rmtree.assert_called_once_with([S3Path('s3://bucket/dir')])
 
-    @mock.patch.object(SwiftPath, 'rmtree', autospec=True)
+    @mock.patch('stor.rmtree_multiple', autospec=True)
     def test_rmtree_swift(self, mock_rmtree):
         self.parse_args('stor rm -r swift://t/c/dir')
-        mock_rmtree.assert_called_once_with(SwiftPath('swift://t/c/dir'))
+        mock_rmtree.assert_called_once_with([SwiftPath('swift://t/c/dir')])
+
+    @mock.patch('stor.rmtree_multiple', autospec=True)
+    def test_rmtree_multiple_swift(self, mock_rmtree):
+        self.parse_args('stor rm -r swift://t/c/dir1 swift://t/c/dir2')
+        mock_rmtree.assert_called_once_with([SwiftPath('swift://t/c/dir1'),
+                                             SwiftPath('swift://t/c/dir2')])
 
 
 class TestWalkfiles(BaseCliTest):
@@ -469,6 +494,14 @@ class TestCat(BaseCliTest):
         self.parse_args('stor cat swift://some/test/file')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
         mock_read.assert_called_once_with(SwiftPath('swift://some/test/file'))
+
+    @mock.patch.object(SwiftPath, 'read_object', autospec=True)
+    def test_cat_swift_multiple(self, mock_read):
+        mock_read.side_effect = ['hello world A', 'hello world B', 'hello world A']
+        self.parse_args('stor cat swift://some/test/fileA'
+                        ' swift://some/test/fileB swift://some/test/fileA')
+        self.assertEquals(sys.stdout.getvalue(),
+                          'hello world Ahello world Bhello world A\n')
 
 
 class TestCd(BaseCliTest):

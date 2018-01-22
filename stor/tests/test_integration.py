@@ -73,6 +73,18 @@ class BaseIntegrationTest(object):
                     stor.copy(obj_path, 'copied_file')
                     self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
 
+        def test_copy_multiple_to_from_dir(self):
+            num_test_objs = 5
+            min_obj_size = 100
+            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+                self.create_dataset(tmp_d, num_test_objs, min_obj_size)
+                objs = self.get_dataset_obj_names(num_test_objs)
+                stor.copy_multiple(objs, self.test_dir / "")
+                for which_obj in objs:
+                    obj_path = stor.join(self.test_dir, which_obj)
+                    stor.copy(obj_path, 'copied_file')
+                    self.assertCorrectObjectContents('copied_file', which_obj, min_obj_size)
+
         def test_copytree_to_from_dir(self):
             num_test_objs = 10
             test_obj_size = 100
@@ -91,6 +103,29 @@ class BaseIntegrationTest(object):
                 for which_obj in self.get_dataset_obj_names(num_test_objs):
                     obj_path = Path('test') / which_obj
                     self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
+
+        def test_copytree_multiple_to_from_dir(self):
+            num_test_dirs = 10
+            num_test_objs = 2
+            test_obj_size = 100
+            # Create mock dataset and copy all directories
+            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+                test_dirs = self.get_dataset_obj_names(num_test_dirs)
+                for dirname in test_dirs:
+                    stor.utils.make_dest_dir(dirname)
+                    self.create_dataset(dirname, num_test_objs, test_obj_size)
+                stor.copytree_multiple(test_dirs, self.test_dir / "")
+            # Copy the files back to get contents
+            with NamedTemporaryDirectory(change_dir=True) as tmp_d:
+                for dirname in test_dirs:
+                    (self.test_dir / dirname).copytree(
+                        'test-%s' % dirname,
+                        condition=lambda results: len(results) == num_test_objs)
+
+                    # Verify contents of all downloaded test objects
+                    for which_obj in self.get_dataset_obj_names(num_test_objs):
+                        obj_path = Path('test-%s' % dirname) / which_obj
+                        self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
         def test_hidden_file_nested_dir_copytree(self):
             with NamedTemporaryDirectory(change_dir=True):

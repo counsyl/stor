@@ -32,14 +32,15 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
 
         settings.update({
             'swift': {
+                'auth_url': os.environ.get('OS_AUTH_URL'),
                 'username': os.environ.get('SWIFT_TEST_USERNAME'),
                 'password': os.environ.get('SWIFT_TEST_PASSWORD'),
                 'num_retries': 5
             }})
         # fall back on to swiftstack auth for tenant
         tenant = os.environ.get('SWIFT_TEST_TENANT', 'AUTH_%s' % os.environ['SWIFT_TEST_USERNAME'])
-
-        self.test_container = Path('swift://%s/%s' % (tenant, uuid.uuid4()))
+        container_prefix = os.environ.get('SWIFT_TEST_CONTAINER_PREFIX', '')
+        self.test_container = Path('swift://%s/%s%s' % (tenant, uuid.uuid4()))
         if self.test_container.exists():
             raise ValueError('test container %s already exists.' % self.test_container)
 

@@ -82,6 +82,9 @@ import shutil
 import signal
 import sys
 import tempfile
+from datetime import datetime as dt
+from collections import defaultdict
+import mimetypes
 
 import six
 from six.moves import configparser
@@ -92,7 +95,7 @@ from stor import settings
 from stor import Path
 from stor import utils
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles')
+PRINT_CMDS = ('cat', 'pwd', 'swift')
 SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -126,7 +129,7 @@ def _make_stdin_action(func, err_msg):
     """
     class StdinAction(argparse._StoreAction):
         def __call__(self, parser, namespace, values, option_string=None):
-            if values == '-':
+            if '-' in values:
                 if namespace.func == func:
                     raise argparse.ArgumentError(self, err_msg)
                 else:
@@ -207,9 +210,12 @@ def _clear_env(service=None):
             _env_chdir(name + '://')
 
 
-def _cat(pth):
+def _cat(pths):
     """Return the contents of a given path."""
-    return pth.open().read()
+    contents = []
+    for pth in pths:
+        contents.append(pth.open().read())
+    return "".join(contents)
 
 
 def _obs_relpath_service(pth):
@@ -268,6 +274,39 @@ def get_path(pth, mode=None):
     return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
+def _add_listing_parser_args(subparser):
+    subparser.add_argument('-l', '--simple-list',
+                           help='Show short, simple list format rather than the long format',
+                           action='store_true')
+    subparser.add_argument('-b', '--use-bytes',
+                           help='In long format use bytes rather than human readable file sizes',
+                           action='store_true')
+    subparser.add_argument('-S', '--sort-by-file-size',
+                           help='Sort files by size, smallest first',
+                           action='store_true')
+    subparser.add_argument('-t', '--sort-by-time',
+                           help='Sort files by modification time, oldest first',
+                           action='store_true')
+    subparser.add_argument('-U', '--sort-by-directory-order',
+                           help=("Don't apply a particular sorting. With no sorting "
+                                 "flags, sorting is alphabetical"),
+                           action='store_true')
+    subparser.add_argument('-r', '--reverse',
+                           help='Reverse the order',
+                           action='store_true')
+    subparser.add_argument('-u', '--url',
+                           help='Display URL rather than filename',
+                           action='store_true')
+    subparser.add_argument('-T', '--tabs',
+                           help='Use tabs as separators rather than fixed-width columns',
+                           action='store_true')
+    subparser.add_argument('--relative-time',
+                           help='In long format use relative time',
+                           action='store_true')
+    subparser.add_argument('path', default='./', nargs='?', type=get_path, metavar='PATH')
+    subparser.set_defaults(func=_print_ls_output)
+
+
 def create_parser():
     parser = argparse.ArgumentParser(description='A command line interface for stor.')
 
@@ -287,56 +326,24 @@ def create_parser():
     parser_list = subparsers.add_parser('list',
                                         help=list_msg,
                                         description=list_msg)
-    parser_list.add_argument('path', type=get_path, metavar='PATH')
     parser_list.add_argument('-s', '--starts-with',
                              help='Append an additional path to the search path.',
                              type=str,
                              dest='starts_with',
                              metavar='PREFIX')
-    parser_list.add_argument('-l', '--limit',
+    parser_list.add_argument('-L', '--limit',
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
-    parser_list.set_defaults(func=stor.list)
+    _add_listing_parser_args(parser_list)
+    parser_list.set_defaults(list_func=stor.list)
 
     ls_msg = 'List path as a directory.'
     parser_ls = subparsers.add_parser('ls',  # noqa
                                       help=ls_msg,
                                       description=ls_msg)
-    parser_ls.add_argument('path', type=get_path, metavar='PATH')
-    parser_ls.set_defaults(func=stor.listdir)
-
-    cp_msg = 'Copy a source to a destination path.'
-    cp_msg = 'Alias for copy.'
-    parser_cp = subparsers.add_parser('cp',  # noqa
-                                      help=cp_msg,
-                                      description='%s\n \'-\' is a special character that allows'
-                                                  ' for using stdin as the source.' % cp_msg)
-    parser_cp.add_argument('-r',
-                           help='Copy a directory and its subtree to the destination directory.'
-                                ' Must be specified before any other flags.',
-                           action='store_const',
-                           dest='func',
-                           const=stor.copytree,
-                           default=stor.copy)
-    parser_cp.add_argument('source',
-                           type=get_path,
-                           metavar='SOURCE',
-                           action=_make_stdin_action(stor.copytree,
-                                                     '- cannot be used with -r'))
-    parser_cp.add_argument('dest', type=get_path, metavar='DEST')
-
-    rm_msg = 'Remove file at a path.'
-    parser_rm = subparsers.add_parser('rm',
-                                      help=rm_msg,
-                                      description='%s Use the -r flag to remove a tree.' % rm_msg)
-    parser_rm.add_argument('-r',
-                           help='Remove a path and all its contents.',
-                           action='store_const',
-                           dest='func',
-                           const=stor.rmtree,
-                           default=stor.remove)
-    parser_rm.add_argument('path', type=get_path, metavar='PATH')
+    _add_listing_parser_args(parser_ls)
+    parser_ls.set_defaults(list_func=stor.listdir)
 
     walkfiles_msg = 'List all files under a path that match an optional pattern.'
     parser_walkfiles = subparsers.add_parser('walkfiles',
@@ -346,12 +353,64 @@ def create_parser():
                                   help='A regex pattern to match file names on.',
                                   type=str,
                                   metavar='REGEX')
-    parser_walkfiles.add_argument('path', type=get_path, metavar='PATH')
-    parser_walkfiles.set_defaults(func=stor.walkfiles)
+    _add_listing_parser_args(parser_walkfiles)
+    parser_walkfiles.set_defaults(list_func=stor.walkfiles)
+
+    cp_msg = 'Copy source(s) to a destination path.'
+    parser_cp = subparsers.add_parser('cp',  # noqa
+                                      help=cp_msg,
+                                      description='%s\n \'-\' is a special character that allows'
+                                                  ' for using stdin as the source.' % cp_msg)
+    parser_cp.add_argument('-r',
+                           help='Copy a directory and its subtree to the destination directory.'
+                                ' Must be specified before any other flags.',
+                           action='store_const',
+                           dest='func',
+                           const=stor.copytree_multiple,
+                           default=stor.copy_multiple)
+    parser_cp.add_argument('sources',
+                           type=get_path,
+                           metavar='SOURCE',
+                           nargs='+',
+                           action=_make_stdin_action(stor.copytree_multiple,
+                                                     '- cannot be used with -r'))
+    parser_cp.add_argument('dest', type=get_path, metavar='DEST')
+
+    parser_cpto = subparsers.add_parser(
+        'cpto',
+        help=cp_msg + ' Note that here DEST comes before SOURCE(s).',
+        description='%s\n \'-\' is a special character that allows'
+                    ' for using stdin as the source.' % cp_msg)
+    parser_cpto.add_argument('-r',
+                             help='Copy a directory and its subtree to the destination directory.'
+                                  ' Must be specified before any other flags.',
+                             action='store_const',
+                             dest='func',
+                             const=stor.copytree_multiple,
+                             default=stor.copy_multiple)
+    parser_cpto.add_argument('dest', type=get_path, metavar='DEST')
+    parser_cpto.add_argument('sources',
+                             type=get_path,
+                             metavar='SOURCE',
+                             nargs='+',
+                             action=_make_stdin_action(stor.copytree_multiple,
+                                                       '- cannot be used with -r'))
+
+    rm_msg = 'Remove file at a path.'
+    parser_rm = subparsers.add_parser('rm',
+                                      help=rm_msg,
+                                      description='%s Use the -r flag to remove a tree.' % rm_msg)
+    parser_rm.add_argument('-r',
+                           help='Remove a path and all its contents.',
+                           action='store_const',
+                           dest='func',
+                           const=stor.rmtree_multiple,
+                           default=stor.remove_multiple)
+    parser_rm.add_argument('path', type=get_path, metavar='PATH', nargs="+")
 
     cat_msg = 'Output file contents to stdout.'
     parser_cat = subparsers.add_parser('cat', help=cat_msg, description=cat_msg)
-    parser_cat.add_argument('path', type=partial(get_path, mode='r'), metavar='PATH')
+    parser_cat.add_argument('path', type=partial(get_path, mode='r'), metavar='PATH', nargs='+')
     parser_cat.set_defaults(func=_cat)
 
     cd_msg = 'Change directory to a given OBS path.'
@@ -370,6 +429,16 @@ def create_parser():
                                          ' will be cleared if SERVICE is omitted.' % clear_msg)
     parser_clear.add_argument('service', nargs='?', type=str, metavar='SERVICE')
     parser_clear.set_defaults(func=_clear_env)
+
+    swift_msg = 'Get Swift-specific information.'
+    parser_swift = subparsers.add_parser('swift', help=swift_msg, description=swift_msg)
+    parser_swift.add_argument(
+        'get', choices=['get-tenant', 'get-container', 'get-object', 'get-resource',
+                        'get-url'],
+        help=("Which part of swift://tenant/container/object-or-resource to return; "
+              "get-url returns the https:// URL"))
+    parser_swift.add_argument('path', type=get_path, metavar='PATH')
+    parser_swift.set_defaults(func=_swift)
 
     return parser
 
@@ -416,6 +485,228 @@ def print_results(results):
     else:
         for result in results:
             sys.stdout.write('%s\n' % str(result))
+
+
+def _swift(path, get):
+    if get == 'get-tenant':
+        return str(path.tenant)
+    if get == 'get-container':
+        return str(path.container)
+    if get == 'get-object' or get == 'get-resource':
+        return str(path.resource)
+    if get == 'get-url':
+        auth_url = settings.get()['swift']['auth_url']
+        swift_prefix = auth_url.split('auth')[0]
+        return _swift_url(swift_prefix, path)
+    raise RuntimeError("Invalid thing to get for a swift path: {}".format(get))
+
+
+def _format_size(size_bytes, human_readable=True):
+    if size_bytes is None:  # e.g. a directory
+        return ""
+    if not human_readable:
+        return str(size_bytes)
+    size_kib = size_bytes / 1024.
+    if size_kib < 1:
+        return "{} B".format(size_bytes)
+    size_mib = size_kib / 1024.
+    if size_mib < 1:
+        return "{:.1f} KiB".format(size_kib)
+    size_gib = size_mib / 1024.
+    if size_gib < 1:
+        return "{:.1f} MiB".format(size_mib)
+    size_tib = size_gib / 1024.
+    if size_tib < 1:
+        return "{:.1f} GiB".format(size_gib)
+    return "{:.1f} TiB".format(size_tib)
+
+
+def _swift_url(swift_prefix, path):
+    return "{}v1/{}/{}/{}".format(
+        swift_prefix, path.tenant, path.container, path.resource)
+
+
+def _get_swift_metadata_factory(auth_url):
+    swift_prefix = auth_url.split('auth')[0]
+
+    def get_metadata(path, use_bytes, url, relative_to):
+        raw_metadata = {
+            'name': str(path),
+            'url': _swift_url(swift_prefix, path),
+            'size_bytes': None,
+            'ctype': None,
+            'last_modified': None,
+            'hash': None,
+        }
+        try:
+            info = path.stat()
+            isfile = path.resource and 'directory' not in info.get('Content-Type', '')
+        except exceptions.NotFoundError:
+            isfile = False
+        if isfile:
+            raw_metadata['last_modified'] = dt.fromtimestamp(float(
+                info['headers']['x-object-meta-mtime']))
+            raw_metadata['size_bytes'] = int(info['Content-Length'])
+            raw_metadata['ctype'] = info['Content-Type']
+            raw_metadata['hash'] = info.get('ETag', None)
+        else:
+            raw_metadata['ctype'] = 'DIR'
+        raw_metadata['isfile'] = isfile
+        display_metadata = {
+            'name': raw_metadata['url'] if url else raw_metadata['name'],
+            'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
+            'ctype': raw_metadata['ctype'] or '',
+            'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
+            'hash': raw_metadata['hash'] or '',
+        }
+        return {'raw': raw_metadata, 'display': display_metadata}
+    return get_metadata
+
+
+def _get_s3_metadata(path, use_bytes, url, relative_to):
+    raw_metadata = {
+        'last_modified': None,
+        'url': "TODO",  # TODO
+        'size_bytes': None,
+        'ctype': 'DIR',
+        'storage_class': None,
+        'hash': None,
+        'isfile': False,
+    }
+    try:
+        info = path.stat()
+        raw_metadata['last_modified'] = info['LastModified']
+        raw_metadata['size_bytes'] = info['ContentLength']
+        raw_metadata['ctype'] = info['ContentType']
+        raw_metadata['storage_class'] = info['StorageClass']
+        raw_metadata['hash'] = info['ETag']
+        raw_metadata['isfile'] = True
+    except exceptions.NotFoundError:
+        pass
+    display_metadata = {
+        'name': raw_metadata['url'] if url else raw_metadata['name'],
+        'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
+        'ctype': raw_metadata['ctype'] or '',
+        'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
+        'storage_class': raw_metadata['storage_class'],
+        'hash': raw_metadata['hash'] or '',
+    }
+    return {'raw': raw_metadata, 'display': display_metadata}
+
+
+def _get_file_metadata(path, use_bytes, url, relative_to):
+    info = os.stat(path)
+    isfile = path.isfile()
+    raw_metadata = {
+        'name': str(path),
+        'url': "file://" + str(path.abspath()).replace("\\", "/"),
+        'size_bytes': info.st_size if isfile else None,
+        'ctype': mimetypes.guess_type(path)[0] if isfile else 'DIR',
+        'last_modified': dt.fromtimestamp(info.st_mtime) if isfile else None,
+        'isfile': isfile,
+    }
+    display_metadata = {
+        'name': raw_metadata['url'] if url else raw_metadata['name'],
+        'size': _format_size(raw_metadata['size_bytes'], not use_bytes),
+        'ctype': raw_metadata['ctype'] or '',
+        'last_modified': _format_time(raw_metadata['last_modified'], relative_to),
+    }
+    return {'raw': raw_metadata, 'display': display_metadata}
+
+
+def _format_time(timestamp, relative_to=None):
+    if timestamp is None:
+        return ''
+    if relative_to is not None:
+        secs = (relative_to - timestamp).total_seconds()
+        mins = secs / 60.
+        if mins < 1:
+            return "{:.0f} s".format(secs)
+        hours = mins / 60.
+        if hours < 1:
+            return "{:.2g} mins".format(mins)
+        days = hours / 24.
+        if days < 1:
+            return "{:.2g} hrs".format(hours)
+        weeks = days / 7.
+        if weeks < 1:
+            return "{:.2g} d".format(days)
+        months = weeks / 4.
+        if months < 1:
+            return "{:.2g} w".format(weeks)
+        years = months / 12.
+        if years < 1:
+            return "{:.2g} mo".format(months)
+        return "{:.2g} yrs".format(years)
+    return timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+
+def _print_ls_output(path, simple_list=False, use_bytes=False,  # noqa: C901
+                     sort_by_file_size=False, sort_by_time=False, sort_by_directory_order=False,
+                     reverse=False, url=False, tabs=False, relative_time=False,
+                     list_func=stor.listdir, **kwargs):
+    # TODO: --tree
+    # TODO: --depth
+    path = Path(path)
+    out_lines = []
+    paths = list(list_func(path, **kwargs))
+    if utils.is_swift_path(path):
+        get_metadata = _get_swift_metadata_factory(settings.get()['swift']['auth_url'])
+        tabs_fmt = "{size}\t{last_modified}\t{ctype}\t{hash}\t{name}"
+        fixed_fmt = ("{{size: >{max_lens[size]}}}  "
+                     "{{last_modified: >{max_lens[last_modified]}}}  "
+                     "{{ctype: >{max_lens[ctype]}}}  "
+                     "{{hash: >{max_lens[hash]}}}  "
+                     "{{name}}")
+    elif utils.is_s3_path(path):
+        get_metadata = _get_s3_metadata
+        tabs_fmt = "{size}\t{last_modified}\t{ctype}\t{storage_class}\t{name}"
+        fixed_fmt = ("{{size: >{max_lens[size]}}}  "
+                     "{{last_modified: >{max_lens[last_modified]}}}  "
+                     "{{ctype: >{max_lens[ctype]}}}  "
+                     "{{storage_class: >{max_lens[storage_class]}}}  "
+                     "{{hash: >{max_lens[hash]}}}  "
+                     "{{name}}")
+    else:
+        get_metadata = _get_file_metadata
+        tabs_fmt = "{size}\t{last_modified}\t{ctype}\t{name}"
+        fixed_fmt = ("{{size: >{max_lens[size]}}}  "
+                     "{{last_modified: >{max_lens[last_modified]}}}  "
+                     "{{ctype: >{max_lens[ctype]}}}  "
+                     "{{name}}")
+    metadata = dict((p, get_metadata(p, use_bytes, url, dt.now()
+                                     if relative_time else None)) for p in paths)
+    if sort_by_directory_order:
+        # no particular ordering
+        pass
+    elif sort_by_file_size:
+        paths = sorted(paths, key=lambda p: metadata[p]['raw']['size_bytes'])
+    elif sort_by_time:
+        paths = sorted(paths, key=lambda p: metadata[p]['raw']['last_modified'] or dt.min)
+    else:
+        paths = sorted(paths)
+    if reverse:
+        paths = paths[::-1]
+    total_bytes = 0
+    for p in paths:
+        out_lines.append(metadata[p]['display'])
+        total_bytes += metadata[p]['raw']['size_bytes'] or 0
+    if simple_list:
+        out_lines = ["{}".format(line['name']) for line in out_lines]
+    else:
+        if tabs:
+            fmt = tabs_fmt
+        else:
+            max_lens = defaultdict(int)
+            for line in out_lines:
+                for k in line:
+                    max_lens[k] = max(max_lens[k], len(line[k]))
+            fmt = fixed_fmt.format(max_lens=max_lens)
+        out_lines = [fmt.format(**line) for line in out_lines]
+        if sys.stdout.isatty():  # mimic ls
+            out_lines = ['Total: {}'.format(_format_size(total_bytes, not use_bytes))] + out_lines
+    sys.stdout.write('\n'.join(out_lines))
+    sys.stdout.write('\n')
 
 
 def main():
