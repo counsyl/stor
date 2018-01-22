@@ -456,14 +456,14 @@ class TestWalkfiles(BaseCliTest):
 
 
 class TestToUri(BaseCliTest):
-    def test_as_uri(self):
-        self.parse_args('stor uri s3://test/file')
+    def test_to_url(self):
+        self.parse_args('stor url s3://test/file')
         self.assertEquals(sys.stdout.getvalue(), 'https://test.s3.amazonaws.com/file\n')
 
     @mock.patch('sys.stderr', new=six.StringIO())
     def test_file_uri_error(self):
         with self.assertRaises(SystemExit):
-            self.parse_args('stor uri /test/file')
+            self.parse_args('stor url /test/file')
         self.assertEquals(sys.stdout.getvalue(), '')
         self.assertIn('must be swift or s3 path', sys.stderr.getvalue())
 

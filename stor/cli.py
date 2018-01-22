@@ -92,7 +92,7 @@ from stor import settings
 from stor import Path
 from stor import utils
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'uri')
+PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'url')
 SERVICES = ('s3', 'swift')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -268,10 +268,10 @@ def get_path(pth, mode=None):
     return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
-def _as_uri(path):
+def _to_url(path):
     if stor.is_filesystem_path(path):
         raise ValueError('must be swift or s3 path')
-    return stor.Path(path).as_uri()
+    return stor.Path(path).to_url()
 
 
 def create_parser():
@@ -376,9 +376,9 @@ def create_parser():
                                          ' will be cleared if SERVICE is omitted.' % clear_msg)
     parser_clear.add_argument('service', nargs='?', type=str, metavar='SERVICE')
     parser_clear.set_defaults(func=_clear_env)
-    url_parser = subparsers.add_parser('uri', help='generate URI for path')
+    url_parser = subparsers.add_parser('url', help='generate URI for path')
     url_parser.add_argument('path')
-    url_parser.set_defaults(func=_as_uri)
+    url_parser.set_defaults(func=_to_url)
 
     return parser
 

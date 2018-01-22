@@ -1564,11 +1564,11 @@ class SwiftPath(OBSPath):
                 if pattern is None or f.fnmatch(pattern):
                     yield f
 
-    def as_uri(self):
+    def to_url(self):
         """Returns URI for object (based on storage URL)
 
         Returns:
-            str: the HTTP uri to the object
+            str: the HTTP url to the object
         Raises:
             UnauthorizedError: if we cannot authenticate to get a storage URL"""
         storage_url = _get_or_create_auth_credentials(self.tenant)['os_storage_url']

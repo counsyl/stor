@@ -83,16 +83,16 @@ class TestBasicPathMethods(unittest.TestCase):
         p = Path('swift://tenant/container/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
 
-    def test_as_uri(self):
+    def test_to_url(self):
         with mock.patch('stor.swift._get_or_create_auth_credentials',
                         # storage url may be an opaque value... ensure we roll with that
                         return_value={'os_storage_url': 'https://example.com/v1.0/othertenant',
                                       'os_auth_token': 'sometoken'}):
-            self.assertEquals(Path('swift://tenant/container/path/to/resource').as_uri(),
+            self.assertEquals(Path('swift://tenant/container/path/to/resource').to_url(),
                               'https://example.com/v1.0/othertenant/container/path/to/resource')
-            self.assertEquals(stor.Path('swift://tenant/container').as_uri(),
+            self.assertEquals(stor.Path('swift://tenant/container').to_url(),
                               'https://example.com/v1.0/othertenant/container')
-            self.assertEquals(stor.Path('swift://tenant').as_uri(),
+            self.assertEquals(stor.Path('swift://tenant').to_url(),
                               'https://example.com/v1.0/othertenant')
 
 
