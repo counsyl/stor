@@ -758,7 +758,7 @@ class S3Path(OBSPath):
         utils.check_condition(condition, [r['dest'] for r in uploaded['completed']])
         return uploaded
 
-    def to_url(self):
-        """Returns HTTPS path for object (virtual host-style)"""
+    def as_uri(self):
+        """Returns HTTP uri for object (virtual host-style)"""
         return u'https://{bucket}.s3.amazonaws.com/{key}'.format(bucket=self.bucket,
                                                                  key=self.resource)
