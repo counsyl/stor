@@ -237,6 +237,10 @@ class OBSPath(Path):
         """Upload a list of files and directories to a directory."""
         raise NotImplementedError
 
+    def to_url(self):
+        """Get HTTPS URL for given path"""
+        raise NotImplementedError
+
 
 class OBSFile(object):
     """
