@@ -26,7 +26,8 @@ class TestSwiftStackExtensions(BaseCliTest):
 
     def test_swift_to_s3(self):
         assert str(swiftstack.swift_to_s3(self.swift_path, 'ex-bucket')) == self.s3_path
-        assert str(swiftstack.swift_to_s3(self.swift_path + '/some/object', 'ex-bucket')) == self.s3_path + '/some/object'
+        assert (str(swiftstack.swift_to_s3(self.swift_path + '/some/object', 'ex-bucket')) ==
+                self.s3_path + '/some/object')
 
     def test_s3_to_swift(self):
         assert str(swiftstack.s3_to_swift(self.s3_path)) == self.swift_path

@@ -74,7 +74,6 @@ class TestCliTestUtils(BaseCliTest):
                 print('blah', file=sys.stderr)
 
 
-
 class TestCliBasics(BaseCliTest):
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_cli_error(self, mock_list):
