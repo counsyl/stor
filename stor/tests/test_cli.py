@@ -1,3 +1,6 @@
+from __future__ import print_function
+
+import contextlib
 import os
 import mock
 import sys
@@ -14,24 +17,64 @@ from stor import settings
 from stor import test
 
 
-@mock.patch('sys.stdout', new=six.StringIO())
 class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
     def setUp(self):
         patcher = mock.patch.object(sys, 'stdout', six.StringIO())
         self.addCleanup(patcher.stop)
         patcher.start()
 
+    @contextlib.contextmanager
+    def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):
+        patch = mock.patch('sys.stderr', new=six.StringIO())
+        self.addCleanup(patch.stop)
+        patch.start()
+        if exit_status is not None:
+            try:
+                yield
+            except SystemExit as e:
+                self.assertEquals(e.code, int(exit_status))
+            else:
+                assert False, 'SystemExit not raised'
+        else:
+            yield
+        if not stdout:
+            self.assertEquals(sys.stdout.getvalue(), '', 'stdout')
+        else:
+            self.assertRegexpMatches(sys.stdout.getvalue(), stdout, 'stdout')
+        if not stderr:
+            self.assertEquals(sys.stderr.getvalue(), '', 'stderr')
+        else:
+            self.assertRegexpMatches(sys.stderr.getvalue(), stderr, 'stderr')
+
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
 
 
+class TestCliTestUtils(BaseCliTest):
+    def test_stdout_matching(self):
+        with six.assertRaisesRegex(self, AssertionError, 'stdout'):
+            with self.assertOutputMatches(stdout=None):
+                print('blah')
+
+    def test_stderr_matching(self):
+        with six.assertRaisesRegex(self, AssertionError, 'stderr'):
+            with self.assertOutputMatches(stderr=None):
+                print('blah', file=sys.stderr)
+
+    def test_stderr_and_stdout_matching(self):
+        with six.assertRaisesRegex(self, AssertionError, 'stderr'):
+            with self.assertOutputMatches(stdout='apple', stderr=None):
+                print('apple')
+                print('blah', file=sys.stderr)
+
+
+
 class TestCliBasics(BaseCliTest):
-    @mock.patch('sys.stderr', autospec=True)
     @mock.patch.object(S3Path, 'list', autospec=True)
-    def test_cli_error(self, mock_list, mock_stderr):
+    def test_cli_error(self, mock_list):
         mock_list.side_effect = exceptions.RemoteError('some error')
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status='1', stderr='RemoteError: some error'):
             self.parse_args('stor list s3://bucket')
 
     @mock.patch.dict('stor.settings._global_settings', {}, clear=True)
@@ -90,36 +133,27 @@ class TestCliBasics(BaseCliTest):
         self.assertEquals(settings._global_settings, expected_settings)
 
     @mock.patch('stor.copy', autospec=True)
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_not_implemented_error(self, mock_copy):
         mock_copy.side_effect = NotImplementedError
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status='1', stderr='not a valid command'):
             self.parse_args('stor cp some/path some/where')
-        self.assertIn('not a valid command', sys.stderr.getvalue())
 
     @mock.patch('stor.cli._clear_env', autospec=True)
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_not_implemented_error_no_args(self, mock_clear):
         mock_clear.side_effect = NotImplementedError
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status='1', stderr='not a valid command'):
             self.parse_args('stor clear')
-        self.assertIn('not a valid command', sys.stderr.getvalue())
 
     @mock.patch.object(PosixPath, 'list', autospec=True)
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_not_implemented_error_path(self, mock_list):
         mock_list.side_effect = NotImplementedError
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status='1', stderr='not a valid command'):
             self.parse_args('stor list some_path')
-        self.assertIn('not a valid command', sys.stderr.getvalue())
 
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_no_cmd_provided(self):
-        with mock.patch.object(sys, 'argv', ['stor']):
-            with self.assertRaisesRegexp(SystemExit, '2'):
-                cli.main()
-        self.assertIn('stor: error:', sys.stderr.getvalue())
-        self.assertIn('arguments', sys.stderr.getvalue())
+        with self.assertOutputMatches(exit_status='2', stderr='stor: error:.*arguments'):
+            with mock.patch.object(sys, 'argv', ['stor']):
+                    cli.main()
 
 
 @mock.patch('stor.cli._get_pwd', autospec=True)
@@ -298,13 +332,11 @@ class TestList(BaseCliTest):
             mock.call(S3Path('s3://some-bucket'), limit=2)
         ])
 
-    @mock.patch('sys.stderr', new=six.StringIO())
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_list_not_found(self, mock_list):
         mock_list.side_effect = exceptions.NotFoundError('not found')
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status='1', stderr='s3://bucket/path'):
             self.parse_args('stor list s3://bucket/path')
-        self.assertIn('s3://bucket/path', sys.stderr.getvalue())
 
 
 class TestLs(BaseCliTest):
@@ -366,11 +398,9 @@ class TestCopytree(BaseCliTest):
         self.parse_args('stor cp -r s3://bucket .')
         mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
 
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_copytree_stdin_error(self, mock_copytree):
-        with self.assertRaisesRegexp(SystemExit, '2'):
+        with self.assertOutputMatches(exit_status='2', stderr='- cannot be used with -r'):
             self.parse_args('stor cp -r - s3://bucket')
-        self.assertRegexpMatches(sys.stderr.getvalue(), '- cannot be used with -r')
 
 
 class TestRemove(BaseCliTest):
@@ -457,15 +487,12 @@ class TestWalkfiles(BaseCliTest):
 
 class TestToUri(BaseCliTest):
     def test_to_url(self):
-        self.parse_args('stor url s3://test/file')
-        self.assertEquals(sys.stdout.getvalue(), 'https://test.s3.amazonaws.com/file\n')
+        with self.assertOutputMatches(stdout='^https://test.s3.amazonaws.com/file\n$'):
+            self.parse_args('stor url s3://test/file')
 
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_file_uri_error(self):
-        with self.assertRaises(SystemExit):
+        with self.assertOutputMatches(exit_status='1', stderr='must be swift or s3 path'):
             self.parse_args('stor url /test/file')
-        self.assertEquals(sys.stdout.getvalue(), '')
-        self.assertIn('must be swift or s3 path', sys.stderr.getvalue())
 
 
 class TestCat(BaseCliTest):
@@ -517,24 +544,18 @@ class TestCd(BaseCliTest):
                       open(self.test_env_file).read())
 
     @mock.patch.object(S3Path, 'isdir', return_value=False, autospec=True)
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_cd_not_dir_s3(self, mock_isdir):
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status=1, stderr='not a directory'):
             self.parse_args('stor cd s3://test/file')
-        self.assertIn('not a directory', sys.stderr.getvalue())
 
     @mock.patch.object(SwiftPath, 'isdir', return_value=False, autospec=True)
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_cd_not_dir_swift(self, mock_isdir):
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status=1, stderr='not a directory'):
             self.parse_args('stor cd swift://test/container/file')
-        self.assertIn('not a directory', sys.stderr.getvalue())
 
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_cd_bad_path_error(self):
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status=1, stderr='invalid path'):
             self.parse_args('stor cd drive://not/correct')
-        self.assertIn('invalid path', sys.stderr.getvalue())
 
     def test_clear_all(self):
         with open(self.test_env_file, 'w') as outfile:
@@ -580,8 +601,6 @@ class TestCd(BaseCliTest):
         self.parse_args('stor pwd swift')
         self.assertEquals(sys.stdout.getvalue(), 'swift://test/container/\n')
 
-    @mock.patch('sys.stderr', new=six.StringIO())
     def test_pwd_error(self):
-        with self.assertRaisesRegexp(SystemExit, '1'):
+        with self.assertOutputMatches(exit_status=1, stderr='invalid service'):
             self.parse_args('stor pwd service')
-        self.assertIn('invalid service', sys.stderr.getvalue())

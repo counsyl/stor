@@ -1,32 +1,25 @@
-import unittest
 import sys
 
-import mock
-import six
-
 from stor import cli
+from stor.tests.test_cli import BaseCliTest
 from stor.extensions import swiftstack
 
 
-@mock.patch('sys.stdout', new=six.StringIO())
-class SwiftStackExtensions(unittest.TestCase):
+class TestSwiftStackExtensions(BaseCliTest):
     swift_path = "swift://AUTH_seq_upload_prod/D00576"
     s3_path = "s3://ex-bucket/a9bf76/AUTH_seq_upload_prod/D00576"
 
-    def test_cli(self):
-        with mock.patch.object(
-            sys, 'argv',
-            ['stor', 'convert-swiftstack', self.swift_path, '--bucket', 'ex-bucket']
-        ):
-            cli.main()
+    def test_s3_to_swift_cli(self):
+        self.parse_args('stor convert-swiftstack %s --bucket ex-bucket' % self.swift_path)
         self.assertEqual(sys.stdout.getvalue(), self.s3_path + '\n')
 
-        with self.assertRaisesRegexp(TypeError, 'bucket is required'):
-            with mock.patch.object(
-                sys, 'argv',
-                ['stor', 'convert-swiftstack', self.swift_path]
-            ):
-                cli.main()
+    def test_s3_to_swift_no_bucket_errors(self):
+        with self.assertOutputMatches(exit_status='1', stderr='bucket'):
+            self.parse_args('stor convert-swiftstack %s' % self.swift_path)
+
+    def test_filesystem_path_errors(self):
+        with self.assertOutputMatches(exit_status='1', stderr="invalid path.* '/test/path'"):
+            self.parse_args('stor convert-swiftstack /test/path')
 
     def test_swift_to_s3(self):
         assert str(swiftstack.swift_to_s3(self.swift_path, "ex-bucket")) == self.s3_path
