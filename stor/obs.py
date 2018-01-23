@@ -269,6 +269,7 @@ class OBSFile(object):
         call open and then do not close it.
     """
     closed = False
+    _buffer_created = False
     _READ_MODES = ('r', 'rb')
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
@@ -336,6 +337,7 @@ class OBSFile(object):
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
         self.__buffer = buf
+        self._buffer_created = True
         return self.__buffer
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
@@ -364,17 +366,13 @@ class OBSFile(object):
     def close(self):
         if self.closed:
             return
-        # do NOT try to create a buffer in close() method
-        if not self.__buffer:
-            self.closed = True
-            return
-        if self.mode in self._WRITE_MODES:
-            self.flush()
-        if self.__buffer:
+        if self._buffer_created:
+            if self.mode in self._WRITE_MODES:
+                self.flush()
             self.__buffer.close()
+            # free reference to underlying data
+            del self.__buffer
         self.closed = True
-        # free reference to underlying data
-        del self.__buffer
 
     def flush(self):
         """Flushes the write buffer to the OBS path (if it exists)"""

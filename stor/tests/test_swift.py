@@ -1,4 +1,3 @@
-import gzip
 import logging
 import ntpath
 import os
@@ -7,7 +6,6 @@ import unittest
 
 import freezegun
 import mock
-import six
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from testfixtures import LogCapture
@@ -21,7 +19,7 @@ from stor import swift
 from stor import utils
 from stor.swift import SwiftPath
 from stor.test import SwiftTestCase
-from stor.tests.shared import assert_same_data
+from stor.tests.shared_obs import SharedOBSFileCases
 
 
 def _service_404_exception():
@@ -243,51 +241,6 @@ class TestSwiftFile(SwiftTestCase):
         super(TestSwiftFile, self).setUp()
         settings.update({'swift': {'num_retries': 5}})
 
-    def test_makedirs_p_does_nothing(self):
-        # dumb test... but why not?
-        SwiftPath('swift://tenant/container/obj').makedirs_p()
-
-    def test_invalid_buffer_mode(self):
-        swift_f = SwiftPath('swift://tenant/container/obj').open()
-        swift_f.mode = 'invalid'
-        with self.assertRaisesRegexp(ValueError, 'buffer'):
-            swift_f._buffer
-
-    def test_invalid_flush_mode(self):
-        self.mock_swift_conn.get_object.return_value = ('header', b'data')
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        obj = swift_p.open()
-        with self.assertRaisesRegexp(TypeError, 'flush'):
-            obj.flush()
-
-    def test_name(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        obj = swift_p.open()
-        self.assertEquals(obj.name, swift_p)
-
-    def test_context_manager_on_closed_file(self):
-        self.mock_swift_conn.get_object.return_value = ('header', b'data')
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        obj = swift_p.open()
-        obj.close()
-
-        with self.assertRaisesRegexp(ValueError, 'closed file'):
-            with obj:
-                pass  # pragma: no cover
-
-    def test_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        with self.assertRaisesRegexp(ValueError, 'invalid mode'):
-            swift_p.open(mode='invalid')
-
-    def test_invalid_io_op(self):
-        # now invalid delegates are considered invalid on instantiation
-        with self.assertRaisesRegexp(AttributeError, 'no attribute'):
-            class MyFile(object):
-                closed = False
-                _buffer = six.BytesIO()
-                invalid = swift._delegate_to_buffer('invalid')
-
     def test_read_on_closed_file(self):
         self.mock_swift_conn.get_object.return_value = ('header', b'data')
         swift_p = SwiftPath('swift://tenant/container/obj')
@@ -297,15 +250,11 @@ class TestSwiftFile(SwiftTestCase):
         with self.assertRaisesRegexp(ValueError, 'closed file'):
             obj.read()
 
-    def test_read_invalid_mode(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        with self.assertRaisesRegexp(TypeError, 'mode.*read'):
-            swift_p.open(mode='wb').read()
-
     def test_read_success(self):
         self.mock_swift_conn.get_object.return_value = ('header', b'data')
 
         swift_p = SwiftPath('swift://tenant/container/obj')
+        self.assertEquals(swift_p.read_object(), b'data')
         self.assertEquals(swift_p.open().read(), 'data')
 
     def test_iterating_over_files(self):
@@ -340,12 +289,6 @@ line4
         obj = swift_p.open()
         self.assertEquals(obj.read(), 'data')
         self.assertEquals(len(mock_sleep.call_args_list), 1)
-
-    def test_write_invalid_args(self):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        obj = swift_p.open(mode='r')
-        with self.assertRaisesRegexp(TypeError, 'mode.*write'):
-            obj.write('hello')
 
     @mock.patch('time.sleep', autospec=True)
     @mock.patch.object(SwiftPath, 'upload', autospec=True)
@@ -404,33 +347,11 @@ line4
                 # additional file change
                 self.assertEqual(open(ntf3.name).read(), 'hello world')
 
-    @mock.patch('time.sleep', autospec=True)
-    @mock.patch.object(SwiftPath, 'upload', autospec=True)
-    def test_close_no_writes(self, mock_upload, mock_sleep):
-        swift_p = SwiftPath('swift://tenant/container/obj')
-        obj = swift_p.open(mode='wb')
-        obj.close()
 
-        self.assertFalse(mock_upload.called)
-
-    def test_works_with_gzip(self):
-        gzip_path = stor.join(stor.dirname(__file__),
-                              'file_data', 's_3_2126.bcl.gz')
-        text = stor.open(gzip_path, 'rb').read()
-        with mock.patch.object(SwiftPath, 'read_object', autospec=True) as read_mock:
-            read_mock.return_value = text
-            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz', 'rb')
-
-            with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
-                with gzip.open(gzip_path) as gzip_fp:
-                    assert_same_data(swift_file_fp, gzip_fp)
-            swift_file = stor.open('swift://A/C/s_3_2126.bcl.gz', 'rb')
-            with gzip.GzipFile(fileobj=swift_file) as swift_file_fp:
-                with gzip.open(gzip_path) as gzip_fp:
-                    # after seeking should still be same
-                    swift_file_fp.seek(3)
-                    gzip_fp.seek(3)
-                    assert_same_data(swift_file_fp, gzip_fp)
+class TestSwiftShared(SharedOBSFileCases, SwiftTestCase):
+    drive = 'swift://'
+    path_class = SwiftPath
+    normal_path = SwiftPath('swift://tenant/container/obj')
 
 
 class TestTempURL(SwiftTestCase):
