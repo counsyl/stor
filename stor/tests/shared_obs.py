@@ -79,6 +79,20 @@ class SharedOBSFileCases(object):
 
     @mock_write_object
     @mock_read_object
+    def test_empty_buffer_no_writes(self, mock_read_object, mock_write_object):
+        # NOTE: this tests that our current description (only non-empty buffers are uploaded) is
+        # enshrined.
+        fileobj = stor.open('{drive}B/C/obj'.format(drive=self.drive), 'w')
+        fileobj.flush()
+        self.assertFalse(fileobj._buffer_created)
+        fileobj.write('')
+        fileobj.flush()
+        fileobj.close()
+        self.assertFalse(mock_read_object.called)
+        self.assertFalse(mock_write_object.called)
+
+    @mock_write_object
+    @mock_read_object
     def test_on_del_no_writes(self, mock_read_object, mock_write_object):
         fileobj = stor.open('{drive}B/C/obj'.format(drive=self.drive), 'w')
         del fileobj

@@ -255,9 +255,9 @@ class OBSFile(object):
         obj.write('world')
         obj.close()
 
-    Note that the writes will not be commited until the object has been
-    closed or garbage collected (meaning that an exception within a block will still generate a
-    partial file).
+    If *any* data is written to the file's internal buffer, it will be written to object storage
+    on ``flush()``, ``close()`` (or leaving a with statement / `__exit__()`) or when the
+    ``OBSFile`` is garbage collected. You *cannot* create a zero-byte object on OBS.
 
     Just like with Python file objects, it's good practice to use it in a contextmanager::
 
@@ -379,7 +379,11 @@ class OBSFile(object):
         if self.mode not in self._WRITE_MODES:
             raise TypeError("File must be in modes %s to 'flush'" %
                             (self._WRITE_MODES,))
-        if self._buffer.tell():
+        # NOTE: this helps ensure that only non-zero objects are uploaded with open.
+        # Otherwise you have weird behavior where calling open().tell() will cause an empty object
+        # to be created on OBS on exit. Instead, philosophy is "if buffer has data, we'll upload it
+        # on close"
+        if self.__buffer and self._buffer.tell():
             if self.mode == 'w':
                 self._path.write_object(self._buffer.getvalue().encode(self.encoding))
             else:
