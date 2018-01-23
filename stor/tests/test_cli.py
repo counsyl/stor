@@ -455,6 +455,19 @@ class TestWalkfiles(BaseCliTest):
         mock_walkfiles.assert_called_once_with(PosixPath('.'))
 
 
+class TestToUri(BaseCliTest):
+    def test_to_url(self):
+        self.parse_args('stor url s3://test/file')
+        self.assertEquals(sys.stdout.getvalue(), 'https://test.s3.amazonaws.com/file\n')
+
+    @mock.patch('sys.stderr', new=six.StringIO())
+    def test_file_uri_error(self):
+        with self.assertRaises(SystemExit):
+            self.parse_args('stor url /test/file')
+        self.assertEquals(sys.stdout.getvalue(), '')
+        self.assertIn('must be swift or s3 path', sys.stderr.getvalue())
+
+
 class TestCat(BaseCliTest):
     @mock.patch.object(S3Path, 'read_object', autospec=True)
     def test_cat_s3(self, mock_read):

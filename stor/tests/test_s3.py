@@ -50,6 +50,11 @@ class TestBasicPathMethods(unittest.TestCase):
         p = Path('s3://bucket/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
 
+    def test_to_url(self):
+        p = Path('s3://mybucket/path/to/resource')
+        self.assertEquals(p.to_url(),
+                          'https://mybucket.s3.amazonaws.com/path/to/resource')
+
 
 class TestValidation(unittest.TestCase):
     def test_new_failed(self):

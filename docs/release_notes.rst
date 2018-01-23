@@ -1,20 +1,17 @@
 Release Notes
 =============
 
-v1.5.4
+v1.6.0
 ------
 
+* Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
 * Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
   nothing on OBS-paths (just there for convenience).
-
-v1.5.3
-------
-
-* Hoist ``stor.utils.is_obs_path`` --> ``stor.is_obs_path``
 
 v1.5.2
 ------
 
+* Hoist ``stor.utils.is_obs_path`` --> ``stor.is_obs_path``
 * Build universal wheels for both Python 2 and Python 3.
   (no actual code changes)
 
