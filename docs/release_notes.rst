@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Latest
+------
+
+API Changes
+^^^^^^^^^^^
+
+* GETs on unrestored Glacier objects raise an ``ObjectInColdStorageError``
+  rather than an ``UnauthorizedError``.
+
 v1.6.0
 ------
 

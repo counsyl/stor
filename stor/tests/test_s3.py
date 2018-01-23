@@ -1596,3 +1596,28 @@ class TestSessionSettings(unittest.TestCase):
             assert mock_session.called
             assert len(mock_session.call_args_list) == 1
             assert mock_session.call_args_list[0] == ((), {'aws_access_key_id': 'blah'})
+
+
+class TestS3ErrorParsing(unittest.TestCase):
+    def test_cold_storage_exception(self):
+        exc = ClientError(
+            error_response={
+                'ResponseMetadata': {
+                    'HTTPStatusCode': 403, 'RetryAttempts': 0, 'HostId': '',
+                    'RequestId': '53AA120E409A4EB7',
+                    'HTTPHeaders': {'x-amz-id-2': '', 'server': 'AmazonS3',
+                                    'transfer-encoding': 'chunked',
+                                    'x-amz-request-id': '53AA120E409A4EB7',
+                                    'date': 'Sat, 20 Jan 2018 05:24:30 GMT',
+                                    'content-type': 'application/xml'}
+                },
+                'Error': {
+                        'Message': "The operation is not valid for the object's storage class",
+                        'Code': 'InvalidObjectState'
+                }
+            },
+            operation_name=u'GetObject')
+        obj = s3._parse_s3_error(exc, Bucket='BUCKETNAME', Key='KEYNAME')
+        self.assertIsInstance(obj, exceptions.ObjectInColdStorageError)
+        self.assertIn('Bucket: BUCKETNAME', str(obj))
+        self.assertIn('Key: KEYNAME', str(obj))
