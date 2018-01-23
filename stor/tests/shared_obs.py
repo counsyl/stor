@@ -120,10 +120,27 @@ class SharedOBSFileCases(object):
         self.assertFalse(obj._buffer_created)
 
     def test_invalid_buffer_mode(self):
+        # internal error only
         fp = self.normal_path.open()
         fp.mode = 'invalid'
         with self.assertRaisesRegexp(ValueError, 'buffer'):
             fp._buffer
+
+    def test_invalid_open(self):
+        pth = '{drive}B/C/D'.format(drive=self.drive)
+        with self.assertRaisesRegexp(ValueError, 'mode'):
+            # keep reference here
+            f = stor.open(pth, 'invalid')
+            assert False, 'should error before this'
+            f;
+
+        with self.assertRaisesRegexp(ValueError, 'mode'):
+            with stor.open(pth, 'invalid'):
+                assert False, 'should error before this'
+
+        with self.assertRaisesRegexp(ValueError, 'mode'):
+            with stor.Path(pth).open('invalid'):
+                assert False, 'should error before this'
 
     @mock_write_object
     @mock_read_object
