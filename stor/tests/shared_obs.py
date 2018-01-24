@@ -130,17 +130,16 @@ class SharedOBSFileCases(object):
         pth = '{drive}B/C/D'.format(drive=self.drive)
         with self.assertRaisesRegexp(ValueError, 'mode'):
             # keep reference here
-            f = stor.open(pth, 'invalid')
-            assert False, 'should error before this'
-            f;
+            f = stor.open(pth, 'invalid')  # nopep8
+            assert False, 'should error before this'  # pragma: no cover
 
         with self.assertRaisesRegexp(ValueError, 'mode'):
             with stor.open(pth, 'invalid'):
-                assert False, 'should error before this'
+                assert False, 'should error before this'  # pragma: no cover
 
         with self.assertRaisesRegexp(ValueError, 'mode'):
             with stor.Path(pth).open('invalid'):
-                assert False, 'should error before this'
+                assert False, 'should error before this'  # pragma: no cover
 
     @mock_write_object
     @mock_read_object
