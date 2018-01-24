@@ -2,6 +2,7 @@ import mock
 import os
 import tempfile
 import unittest
+import warnings
 
 import stor
 from stor import NamedTemporaryDirectory
@@ -258,8 +259,10 @@ class TestList(unittest.TestCase):
 class TestListpath(unittest.TestCase):
     @mock.patch('stor.list', autospec=True)
     def test_deprecated_listpath(self, mock_list):
-        stor.listpath('.')
-        mock_list.assert_called_once_with('.')
+        with warnings.catch_warnings(record=True) as warn_bucket:
+            stor.listpath('.')
+            mock_list.assert_called_once_with('.')
+            assert len(warn_bucket) == 1
 
 
 class TestWalkfiles(unittest.TestCase):

@@ -14,46 +14,50 @@ from stor import Path
 from stor import settings
 from stor import swift
 from stor import utils
-from stor.tests.test_integration import BaseIntegrationTest
+from stor.tests import integration
 
 
-class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
+def set_up_integration_swift(test_case):
+    """Set up integraton test case to point at swift.
+
+    Handles updating stor settings and creating/cleaning up test data"""
+    if not os.environ.get('SWIFT_TEST_USERNAME'):
+        raise unittest.SkipTest(
+            'SWIFT_TEST_USERNAME env var not set. Skipping integration test')
+
+    # Disable loggers so nose output wont be trashed
+    logging.getLogger('requests').setLevel(logging.CRITICAL)
+    logging.getLogger('swiftclient').setLevel(logging.CRITICAL)
+    logging.getLogger('keystoneclient').setLevel(logging.CRITICAL)
+
+    settings.update({
+        'swift': {
+            'username': os.environ.get('SWIFT_TEST_USERNAME'),
+            'password': os.environ.get('SWIFT_TEST_PASSWORD'),
+            'num_retries': 5
+        }})
+    # fall back on to swiftstack auth for tenant
+    test_case.tenant = os.environ.get(
+        'SWIFT_TEST_TENANT',
+        'AUTH_%s' % os.environ['SWIFT_TEST_USERNAME'])
+
+    test_case.test_container = Path('swift://%s/%s' % (test_case.tenant, uuid.uuid4()))
+    if test_case.test_container.exists():
+        raise ValueError('test container %s already exists.' % test_case.test_container)
+
+    try:
+        test_case.test_container.post()
+    except:
+        test_case.test_container.rmtree()
+        raise
+
+    test_case.test_dir = test_case.test_container / 'test'
+
+
+class SwiftIntegrationTest(integration.FromFilesystemTestCase):
     def setUp(self):
         super(SwiftIntegrationTest, self).setUp()
-
-        if not os.environ.get('SWIFT_TEST_USERNAME'):
-            raise unittest.SkipTest(
-                'SWIFT_TEST_USERNAME env var not set. Skipping integration test')
-
-        # Disable loggers so nose output wont be trashed
-        logging.getLogger('requests').setLevel(logging.CRITICAL)
-        logging.getLogger('swiftclient').setLevel(logging.CRITICAL)
-        logging.getLogger('keystoneclient').setLevel(logging.CRITICAL)
-
-        settings.update({
-            'swift': {
-                'username': os.environ.get('SWIFT_TEST_USERNAME'),
-                'password': os.environ.get('SWIFT_TEST_PASSWORD'),
-                'num_retries': 5
-            }})
-        # fall back on to swiftstack auth for tenant
-        tenant = os.environ.get('SWIFT_TEST_TENANT', 'AUTH_%s' % os.environ['SWIFT_TEST_USERNAME'])
-
-        self.test_container = Path('swift://%s/%s' % (tenant, uuid.uuid4()))
-        if self.test_container.exists():
-            raise ValueError('test container %s already exists.' % self.test_container)
-
-        try:
-            self.test_container.post()
-        except:
-            self.test_container.rmtree()
-            raise
-
-        self.test_dir = self.test_container / 'test'
-
-    def tearDown(self):
-        super(SwiftIntegrationTest, self).tearDown()
-        self.test_container.rmtree()
+        set_up_integration_swift(self)
 
     def test_cached_auth_and_auth_invalidation(self):
         from swiftclient.client import get_auth_keystone as real_get_keystone
