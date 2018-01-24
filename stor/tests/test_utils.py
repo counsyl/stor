@@ -1,12 +1,14 @@
 import errno
 import logging
-import mock
 import ntpath
 import os
 import stat
 import unittest
 
+
 from testfixtures import LogCapture
+import mock
+import pytest
 
 import stor
 from stor import Path
@@ -15,6 +17,7 @@ from stor.s3 import S3Path
 from stor.swift import SwiftPath
 from stor.windows import WindowsPath
 from stor import utils
+from stor.test import StorTestCase
 
 
 class TestBaseProgressLogger(unittest.TestCase):
@@ -112,7 +115,7 @@ class TestWalkFilesAndDirs(unittest.TestCase):
         )
         with utils.NamedTemporaryDirectory(dir=swift_dir) as tmp_dir:
             symlink = tmp_dir / 'broken.symlink'
-            symlink_source = tmp_dir / 'nonexistent'
+            symlink_source = tmp_dir / 'nonexistent.txt'
             # put something in symlink source so that Python doesn't complain
             with stor.open(symlink_source, 'w') as fp:
                 fp.write('blah')
@@ -460,3 +463,47 @@ class TestIsWriteableS3(unittest.TestCase):
         self.mock_copy.side_effect = stor.exceptions.FailedUploadError('foo')
         self.assertFalse(utils.is_writeable('s3://stor-test/foo/bar'))
         self.assertFalse(self.mock_remove.called)
+
+
+@mock.patch.object(stor.base.FileSystemPath, 'makedirs', lambda *args, **kwargs: None)
+class TestAmbiguityValidation(StorTestCase):
+    # someday we'll be able to use pytest.parametrized, but not today
+    DRIVES = ["swift://", "s3://", "/"]
+    def test_open_detects_invalid_modes(self):
+        def tester(drive):
+            with self.assertRaisesRegexp(ValueError, 'mode'):
+                with stor.open(stor.join(drive, 'dummy/something/path.txt'), 'invalid'):
+                    assert False, 'I should not be able to get into this block'
+        for drive in self.DRIVES:
+            tester(drive)
+
+    @mock.patch('stor.base.builtins.open', lambda *args, **kwargs: None)
+    def test_open_should_detect_invalid_paths(self):
+        def tester(drive, subpath):
+            with self.assertRaisesRegexp(ValueError, 'file paths'):
+                with stor.open(stor.join(drive, subpath), 'w'):
+                    assert False, 'I should not be able to get into this block'
+            with self.assertRaisesRegexp(ValueError, 'file paths'):
+                # prevent from going out of scope
+                f = stor.open(stor.join(drive, subpath))
+                assert False and not f
+            with self.assertRaisesRegexp(ValueError, 'file paths'):
+                utils.copy('whatever', stor.join(drive, subpath))
+        with stor.settings.use({'stor': {'always_raise_on_ambiguous_path': True}}):
+            for drive in self.DRIVES:
+                for subpath in [
+                        'tenant/ambiguous-container', 'T/C/trailing-slash/', 'T/C/no-extension']:
+                    tester(drive, subpath)
+        with pytest.warns(UserWarning):
+            stor.open('/a/')
+
+    @mock.patch('stor.base.builtins.open', lambda *args, **kwargs: None)
+    def test_validate_path(self):
+        def tester(subpath, regex):
+            with stor.settings.use({'stor': {'always_raise_on_ambiguous_path': True}}):
+                for drive in ['swift://', 's3://', '/']:
+                    with self.assertRaisesRegexp(ValueError, regex):
+                        utils.validate_file_path(stor.join(drive, subpath))
+        for subpath in ['T', 'T/C', 'T/C/no-extension']:
+            tester(subpath, 'without extension are ambiguous')
+        tester('T/C/something/', 'trailing slash')

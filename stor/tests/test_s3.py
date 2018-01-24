@@ -106,16 +106,16 @@ class TestResource(unittest.TestCase):
         self.assertIsNone(s3_p.resource)
 
     def test_resource_object(self):
-        s3_p = S3Path('s3://bucket/obj')
-        self.assertEquals(s3_p.resource, 'obj')
+        s3_p = S3Path('s3://bucket/obj.ext')
+        self.assertEquals(s3_p.resource, 'obj.ext')
 
     def test_resource_single_dir(self):
         s3_p = S3Path('s3://bucket/dir/')
         self.assertEquals(s3_p.resource, 'dir/')
 
     def test_resource_nested_obj(self):
-        s3_p = S3Path('s3://bucket/nested/obj')
-        self.assertEquals(s3_p.resource, 'nested/obj')
+        s3_p = S3Path('s3://bucket/nested/obj.ext')
+        self.assertEquals(s3_p.resource, 'nested/obj.ext')
 
     def test_resource_nested_dir(self):
         s3_p = S3Path('s3://bucket/nested/dir/')
@@ -353,14 +353,14 @@ class TestList(S3TestCase):
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_list_w_use_manifest(self, mock_stream):
-        mock_stream.read.return_value = b'my/obj1\nmy/obj2\nmy/obj3\n'
+        mock_stream.read.return_value = b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list = self.mock_s3_iterator
         mock_list.__iter__.return_value = [{
             'Contents': [
-                {'Key': 'my/obj1'},
-                {'Key': 'my/obj2'},
-                {'Key': 'my/obj3'}
+                {'Key': 'my/obj1.ext'},
+                {'Key': 'my/obj2.ext'},
+                {'Key': 'my/obj3.ext'}
             ],
             'IsTruncated': False
         }]
@@ -368,20 +368,20 @@ class TestList(S3TestCase):
         s3_p = S3Path('s3://bucket')
         results = s3_p.list(use_manifest=True)
         self.assertEquals(set(results), set([
-            's3://bucket/my/obj1',
-            's3://bucket/my/obj2',
-            's3://bucket/my/obj3'
+            's3://bucket/my/obj1.ext',
+            's3://bucket/my/obj2.ext',
+            's3://bucket/my/obj3.ext'
         ]))
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_list_w_use_manifest_validation_err(self, mock_stream):
-        mock_stream.read.return_value = b'my/obj1\nmy/obj2\nmy/obj3\n'
+        mock_stream.read.return_value = b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list = self.mock_s3_iterator
         mock_list.__iter__.return_value = [{
             'Contents': [
-                {'Key': 'my/obj1'},
-                {'Key': 'my/obj2'}
+                {'Key': 'my/obj1.ext'},
+                {'Key': 'my/obj2.ext'}
             ],
             'IsTruncated': False
         }]
@@ -392,14 +392,14 @@ class TestList(S3TestCase):
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_list_w_condition_and_use_manifest(self, mock_stream):
-        mock_stream.read.return_value = b'my/obj1\nmy/obj2\nmy/obj3\n'
+        mock_stream.read.return_value = b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list = self.mock_s3_iterator
         mock_list.__iter__.return_value = [{
             'Contents': [
-                {'Key': 'my/obj1'},
-                {'Key': 'my/obj2'},
-                {'Key': 'my/obj3'}
+                {'Key': 'my/obj1.ext'},
+                {'Key': 'my/obj2.ext'},
+                {'Key': 'my/obj3.ext'}
             ],
             'IsTruncated': False
         }]
@@ -407,9 +407,9 @@ class TestList(S3TestCase):
         s3_p = S3Path('s3://bucket')
         results = s3_p.list(use_manifest=True, condition=lambda results: len(results) == 3)
         self.assertEquals(set(results), set([
-            's3://bucket/my/obj1',
-            's3://bucket/my/obj2',
-            's3://bucket/my/obj3'
+            's3://bucket/my/obj1.ext',
+            's3://bucket/my/obj2.ext',
+            's3://bucket/my/obj3.ext'
         ]))
 
     def test_list_ignore_dir_markers(self):
@@ -646,7 +646,7 @@ class TestGetsize(S3TestCase):
             'ContentLength': 15,
             'ContentType': 'text/plain'
         }
-        s3_p = S3Path('s3://bucket/obj')
+        s3_p = S3Path('s3://bucket/obj.ext')
         self.assertEquals(s3_p.getsize(), 15)
 
     @mock.patch.object(S3Path, 'exists', autospec=True)
@@ -839,17 +839,17 @@ class TestRmtree(S3TestCase):
     def test_rmtree_over_1000(self, mock_list):
         mock_delete_objects = self.mock_s3.delete_objects
         mock_delete_objects.return_value = {}
-        objects = [S3Path('s3://bucket/obj' + str(i)) for i in range(1234)]
+        objects = [S3Path('s3://bucket/obj.ext' + str(i)) for i in range(1234)]
         mock_list.return_value = objects
 
         s3_p = S3Path('s3://bucket')
         s3_p.rmtree()
         mock_delete_objects.assert_has_calls([
             mock.call(Bucket='bucket', Delete={
-                'Objects': [{'Key': 'obj' + str(i)} for i in range(1000)]
+                'Objects': [{'Key': 'obj.ext' + str(i)} for i in range(1000)]
             }),
             mock.call(Bucket='bucket', Delete={
-                'Objects': [{'Key': 'obj' + str(i + 1000)} for i in range(234)]
+                'Objects': [{'Key': 'obj.ext' + str(i + 1000)} for i in range(234)]
             })
         ])
         self.assertEquals([], objects)
@@ -1233,12 +1233,12 @@ class TestDownload(S3TestCase):
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_download_w_use_manifest(self, mock_stream, mock_list, mock_getsize,
                                      mock_make_dest_dir):
-        mock_stream.read.return_value = b'my/obj1\nmy/obj2\nmy/obj3\n'
+        mock_stream.read.return_value = b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-            S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
+            S3Path('s3://bucket/my/obj1.ext'),
+            S3Path('s3://bucket/my/obj2.ext'),
+            S3Path('s3://bucket/my/obj3.ext')
         ]
 
         s3_p = S3Path('s3://bucket')
@@ -1249,11 +1249,11 @@ class TestDownload(S3TestCase):
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_download_w_use_manifest_validation_err(self, mock_stream, mock_list, mock_getsize,
                                                     mock_make_dest_dir):
-        mock_stream.read.return_value = b'my/obj1\nmy/obj2\nmy/obj3\n'
+        mock_stream.read.return_value = b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-            S3Path('s3://bucket/my/obj2')
+            S3Path('s3://bucket/my/obj1.ext'),
+            S3Path('s3://bucket/my/obj2.ext')
         ]
 
         s3_p = S3Path('s3://bucket')
@@ -1264,12 +1264,12 @@ class TestDownload(S3TestCase):
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_download_w_condition_and_use_manifest(self, mock_stream, mock_list, mock_getsize,
                                                    mock_make_dest_dir):
-        mock_stream.read.return_value = b'my/obj1\nmy/obj2\nmy/obj3\n'
+        mock_stream.read.return_value = b'my/obj1.ext\nmy/obj2.ext\nmy/obj3.ext\n'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
         mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-            S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
+            S3Path('s3://bucket/my/obj1.ext'),
+            S3Path('s3://bucket/my/obj2.ext'),
+            S3Path('s3://bucket/my/obj3.ext')
         ]
 
         s3_p = S3Path('s3://bucket')
@@ -1295,9 +1295,9 @@ class TestDownload(S3TestCase):
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_remote_error(self, mock_list, mock_getsize, mock_make_dest_dir):
         mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-            S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
+            S3Path('s3://bucket/my/obj1.ext'),
+            S3Path('s3://bucket/my/obj2.ext'),
+            S3Path('s3://bucket/my/obj3.ext')
         ]
         self.mock_s3_transfer.download_file.side_effect = RetriesExceededError('failed')
 
@@ -1307,9 +1307,9 @@ class TestDownload(S3TestCase):
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_other_error(self, mock_list, mock_getsize, mock_make_dest_dir):
         mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-            S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
+            S3Path('s3://bucket/my/obj1.ext'),
+            S3Path('s3://bucket/my/obj2.ext'),
+            S3Path('s3://bucket/my/obj3.ext')
         ]
         self.mock_s3_transfer.download_file.side_effect = [None, ValueError]
 
@@ -1319,9 +1319,9 @@ class TestDownload(S3TestCase):
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_multipart_settings(self, mock_list, mock_getsize, mock_make_dest_dir):
         mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-            S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
+            S3Path('s3://bucket/my/obj1.ext'),
+            S3Path('s3://bucket/my/obj2.ext'),
+            S3Path('s3://bucket/my/obj3.ext')
         ]
         s3_p = S3Path('s3://bucket')
         with settings.use({'s3:download': {'segment_size': '5M', 'segment_threads': 20}}):
@@ -1365,14 +1365,14 @@ class TestCopy(S3TestCase):
             mockdownload_object.assert_called_once_with(p, Path(tmp_d) / 'file_source.txt')
 
     def test_copy_swift_destination(self):
-        p = S3Path('s3://bucket/key/file_source')
+        p = S3Path('s3://bucket/key/file_source.ext')
         with self.assertRaisesRegexp(ValueError, 'OBS path'):
-            p.copy('swift://tenant/container/file_dest')
+            p.copy('swift://tenant/container/file_dest.ext')
 
     def test_copy_s3_destination(self):
-        p = S3Path('s3://bucket/key/file_source')
+        p = S3Path('s3://bucket/key/file_source.ext')
         with self.assertRaisesRegexp(ValueError, 'OBS path'):
-            p.copy('s3://bucket/key/file_dest')
+            p.copy('s3://bucket/key/file_dest.ext')
 
 
 class TestCopytree(S3TestCase):
@@ -1400,7 +1400,7 @@ class TestCopytree(S3TestCase):
 
 class TestS3File(S3TestCase):
     def test_invalid_buffer_mode(self):
-        s3_f = S3Path('s3://bucket/key/obj').open()
+        s3_f = S3Path('s3://bucket/key/obj.ext').open()
         s3_f.mode = 'invalid'
         with self.assertRaisesRegexp(ValueError, 'buffer'):
             s3_f._buffer
@@ -1409,13 +1409,13 @@ class TestS3File(S3TestCase):
     def test_invalid_flush_mode(self, mock_stream):
         mock_stream.read.return_value = b'data'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         obj = s3_p.open()
         with self.assertRaisesRegexp(TypeError, 'flush'):
             obj.flush()
 
     def test_name(self):
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         obj = s3_p.open()
         self.assertEquals(obj.name, s3_p)
 
@@ -1423,7 +1423,7 @@ class TestS3File(S3TestCase):
     def test_context_manager_on_closed_file(self, mock_stream):
         mock_stream.read.return_value = b'data'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         obj = s3_p.open()
         obj.close()
 
@@ -1432,7 +1432,7 @@ class TestS3File(S3TestCase):
                 pass  # pragma: no cover
 
     def test_invalid_mode(self):
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         with self.assertRaisesRegexp(ValueError, 'invalid mode'):
             s3_p.open(mode='invalid')
 
@@ -1448,7 +1448,7 @@ class TestS3File(S3TestCase):
     def test_read_on_closed_file(self, mock_stream):
         mock_stream.read.return_value = b'data'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         obj = s3_p.open()
         obj.close()
 
@@ -1456,7 +1456,7 @@ class TestS3File(S3TestCase):
             obj.read()
 
     def test_read_invalid_mode(self):
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         with self.assertRaisesRegexp(TypeError, 'mode.*read'):
             s3_p.open(mode='wb').read()
 
@@ -1465,7 +1465,7 @@ class TestS3File(S3TestCase):
         mock_stream.read.return_value = b'data'
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
 
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         self.assertEquals(s3_p.open().read(), 'data')
 
     @mock.patch('botocore.response.StreamingBody', autospec=True)
@@ -1479,7 +1479,7 @@ line4
         mock_stream.read.return_value = data
         self.mock_s3.get_object.return_value = {'Body': mock_stream}
 
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         self.assertEquals(s3_p.open().read(), data.decode('ascii'))
         self.assertEquals(s3_p.open().readlines(),
                           [l + '\n' for l in data.decode('ascii').split('\n')][:-1])
@@ -1490,7 +1490,7 @@ line4
         self.assertEqual(next(iter(s3_p.open())), 'line1\n')
 
     def test_write_invalid_args(self):
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         obj = s3_p.open(mode='r')
         with self.assertRaisesRegexp(TypeError, 'mode.*write'):
             obj.write('hello')
@@ -1498,7 +1498,7 @@ line4
     @mock.patch('time.sleep', autospec=True)
     def test_binary_write_multiple_w_context_manager(self, mock_sleep):
         mock_upload = self.mock_s3_transfer.upload_file
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         with s3_p.open(mode='wb') as obj:
             obj.write(b'hello')
             obj.write(b' world')
@@ -1509,7 +1509,7 @@ line4
     @mock.patch('time.sleep', autospec=True)
     def test_write_multiple_flush_multiple_upload(self, mock_sleep):
         mock_upload = self.mock_s3_transfer.upload_file
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         with NamedTemporaryFile('wb', delete=False) as ntf1,\
                 NamedTemporaryFile('wb', delete=False) as ntf2,\
                 NamedTemporaryFile('wb', delete=False) as ntf3:
@@ -1539,7 +1539,7 @@ line4
     @mock.patch('time.sleep', autospec=True)
     def test_close_no_writes(self, mock_sleep):
         mock_upload = self.mock_s3_transfer.upload_file
-        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p = S3Path('s3://bucket/key/obj.ext')
         obj = s3_p.open(mode='wb')
         obj.close()
 

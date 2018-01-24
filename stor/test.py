@@ -207,3 +207,7 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
             del s3._thread_local.s3_transfer_config
         except AttributeError:
             pass
+
+
+class StorTestCase(S3TestCase, SwiftTestCase):
+    """A TestCase class that mocks BOTH s3 and stor for tests"""

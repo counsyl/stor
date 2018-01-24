@@ -4,19 +4,37 @@ Release Notes
 v1.6.0
 ------
 
-API additions
+API Additions
 ^^^^^^^^^^^^^
 
 * Add `stor.extensions.swiftstack` module for translating swift paths to s3.
 * Add ``OBSPath.to_url()`` method to translate swift and s3 paths to HTTP paths.
 * Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
   nothing on OBS-paths (just there for convenience).
+* Add ``stor.test.TestCase`` that allows mocking out of both swift AND s3
+  functionality in a test case.
 
-CLI additions
+CLI Additions
 ^^^^^^^^^^^^^
 
 * ``stor url <path>`` to translate swift and s3 paths to HTTP paths.
 * ``stor convert-swiftstack [--bucket] <path>`` cli tool to convert s3 <-> swiftstack paths.
+
+Bug Fixes
+^^^^^^^^^
+
+* ``open()`` will raise with an OBS path that ends in trailing slash, rather
+  than generating an invalid/difficult OBS object.
+
+Deprecations
+^^^^^^^^^^^^
+
+* Add warning about calling ``open()`` or ``copy()`` with OBS or filesystem
+  paths that are ambiguous or end in a trailing slash. In the next version of
+  stor, this will be an error, to prevent differences between local and OBS
+  code. Set ``stor:raise_on_ambiguous_filesystem_path`` to get this behavior
+  now.
+* ``is_ambiguous()`` is now deprecated.
 
 v1.5.2
 ------

@@ -32,7 +32,9 @@ class TestSettings(unittest.TestCase):
     @mock.patch.dict(os.environ, {}, clear=True)
     def test_initialize_default(self):
         expected_settings = {
-            'stor': {},
+            'stor': {
+                'always_raise_on_ambiguous_path': False,
+            },
             's3': {
                 'aws_access_key_id': '',
                 'aws_secret_access_key': '',
@@ -83,7 +85,9 @@ class TestSettings(unittest.TestCase):
     @mock.patch.dict(os.environ, {}, clear=True)
     def test_initialize_w_user_file(self):
         expected_settings = {
-            'stor': {},
+            'stor': {
+                'always_raise_on_ambiguous_path': False,
+            },
             's3': {
                 'aws_access_key_id': '',
                 'aws_secret_access_key': '',

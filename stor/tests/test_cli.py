@@ -87,7 +87,9 @@ class TestCliBasics(BaseCliTest):
     @mock.patch('stor.settings.USER_CONFIG_FILE', '')
     def test_cli_config(self, mock_copytree):
         expected_settings = {
-            'stor': {},
+            'stor': {
+                'always_raise_on_ambiguous_path': False
+            },
             's3': {
                 'aws_access_key_id': '',
                 'aws_secret_access_key': '',
@@ -478,14 +480,14 @@ class TestWalkfiles(BaseCliTest):
             './a/b.txt',
             './c.txt',
             './d.txt',
-            './file'
+            './file.ext'
         ]
         self.parse_args('stor walkfiles .')
         self.assertEquals(sys.stdout.getvalue(),
                           './a/b.txt\n'
                           './c.txt\n'
                           './d.txt\n'
-                          './file\n')
+                          './file.ext\n')
         mock_walkfiles.assert_called_once_with(PosixPath('.'))
 
 
@@ -503,16 +505,16 @@ class TestCat(BaseCliTest):
     @mock.patch.object(S3Path, 'read_object', autospec=True)
     def test_cat_s3(self, mock_read):
         mock_read.return_value = b'hello world\n'
-        self.parse_args('stor cat s3://test/file')
+        self.parse_args('stor cat s3://test/file.ext')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
-        mock_read.assert_called_once_with(S3Path('s3://test/file'))
+        mock_read.assert_called_once_with(S3Path('s3://test/file.ext'))
 
     @mock.patch.object(SwiftPath, 'read_object', autospec=True)
     def test_cat_swift(self, mock_read):
         mock_read.return_value = b'hello world'
-        self.parse_args('stor cat swift://some/test/file')
+        self.parse_args('stor cat swift://some/test/file.ext')
         self.assertEquals(sys.stdout.getvalue(), 'hello world\n')
-        mock_read.assert_called_once_with(SwiftPath('swift://some/test/file'))
+        mock_read.assert_called_once_with(SwiftPath('swift://some/test/file.ext'))
 
 
 class TestCd(BaseCliTest):

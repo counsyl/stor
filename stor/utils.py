@@ -7,6 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+import warnings
 
 from stor import exceptions
 
@@ -312,6 +313,52 @@ def is_writeable(path, swift_retry_options=None):
     return answer
 
 
+def validate_file_path(dest, _warn=False):
+    """Raises ValueError if dest is an ambiguous or invalid path.
+
+    Args:
+        dest (Path): path to validate
+        _warn (bool): DO NOT USE: if True, only generate warning (will be removed in a future
+            version)
+    Raises:
+        ValueError: if path is ambiguous and is not a filesystem path (see below)
+    Note:
+        if an ambiguous filesystem path and ``always_raise_on_ambiguous_path`` is true, will raise
+        a ValueError as well, otherwise it warns.
+
+    In OBS-land, we cannot differentiate between files and directories, except by convention.
+    Conventionally, directories are either prefixes or zero-sized objects ending with a trailing
+    slash. With POSIX copies, it's conventional to do something like::
+        cp source/myfile.txt dest
+
+    In which case the system checks whether dest is a directory and, if it is, dumps to
+    ``dest/myfile.txt`` or otherwise dumps to ``dest``.
+
+    We can't do that kind of validation and don't want the outcome of a command to depend upon
+    whether there's a file with the same prefix or not. Thus, we raise an error if you try to use
+    `stor.copy()`. (to manipulate files without extensions, you can always use `stor.copytree()`.
+    """
+    import stor.settings
+
+    # we use a try/except so that it's easier for the reader to tell why the exception was
+    # generated.
+    try:
+        if not dest.name:
+            raise ValueError('file paths may not end with trailing slash')
+        if not dest.ext:
+            raise ValueError('file paths without extension are ambiguous')
+    except ValueError as e:
+        if ((_warn or is_filesystem_path(dest)) and
+                not stor.settings.get()['stor']['always_raise_on_ambiguous_path']):
+            warnings.warn(
+                'In stor 2.0, all ambiguous paths will raise an error (%s)' % str(e),
+                # this works for stor.copy, will not look right when the copy method is used
+                stacklevel=4
+            )
+            return
+        raise
+
+
 def copy(source, dest, swift_retry_options=None):
     """Copies a source file to a destination file.
 
@@ -347,18 +394,18 @@ def copy(source, dest, swift_retry_options=None):
             >>> local_p.copy('swift://tenant/container/dir')
             Traceback (most recent call last):
             ...
-            ValueError: OBS destination must be file with extension or directory with slash
+            ValueError: OBS file destinations without extension are ambiguous
     """
     from stor import Path
     from stor.obs import OBSUploadObject
 
     source = Path(source)
+    validate_file_path(source)
     dest = Path(dest)
+    validate_file_path(dest)
     swift_retry_options = swift_retry_options or {}
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
-    if is_obs_path(dest) and dest.is_ambiguous():
-        raise ValueError('OBS destination must be file with extension or directory with slash')
 
     if is_filesystem_path(dest):
         dest.parent.makedirs_p()
