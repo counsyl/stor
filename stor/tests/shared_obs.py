@@ -42,19 +42,22 @@ class SharedOBSFileCases(object):
     drive = None
     path_class = None
 
-    def test_works_with_gzip(self):
+    @mock_read_object
+    def test_works_with_gzip(self, mock_read_object):
         gzip_path = stor.join(stor.dirname(__file__),
                               'file_data', 's_3_2126.bcl.gz')
         text = stor.open(gzip_path, 'rb').read()
-        with mock.patch.object(self.path_class, 'read_object', autospec=True) as read_mock:
-            read_mock.return_value = text
-            fileobj = stor.open('{drive}A/C/s_3_2126.bcl.gz'.format(drive=self.drive), 'rb')
+        mock_read_object.return_value = text
+        fileobj = stor.open('{drive}A/C/s_3_2126.bcl.gz'.format(drive=self.drive), 'rb')
 
+        with fileobj:
             with gzip.GzipFile(fileobj=fileobj) as fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(fp, gzip_fp)
 
-            fileobj = stor.open('{drive}A/C/s_3_2126.bcl.gz'.format(drive=self.drive), 'rb')
+        fileobj = stor.open('{drive}A/C/s_3_2126.bcl.gz'.format(drive=self.drive), 'rb')
+
+        with fileobj:
             with gzip.GzipFile(fileobj=fileobj) as fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     # after seeking should still be same
