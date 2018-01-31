@@ -10,9 +10,18 @@ class RemoteError(Exception):
 
     The 'caught_exception' attribute of the exception must be examined in order
     to inspect the exception thrown by the swift or S3 service. A swift exception
-    can either be a ``SwiftError`` (thrown by ``swiftclient.service``) or a
-    ``ClientError`` (thrown by ``swiftclient.client``). A S3 exception can be
-    a ``ClientError`` (thrown by ``botocore.client``).
+
+    Swift has two types of caught exceptions:
+
+    * ``SwiftError`` (thrown by ``swiftclient.service``)
+    * ``ClientError`` (thrown by ``swiftclient.client``)
+
+    S3 raises:
+
+    * ``ClientError`` (thrown by ``botocore.client``).
+
+    Attributes:
+        caught_exception (Exception): the underlying exception that was raised from service.
     """
     def __init__(self, message, caught_exception=None):
         super(RemoteError, self).__init__(message)
@@ -22,6 +31,18 @@ class RemoteError(Exception):
 class NotFoundError(RemoteError):
     """Thrown when a 404 response is returned."""
     pass
+
+
+class ObjectInColdStorageError(RemoteError):
+    """Thrown when a 403 is returned from S3/SwiftStack because backing data is on Glacier.
+
+    Note:
+        We don't want to retry on this
+        one, because the object will always be in cold storage.
+        See AWS `S3 Rest API GET`_ spec for more details.
+
+    .. _S3 Rest API GET: https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html
+    """
 
 
 class UnauthorizedError(RemoteError):

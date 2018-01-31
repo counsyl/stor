@@ -44,7 +44,7 @@ def _make_stat_response(stat_response=None):
     return [defaults]
 
 
-class TestPathcedGetAuthKeystone(unittest.TestCase):
+class TestPatchedGetAuthKeystone(unittest.TestCase):
     @mock.patch('stor.swift.real_get_auth_keystone', autospec=True)
     def test_patched_get_auth_keystone(self, mock_get_real_auth_keystone):
         mock_get_real_auth_keystone.side_effect = Exception
@@ -2636,3 +2636,15 @@ class TestIsMethods(SwiftTestCase):
         self.mock_swift.stat.side_effect = _service_404_exception()
         self.mock_list.side_effect = _service_404_exception()
         self.assertFalse(SwiftPath('swift://A/B/C').isdir())
+
+
+class TestExceptionParsing(unittest.TestCase):
+    def test_parse_cold_storage_error(self):
+        exc = ClientException(
+            http_reason='Forbidden', http_port=None, http_scheme='https', http_response_headers={},
+            http_response_content="The operation is not valid for the object's storage class",
+            http_device='', http_query='',
+            http_path='/v1/AUTH_seq_upload_prod/X5WGWBCXY_161212_D00254_1027_A/.data_manifest.csv',
+            http_host='swift.counsyl.com', http_status=403, msg='Object GET failed')
+        with self.assertRaises(exceptions.ObjectInColdStorageError):
+            swift._swiftclient_error_to_descriptive_exception(exc)

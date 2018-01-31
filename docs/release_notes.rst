@@ -4,11 +4,18 @@ Release Notes
 v2.0.0
 ------
 
+CLI additions
+^^^^^^^^^^^^^
+
+* ``stor url <path>`` to translate swift and s3 paths to HTTP paths.
+* ``stor convert-swiftstack [--bucket] <path>`` cli tool to convert s3 <-> swiftstack paths.
+
 API Additions
 ^^^^^^^^^^^^^
 
-
 * Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
+* GETs on unrestored Glacier objects now raise a more useful ``ObjectInColdStorageError``.
+* Add `stor.extensions.swiftstack` module for translating swift paths to s3.
 * Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
   nothing on OBS-paths (just there for convenience).
 
@@ -17,6 +24,7 @@ API Breaks
 ^^^^^^^^^^
 
 * ``OBSFile`` can no longer (accidentally or intentionally) create zero-byte objects.
+* GETs on unrestored Glacier objects no longer raise ``UnauthorizedError`` (see above).
 
 
 Bug fixes
@@ -25,7 +33,6 @@ Bug fixes
 * ``OBSFile`` objects no longer attempt to load buffers on garbage collection.
   This should resolve the ``Exception ignored in OBSFile.__del__`` messages and
   eliminate "hangs" on garbage collection or closing python terminal.
-
 
 Other Changes
 ^^^^^^^^^^^^^

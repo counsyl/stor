@@ -40,6 +40,7 @@ def _parse_s3_error(exc, **kwargs):
     """
     http_status = exc.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
     msg = exc.response['Error'].get('Message', 'Unknown')
+    code = exc.response['Error'].get('Code')
 
     # Give some more info about the error's origins
     if 'Bucket' in kwargs:
@@ -48,6 +49,8 @@ def _parse_s3_error(exc, **kwargs):
         msg += ', Key: ' + kwargs.get('Key')
 
     if http_status == 403:
+        if 'storage class' in msg and code == 'InvalidObjectState':
+            return exceptions.ObjectInColdStorageError(msg, exc)
         return exceptions.UnauthorizedError(msg, exc)
     elif http_status == 404:
         return exceptions.NotFoundError(msg, exc)
