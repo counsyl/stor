@@ -19,7 +19,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         if valid_modes and self.mode not in valid_modes:
             raise TypeError('File must be in modes %s to %r' %
                             (valid_modes, attr_name))
-        func = getattr(self._buffer, attr_name)
+        func = getattr(self._get_or_create_buffer(), attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
     wrapper.__doc__ = getattr(six.BytesIO(), attr_name).__doc__
@@ -269,13 +269,12 @@ class OBSFile(object):
         call open and then do not close it.
     """
     closed = False
-    _buffer_created = False
     _READ_MODES = ('r', 'rb')
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
     # we have to know whether we've generated a buffer at all
     # to know whether we need to close the underlying buffer
-    __buffer = None
+    _buffer = None
 
     def __init__(self, pth, mode='r', encoding=None, **kwargs):
         """Initializes a file object
@@ -322,11 +321,10 @@ class OBSFile(object):
         """The class used for the IO stream"""
         return six.BytesIO if self.mode in ('rb', 'wb') else six.StringIO
 
-    @property
-    def _buffer(self):
+    def _get_or_create_buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
-        if self.__buffer:
-            return self.__buffer
+        if self._buffer:
+            return self._buffer
 
         if self.mode == 'r':
             buf = self.stream_cls(self._path.read_object().decode(self.encoding))
@@ -336,9 +334,8 @@ class OBSFile(object):
             buf = self.stream_cls()
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
-        self.__buffer = buf
-        self._buffer_created = True
-        return self.__buffer
+        self._buffer = buf
+        return self._buffer
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
     tell = _delegate_to_buffer('tell', valid_modes=_VALID_MODES)
@@ -366,12 +363,10 @@ class OBSFile(object):
     def close(self):
         if self.closed:
             return
-        if self._buffer_created:
+        if self._buffer:
             if self.mode in self._WRITE_MODES:
                 self.flush()
-            self.__buffer.close()
-            # free reference to underlying data
-            del self.__buffer
+            self._buffer.close()
         self.closed = True
 
     def flush(self):
@@ -379,13 +374,16 @@ class OBSFile(object):
         if self.mode not in self._WRITE_MODES:
             raise TypeError("File must be in modes %s to 'flush'" %
                             (self._WRITE_MODES,))
+        if not self._buffer:
+            return
         # NOTE: this helps ensure that only non-zero objects are uploaded with open.
         # Otherwise you have weird behavior where calling open().tell() will cause an empty object
         # to be created on OBS on exit. Instead, philosophy is "if buffer has data, we'll upload it
         # on close"
-        if self.__buffer and self._buffer.tell():
-            if self.mode == 'w':
-                self._path.write_object(self._buffer.getvalue().encode(self.encoding))
-            else:
-                self._path.write_object(self._buffer.getvalue(),
-                                        **self._kwargs)
+        data = self._buffer.getvalue()
+        if not data:
+            return
+        if self.mode == 'w':
+            self._path.write_object(self._buffer.getvalue().encode(self.encoding))
+        else:
+            self._path.write_object(self._buffer.getvalue(), **self._kwargs)

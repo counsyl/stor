@@ -84,7 +84,7 @@ class SharedOBSFileCases(object):
         # enshrined.
         fileobj = stor.open('{drive}B/C/obj'.format(drive=self.drive), 'w')
         fileobj.flush()
-        self.assertFalse(fileobj._buffer_created)
+        self.assertFalse(fileobj._buffer)
         fileobj.write('')
         fileobj.flush()
         fileobj.close()
@@ -191,4 +191,16 @@ class SharedOBSFileCases(object):
             obj.write(b'hello')
             obj.write(b' world')
         mock_write_object.assert_called_with(self.normal_path, b'hello world')
+        self.assertEquals(len(mock_write_object.call_args_list), 1)
+
+    @mock_write_object
+    def test_seek_behavior_and_writes(self, mock_write_object):
+        with self.normal_path.open(mode='wb') as obj:
+            obj.write(b'happy go lucky')
+            obj.seek(5)
+            obj.write(b'-')
+            obj.seek(8)
+            obj.write(b'_')
+            obj.seek(0)
+        mock_write_object.assert_called_with(self.normal_path, b'happy-go_lucky')
         self.assertEquals(len(mock_write_object.call_args_list), 1)
