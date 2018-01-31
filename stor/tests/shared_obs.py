@@ -48,14 +48,14 @@ class SharedOBSFileCases(object):
                               'file_data', 's_3_2126.bcl.gz')
         text = stor.open(gzip_path, 'rb').read()
         mock_read_object.return_value = text
-        fileobj = stor.open('{drive}A/C/s_3_2126.bcl.gz'.format(drive=self.drive), 'rb')
+        fileobj = stor.open(stor.join(self.drive, 'A/C/s_3_2126.bcl.gz'), 'rb')
 
         with fileobj:
             with gzip.GzipFile(fileobj=fileobj) as fp:
                 with gzip.open(gzip_path) as gzip_fp:
                     assert_same_data(fp, gzip_fp)
 
-        fileobj = stor.open('{drive}A/C/s_3_2126.bcl.gz'.format(drive=self.drive), 'rb')
+        fileobj = stor.open(stor.join(self.drive, 'A/C/s_3_2126.bcl.gz'), 'rb')
 
         with fileobj:
             with gzip.GzipFile(fileobj=fileobj) as fp:
@@ -85,7 +85,7 @@ class SharedOBSFileCases(object):
     def test_empty_buffer_no_writes(self, mock_read_object, mock_write_object):
         # NOTE: this tests that our current description (only non-empty buffers are uploaded) is
         # enshrined.
-        fileobj = stor.open('{drive}B/C/obj'.format(drive=self.drive), 'w')
+        fileobj = stor.open(stor.join(self.drive, 'B/C/obj'), 'w')
         fileobj.flush()
         self.assertFalse(fileobj._buffer)
         fileobj.write('')
@@ -97,14 +97,14 @@ class SharedOBSFileCases(object):
     @mock_write_object
     @mock_read_object
     def test_on_del_no_writes(self, mock_read_object, mock_write_object):
-        fileobj = stor.open('{drive}B/C/obj'.format(drive=self.drive), 'w')
+        fileobj = stor.open(stor.join(self.drive, 'B/C/obj'), 'w')
         del fileobj
         gc.collect()
 
         self.assertFalse(mock_read_object.called)
         self.assertFalse(mock_write_object.called)
 
-        fileobj = stor.open('{drive}B/C/obj'.format(drive=self.drive), 'r')
+        fileobj = stor.open(stor.join(self.drive, 'B/C/obj'), 'r')
         del fileobj
         gc.collect()
 
@@ -130,7 +130,7 @@ class SharedOBSFileCases(object):
             fp._get_or_create_buffer()
 
     def test_invalid_open(self):
-        pth = '{drive}B/C/D'.format(drive=self.drive)
+        pth = stor.join(self.drive, 'B/C/D')
         with self.assertRaisesRegexp(ValueError, 'mode'):
             # keep reference here
             f = stor.open(pth, 'invalid')  # nopep8
