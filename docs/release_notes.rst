@@ -13,9 +13,19 @@ API Changes
 v1.6.0
 ------
 
-* Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
+API additions
+^^^^^^^^^^^^^
+
+* Add `stor.extensions.swiftstack` module for translating swift paths to s3.
+* Add ``OBSPath.to_url()`` method to translate swift and s3 paths to HTTP paths.
 * Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
   nothing on OBS-paths (just there for convenience).
+
+CLI additions
+^^^^^^^^^^^^^
+
+* ``stor url <path>`` to translate swift and s3 paths to HTTP paths.
+* ``stor convert-swiftstack [--bucket] <path>`` cli tool to convert s3 <-> swiftstack paths.
 
 v1.5.2
 ------

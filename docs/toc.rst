@@ -15,6 +15,7 @@ Table of Contents
    exceptions
    testing
    settings
+   extensions
    contributing
    roadmap
    release_notes
