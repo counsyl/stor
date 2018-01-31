@@ -117,14 +117,14 @@ class SharedOBSFileCases(object):
 
         self.assertTrue(obj.closed)
         self.assertFalse(mock_write_object.called)
-        self.assertFalse(obj._buffer_created)
+        self.assertFalse(obj._buffer)
 
     def test_invalid_buffer_mode(self):
         # internal error only
         fp = self.normal_path.open()
         fp.mode = 'invalid'
         with self.assertRaisesRegexp(ValueError, 'buffer'):
-            fp._buffer
+            fp._get_or_create_buffer()
 
     def test_invalid_open(self):
         pth = '{drive}B/C/D'.format(drive=self.drive)
