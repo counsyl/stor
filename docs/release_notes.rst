@@ -1,31 +1,43 @@
 Release Notes
 =============
 
-Latest
+v2.0.0
 ------
-
-API Changes
-^^^^^^^^^^^
-
-* GETs on unrestored Glacier objects raise an ``ObjectInColdStorageError``
-  rather than an ``UnauthorizedError``.
-
-v1.6.0
-------
-
-API additions
-^^^^^^^^^^^^^
-
-* Add `stor.extensions.swiftstack` module for translating swift paths to s3.
-* Add ``OBSPath.to_url()`` method to translate swift and s3 paths to HTTP paths.
-* Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
-  nothing on OBS-paths (just there for convenience).
 
 CLI additions
 ^^^^^^^^^^^^^
 
 * ``stor url <path>`` to translate swift and s3 paths to HTTP paths.
 * ``stor convert-swiftstack [--bucket] <path>`` cli tool to convert s3 <-> swiftstack paths.
+
+API Additions
+^^^^^^^^^^^^^
+
+* Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
+* GETs on unrestored Glacier objects now raise a more useful ``ObjectInColdStorageError``.
+* Add `stor.extensions.swiftstack` module for translating swift paths to s3.
+* Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
+  nothing on OBS-paths (just there for convenience).
+
+
+API Breaks
+^^^^^^^^^^
+
+* ``OBSFile`` can no longer (accidentally or intentionally) create zero-byte objects.
+* GETs on unrestored Glacier objects no longer raise ``UnauthorizedError`` (see above).
+
+
+Bug fixes
+^^^^^^^^^
+
+* ``OBSFile`` objects no longer attempt to load buffers on garbage collection.
+  This should resolve the ``Exception ignored in OBSFile.__del__`` messages and
+  eliminate "hangs" on garbage collection or closing python terminal.
+
+Other Changes
+^^^^^^^^^^^^^
+
+* ``stor`` no longer depends on ``cached-property``.
 
 v1.5.2
 ------
