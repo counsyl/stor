@@ -44,5 +44,5 @@ class PosixPath(base.FileSystemPath):
             This may be much slower than list() because it checks twice that everything is a file.
         """
         for f in self.list():
-            if os.path.isfile(f) and (pattern is None or f.fnmatch(pattern)):
+            if pattern is None or f.fnmatch(pattern):
                 yield f
