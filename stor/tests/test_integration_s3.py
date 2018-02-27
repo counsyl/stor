@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import unittest
+import uuid
 
 import six
 
@@ -27,15 +28,16 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         super(S3IntegrationTest, self).setUp()
 
         if not (os.environ.get('AWS_TEST_ACCESS_KEY_ID') and
-                os.environ.get('AWS_TEST_SECRET_ACCESS_KEY')):
+                os.environ.get('AWS_TEST_SECRET_ACCESS_KEY') and
+                os.environ.get('S3_TEST_BUCKET')):
             raise unittest.SkipTest(
-                'AWS_TEST_ACCESS_KEY_ID / AWS_TEST_SECRET_ACCESS_KEY env var not set.'
-                ' Skipping integration test')
+                'AWS_TEST_ACCESS_KEY_ID / AWS_TEST_SECRET_ACCESS_KEY / S3_TEST_BUCKET '
+                ' env vars not set. Skipping integration test')
 
         # Disable loggers so nose output is clean
         logging.getLogger('botocore').setLevel(logging.CRITICAL)
-
-        self.test_bucket = Path('s3://stor-test-bucket')
+        test_bucket = os.environ['S3_TEST_BUCKET']
+        self.test_bucket = Path('s3://{test_bucket}/{uuid}'.format(test_bucket=test_bucket, uuid=uuid.uuid4()))
         self.test_dir = self.test_bucket / 'test'
         stor.settings.update({
             's3': {
