@@ -37,7 +37,8 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
         # Disable loggers so nose output is clean
         logging.getLogger('botocore').setLevel(logging.CRITICAL)
         test_bucket = os.environ['S3_TEST_BUCKET']
-        self.test_bucket = Path('s3://{test_bucket}/{uuid}'.format(test_bucket=test_bucket, uuid=uuid.uuid4()))
+        self.test_bucket = Path('s3://{test_bucket}/{uuid}'.format(test_bucket=test_bucket,
+                                                                   uuid=uuid.uuid4()))
         self.test_dir = self.test_bucket / 'test'
         stor.settings.update({
             's3': {
