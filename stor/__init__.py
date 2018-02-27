@@ -90,27 +90,6 @@ def glob(pth, pattern):  # pragma: no cover
     return Path(pth).glob(pattern)
 
 
-def listpath(pth):  # pragma: no cover
-    import warnings
-
-    # DeprecationWarnings are hidden by default. We want to get rid of this
-    # sooner rather than later.
-    warnings.warn('Using the ``stor.listpath()`` function directly is'
-                  ' deprecated, use ``stor.list()`` instead', UserWarning)
-    return list(pth)
-
-
-def path(pth):  # pragma: no cover
-    import warnings
-
-    # DeprecationWarnings are hidden by default. We want to get rid of this
-    # sooner rather than later.
-    warnings.warn('Using the ``path()`` function directly is deprecated -'
-                  ' either use stor.Path or the functional API'
-                  ' directly', UserWarning)
-    return Path(pth)
-
-
 __all__ = [
     'abspath',
     'normcase',

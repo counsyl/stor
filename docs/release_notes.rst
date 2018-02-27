@@ -25,6 +25,7 @@ API Breaks
 
 * ``OBSFile`` can no longer (accidentally or intentionally) create zero-byte objects.
 * GETs on unrestored Glacier objects no longer raise ``UnauthorizedError`` (see above).
+* Removed already-deprecated ``stor.listpath`` and ``stor.path``.
 
 
 Bug fixes
@@ -33,6 +34,7 @@ Bug fixes
 * ``OBSFile`` objects no longer attempt to load buffers on garbage collection.
   This should resolve the ``Exception ignored in OBSFile.__del__`` messages and
   eliminate "hangs" on garbage collection or closing python terminal.
+* ``stor cp`` no longer claims to be an alias of copy.
 
 Other Changes
 ^^^^^^^^^^^^^
