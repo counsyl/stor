@@ -34,6 +34,7 @@ Bug fixes
 * ``OBSFile`` objects no longer attempt to load buffers on garbage collection.
   This should resolve the ``Exception ignored in OBSFile.__del__`` messages and
   eliminate "hangs" on garbage collection or closing python terminal.
+* ``stor cp`` no longer claims to be an alias of copy.
 
 Other Changes
 ^^^^^^^^^^^^^

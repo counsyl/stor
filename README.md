@@ -27,15 +27,17 @@ with a single, cross-compatible API.
 ## Quickstart - CLI
 
 ```
-usage: stor [-h] [-c CONFIG_FILE] [--version]  ...
+usage: stor [-h] [-c CONFIG_FILE] [--version]
+            {list,ls,cp,rm,walkfiles,cat,cd,pwd,clear,url,convert-swiftstack}
+            ...
 
 A command line interface for stor.
 
 positional arguments:
-
+  {list,ls,cp,rm,walkfiles,cat,cd,pwd,clear,url,convert-swiftstack}
     list                List contents using the path as a prefix.
     ls                  List path as a directory.
-    cp                  Alias for copy.
+    cp                  Copy a source to a destination path.
     rm                  Remove file at a path.
     walkfiles           List all files under a path that match an optional
                         pattern.
@@ -44,6 +46,14 @@ positional arguments:
     pwd                 Get the present working directory of a service or all
                         current directories.
     clear               Clear current directories of a specified service.
+    url                 generate URI for path
+    convert-swiftstack  convert swiftstack paths
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONFIG_FILE, --config CONFIG_FILE
+                        File containing configuration settings.
+  --version             Print version
 ```
 
 You can `ls` local and remote directories
