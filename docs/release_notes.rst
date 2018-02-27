@@ -25,6 +25,7 @@ API Breaks
 
 * ``OBSFile`` can no longer (accidentally or intentionally) create zero-byte objects.
 * GETs on unrestored Glacier objects no longer raise ``UnauthorizedError`` (see above).
+* Removed already-deprecated ``stor.listpath`` and ``stor.path``.
 
 
 Bug fixes

@@ -327,7 +327,6 @@ def create_parser():
     parser_ls.set_defaults(func=stor.listdir)
 
     cp_msg = 'Copy a source to a destination path.'
-    cp_msg = 'Alias for copy.'
     parser_cp = subparsers.add_parser('cp',  # noqa
                                       help=cp_msg,
                                       description='%s\n \'-\' is a special character that allows'
