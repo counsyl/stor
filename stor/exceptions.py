@@ -34,7 +34,7 @@ class NotFoundError(RemoteError):
 
 
 class InvalidObjectStateError(RemoteError):
-    """Base class for 403 errors from S3/SwiftStack dealing with"""
+    """Base class for 403 errors from S3 dealing with storage classes."""
 
 
 class ObjectInColdStorageError(InvalidObjectStateError):
