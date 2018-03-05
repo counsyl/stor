@@ -1412,7 +1412,7 @@ class TestRestore(S3TestCase):
         self.mock_get_s3_client.return_value.restore_object.assert_called_with(
             Bucket='bucket', Key='key/obj', RestoreRequest={'Days': 29, 'GlacierJobParameters':
                                                             {'Tier': 'Expedited'}})
-        with self.assertRaisesRegexp(TypeError, 'tier.*Standard'):
+        with self.assertRaisesRegexp(ValueError, 'tier.*Standard'):
             s3_p.restore(tier='Blah')
 
     def test_restore_with_exception(self):

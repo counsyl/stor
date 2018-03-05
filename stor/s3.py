@@ -774,10 +774,8 @@ class S3Path(OBSPath):
         """Issue a restore command for a single object from glacier.
 
         Args:
-            tier (str, optional): restore speed (see Glacier docs for details)
-            days (int, optional): number of days to keep data in S3 post-restore.
-        Returns:
-            dict or None: restore response from S3 client
+            tier (str, default 'Bulk'): restore speed (see Glacier docs for details)
+            days (int, default 10): number of days to keep data in S3 post-restore.
         Note:
             Calling ``restore()`` on a directory will not work correctly. Only use this for single
             objects! (you can always do ``[s.restore() for s in stor.list(<directory>)]``)
@@ -787,7 +785,7 @@ class S3Path(OBSPath):
         """
         valid_tiers = ('Standard', 'Bulk', 'Expedited')
         if tier not in valid_tiers:
-            raise TypeError('`tier` must be one of {}'.format(valid_tiers))
+            raise ValueError('`tier` must be one of {}'.format(valid_tiers))
         try:
             self._s3_client_call('restore_object',
                                  Bucket=self.bucket,
@@ -796,7 +794,5 @@ class S3Path(OBSPath):
                                                  'GlacierJobParameters': {'Tier': tier}})
         except exceptions.RestoreAlreadyInProgressError:
             logger.debug('restore already started, not doing anything')
-            return None
         except exceptions.AlreadyRestoredError:
             logger.debug('already restored, not doing anything')
-            return None
