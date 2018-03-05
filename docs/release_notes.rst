@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v2.1.0
+------
+
+* Add ``stor.S3Path.restore(days, tier)`` to restore objects from Glacier to S3.
+  Paired with this change are two specific exceptions related to S3 restores,
+  ``RestoreAlreadyInProgressError`` (raised when restore has already started)
+  and ``AlreadyRestoredError`` (raised when restoring object already in S3).
+* Move ``ConflictError`` to ``stor.exceptions`` (still available under ``stor.swift``)
+
 v2.0.0
 ------
 
