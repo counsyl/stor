@@ -49,19 +49,21 @@ def _parse_s3_error(exc, **kwargs):
         if 'storage class' in msg and code == 'InvalidObjectState':
             if operation_name == 'GetObject':
                 return exceptions.ObjectInColdStorageError(msg, exc)
-            if operation_name == 'RestoreObject':
+            elif operation_name == 'RestoreObject':
                 return exceptions.AlreadyRestoredError(msg, exc)
-        return exceptions.UnauthorizedError(msg, exc)
-    if http_status == 404:
+            else:
+                return exceptions.UnauthorizedError(msg, exc)
+    elif http_status == 404:
         return exceptions.NotFoundError(msg, exc)
-    if http_status == 503:
+    elif http_status == 503:
         return exceptions.UnavailableError(msg, exc)
-    if http_status == 409:
+    elif http_status == 409:
         if 'Object restore is already in progress' in msg:
             return exceptions.RestoreAlreadyInProgressError(msg, exc)
-        return exceptions.ConflictError(msg, exc)
-
-    return exceptions.RemoteError(msg, exc)
+        else:  # pragma: no cover
+            return exceptions.ConflictError(msg, exc)
+    else:
+        return exceptions.RemoteError(msg, exc)
 
 
 def _get_s3_client():
