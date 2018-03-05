@@ -1422,10 +1422,13 @@ class TestRestore(S3TestCase):
             S3Path('s3://bucket/key/obj').restore()
 
     def test_restore_with_known_exception(self):
-        self.mock_get_s3_client.return_value.restore_object.side_effect =\
-            exceptions.RestoreAlreadyInProgressError('blah')
-        S3Path('s3://bucket/key/obj').restore()
-        assert self.mock_get_s3_client.return_value.restore_object.called
+        for exc in [exceptions.RestoreAlreadyInProgressError('blah'),
+                    exceptions.AlreadyRestoredError('blah')]:
+            self.mock_get_s3_client.reset_mock()
+            assert not self.mock_get_s3_client.return_value.restore_object.called
+            self.mock_get_s3_client.return_value.restore_object.side_effect = exc
+            S3Path('s3://bucket/key/obj').restore()
+            assert self.mock_get_s3_client.return_value.restore_object.called
 
 
 class TestS3File(S3TestCase):
