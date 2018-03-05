@@ -771,13 +771,16 @@ class S3Path(OBSPath):
                                                                  key=self.resource)
 
     def restore(self, tier='Bulk', days=10):
-        """Issue a restore command for the object from glacier.
+        """Issue a restore command for a single object from glacier.
 
         Args:
             tier (str, optional): restore speed (see Glacier docs for details)
             days (int, optional): number of days to keep data in S3 post-restore.
         Returns:
             dict or None: restore response from S3 client
+        Note:
+            Calling ``restore()`` on a directory will not work correctly. Only use this for single
+            objects! (you can always do ``[s.restore() for s in stor.list(<directory>)]``)
 
         Ignores RestoreAlreadyInProgressError and AlreadyRestoredError (note that you can't force
         S3 to do a faster restore once you've chosen a tier)
