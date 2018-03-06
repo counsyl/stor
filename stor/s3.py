@@ -52,8 +52,9 @@ def _parse_s3_error(exc, **kwargs):
             elif operation_name == 'RestoreObject':
                 return exceptions.AlreadyRestoredError(msg, exc)
             else:  # pragma: no cover
-                pass
-        return exceptions.UnauthorizedError(msg, exc)
+                return exceptions.UnauthorizedError(msg, exc)
+        else:
+            return exceptions.UnauthorizedError(msg, exc)
     elif http_status == 404:
         return exceptions.NotFoundError(msg, exc)
     elif http_status == 503:
