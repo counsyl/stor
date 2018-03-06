@@ -99,6 +99,7 @@ initial_retry_sleep = 1
 SwiftError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
 ConditionNotMetError = stor_exceptions.ConditionNotMetError
+ConflictError = stor_exceptions.ConflictError
 UnavailableError = stor_exceptions.UnavailableError
 UnauthorizedError = stor_exceptions.UnauthorizedError
 SwiftFile = OBSFile
@@ -185,16 +186,6 @@ class AuthenticationError(SwiftError):
 
     Swiftclient throws this error when trying to authenticate with
     the keystone client. This is similar to a 401 HTTP response.
-    """
-    pass
-
-
-class ConflictError(SwiftError):
-    """Thrown when a 409 response is returned from swift
-
-    This error is thrown when deleting a container and
-    some object storage nodes report that the container
-    has objects while others don't.
     """
     pass
 

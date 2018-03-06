@@ -1405,6 +1405,32 @@ class TestCopytree(S3TestCase):
         self.assertEquals(s3_p.read_object(), b'data')
 
 
+class TestRestore(S3TestCase):
+    def test_restore_normal(self):
+        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p.restore(days=29, tier='Expedited')
+        self.mock_get_s3_client.return_value.restore_object.assert_called_with(
+            Bucket='bucket', Key='key/obj', RestoreRequest={'Days': 29, 'GlacierJobParameters':
+                                                            {'Tier': 'Expedited'}})
+        with self.assertRaisesRegexp(ValueError, 'tier.*Standard'):
+            s3_p.restore(tier='Blah')
+
+    def test_restore_with_exception(self):
+        self.mock_get_s3_client.return_value.restore_object.side_effect =\
+            exceptions.ConflictError('blah')
+        with self.assertRaises(exceptions.ConflictError):
+            S3Path('s3://bucket/key/obj').restore()
+
+    def test_restore_with_known_exception(self):
+        for exc in [exceptions.RestoreAlreadyInProgressError('blah'),
+                    exceptions.AlreadyRestoredError('blah')]:
+            self.mock_get_s3_client.reset_mock()
+            assert not self.mock_get_s3_client.return_value.restore_object.called
+            self.mock_get_s3_client.return_value.restore_object.side_effect = exc
+            S3Path('s3://bucket/key/obj').restore()
+            assert self.mock_get_s3_client.return_value.restore_object.called
+
+
 class TestS3File(S3TestCase):
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_read_success(self, mock_stream):
@@ -1519,7 +1545,7 @@ class TestSessionSettings(unittest.TestCase):
 class TestS3ErrorParsing(unittest.TestCase):
     def test_cold_storage_exception(self):
         exc = ClientError(
-            error_response={
+            {
                 'ResponseMetadata': {
                     'HTTPStatusCode': 403, 'RetryAttempts': 0, 'HostId': '',
                     'RequestId': '53AA120E409A4EB7',
@@ -1530,12 +1556,52 @@ class TestS3ErrorParsing(unittest.TestCase):
                                     'content-type': 'application/xml'}
                 },
                 'Error': {
-                        'Message': "The operation is not valid for the object's storage class",
-                        'Code': 'InvalidObjectState'
+                    'Message': "The operation is not valid for the object's storage class",
+                    'Code': 'InvalidObjectState'
                 }
             },
-            operation_name=u'GetObject')
+            u'GetObject')
         obj = s3._parse_s3_error(exc, Bucket='BUCKETNAME', Key='KEYNAME')
         self.assertIsInstance(obj, exceptions.ObjectInColdStorageError)
         self.assertIn('Bucket: BUCKETNAME', str(obj))
         self.assertIn('Key: KEYNAME', str(obj))
+
+    def test_already_restoring_error(self):
+        error_response = {
+            'Error': {'Code': 'RestoreAlreadyInProgress',
+                      'Message': 'Object restore is already in progress'},
+            'ResponseMetadata': {'HTTPHeaders': {'content-type': 'application/xml',
+                                                 'date': 'Mon, 05 Mar 2018 19:26:11 GMT',
+                                                 'server': 'AmazonS3',
+                                                 'transfer-encoding': 'chunked',
+                                                 'x-amz-id-2': '',
+                                                 'x-amz-request-id': 'FC1D76375EF41CED'},
+                                 'HTTPStatusCode': 409,
+                                 'HostId': '',
+                                 'RequestId': 'FC1D76375EF41CED',
+                                 'RetryAttempts': 0}}
+        obj = s3._parse_s3_error(ClientError(error_response, u'RestoreObject'),
+                                 Bucket='BUCKETNAME', Key='KEYNAME')
+        self.assertIsInstance(obj, exceptions.RestoreAlreadyInProgressError)
+
+    def test_already_restored_exception(self):
+        error_response = {
+            'Error': {
+                'Code': 'InvalidObjectState',
+                'Message': "Restore is not allowed, as object's storage class is not GLACIER"
+            },
+            'ResponseMetadata': {'HTTPHeaders': {'connection': 'close',
+                                                 'content-type': 'application/xml',
+                                                 'date': 'Mon, 05 Mar 2018 18:53:56 GMT',
+                                                 'server': 'AmazonS3',
+                                                 'transfer-encoding': 'chunked',
+                                                 'x-amz-id-2': 'txt',
+                                                 'x-amz-request-id': '29C9FD65B889D4A6'},
+                                 'HTTPStatusCode': 403,
+                                 'HostId': '',
+                                 'RequestId': '29C9FD65B889D4A6',
+                                 'RetryAttempts': 0}
+        }
+        obj = s3._parse_s3_error(ClientError(error_response, u'RestoreObject'),
+                                 Bucket='BUCKETNAME', Key='KEYNAME')
+        self.assertIsInstance(obj, exceptions.AlreadyRestoredError)

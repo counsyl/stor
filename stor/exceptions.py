@@ -33,7 +33,11 @@ class NotFoundError(RemoteError):
     pass
 
 
-class ObjectInColdStorageError(RemoteError):
+class InvalidObjectStateError(RemoteError):
+    """Base class for 403 errors from S3 dealing with storage classes."""
+
+
+class ObjectInColdStorageError(InvalidObjectStateError):
     """Thrown when a 403 is returned from S3/SwiftStack because backing data is on Glacier.
 
     Note:
@@ -43,6 +47,10 @@ class ObjectInColdStorageError(RemoteError):
 
     .. _S3 Rest API GET: https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html
     """
+
+
+class AlreadyRestoredError(InvalidObjectStateError):
+    """Thrown on attempt to restore object already not in Glacier"""
 
 
 class UnauthorizedError(RemoteError):
@@ -61,6 +69,22 @@ class UnauthorizedError(RemoteError):
 class UnavailableError(RemoteError):
     """Thrown when a 503 response is returned."""
     pass
+
+
+class ConflictError(RemoteError):
+    """Thrown when a 409 response is returned.
+
+    Notes:
+        * **Swift**: This error is thrown when deleting a container and
+          some object storage nodes report that the container
+          has objects while others don't.
+        * **S3**: Raised when attempting to restore object that's already being restored (as
+          RestoreAlreadyInProgressError). Possibly in other cases.
+    """
+
+
+class RestoreAlreadyInProgressError(ConflictError):
+    """Thrown when RestoreAlreadyInProgress on glacier restore"""
 
 
 class ConditionNotMetError(RemoteError):
