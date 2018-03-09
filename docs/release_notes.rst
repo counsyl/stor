@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v2.1.1
+------
+
+* Fix trove identifier for License and ensure MIT License is included with source distributions.
+
 v2.1.0
 ------
 
