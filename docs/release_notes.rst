@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v2.1.2
+------
+
+* Nicer README for PyPI
+
 v2.1.1
 ------
 
