@@ -1079,8 +1079,14 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError,
-                              UnauthorizedError))
+    @_swift_retry(
+        exceptions=(
+            ConditionNotMetError,
+            UnavailableError,
+            UnauthorizedError,
+            AuthenticationError,
+        )
+    )
     def upload(self,
                to_upload,
                condition=None,
