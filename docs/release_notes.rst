@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v2.1.3
+------
+
+* Retry upload on ``AuthenticationError``.
+
 v2.1.2
 ------
 
