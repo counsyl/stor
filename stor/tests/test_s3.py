@@ -1,5 +1,4 @@
 import datetime
-import gzip
 import ntpath
 from tempfile import NamedTemporaryFile
 import unittest
@@ -9,7 +8,6 @@ from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import ClientError
 import freezegun
 import mock
-import six
 from testfixtures import LogCapture
 
 import stor
@@ -17,13 +15,12 @@ from stor import exceptions
 from stor import NamedTemporaryDirectory
 from stor.obs import OBSUploadObject
 from stor import Path
-from stor import obs
 from stor import settings
 from stor import s3
 from stor.s3 import S3Path
 from stor.test import S3TestCase
+from stor.tests.shared_obs import SharedOBSFileCases
 from stor import utils
-from stor.tests.shared import assert_same_data
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -49,6 +46,11 @@ class TestBasicPathMethods(unittest.TestCase):
     def test_basename(self):
         p = Path('s3://bucket/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
+
+    def test_to_url(self):
+        p = Path('s3://mybucket/path/to/resource')
+        self.assertEquals(p.to_url(),
+                          'https://mybucket.s3.amazonaws.com/path/to/resource')
 
 
 class TestValidation(unittest.TestCase):
@@ -1392,69 +1394,44 @@ class TestCopytree(S3TestCase):
         with self.assertRaisesRegexp(ValueError, 'not supported'):
             p.copytree(r'windows\path')
 
+    @mock.patch('botocore.response.StreamingBody', autospec=True)
+    def test_read_object(self, mock_stream):
+        mock_stream.read.return_value = b'data'
+        self.mock_s3.get_object.return_value = {'Body': mock_stream}
+
+        s3_p = S3Path('s3://bucket/key/obj')
+        # essentially equivalent to open().read(), but this one test means we can just mock
+        # read_object in the shared tests.
+        self.assertEquals(s3_p.read_object(), b'data')
+
+
+class TestRestore(S3TestCase):
+    def test_restore_normal(self):
+        s3_p = S3Path('s3://bucket/key/obj')
+        s3_p.restore(days=29, tier='Expedited')
+        self.mock_get_s3_client.return_value.restore_object.assert_called_with(
+            Bucket='bucket', Key='key/obj', RestoreRequest={'Days': 29, 'GlacierJobParameters':
+                                                            {'Tier': 'Expedited'}})
+        with self.assertRaisesRegexp(ValueError, 'tier.*Standard'):
+            s3_p.restore(tier='Blah')
+
+    def test_restore_with_exception(self):
+        self.mock_get_s3_client.return_value.restore_object.side_effect =\
+            exceptions.ConflictError('blah')
+        with self.assertRaises(exceptions.ConflictError):
+            S3Path('s3://bucket/key/obj').restore()
+
+    def test_restore_with_known_exception(self):
+        for exc in [exceptions.RestoreAlreadyInProgressError('blah'),
+                    exceptions.AlreadyRestoredError('blah')]:
+            self.mock_get_s3_client.reset_mock()
+            assert not self.mock_get_s3_client.return_value.restore_object.called
+            self.mock_get_s3_client.return_value.restore_object.side_effect = exc
+            S3Path('s3://bucket/key/obj').restore()
+            assert self.mock_get_s3_client.return_value.restore_object.called
+
 
 class TestS3File(S3TestCase):
-    def test_invalid_buffer_mode(self):
-        s3_f = S3Path('s3://bucket/key/obj').open()
-        s3_f.mode = 'invalid'
-        with self.assertRaisesRegexp(ValueError, 'buffer'):
-            s3_f._buffer
-
-    @mock.patch('botocore.response.StreamingBody', autospec=True)
-    def test_invalid_flush_mode(self, mock_stream):
-        mock_stream.read.return_value = b'data'
-        self.mock_s3.get_object.return_value = {'Body': mock_stream}
-        s3_p = S3Path('s3://bucket/key/obj')
-        obj = s3_p.open()
-        with self.assertRaisesRegexp(TypeError, 'flush'):
-            obj.flush()
-
-    def test_name(self):
-        s3_p = S3Path('s3://bucket/key/obj')
-        obj = s3_p.open()
-        self.assertEquals(obj.name, s3_p)
-
-    @mock.patch('botocore.response.StreamingBody', autospec=True)
-    def test_context_manager_on_closed_file(self, mock_stream):
-        mock_stream.read.return_value = b'data'
-        self.mock_s3.get_object.return_value = {'Body': mock_stream}
-        s3_p = S3Path('s3://bucket/key/obj')
-        obj = s3_p.open()
-        obj.close()
-
-        with self.assertRaisesRegexp(ValueError, 'closed file'):
-            with obj:
-                pass  # pragma: no cover
-
-    def test_invalid_mode(self):
-        s3_p = S3Path('s3://bucket/key/obj')
-        with self.assertRaisesRegexp(ValueError, 'invalid mode'):
-            s3_p.open(mode='invalid')
-
-    def test_invalid_io_op(self):
-        # now invalid delegates are considered invalid on instantiation
-        with self.assertRaisesRegexp(AttributeError, 'no attribute'):
-            class MyFile(object):
-                closed = False
-                _buffer = six.BytesIO()
-                invalid = obs._delegate_to_buffer('invalid')
-
-    @mock.patch('botocore.response.StreamingBody', autospec=True)
-    def test_read_on_closed_file(self, mock_stream):
-        mock_stream.read.return_value = b'data'
-        self.mock_s3.get_object.return_value = {'Body': mock_stream}
-        s3_p = S3Path('s3://bucket/key/obj')
-        obj = s3_p.open()
-        obj.close()
-
-        with self.assertRaisesRegexp(ValueError, 'closed file'):
-            obj.read()
-
-    def test_read_invalid_mode(self):
-        s3_p = S3Path('s3://bucket/key/obj')
-        with self.assertRaisesRegexp(TypeError, 'mode.*read'):
-            s3_p.open(mode='wb').read()
-
     @mock.patch('botocore.response.StreamingBody', autospec=True)
     def test_read_success(self, mock_stream):
         mock_stream.read.return_value = b'data'
@@ -1483,12 +1460,6 @@ line4
 
         self.assertEqual(next(s3_p.open()), 'line1\n')
         self.assertEqual(next(iter(s3_p.open())), 'line1\n')
-
-    def test_write_invalid_args(self):
-        s3_p = S3Path('s3://bucket/key/obj')
-        obj = s3_p.open(mode='r')
-        with self.assertRaisesRegexp(TypeError, 'mode.*write'):
-            obj.write('hello')
 
     @mock.patch('time.sleep', autospec=True)
     def test_binary_write_multiple_w_context_manager(self, mock_sleep):
@@ -1531,33 +1502,11 @@ line4
                 # additional file change
                 self.assertEqual(open(ntf3.name, 'rb').read(), b'hello world')
 
-    @mock.patch('time.sleep', autospec=True)
-    def test_close_no_writes(self, mock_sleep):
-        mock_upload = self.mock_s3_transfer.upload_file
-        s3_p = S3Path('s3://bucket/key/obj')
-        obj = s3_p.open(mode='wb')
-        obj.close()
 
-        self.assertFalse(mock_upload.called)
-
-    def test_works_with_gzip(self):
-        gzip_path = stor.join(stor.dirname(__file__),
-                              'file_data', 's_3_2126.bcl.gz')
-        text = stor.open(gzip_path, 'rb').read()
-        with mock.patch.object(S3Path, 'read_object', autospec=True) as read_mock:
-            read_mock.return_value = text
-            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz', 'rb')
-
-            with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
-                with gzip.open(gzip_path) as gzip_fp:
-                    assert_same_data(s3_file_fp, gzip_fp)
-            s3_file = stor.open('s3://A/C/s_3_2126.bcl.gz', 'rb')
-            with gzip.GzipFile(fileobj=s3_file) as s3_file_fp:
-                with gzip.open(gzip_path) as gzip_fp:
-                    # after seeking should still be same
-                    s3_file_fp.seek(3)
-                    gzip_fp.seek(3)
-                    assert_same_data(s3_file_fp, gzip_fp)
+class TestS3Shared(SharedOBSFileCases, S3TestCase):
+    drive = 's3://'
+    path_class = S3Path
+    normal_path = S3Path('s3://bucket/my/key/obj')
 
 
 @mock.patch('boto3.session.Session')
@@ -1591,3 +1540,68 @@ class TestSessionSettings(unittest.TestCase):
             assert mock_session.called
             assert len(mock_session.call_args_list) == 1
             assert mock_session.call_args_list[0] == ((), {'aws_access_key_id': 'blah'})
+
+
+class TestS3ErrorParsing(unittest.TestCase):
+    def test_cold_storage_exception(self):
+        exc = ClientError(
+            {
+                'ResponseMetadata': {
+                    'HTTPStatusCode': 403, 'RetryAttempts': 0, 'HostId': '',
+                    'RequestId': '53AA120E409A4EB7',
+                    'HTTPHeaders': {'x-amz-id-2': '', 'server': 'AmazonS3',
+                                    'transfer-encoding': 'chunked',
+                                    'x-amz-request-id': '53AA120E409A4EB7',
+                                    'date': 'Sat, 20 Jan 2018 05:24:30 GMT',
+                                    'content-type': 'application/xml'}
+                },
+                'Error': {
+                    'Message': "The operation is not valid for the object's storage class",
+                    'Code': 'InvalidObjectState'
+                }
+            },
+            u'GetObject')
+        obj = s3._parse_s3_error(exc, Bucket='BUCKETNAME', Key='KEYNAME')
+        self.assertIsInstance(obj, exceptions.ObjectInColdStorageError)
+        self.assertIn('Bucket: BUCKETNAME', str(obj))
+        self.assertIn('Key: KEYNAME', str(obj))
+
+    def test_already_restoring_error(self):
+        error_response = {
+            'Error': {'Code': 'RestoreAlreadyInProgress',
+                      'Message': 'Object restore is already in progress'},
+            'ResponseMetadata': {'HTTPHeaders': {'content-type': 'application/xml',
+                                                 'date': 'Mon, 05 Mar 2018 19:26:11 GMT',
+                                                 'server': 'AmazonS3',
+                                                 'transfer-encoding': 'chunked',
+                                                 'x-amz-id-2': '',
+                                                 'x-amz-request-id': 'FC1D76375EF41CED'},
+                                 'HTTPStatusCode': 409,
+                                 'HostId': '',
+                                 'RequestId': 'FC1D76375EF41CED',
+                                 'RetryAttempts': 0}}
+        obj = s3._parse_s3_error(ClientError(error_response, u'RestoreObject'),
+                                 Bucket='BUCKETNAME', Key='KEYNAME')
+        self.assertIsInstance(obj, exceptions.RestoreAlreadyInProgressError)
+
+    def test_already_restored_exception(self):
+        error_response = {
+            'Error': {
+                'Code': 'InvalidObjectState',
+                'Message': "Restore is not allowed, as object's storage class is not GLACIER"
+            },
+            'ResponseMetadata': {'HTTPHeaders': {'connection': 'close',
+                                                 'content-type': 'application/xml',
+                                                 'date': 'Mon, 05 Mar 2018 18:53:56 GMT',
+                                                 'server': 'AmazonS3',
+                                                 'transfer-encoding': 'chunked',
+                                                 'x-amz-id-2': 'txt',
+                                                 'x-amz-request-id': '29C9FD65B889D4A6'},
+                                 'HTTPStatusCode': 403,
+                                 'HostId': '',
+                                 'RequestId': '29C9FD65B889D4A6',
+                                 'RetryAttempts': 0}
+        }
+        obj = s3._parse_s3_error(ClientError(error_response, u'RestoreObject'),
+                                 Bucket='BUCKETNAME', Key='KEYNAME')
+        self.assertIsInstance(obj, exceptions.AlreadyRestoredError)

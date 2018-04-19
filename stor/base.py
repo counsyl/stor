@@ -14,6 +14,7 @@ from six import string_types
 from six import PY3
 
 from stor import utils
+import six
 
 
 class TreeWalkWarning(Warning):
@@ -340,6 +341,11 @@ class Path(text_type):
         """Delete entire directory (or all paths starting with prefix).
 
         See shutil.rmtree"""
+        raise NotImplementedError
+
+    def makedirs_p(self, mode=0o777):
+        """ Like :func:`os.makedirs`, but does not raise an exception if the
+        directory already exists. """
         raise NotImplementedError
 
     def walkfiles(self, pattern=None):

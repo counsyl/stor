@@ -1,6 +1,77 @@
 Release Notes
 =============
 
+v2.1.3
+------
+
+* Retry upload on ``AuthenticationError``.
+
+v2.1.2
+------
+
+* Nicer README for PyPI
+
+v2.1.1
+------
+
+* Fix trove identifier for License and ensure MIT License is included with source distributions.
+
+v2.1.0
+------
+
+* Add ``stor.S3Path.restore(days, tier)`` to restore *single* objects from Glacier to S3.
+  Paired with this change are two specific exceptions related to S3 restores,
+  ``RestoreAlreadyInProgressError`` (raised when restore has already started)
+  and ``AlreadyRestoredError`` (raised when restoring object already in S3).
+* Move ``ConflictError`` to ``stor.exceptions`` (still available under ``stor.swift``)
+
+v2.0.0
+------
+
+CLI additions
+^^^^^^^^^^^^^
+
+* ``stor url <path>`` to translate swift and s3 paths to HTTP paths.
+* ``stor convert-swiftstack [--bucket] <path>`` cli tool to convert s3 <-> swiftstack paths.
+
+API Additions
+^^^^^^^^^^^^^
+
+* Add ``to_url()`` method on Path and ``url`` cli method to translate swift and s3 paths to HTTP paths.
+* GETs on unrestored Glacier objects now raise a more useful ``ObjectInColdStorageError``.
+* Add `stor.extensions.swiftstack` module for translating swift paths to s3.
+* Add ``stor.makedirs_p(path, mode=0o777)`` to cross-compatible API. This does
+  nothing on OBS-paths (just there for convenience).
+
+
+API Breaks
+^^^^^^^^^^
+
+* ``OBSFile`` can no longer (accidentally or intentionally) create zero-byte objects.
+* GETs on unrestored Glacier objects no longer raise ``UnauthorizedError`` (see above).
+* Removed already-deprecated ``stor.listpath`` and ``stor.path``.
+
+
+Bug fixes
+^^^^^^^^^
+
+* ``OBSFile`` objects no longer attempt to load buffers on garbage collection.
+  This should resolve the ``Exception ignored in OBSFile.__del__`` messages and
+  eliminate "hangs" on garbage collection or closing python terminal.
+* ``stor cp`` no longer claims to be an alias of copy.
+
+Other Changes
+^^^^^^^^^^^^^
+
+* ``stor`` no longer depends on ``cached-property``.
+
+v1.5.2
+------
+
+* Hoist ``stor.utils.is_obs_path`` --> ``stor.is_obs_path``
+* Build universal wheels for both Python 2 and Python 3.
+  (no actual code changes)
+
 v1.5.1
 ------
 

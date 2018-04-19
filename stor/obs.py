@@ -2,7 +2,6 @@ import locale
 import posixpath
 import sys
 
-from cached_property import cached_property
 import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
@@ -20,7 +19,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         if valid_modes and self.mode not in valid_modes:
             raise TypeError('File must be in modes %s to %r' %
                             (valid_modes, attr_name))
-        func = getattr(self._buffer, attr_name)
+        func = getattr(self._get_or_create_buffer(), attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
     wrapper.__doc__ = getattr(six.BytesIO(), attr_name).__doc__
@@ -186,6 +185,12 @@ class OBSPath(Path):
     def ismount(self):
         return True
 
+    # NOTE: we only have makedirs_p() because the other mkdir/mkdir_p/makedirs methods are expected
+    # to raise errors if directories exist or intermediate directories don't exist.
+    def makedirs_p(self, mode=0o777):
+        """No-op (no directories on OBS)"""
+        return
+
     def getsize(self):
         """Returns size, in bytes of path."""
         raise NotImplementedError
@@ -231,6 +236,10 @@ class OBSPath(Path):
         """Upload a list of files and directories to a directory."""
         raise NotImplementedError
 
+    def to_url(self):
+        """Get HTTPS URL for given path"""
+        raise NotImplementedError
+
 
 class OBSFile(object):
     """
@@ -250,17 +259,26 @@ class OBSFile(object):
         obj.write('world')
         obj.close()
 
-    Note that the writes will not be commited until the object has been
-    closed. It is recommended to use `OBSPath.open` as a context manager
-    to avoid forgetting to close the resource::
+    If *any* data is written to the file's internal buffer, it will be written to object storage
+    on ``flush()``, ``close()`` (or leaving a with statement / `__exit__()`) or when the
+    ``OBSFile`` is garbage collected. You *cannot* create a zero-byte object on OBS.
+
+    Just like with Python file objects, it's good practice to use it in a contextmanager::
 
         with Path('swift://tenant/container/object').open(mode='r') as obj:
             obj.write('Hello world!')
+
+    .. note::
+        Unlike python file objects, OBSFile does not create an empty sentinel file if you
+        call open and then do not close it.
     """
     closed = False
     _READ_MODES = ('r', 'rb')
     _WRITE_MODES = ('w', 'wb')
     _VALID_MODES = _READ_MODES + _WRITE_MODES
+    # we have to know whether we've generated a buffer at all
+    # to know whether we need to close the underlying buffer
+    _buffer = None
 
     def __init__(self, pth, mode='r', encoding=None, **kwargs):
         """Initializes a file object
@@ -307,17 +325,21 @@ class OBSFile(object):
         """The class used for the IO stream"""
         return six.BytesIO if self.mode in ('rb', 'wb') else six.StringIO
 
-    @cached_property
-    def _buffer(self):
+    def _get_or_create_buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
+        if self._buffer:
+            return self._buffer
+
         if self.mode == 'r':
-            return self.stream_cls(self._path.read_object().decode(self.encoding))
-        if self.mode == 'rb':
-            return self.stream_cls(self._path.read_object())
+            buf = self.stream_cls(self._path.read_object().decode(self.encoding))
+        elif self.mode == 'rb':
+            buf = self.stream_cls(self._path.read_object())
         elif self.mode in ('w', 'wb'):
-            return self.stream_cls()
+            buf = self.stream_cls()
         else:
             raise ValueError('cannot obtain buffer in mode: %r' % self.mode)
+        self._buffer = buf
+        return self._buffer
 
     seek = _delegate_to_buffer('seek', valid_modes=_VALID_MODES)
     tell = _delegate_to_buffer('tell', valid_modes=_VALID_MODES)
@@ -345,20 +367,27 @@ class OBSFile(object):
     def close(self):
         if self.closed:
             return
-        if self.mode in self._WRITE_MODES:
-            self.flush()
-        self._buffer.close()
+        if self._buffer:
+            if self.mode in self._WRITE_MODES:
+                self.flush()
+            self._buffer.close()
         self.closed = True
-        del self.__dict__['_buffer']
 
     def flush(self):
         """Flushes the write buffer to the OBS path (if it exists)"""
         if self.mode not in self._WRITE_MODES:
             raise TypeError("File must be in modes %s to 'flush'" %
                             (self._WRITE_MODES,))
-        if self._buffer.tell():
-            if self.mode == 'w':
-                self._path.write_object(self._buffer.getvalue().encode(self.encoding))
-            else:
-                self._path.write_object(self._buffer.getvalue(),
-                                        **self._kwargs)
+        if not self._buffer:
+            return
+        # NOTE: this helps ensure that only non-zero objects are uploaded with open.
+        # Otherwise you have weird behavior where calling open().tell() will cause an empty object
+        # to be created on OBS on exit. Instead, philosophy is "if buffer has data, we'll upload it
+        # on close"
+        data = self._buffer.getvalue()
+        if not data:
+            return
+        if self.mode == 'w':
+            self._path.write_object(self._buffer.getvalue().encode(self.encoding))
+        else:
+            self._path.write_object(self._buffer.getvalue(), **self._kwargs)

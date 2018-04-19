@@ -99,6 +99,9 @@ initial_retry_sleep = 1
 SwiftError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
 ConditionNotMetError = stor_exceptions.ConditionNotMetError
+ConflictError = stor_exceptions.ConflictError
+UnavailableError = stor_exceptions.UnavailableError
+UnauthorizedError = stor_exceptions.UnauthorizedError
 SwiftFile = OBSFile
 SwiftUploadObject = OBSUploadObject
 
@@ -170,25 +173,11 @@ def _clear_cached_auth_credentials():
         _cached_auth_token_map.clear()
 
 
-class UnavailableError(SwiftError):
-    """Thrown when a 503 response is returned from swift"""
-    pass
+class FailedUploadError(stor_exceptions.FailedUploadError, UnavailableError):
+    """Thrown when an upload fails because of availability issues.
 
-
-class FailedUploadError(UnavailableError):
-    """Thrown when an upload fails because of availability issues"""
-    pass
-
-
-class UnauthorizedError(SwiftError):
-    """Thrown when a 403 response is returned from swift.
-
-    Note:
-        Internal swift connection errors (e.g., when a particular node is
-        unavailable) appear to translate themselves into 403 errors at the
-        proxy layer, thus in general it's a good idea to retry on authorization
-        errors as equivalent to unavailable errors when doing PUT or GET
-        operations (list / stat / etc never hit this issue)."""
+    The exception hierarchy is different for swift because FailedUploadError is nearly always a 503
+    in Swift world (and thus almost always retry-able)"""
     pass
 
 
@@ -197,16 +186,6 @@ class AuthenticationError(SwiftError):
 
     Swiftclient throws this error when trying to authenticate with
     the keystone client. This is similar to a 401 HTTP response.
-    """
-    pass
-
-
-class ConflictError(SwiftError):
-    """Thrown when a 409 response is returned from swift
-
-    This error is thrown when deleting a container and
-    some object storage nodes report that the container
-    has objects while others don't.
     """
     pass
 
@@ -265,8 +244,12 @@ def _swiftclient_error_to_descriptive_exception(exc):
     if exc_headers and exc_headers.get('X-Trans-Id'):
         exc_str += ' X-Trans-Id: %s' % exc_headers['X-Trans-Id']
     if http_status == 403:
-        logger.error('unauthorized error in swift operation - %s', exc_str)
-        return UnauthorizedError(exc_str, exc)
+        # pass through of the InvalidObjectState error from S3 (but we only get exception message)
+        if "storage class" in exc_str:
+            raise stor_exceptions.ObjectInColdStorageError(exc_str, exc)
+        else:
+            logger.error('unauthorized error in swift operation - %s', exc_str)
+            return UnauthorizedError(exc_str, exc)
     elif http_status == 404:
         return NotFoundError(exc_str, exc)
     elif http_status == 409:
@@ -1096,8 +1079,14 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError,
-                              UnauthorizedError))
+    @_swift_retry(
+        exceptions=(
+            ConditionNotMetError,
+            UnavailableError,
+            UnauthorizedError,
+            AuthenticationError,
+        )
+    )
     def upload(self,
                to_upload,
                condition=None,
@@ -1575,3 +1564,14 @@ class SwiftPath(OBSPath):
             for f in self.list(ignore_dir_markers=True):
                 if pattern is None or f.fnmatch(pattern):
                     yield f
+
+    def to_url(self):
+        """Returns URI for object (based on storage URL)
+
+        Returns:
+            str: the HTTP url to the object
+        Raises:
+            UnauthorizedError: if we cannot authenticate to get a storage URL"""
+        storage_url = _get_or_create_auth_credentials(self.tenant)['os_storage_url']
+        return six.text_type(os.path.join(*filter(None,
+                                                  [storage_url, self.container, self.resource])))

@@ -26,6 +26,7 @@ from stor.utils import copy
 from stor.utils import copytree
 from stor.utils import is_filesystem_path
 from stor.utils import is_swift_path
+from stor.utils import is_obs_path
 from stor.utils import NamedTemporaryDirectory
 from stor.base import Path
 from stor import settings
@@ -74,6 +75,7 @@ isfile = _delegate_to_path('isfile')
 islink = _delegate_to_path('islink')
 ismount = _delegate_to_path('ismount')
 getsize = _delegate_to_path('getsize')
+makedirs_p = _delegate_to_path('makedirs_p')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
 walkfiles = _delegate_to_path('walkfiles')
@@ -86,27 +88,6 @@ def glob(pth, pattern):  # pragma: no cover
     # TODO(jtratner): support single argument for glob, which is more
     # comprehensible.
     return Path(pth).glob(pattern)
-
-
-def listpath(pth):  # pragma: no cover
-    import warnings
-
-    # DeprecationWarnings are hidden by default. We want to get rid of this
-    # sooner rather than later.
-    warnings.warn('Using the ``stor.listpath()`` function directly is'
-                  ' deprecated, use ``stor.list()`` instead', UserWarning)
-    return list(pth)
-
-
-def path(pth):  # pragma: no cover
-    import warnings
-
-    # DeprecationWarnings are hidden by default. We want to get rid of this
-    # sooner rather than later.
-    warnings.warn('Using the ``path()`` function directly is deprecated -'
-                  ' either use stor.Path or the functional API'
-                  ' directly', UserWarning)
-    return Path(pth)
 
 
 __all__ = [
@@ -138,5 +119,6 @@ __all__ = [
     'walkfiles',
     'is_filesystem_path',
     'is_swift_path',
+    'is_obs_path',
     'NamedTemporaryDirectory',
 ]

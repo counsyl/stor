@@ -40,21 +40,32 @@ def _parse_s3_error(exc, **kwargs):
     """
     http_status = exc.response.get('ResponseMetadata', {}).get('HTTPStatusCode')
     msg = exc.response['Error'].get('Message', 'Unknown')
-
-    # Give some more info about the error's origins
-    if 'Bucket' in kwargs:
-        msg += ' Bucket: ' + kwargs.get('Bucket')
-    if 'Key' in kwargs:
-        msg += ', Key: ' + kwargs.get('Key')
+    code = exc.response['Error'].get('Code')
+    operation_name = exc.operation_name
+    msg += ' Bucket: ' + kwargs.get('Bucket') if 'Bucket' in kwargs else ''
+    msg += ' Key: ' + kwargs.get('Key') if 'Key' in kwargs else ''
 
     if http_status == 403:
-        return exceptions.UnauthorizedError(msg, exc)
+        if 'storage class' in msg and code == 'InvalidObjectState':
+            if operation_name == 'GetObject':
+                return exceptions.ObjectInColdStorageError(msg, exc)
+            elif operation_name == 'RestoreObject':
+                return exceptions.AlreadyRestoredError(msg, exc)
+            else:  # pragma: no cover
+                return exceptions.UnauthorizedError(msg, exc)
+        else:
+            return exceptions.UnauthorizedError(msg, exc)
     elif http_status == 404:
         return exceptions.NotFoundError(msg, exc)
     elif http_status == 503:
         return exceptions.UnavailableError(msg, exc)
-
-    return exceptions.RemoteError(msg, exc)
+    elif http_status == 409:
+        if 'Object restore is already in progress' in msg:
+            return exceptions.RestoreAlreadyInProgressError(msg, exc)
+        else:  # pragma: no cover
+            return exceptions.ConflictError(msg, exc)
+    else:
+        return exceptions.RemoteError(msg, exc)
 
 
 def _get_s3_client():
@@ -757,3 +768,35 @@ class S3Path(OBSPath):
 
         utils.check_condition(condition, [r['dest'] for r in uploaded['completed']])
         return uploaded
+
+    def to_url(self):
+        """Returns HTTP url for object (virtual host-style)"""
+        return u'https://{bucket}.s3.amazonaws.com/{key}'.format(bucket=self.bucket,
+                                                                 key=self.resource)
+
+    def restore(self, tier='Bulk', days=10):
+        """Issue a restore command for a single object from glacier.
+
+        Args:
+            tier (str, default 'Bulk'): restore speed (see Glacier docs for details)
+            days (int, default 10): number of days to keep data in S3 post-restore.
+        Note:
+            Calling ``restore()`` on a directory will not work correctly. Only use this for single
+            objects! (you can always do ``[s.restore() for s in stor.list(<directory>)]``)
+
+        Ignores RestoreAlreadyInProgressError and AlreadyRestoredError (note that you can't force
+        S3 to do a faster restore once you've chosen a tier)
+        """
+        valid_tiers = ('Standard', 'Bulk', 'Expedited')
+        if tier not in valid_tiers:
+            raise ValueError('`tier` must be one of {}'.format(valid_tiers))
+        try:
+            self._s3_client_call('restore_object',
+                                 Bucket=self.bucket,
+                                 Key=self.resource,
+                                 RestoreRequest={'Days': days,
+                                                 'GlacierJobParameters': {'Tier': tier}})
+        except exceptions.RestoreAlreadyInProgressError:
+            logger.debug('restore already started, not doing anything')
+        except exceptions.AlreadyRestoredError:
+            logger.debug('already restored, not doing anything')

@@ -90,26 +90,6 @@ SwiftUploadObject
 .. autoclass:: SwiftUploadObject
   :members:
 
-
-Exceptions
-----------
-
-.. autoexception:: SwiftError
-
-.. autoexception:: NotFoundError
-
-.. autoexception:: UnavailableError
-
-.. autoexception:: FailedUploadError
-
-.. autoexception:: UnauthorizedError
-
-.. autoexception:: ConfigurationError
-
-.. autoexception:: ConditionNotMetError
-
-.. autoexception:: ConflictError
-
 Utilities
 ---------
 
