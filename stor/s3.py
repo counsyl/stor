@@ -113,63 +113,19 @@ def _get_s3_transfer(config=None):
 
 
 class S3DownloadLogger(utils.BaseProgressLogger):
-    def __init__(self, total_download_objects):
-        super(S3DownloadLogger, self).__init__(progress_logger)
-        self.total_download_objects = total_download_objects
-        self.downloaded_bytes = 0
+    logger = progress_logger
 
-    def update_progress(self, result):
-        """Tracks number of bytes downloaded."""
-        self.downloaded_bytes += (os.path.getsize(result['dest'])
-                                  if not utils.has_trailing_slash(result['source']) else 0)
-
-    def get_start_message(self):
-        return 'starting download of %s objects' % self.total_download_objects
-
-    def get_finish_message(self):
-        return 'download complete - %s' % self.get_progress_message()
-
-    def get_progress_message(self):
-        elapsed_time = self.get_elapsed_time()
-        formatted_elapsed_time = self.format_time(elapsed_time)
-        mb = self.downloaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0.0
-        return (
-            '%s/%s\t'
-            '%s\t'
-            '%0.2f MB\t'
-            '%0.2f MB/s'
-        ) % (self.num_results, self.total_download_objects, formatted_elapsed_time, mb, mb_s)
+    def add_result(self, result):
+        self.update_progress(num_objects=1, addl_bytes=os.path.getszie(result['dest']))
 
 
 class S3UploadLogger(utils.BaseProgressLogger):
-    def __init__(self, total_upload_objects):
-        super(S3UploadLogger, self).__init__(progress_logger)
-        self.total_upload_objects = total_upload_objects
-        self.uploaded_bytes = 0
+    logger = progress_logger
 
-    def update_progress(self, result):
+    def add_result(self, result):
         """Keep track of total uploaded bytes by referencing the object sizes"""
-        self.uploaded_bytes += (os.path.getsize(result['source'])
-                                if not utils.has_trailing_slash(result['dest']) else 0)
-
-    def get_start_message(self):
-        return 'starting upload of %s objects' % self.total_upload_objects
-
-    def get_finish_message(self):
-        return 'upload complete - %s' % self.get_progress_message()
-
-    def get_progress_message(self):
-        elapsed_time = self.get_elapsed_time()
-        formatted_elapsed_time = self.format_time(elapsed_time)
-        mb = self.uploaded_bytes / (1024 * 1024.0)
-        mb_s = mb / elapsed_time.total_seconds() if elapsed_time else 0.0
-        return (
-            '%s/%s\t'
-            '%s\t'
-            '%0.2f MB\t'
-            '%0.2f MB/s'
-        ) % (self.num_results, self.total_upload_objects, formatted_elapsed_time, mb, mb_s)
+        self.update_progress(1, (os.path.getsize(result['source'])
+                             if not utils.has_trailing_slash(result['dest']) else 0))
 
 
 class S3Path(OBSPath):
@@ -627,7 +583,16 @@ class S3Path(OBSPath):
         return downloaded
 
     def _upload_object(self, upload_obj, config=None):
-        """Upload a single object given an OBSUploadObject."""
+        """Upload a single object given an OBSUploadObject.
+
+        Returns:
+            dict: source, dest (str), success (bool), and optionally an error key"""
+        result = {
+            'source': upload_obj.source,
+            'dest': str(upload_obj.object_name),
+            'success': True
+        }
+
         if utils.has_trailing_slash(upload_obj.object_name):
             # Handle empty directories separately
             ul_kwargs = {

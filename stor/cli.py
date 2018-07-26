@@ -74,6 +74,7 @@ is not yet supported.
 """
 import argparse
 import copy
+from collections import OrderedDict
 from functools import partial
 import locale
 import logging
