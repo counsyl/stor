@@ -14,7 +14,6 @@ from six import string_types
 from six import PY3
 
 from stor import utils
-import six
 
 
 class TreeWalkWarning(Warning):

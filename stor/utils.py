@@ -7,6 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+import tqdm
 
 from stor import exceptions
 
@@ -603,62 +604,64 @@ class BaseProgressLogger(object):
     When exiting the context manager, the log message from ``get_finish_message``
     is returned.
 
-    To accumulate more results, implement the ``update_progress`` method. For
-    example, to track the amount of bytes tracked so far::
-
-        def update_progress(self, result):
-            self.total_bytes += result['bytes']
-
-    Any custom results can be printed when implementing ``get_progress_message``.
+    Concrete implementations of this method should implement add_result() to call update_progress
+    with an object count and number of bytes.
     """
-    def __init__(self, logger, level=logging.INFO, result_interval=10):
-        self.logger = logger
-        self.level = level
-        self.result_interval = result_interval
-        self.num_results = 0
-        self.start_time = datetime.datetime.utcnow()
+    logger = logger
+    object_bar = None
+    bytes_bar = None
+    total_objects = None
+    objects_transferred = 0
+    level = logging.INFO
+    show_bytes_bar = True
+
+    def __init__(self, total_objects, total_bytes=None, **tqdm_args):
+        self.total_objects = total_objects
+        self.total_bytes = total_bytes
+        self.objects_transferred = 0
+        self.tqdm_args = tqdm_args
 
     def __enter__(self):
-        start_msg = self.get_start_message()
-        if start_msg:  # pragma: no cover
-            self.logger.log(self.level, start_msg)
+        kwargs = dict(self.tqdm_args)
+        kwargs.setdefault('desc', 'objects')
+        self.object_bar = tqdm.tqdm(total=self.total_objects, **kwargs)
+        if self.show_bytes_bar:
+            kwargs['desc'] = 'bytes'
+            self.bytes_bar = tqdm.tqdm(desc='bytes', unit='B', unit_scale=True, total=self.total_bytes)
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        if exc_type is None:
+        if not (exc_type or exc_value or exc_tb):  # pragma: nocover
             finish_msg = self.get_finish_message()
             if finish_msg:
-                self.logger.log(self.level, finish_msg)
+                self.logger.log(finish_msg)
 
-    def get_elapsed_time(self):
-        return datetime.datetime.utcnow() - self.start_time
+    def close(self):
+        if self.object_bar is not None:
+            self.object_bar.close()
+        if self.bytes_bar is not None:
+            self.bytes_bar.close()
 
-    def format_time(self, t):
-        time_elapsed = datetime.datetime.utcnow() - self.start_time
-        hours, remainder = divmod(time_elapsed.total_seconds(), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        return '%d:%02d:%02d' % (hours, minutes, seconds)
+    def __del__(self):
+        self.close()
 
-    def get_start_message(self):
-        return self.get_progress_message()
+    def update_progress(self, num_objects, addl_bytes):
+        """Update progress bars.
 
-    def get_finish_message(self):
-        return self.get_progress_message()
-
-    def get_progress_message(self):
-        raise NotImplementedError
-
-    def update_progress(self, result):
-        pass
+        Args:
+            num_objects (Optional[int]): additional objects complete
+            addl_bytes (Optional[int]): additional bytes transferred
+        """
+        if num_objects:
+            self.object_bar.update(num_objects)
+            self.objects_transferred += num_objects
+        if addl_bytes:
+            self.bytes_bar.update(addl_bytes)
 
     def add_result(self, result):
-        """Adds a result to the progress logger and logs messages.
+        """Convert system-native result to progress in bytes"""
+        raise NotImplementedError
 
-        Messages are logged every time the ``result_interval`` is met.
-        """
-        self.num_results += 1
-        self.update_progress(result)
-        if self.num_results % self.result_interval == 0:
-            progress_msg = self.get_progress_message()
-            if progress_msg:  # pragma: no cover
-                self.logger.log(self.level, progress_msg)
+    def get_finish_message(self):
+        if self.objects_transferred == self.total_objects:
+            return 'transfer complete!'
