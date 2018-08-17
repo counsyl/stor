@@ -1,5 +1,7 @@
 import mock
 import unittest
+import six
+
 from vcr_unittest import VCRMixin
 import dxpy
 
@@ -196,6 +198,12 @@ class DXTestMixin(VCRMixin):
 
     def setup_dx_mocks(self):
         self.mock_dx_conn = mock.Mock() # TODO
+
+    def assertDXListsEqual(self, r1, r2):
+        if six.PY2:
+            return self.assertItemsEqual(r1, r2)
+        else:
+            return self.assertCountEqual(r1, r2)
 
 
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):

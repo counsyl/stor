@@ -235,10 +235,47 @@ class TestList(DXTestCase):
         dx_p = DXPath('dx://test-project')
         results = dx_p.list()
 
-        self.assertEquals(results, [
+        self.assertDXListsEqual(results, [
             'dx://test-project/path/to/resource1',
             'dx://test-project/path/to/resourc2'
         ])
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_unavailable(self, mock_sleep):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.side_effect = [
+            DXException('unavaiable', http_status=503),
+            ({}, [{
+                'name': 'path/to/resource1'
+            }, {
+                'name': 'path/to/resource2'
+            }])
+        ]
+
+        dx_p = DXPath('dx://project/path')
+        results = dx_p.list()
+        self.assertDXListsEqual(results, [
+            'dx://project/path/to/resource1',
+            'dx://project/path/to/resource2'
+        ])
+
+        # Verify that list was retried one time
+        # self.assertEquals(len(mock_list.call_args_list), 2)
+
+    @mock.patch('time.sleep', autospec=True)
+    def test_list_unauthorized(self, mock_sleep):
+        mock_list = self.mock_swift_conn.get_container
+        mock_list.side_effect = DXException(
+            'unauthorized', http_status=403, http_response_headers={'X-Trans-Id': 'transactionid'})
+
+        dx_p = DXPath('dx://project/path')
+        with self.assertRaises(swift.UnauthorizedError):
+            try:
+                dx_p.list()
+            except swift.UnauthorizedError as exc:
+                self.assertIn('X-Trans-Id: transactionid', str(exc))
+                self.assertIn('X-Trans-Id: transactionid', repr(exc))
+                raise
 
     def test_listdir(self):
         mock_list = self.mock_dx_conn.get_iterator
@@ -254,8 +291,79 @@ class TestList(DXTestCase):
 
         dx_p = DXPath('dx://project/path/to')
         results = list(dx_p.listdir())
-        self.assertListEqual(results, [
+        self.assertDXListsEqual(results, [
             'dx://project/path/to/resource1',
             'dx://project/path/to/resource2',
             'dx://project/path/to/resource3'
         ])
+
+
+    @mock.patch('os.path', ntpath)
+    def test_list_windows(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }, {
+            'name': 'path/to/resource3'
+        }, {
+            'name': 'path/to/resource4'
+        }])
+
+        dx_p = DXPath('dx://project/path')
+        results = list(dx_p.list())
+        self.assertDXListsEqual(results, [
+            'dx://project/path/to/resource1',
+            'dx://project/path/to/resource2',
+            'dx://project/path/to/resource3',
+            'dx://project/path/to/resource4'
+        ])
+
+    def test_list_limit(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }])
+
+        dx_p = DXPath('dx://project/path')
+        results = list(dx_p.list(limit=1))
+        self.assertEquals(results, [
+            'dx://project/path/to/resource1'
+        ])
+
+    def test_list_starts_with(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'r1'
+        }, {
+            'name': 'r2'
+        }])
+        dx_p = DXPath('dx://project/r')
+        results = list(dx_p.list(starts_with='prefix'))
+        self.assertDXListsEqual(results, [
+            'dx://project/r1',
+            'dx://project/r2'
+        ])
+        mock_list.assert_called_once_with('project',
+                                          prefix='r/prefix',
+                                          limit=None,
+                                          full_listing=True)
+
+    def test_list_starts_with_no_resource(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'r1'
+        }, {
+            'name': 'r2'
+        }])
+        dx_p = DXPath('dx://project')
+        results = list(dx_p.list(starts_with='prefix'))
+        self.assertDXListsEqual(results, [
+            'dx://project/r1',
+            'dx://project/r2'
+        ])
+        mock_list.assert_called_once_with('container',
+                                          prefix='prefix',
+                                          limit=None,
+                                          full_listing=True)
