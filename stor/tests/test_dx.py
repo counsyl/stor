@@ -59,8 +59,24 @@ class TestBasicPathMethods(unittest.TestCase):
             DXPath('/bad/dx/path')
 
     def test_successful_new(self):
-        dx_p = DXPath('dx://project/path')
-        self.assertEquals(dx_p, 'dx://project/path')
+        p = DXPath('dx://project/path')
+        self.assertEquals(p, 'dx://project/path')
+
+    def test_success_dx_id(self):
+        # dnanexus always has 24-chr key
+        # TODO (akumar) does initializing with project id actually initialize with abs dx path?
+        p = DXPath('dx://project-123456789012345678901234')
+        self.assertEqual(len(p.basename()), 32)  # 'project-' and 24-chr key
+
+        p = DXPath('dx://project-123456789012345678901234/file-123456789012345678901234')
+        self.assertEqual(len(p.dirname()), 32)  # 'project-' and 24-chr key
+        self.assertEqual(len(p.basename()), 29)  # 'file-' and 24-chr key
+
+    def test_failed_dx_id(self):
+        with self.assertRaises(ValueError):
+            DXPath('dx://project-1234')
+        with self.assertRaises(ValueError):
+            DXPath('dx://project-123456789012345678901234/file-1234')
 
 
 class TestRepr(unittest.TestCase):
@@ -420,3 +436,28 @@ class TestWalkFiles(DXTestCase):
             DXPath('dx://project/my/obj4.sh'),
             DXPath('dx://project/my/other/obj5.sh')
         ]))
+
+
+@mock.patch.object(DXPath, 'list', autospec=True)
+class TestGlob(DXTestCase):
+    def test_valid_pattern(self, mock_list): 
+        dx_p = DXPath('dx://project')
+        dx_p.glob('pattern*')
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
+
+    def test_valid_pattern_wo_wildcard(self, mock_list):
+        dx_p = DXPath('dx://project')
+        dx_p.glob('pattern')
+        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
+
+    def test_multi_glob_pattern(self, mock_list):
+        dx_p = DXPath('dx://project')
+        with self.assertRaises(ValueError):
+            dx_p.glob('*invalid_pattern*', condition=None)
+
+    def test_invalid_glob_pattern(self, mock_list):
+        dx_p = DXPath('dx://project')
+        with self.assertRaises(ValueError):
+            dx_p.glob('invalid_*pattern', condition=None)
+
+    # TODO(akumar) add tests for retries
