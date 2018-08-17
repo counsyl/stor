@@ -1,0 +1,261 @@
+import logging
+import ntpath
+import os
+from tempfile import NamedTemporaryFile
+import unittest
+
+import dxpy
+import freezegun
+import mock
+from testfixtures import LogCapture
+
+import stor
+from stor import exceptions
+from stor import NamedTemporaryDirectory
+from stor import Path
+from stor import settings
+from stor import swift
+from stor import utils
+from stor.dx import DXPath
+from stor.test import DXTestCase
+from stor.tests.shared_obs import SharedOBSFileCases
+
+
+class TestBasicPathMethods(unittest.TestCase):
+    def test_name(self):
+        p = Path('dx://project/path/to/resource')
+        self.assertEquals(p.name, 'resource')
+
+    def test_parent(self):
+        p = Path('dx://project/path/to/resource')
+        self.assertEquals(p.parent, 'dx://project/path/to')
+
+    def test_dirname(self):
+        p = Path('dx://project/path/to/resource')
+        self.assertEquals(p.dirname(), 'dx://project/path/to')
+
+    def test_dirname_top_level(self):
+        p1 = Path('dx://')
+        self.assertEquals(p1.dirname(), 'dx://')
+
+        p2 = Path('dx://a')
+        self.assertEquals(p2.dirname(), 'dx://')
+
+    def test_basename(self):
+        p = Path('dx://project/path/to/resource')
+        self.assertEquals(p.basename(), 'resource')
+
+    def test_to_url(self):
+        p = Path('dx://project/path/to/resource')
+
+        #TODO(akumar) to_url may not make sense for dx paths since DNAnexus uses S3 in backend.
+        #TODO(akumar) Remove this test if so...
+
+        # self.assertEquals(p.to_url(),
+        #                   'https://mybucket.s3.amazonaws.com/path/to/resource')
+
+    def test_failed_new(self):
+        with self.assertRaises(ValueError):
+            DXPath('/bad/dx/path')
+
+    def test_successful_new(self):
+        dx_p = DXPath('dx://project/path')
+        self.assertEquals(dx_p, 'dx://project/path')
+
+
+class TestRepr(unittest.TestCase):
+    def test_repr(self):
+        dx_p = DXPath('dx://t/c/p')
+        self.assertEquals(eval(repr(dx_p)), dx_p)
+
+
+class TestPathManipulations(unittest.TestCase):
+    def test_add(self):
+        dx_p = DXPath('dx://a')
+        dx_p = dx_p + 'b' + Path('c')
+        self.assertTrue(isinstance(dx_p, DXPath))
+        self.assertEquals(dx_p, 'dx://abc')
+
+    def test_div(self):
+        dx_p = DXPath('dx://t')
+        dx_p = dx_p / 'c' / Path('p')
+        self.assertTrue(isinstance(dx_p, DXPath))
+        self.assertEquals(dx_p, 'dx://t/c/p')
+
+
+class TestProject(unittest.TestCase):
+    def test_project_none(self):
+        dx_p = DXPath('dx://')
+        self.assertIsNone(dx_p.project)
+
+    def test_project_exists(self):
+        dx_p = DXPath('dx://project')
+        self.assertEquals(dx_p.project, 'project')
+
+
+class TestResource(unittest.TestCase):
+    def test_resource_none_no_project(self):
+        dx_p = DXPath('dx://')
+        self.assertIsNone(dx_p.resource)
+
+    def test_resource_none_w_project(self):
+        dx_p = DXPath('dx://project/')
+        self.assertIsNone(dx_p.resource)
+
+    def test_resource_object(self):
+        dx_p = DXPath('dx://bucket/obj')
+        self.assertEquals(dx_p.resource, 'obj')
+
+    def test_resource_single_dir(self):
+        dx_p = DXPath('dx://project/dir/')
+        self.assertEquals(dx_p.resource, 'dir/')
+
+    def test_resource_nested_obj(self):
+        dx_p = DXPath('dx://project/nested/obj')
+        self.assertEquals(dx_p.resource, 'nested/obj')
+
+    def test_resource_nested_dir(self):
+        dx_p = DXPath('dx://project/nested/dir/')
+        self.assertEquals(dx_p.resource, 'nested/dir/')
+
+
+class TestGetDXConnectionCreds(unittest.TestCase):
+    def test_login_token(self):
+        dx_p = DXPath('dx://tenant/')
+        with settings.use({'dx': {'dx_login_token': ''}}):
+            #TODO(akumar) move errors to dx class
+            with self.assertRaises(swift.ConfigurationError):
+                dx_p._get_dx_connection_vars()
+
+
+class TestDXFile(DXTestCase):
+
+    def test_read_on_open_file(self):
+        d = dxpy.bindings.dxfile_functions.new_dxfile()
+        self.assertEqual(d.describe()['state'], 'open')
+
+        dx_p = DXPath('dx://{}/{}'.format(self.project, d.name))
+        with self.assertRaisesRegexp(ValueError, 'not in closed state'):
+            dx_p.read_object()
+
+        d.remove()
+
+    def test_read_success_on_closed_file(self):
+        dx_p = DXPath('dx://{}/{}'.format(self.project, self.file_handler.name))
+        self.assertEquals(dx_p.read_object(), b'data')
+        self.assertEquals(dx_p.open().read(), 'data')
+
+    def test_iterating_over_files(self):
+        data = b'''\
+line1
+line2
+line3
+line4
+'''
+        with dxpy.bindings.dxfile_functions.new_dxfile() as d:
+            d.write(data)
+        d.state = 'closed'
+        dx_p = DXPath('dx://{}/{}'.format(self.project, d.name))
+        # open().read() should return str for r
+        self.assertEquals(dx_p.open('r').read(), data.decode('ascii'))
+        # open().read() should return bytes for rb
+        self.assertEquals(dx_p.open('rb').read(), data)
+        self.assertEquals(dx_p.open().readlines(),
+                          [l + '\n' for l in data.decode('ascii').split('\n')][:-1])
+        for i, line in enumerate(dx_p.open(), 1):
+            self.assertEqual(line, 'line%d\n' % i)
+
+        self.assertEqual(next(dx_p.open()), 'line1\n')
+        self.assertEqual(next(iter(dx_p.open())), 'line1\n')
+
+    def test_write_multiple_w_context_manager(self, mock_upload):
+        dx_p = DXPath('dx://{}/{}'.format(self.project, self.file_handler.name))
+        with dx_p.open(mode='wb') as obj:
+            obj.write(b'hello')
+            obj.write(b' world')
+        self.assertIn(b'hello world', dx_p.read_object())
+
+    @mock.patch('time.sleep', autospec=True)
+    @mock.patch.object(DXPath, 'upload', autospec=True)
+    def test_write_multiple_flush_multiple_upload(self, mock_upload):
+        dx_p = DXPath('dx://project/obj')
+        with NamedTemporaryFile(delete=False) as ntf1,\
+                NamedTemporaryFile(delete=False) as ntf2,\
+                NamedTemporaryFile(delete=False) as ntf3:
+            with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
+                ntf.side_effect = [ntf1, ntf2, ntf3]
+                with dx_p.open(mode='wb') as obj:
+                    obj.write(b'hello')
+                    obj.flush()
+                    obj.write(b' world')
+                    obj.flush()
+                u1, u2, u3 = mock_upload.call_args_list
+                u1[0][1][0].source == ntf1.name
+                u2[0][1][0].source == ntf2.name
+                u3[0][1][0].source == ntf3.name
+                u1[0][1][0].object_name == dx_p.resource
+                u2[0][1][0].object_name == dx_p.resource
+                u3[0][1][0].object_name == dx_p.resource
+                self.assertEqual(open(ntf1.name).read(), 'hello')
+                self.assertEqual(open(ntf2.name).read(), 'hello world')
+                # third call happens because we don't care about checking for
+                # additional file change
+                self.assertEqual(open(ntf3.name).read(), 'hello world')
+
+
+class TestSwiftShared(SharedOBSFileCases, DXTestCase):
+    drive = 'dx://'
+    path_class = DXPath
+    normal_path = DXPath('dx://project/obj')
+
+
+class TestTempURL(DXTestCase):
+    def test_success(self):
+        dx_p = DXPath('dx://{}/{}'.format(self.project, self.file_handler.name))
+        temp_url = dx_p.temp_url()
+        #TODO (akumar) what is the expected_url? DXFile.get_download_url doesn't seem to work
+        # expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
+        self.assertIn(str(self.file_handler.name / self.project), temp_url)
+
+
+class TestList(DXTestCase):
+
+    def test_no_project_error(self):
+        dx_p = DXPath('dx://')
+        with self.assertRaises(ValueError):
+            list(dx_p.list())
+
+    def test_list_project(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }])
+        dx_p = DXPath('dx://test-project')
+        results = dx_p.list()
+
+        self.assertEquals(results, [
+            'dx://test-project/path/to/resource1',
+            'dx://test-project/path/to/resourc2'
+        ])
+
+    def test_listdir(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'subdir': 'path/to/resource1/'
+        }, {
+            'name': 'path/to/resource1'
+        }, {
+            'name': 'path/to/resource2'
+        }, {
+            'name': 'path/to/resource3'
+        }])
+
+        dx_p = DXPath('dx://project/path/to')
+        results = list(dx_p.listdir())
+        self.assertListEqual(results, [
+            'dx://project/path/to/resource1',
+            'dx://project/path/to/resource2',
+            'dx://project/path/to/resource3'
+        ])

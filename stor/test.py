@@ -1,9 +1,12 @@
 import mock
+import unittest
+from vcr_unittest import VCRMixin
+import dxpy
+
 from stor import s3
 from stor.s3 import S3Path
 from stor.swift import SwiftPath
 from stor import settings
-import unittest
 
 
 class SwiftTestMixin(object):
@@ -181,6 +184,20 @@ class S3TestMixin(object):
         self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()
 
 
+# TODO(akumar)
+class DXTestMixin(VCRMixin):
+    """A mixin with helpers for mocking out swift.
+
+    DXTestMixin should be used to create base test classes for anything
+    that accesses swift.
+    """
+    def setup_dx_auth(self):
+        pass
+
+    def setup_dx_mocks(self):
+        self.mock_dx_conn = mock.Mock() # TODO
+
+
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
     """A TestCase class that sets up swift mocks and provides additional assertions"""
     def setUp(self):
@@ -207,3 +224,47 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
             del s3._thread_local.s3_transfer_config
         except AttributeError:
             pass
+
+
+class DXTestCase(unittest.TestCase, DXTestMixin):
+    """A TestCase class that sets up DNAnexus vars and provides additional assertions"""
+    @classmethod
+    def setUpClass(cls):
+        #TODO(akumar) set up project in DX for testing
+        super(DXTestCase, cls).setup_dx_auth()
+        cls.proj_handler = cls.setup_project()
+        cls.project = cls.proj_handler.name
+        cls.proj_id = cls.proj_handler.get_id()
+
+        #TODO(akumar) Is there a way around using login_token for testing purposes?
+        # settings.update({
+        #     'dx': {
+        #         'dx_login_token': '__dummy__'
+        #     }
+        # })
+
+
+    @classmethod
+    def setup_project(cls):
+        test_proj = dxpy.bindings.dxproject.DXProject()
+        test_proj.new('Temp_Test')
+        return test_proj
+
+    def setUp(self):
+        with dxpy.bindings.dxfile_functions.new_dxfile() as d:
+            d.write('data')
+        # subtle bug in dnanexus: on executing the above code,
+        # the state of file is left in 'open' state. However, when you
+        # do d.describe() or d.read(), it works and the file's state
+        # magically changes to closed. Hence, first force close below
+        d.state = 'closed'
+        self.file_handler = d
+
+    def tearDown(self):
+        self.file_handler.remove()
+        self.file_handler = None
+
+    def tearDownClass(cls):
+        #TODO(akumar) remove the project created
+        cls.proj_handler.destroy()
+        cls.proj_handler = None
