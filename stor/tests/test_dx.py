@@ -203,7 +203,7 @@ line4
                 self.assertEqual(open(ntf3.name).read(), 'hello world')
 
 
-class TestSwiftShared(SharedOBSFileCases, DXTestCase):
+class TestDXShared(SharedOBSFileCases, DXTestCase):
     drive = 'dx://'
     path_class = DXPath
     normal_path = DXPath('dx://project/obj')
@@ -264,11 +264,12 @@ class TestList(DXTestCase):
 
     @mock.patch('time.sleep', autospec=True)
     def test_list_unauthorized(self, mock_sleep):
-        mock_list = self.mock_swift_conn.get_container
+        mock_list = self.mock_dx_conn.get_iterator
         mock_list.side_effect = DXException(
             'unauthorized', http_status=403, http_response_headers={'X-Trans-Id': 'transactionid'})
 
         dx_p = DXPath('dx://project/path')
+        # TODO(akumar) move errors to dx class
         with self.assertRaises(swift.UnauthorizedError):
             try:
                 dx_p.list()
@@ -367,3 +368,55 @@ class TestList(DXTestCase):
                                           prefix='prefix',
                                           limit=None,
                                           full_listing=True)
+
+
+class TestWalkFiles(DXTestCase):
+    def test_no_pattern_w_dir_markers(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'my/obj1',
+            'content_type': 'application/directory'
+        }, {
+            'name': 'my/obj2',
+            'content_type': 'text/directory'
+        }, {
+            'name': 'my/obj3',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/obj4',
+            'content_type': 'application/octet-stream'
+        }])
+
+        f = list(DXPath('dx://project/').walkfiles())
+        self.assertEquals(set(f), set([
+            DXPath('dx://project/my/obj3'),
+            DXPath('dx://project/my/obj4')
+        ]))
+
+    def test_w_pattern_w_dir_markers(self):
+        mock_list = self.mock_dx_conn.get_iterator
+        mock_list.return_value = ({}, [{
+            'name': 'my/obj1',
+            'content_type': 'application/directory'
+        }, {
+            'name': 'my/obj2',
+            'content_type': 'text/directory'
+        }, {
+            'name': 'my/obj3',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/obj4.sh',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/other/obj5.sh',
+            'content_type': 'application/octet-stream'
+        }, {
+            'name': 'my/dirwithpattern.sh/obj6',
+            'content_type': 'application/octet-stream'
+        }])
+
+        f = list(DXPath('dx://project').walkfiles('*.sh'))
+        self.assertEquals(set(f), set([
+            DXPath('dx://project/my/obj4.sh'),
+            DXPath('dx://project/my/other/obj5.sh')
+        ]))
