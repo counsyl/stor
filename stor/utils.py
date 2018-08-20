@@ -8,6 +8,9 @@ import shutil
 from subprocess import check_call
 import tempfile
 
+from dxpy.bindings import verify_string_dxid
+from dxpy.exceptions import DXError
+
 from stor import exceptions
 
 logger = logging.getLogger(__name__)
@@ -228,6 +231,46 @@ def is_obs_path(p):
         bool: True if p is an OBS path, False otherwise.
     """
     return is_s3_path(p) or is_swift_path(p)
+
+
+def is_dx_path(p):
+    """Determines if the path is a DX path.
+
+    All DX paths start with ``dx://``
+
+    Args:
+        p (str): The path string
+
+    Returns
+        bool: True if p is a DX path, False otherwise.
+    """
+    from stor.dx import DXPath
+    return p.startswith(DXPath.drive)
+
+
+def find_dx_class(p):
+    """Finds the class of the DX path : DXVirtualPath or DXCanonicalPath
+
+    Args:
+        p (str): The path string
+
+    Returns
+        cls: DXVirtualPath or DXCanonicalPath
+    """
+    from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
+    parts = p[len(DXPath.drive):].split('/')
+    if not parts or not parts[0]:
+        assert False, 'Only project level paths are supported for DX currently'
+    try:
+        # verify_string_dxid returns None if success, raises error if failed
+        if not verify_string_dxid(parts[0][:-1], 'project'):
+            if len(parts) > 1 and parts[1] and not verify_string_dxid(parts[1], 'file'):
+                if len(parts) > 2:
+                    assert False, 'Invalid DX path: {}'.format(p)
+                else:
+                    return DXCanonicalPath
+    except DXError:  # DXPath of form 'dx://project-{ID}:/a/b/c' or 'dx://a/b/c'
+        return DXVirtualPath
 
 
 def is_writeable(path, swift_retry_options=None):
