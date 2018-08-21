@@ -318,17 +318,28 @@ def find_dx_class(p):
     from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
     parts = p[len(DXPath.drive):].split('/')
     if not parts or not parts[0]:
-        assert False, 'Only project level paths are supported for DX currently'
+        raise ValueError('Must specify a project for DXPath')
+
+    # first part can be 'proj:file' or 'proj:' or 'proj'
+    parts_first = parts[0].split(':')
+    parts[0] = parts_first[0]
+    if len(parts_first) > 1 and parts_first[1]:
+        parts.insert(1, parts_first[1])
+
     try:
         # verify_string_dxid returns None if success, raises error if failed
-        if not verify_string_dxid(parts[0][:-1], 'project'):
-            if len(parts) > 1 and parts[1] and not verify_string_dxid(parts[1], 'file'):
+        if not verify_string_dxid(parts[0], 'project'):
+            if len(parts) == 1 or (len(parts) > 1 and not parts[1]):
+                return DXCanonicalPath
+            if not verify_string_dxid(parts[1], 'file'):
                 if len(parts) > 2:
-                    assert False, 'Invalid DX path: {}'.format(p)
+                    raise ValueError('Invalid DXPath: {}'.format(p))
                 else:
                     return DXCanonicalPath
     except DXError:  # DXPath of form 'dx://project-{ID}:/a/b/c' or 'dx://a/b/c'
         return DXVirtualPath
+    except:
+        raise
 
 
 def is_writeable(path, swift_retry_options=None):
