@@ -24,16 +24,25 @@ def _parse_dx_error(exc, **kwargs):
 
     if exc_type is dx_exceptions.DXSearchError:
         if msg and 'found more' in msg.lower():
-            return DuplicateError(msg, exc)
+            return DuplicateProjectError(msg, exc)
         elif msg and 'found none' in msg.lower():
             return NotFoundError(msg, exc)
 
 
-class DuplicateError(DNAnexusError):
+class DuplicateProjectError(DNAnexusError):
     """Thrown when multiple projects exist with the same name
 
     Currently, we throw this when trying to get the canonical project
     from virtual path and two or more projects were found with same name
+    """
+    pass
+
+
+class ProjectNotFoundError(NotFoundError):
+    """Thrown when no project exists with the given name
+
+    Currently, we throw this when trying to get the canonical project
+    from virtual path and no project was found with same name
     """
     pass
 
@@ -45,6 +54,10 @@ class DXPath(OBSPath):
         """
 
     def __new__(cls, path):
+        """Custom __new__ method so that the validation checks happen during creation
+
+        This ensures invalid dx paths like DXPath('dx://) are never initialized
+        """
         return super(DXPath, cls).__new__(Path, path)
 
     drive = 'dx://'
@@ -181,7 +194,7 @@ class DXVirtualPath(DXPath):
         If no match is found, returns None
 
         Raises:
-            DuplicateError - if project name is not unique on DX platform
+            DuplicateProjectError - if project name is not unique on DX platform
             NotFoundError - If project name doesn't exist on DNAnexus
         """
         if utils.is_valid_dxid(self.project, 'project'):
@@ -190,8 +203,10 @@ class DXVirtualPath(DXPath):
             try:
                 proj_dict = dxb.search.find_one_project(
                     name=self.project, level='VIEW', zero_ok=True, more_ok=False)
-                if proj_dict and proj_dict['id']:
-                    return proj_dict['id']
+                if proj_dict is None:
+                    raise ProjectNotFoundError('No projects were found with given name ({})'
+                                               .format(self.project))
+                return proj_dict['id']
             except DXError as e:
                 six.raise_from(_parse_dx_error(e), e)
 

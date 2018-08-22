@@ -16,7 +16,7 @@ class TestBasics(unittest.TestCase):
             DXPath(None)
 
     def test_construction_from_no_project(self):
-        with pytest.raises(ValueError, match='Must specify a project'):
+        with pytest.raises(ValueError, match='Project is required to construct a DXPath'):
             DXPath('dx://')
 
     def test_canonical_construct_fail(self):
