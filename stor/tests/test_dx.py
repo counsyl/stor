@@ -17,6 +17,7 @@ from stor import settings
 from stor import swift
 from stor import utils
 from stor.dx import DXPath
+import stor.dx as dx
 from stor.test import DXTestCase
 from stor.tests.shared_obs import SharedOBSFileCases
 
@@ -461,3 +462,26 @@ class TestGlob(DXTestCase):
             dx_p.glob('invalid_*pattern', condition=None)
 
     # TODO(akumar) add tests for retries
+
+
+# TODO(akumar) insert mocks here
+class TestStat(DXTestCase):
+    def test_stat_failure(self):
+        with self.assertRaises(ValueError):
+            DXPath('dx://Test_Project:/Test_Folder/').stat()
+        with self.assertRaises(ValueError):
+            DXPath('dx://Test_Project:/Test_File_No_Ext').stat()
+        with self.assertRaises(dx.DuplicateError):
+            DXPath('dx://Duplicate_Project:').stat()
+        with self.assertRaises(dx.NotFoundError):
+            DXPath('dx://Random_Proj:/').stat()
+
+    def test_stat_project(self):
+        dx_p = DXPath('dx://Test_Project:/')
+        response = dx_p.stat()
+        self.assertIn('region', response)  # only projects have regions
+
+    def test_stat_file(self):
+        dx_p = DXPath('dx://Test_Project:/Test_File.txt')
+        response = dx_p.stat()
+        self.assertIn('folder', response)  # only files have folders

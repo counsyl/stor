@@ -248,6 +248,21 @@ def is_dx_path(p):
     return p.startswith(DXPath.drive)
 
 
+def is_valid_dxid(dxid, expected_classes):
+    """wrapper class for verify_string_dxid, because
+    verify_string_dxid returns None if success, raises error if failed
+
+    Args: Accepts same args as verify_string_dxid
+
+    Returns
+        bool: Whether given dxid is a valid path of one of expected_classes
+    """
+    try:
+        return verify_string_dxid(dxid, expected_classes) is None
+    except DXError:
+        return False
+
+
 def find_dx_class(p):
     """Finds the class of the DX path : DXVirtualPath or DXCanonicalPath
 
@@ -268,20 +283,18 @@ def find_dx_class(p):
     if len(parts_first) > 1 and parts_first[1]:
         parts.insert(1, parts_first[1])
 
-    try:
-        # verify_string_dxid returns None if success, raises error if failed
-        if not verify_string_dxid(parts[0], 'project'):
-            if len(parts) == 1 or (len(parts) > 1 and not parts[1]):
+    if is_valid_dxid(parts[0], 'project'):
+        if len(parts) == 1 or (len(parts) > 1 and not parts[1]):
+            return DXCanonicalPath
+        if is_valid_dxid(parts[1], 'file'):
+            if len(parts) > 2:
+                raise ValueError('Invalid DXPath: {}'.format(p))
+            else:
                 return DXCanonicalPath
-            if not verify_string_dxid(parts[1], 'file'):
-                if len(parts) > 2:
-                    raise ValueError('Invalid DXPath: {}'.format(p))
-                else:
-                    return DXCanonicalPath
-    except DXError:  # DXPath of form 'dx://project-{ID}:/a/b/c' or 'dx://a/b/c'
+        else: # DXPath of form 'dx://project-{ID}:/a/b/c'
+            return DXVirtualPath
+    else:  # DXPath of form 'dx://a/b/c'
         return DXVirtualPath
-    except:
-        raise
 
 
 def is_writeable(path, swift_retry_options=None):
