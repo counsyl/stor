@@ -331,27 +331,22 @@ def find_dx_class(p):
         cls: DXVirtualPath or DXCanonicalPath
     """
     from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
-    parts = p[len(DXPath.drive):].split('/')
-    if not parts or not parts[0]:
-        raise ValueError('Must specify a project for DXPath')
+    colon_pieces = p[len(DXPath.drive):].split(':', 1)
+    if not colon_pieces or not colon_pieces[0]:
+        raise ValueError('Project is required to construct a DXPath')
+    project = colon_pieces[0]
+    resource = (colon_pieces[1] if len(colon_pieces) == 2 else '')
+    resource = resource[resource.startswith('/'):]
+    resource_parts = resource.split('/')
+    root_name, rest = resource_parts[0], resource_parts[1:]
+    canonical_resource = is_valid_dxid(root_name, 'file')
+    if canonical_resource and rest:
+        raise ValueError('Ambiguous and Invalid DXPath! ({})'.format(p))
+    canonical_project = is_valid_dxid(project, 'project')
 
-    # first part can be 'proj:file' or 'proj:' or 'proj'
-    parts_first = parts[0].split(':')
-    parts[0] = parts_first[0]
-    if len(parts_first) > 1 and parts_first[1]:
-        parts.insert(1, parts_first[1])
-
-    if is_valid_dxid(parts[0], 'project'):
-        if len(parts) == 1 or (len(parts) > 1 and not parts[1]):
-            return DXCanonicalPath
-        if is_valid_dxid(parts[1], 'file'):
-            if len(parts) > 2:
-                raise ValueError('Invalid DXPath: {}'.format(p))
-            else:
-                return DXCanonicalPath
-        else: # DXPath of form 'dx://project-{ID}:/a/b/c'
-            return DXVirtualPath
-    else:  # DXPath of form 'dx://a/b/c'
+    if canonical_project and (canonical_resource or not resource):
+        return DXCanonicalPath
+    else:
         return DXVirtualPath
 
 
