@@ -166,9 +166,11 @@ class DXPath(OBSPath):
         if not self.__stat:
 
             if self.canonical_resource:
+                print("trying with canonical resource"+self.canonical_resource+" "+self.canonical_project)
                 self.__stat = dxb.DXFile(dxid=self.canonical_resource,
                                          project=self.canonical_project).describe()
             else:
+                print("trying with canonical project" + self.canonical_project)
                 self.__stat = dxb.DXProject(dxid=self.canonical_project).describe()
         return self.__stat
 
@@ -213,18 +215,20 @@ class DXVirtualPath(DXPath):
     @cached_property
     def canonical_resource(self):
         """Returns the dx file-ID of the first matched filename"""
-        if not self.ext:
-            raise ValueError('DXPath must be file with extension')
         if not self.resource:
             return None
+        if not self.ext:
+            raise ValueError('DXPath ({}) must have extension'.format(self))
         objects = [{
             'name': self.name,
-            'folder': '/' + self.resource.parent,
+            'folder': self.resource.parent,
             'project': self.canonical_project
         }]
         object_d = next(iter(dxb.search.resolve_data_objects(objects=objects)[0]), None)
         if object_d:
             return object_d['id']
+        else:
+            raise NotFoundError('The virtual resource does not exist on DNAnexus')
 
     @property
     def canonical_path(self):

@@ -20,7 +20,7 @@ class TestBasics(unittest.TestCase):
             DXPath('dx://')
 
     def test_canonical_construct_fail(self):
-        with pytest.raises(ValueError, match='Invalid DXPath'):
+        with pytest.raises(ValueError, match='ambiguous'):
             DXPath('dx://project-123456789012345678901234:/file-123456789012345678901234/a/')
 
     def test_canonical_construct_wo_file(self):

@@ -2,8 +2,9 @@ import mock
 import unittest
 import six
 
-from vcr_unittest import VCRMixin
 import dxpy
+import dxpy.bindings as dxb
+from vcr_unittest import VCRMixin
 
 from stor import s3
 from stor.s3 import S3Path
@@ -234,45 +235,48 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
             pass
 
 
-class DXTestCase(unittest.TestCase, DXTestMixin):
+class DXTestCase(DXTestMixin, unittest.TestCase):
     """A TestCase class that sets up DNAnexus vars and provides additional assertions"""
+
+    def _get_vcr_kwargs(self):
+        kwargs = super(DXTestCase, self)._get_vcr_kwargs()
+        kwargs.update({'record_mode': 'new_episodes'})
+        return kwargs
+
     @classmethod
     def setUpClass(cls):
-        #TODO(akumar) set up project in DX for testing
-        super(DXTestCase, cls).setup_dx_auth()
-        cls.proj_handler = cls.setup_project()
-        cls.project = cls.proj_handler.name
-        cls.proj_id = cls.proj_handler.get_id()
-
-        #TODO(akumar) Is there a way around using login_token for testing purposes?
-        # settings.update({
-        #     'dx': {
-        #         'dx_login_token': '__dummy__'
-        #     }
-        # })
+        cls.project_handler = cls.setup_project()
+        cls.project = cls.project_handler.name
+        cls.proj_id = cls.project_handler.get_id()
 
 
     @classmethod
     def setup_project(cls):
-        test_proj = dxpy.bindings.dxproject.DXProject()
-        test_proj.new('Temp_Test')
+        test_proj = dxb.DXProject()
+        test_proj.new('Temp_Proj')
         return test_proj
 
     def setUp(self):
-        with dxpy.bindings.dxfile_functions.new_dxfile() as d:
-            d.write('data')
-        # subtle bug in dnanexus: on executing the above code,
-        # the state of file is left in 'open' state. However, when you
-        # do d.describe() or d.read(), it works and the file's state
-        # magically changes to closed. Hence, first force close below
-        d.state = 'closed'
-        self.file_handler = d
+        super(DXTestCase, self).setUp()
+        self.project_handler.new_folder('/temp_folder')
+        with dxb.dxfile_functions.new_dxfile(name='Temp_File.txt',
+                                             project=self.proj_id) as f:
+            f.write('data')
+        with dxb.dxfile_functions.new_dxfile(name='Temp_File2.txt',
+                                             folder='/temp_folder',
+                                             project=self.proj_id) as ff:
+            ff.write('temp_data')
+        self.file_handler = f
+        self.folder_file_handler = ff
 
     def tearDown(self):
+        self.project_handler.remove_folder('/temp_folder', recurse=True, force=True)
+        # Temp_File2.txt is already removed above.
+        self.folder_file_handler = None
         self.file_handler.remove()
         self.file_handler = None
 
+    @classmethod
     def tearDownClass(cls):
-        #TODO(akumar) remove the project created
-        cls.proj_handler.destroy()
-        cls.proj_handler = None
+        cls.project_handler.destroy()
+        cls.project_handler = None

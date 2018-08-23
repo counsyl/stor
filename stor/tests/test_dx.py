@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile
 import unittest
 
 import dxpy
+import dxpy.bindings as dxb
 import freezegun
 import mock
 from testfixtures import LogCapture
@@ -464,24 +465,39 @@ class TestGlob(DXTestCase):
     # TODO(akumar) add tests for retries
 
 
-# TODO(akumar) insert mocks here
 class TestStat(DXTestCase):
-    def test_stat_failure(self):
+    def test_stat_no_ext(self):
+        with dxb.dxfile_functions.new_dxfile(name='Temp_File3',
+                                             project=self.proj_id) as f:
+            f.write('temp_data')
         with self.assertRaises(ValueError):
-            DXPath('dx://Test_Project:/Test_Folder/').stat()
+            DXPath('dx://Temp_Proj:/temp_folder/').stat()
         with self.assertRaises(ValueError):
-            DXPath('dx://Test_Project:/Test_File_No_Ext').stat()
-        with self.assertRaises(dx.DuplicateError):
-            DXPath('dx://Duplicate_Project:').stat()
+            DXPath('dx://Test_Project:/Temp_File3').stat()
+        f.remove()
+
+    def test_stat_project_error(self):
+        test_proj = dxb.DXProject()
+        test_proj.new('Temp_Proj')
+
+        with self.assertRaises(dx.DuplicateProjectError):
+            DXPath('dx://Temp_Proj:').stat()
+        with self.assertRaises(dx.DuplicateProjectError):
+            DXPath('dx://Temp_Proj:/').stat()
         with self.assertRaises(dx.NotFoundError):
-            DXPath('dx://Random_Proj:/').stat()
+            DXPath('dx://Random_Proj:').stat()
+
+        test_proj.destroy()
 
     def test_stat_project(self):
-        dx_p = DXPath('dx://Test_Project:/')
+        dx_p = DXPath('dx://Temp_Proj:/')
         response = dx_p.stat()
         self.assertIn('region', response)  # only projects have regions
 
     def test_stat_file(self):
-        dx_p = DXPath('dx://Test_Project:/Test_File.txt')
+        dx_p = DXPath('dx://Temp_Proj:/Temp_File.txt')
         response = dx_p.stat()
         self.assertIn('folder', response)  # only files have folders
+        dx_p = DXPath('dx://Temp_Proj:/temp_folder/Temp_File2.txt')
+        response = dx_p.stat()
+        self.assertIn('folder', response)
