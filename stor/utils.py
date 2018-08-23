@@ -335,16 +335,15 @@ def find_dx_class(p):
     if not colon_pieces or not colon_pieces[0]:
         raise ValueError('Project is required to construct a DXPath')
     project = colon_pieces[0]
-    resource = (colon_pieces[1] if len(colon_pieces) == 2 else '')
-    resource = resource[resource.startswith('/'):]
+    resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')
     resource_parts = resource.split('/')
     root_name, rest = resource_parts[0], resource_parts[1:]
-    canonical_resource = is_valid_dxid(root_name, 'file')
+    canonical_resource = is_valid_dxid(root_name, 'file') or not resource
     if canonical_resource and rest:
-        raise ValueError('Ambiguous and Invalid DXPath! ({})'.format(p))
+        raise ValueError('DX folder paths that start with a valid file dxid are ambiguous')
     canonical_project = is_valid_dxid(project, 'project')
 
-    if canonical_project and (canonical_resource or not resource):
+    if canonical_project and canonical_resource:
         return DXCanonicalPath
     else:
         return DXVirtualPath
