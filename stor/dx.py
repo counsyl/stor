@@ -119,9 +119,6 @@ class DXPath(OBSPath):
     def getsize(self):
         raise NotImplementedError
 
-    def walkfiles(self, pattern=None):
-        raise NotImplementedError
-
     def download_object(self, dest):
         """Download a single path or object to file."""
         raise NotImplementedError
@@ -141,13 +138,76 @@ class DXPath(OBSPath):
         """
         raise NotImplementedError
 
-    def list(self):
+    def list(self, canonicalize=False):
         """List contents using the resource of the path as a prefix."""
-        raise NotImplementedError
+        return list(self.walkfiles(canonicalize=canonicalize))
 
-    def listdir(self):
+    def listdir(self, canonicalize=False):
         """list the path as a dir, returning top-level directories and files."""
-        raise NotImplementedError
+        proj_id = self.canonical_project
+        proj_name = self.virtual_project
+        ans_list = []
+        if not self.resource:
+            obj_dict = dxb.DXProject(dxid=proj_id).list_folder(
+                describe={'fields': {'name': True, 'folder': True}}
+            )
+        elif self.endswith('/'):
+            obj_dict = dxb.DXProject(dxid=proj_id).list_folder(
+                folder=self.resource,
+                describe={'fields': {'name': True, 'folder': True}}
+            )
+        else:
+            return ans_list
+        for key, values in obj_dict:
+            for entry in values:
+                if key == 'folders':
+                    ans_list.append(entry)
+                elif canonicalize:
+                    ans_list.append(DXCanonicalPath('dx://{}:/{}'.format(proj_id, entry['id'])))
+                else:
+                    ans_list.append(DXVirtualPath(self.drive + proj_name + ':/')
+                                    / entry['describe']['folder'] / entry['describe']['name'])
+
+    def walkfiles(self, pattern=None, canonicalize=False):
+        """Iterates over listed files that match an optional pattern.
+
+        :param pattern: pattern to match the filenames against.
+        :param canonicalize: boolean indicating whether to return canonicalized paths
+        :return: Iter[DXPath] Iterates over listed files that match an optional pattern.
+        """
+        proj_id = self.canonical_project
+        proj_name = self.virtual_project
+        if not self.resource:
+            # the query performance is similar w/wo describe field,
+            # hence no need to customize query on canonicalize flag
+            list_gen = dxb.search.find_data_objects(
+                project=proj_id,
+                name=pattern,
+                name_mode='glob',
+                describe={'fields': {'name': True, 'folder': True}}
+            )
+        elif self.endswith('/'):
+            list_gen = dxb.search.find_data_objects(
+                project=proj_id,
+                name=pattern,
+                name_mode='glob',
+                folder=self.resource,
+                describe={'fields': {'name': True, 'folder': True}}
+            )
+        else:
+            list_gen = dxb.search.find_data_objects(
+                project=proj_id,
+                name=self.virtual_resource.name,
+                folder=self.resource.parent,
+                describe={'fields': {'name': True, 'folder': True}}
+            )
+        for obj in list_gen:
+            if canonicalize:
+                yield DXCanonicalPath('dx://{}:/{}'.format(obj['project'], obj['id']))
+            else:
+                dx_p = DXVirtualPath(self.drive + proj_name + ':/')
+                dx_p = dx_p / obj['describe']['folder'] / obj['describe']['name']
+                yield dx_p
 
     def glob(self, pattern):
         """ Glob for pattern relative to this directory.
@@ -166,11 +226,9 @@ class DXPath(OBSPath):
         if not self.__stat:
 
             if self.canonical_resource:
-                print("trying with canonical resource"+self.canonical_resource+" "+self.canonical_project)
                 self.__stat = dxb.DXFile(dxid=self.canonical_resource,
                                          project=self.canonical_project).describe()
             else:
-                print("trying with canonical project" + self.canonical_project)
                 self.__stat = dxb.DXProject(dxid=self.canonical_project).describe()
         return self.__stat
 
@@ -180,6 +238,8 @@ class DXVirtualPath(DXPath):
 
     @property
     def virtual_project(self):
+        if utils.is_valid_dxid(self.project, 'project'):
+            return dxb.DXProject(dxid=self.project).name
         return self.project
 
     @property
@@ -217,8 +277,8 @@ class DXVirtualPath(DXPath):
         """Returns the dx file-ID of the first matched filename"""
         if not self.resource:
             return None
-        if not self.ext:
-            raise ValueError('DXPath ({}) must have extension'.format(self))
+        if self.endswith('/'):
+            raise ValueError('DXPath ({}) ending in folders cannot be canonicalized'.format(self))
         objects = [{
             'name': self.name,
             'folder': self.resource.parent,

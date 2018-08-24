@@ -470,11 +470,13 @@ class TestStat(DXTestCase):
         with dxb.dxfile_functions.new_dxfile(name='Temp_File3',
                                              project=self.proj_id) as f:
             f.write('temp_data')
+        response = DXPath('dx://Temp_Proj:/Temp_File3').stat()
+        self.assertIn('folder', response)  # only files have folders
+        f.remove()
+
+    def test_stat_folder(self):
         with self.assertRaises(ValueError):
             DXPath('dx://Temp_Proj:/temp_folder/').stat()
-        with self.assertRaises(ValueError):
-            DXPath('dx://Test_Project:/Temp_File3').stat()
-        f.remove()
 
     def test_stat_project_error(self):
         test_proj = dxb.DXProject()
@@ -493,6 +495,9 @@ class TestStat(DXTestCase):
         dx_p = DXPath('dx://Temp_Proj:/')
         response = dx_p.stat()
         self.assertIn('region', response)  # only projects have regions
+        dx_p = DXPath('dx://Temp_Proj:')
+        response = dx_p.stat()
+        self.assertIn('region', response)
 
     def test_stat_file(self):
         dx_p = DXPath('dx://Temp_Proj:/Temp_File.txt')

@@ -241,6 +241,7 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
     def _get_vcr_kwargs(self):
         kwargs = super(DXTestCase, self)._get_vcr_kwargs()
         kwargs.update({'record_mode': 'new_episodes'})
+        kwargs.update({'filter_headers': ['authorization']})
         return kwargs
 
     @classmethod
