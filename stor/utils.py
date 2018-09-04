@@ -274,7 +274,7 @@ def find_dx_class(p):
     """
     from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
     colon_pieces = p[len(DXPath.drive):].split(':', 1)
-    if not colon_pieces or not colon_pieces[0]:
+    if not colon_pieces or not colon_pieces[0] or '/' in colon_pieces[0]:
         raise ValueError('Project is required to construct a DXPath')
     project = colon_pieces[0]
     resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')

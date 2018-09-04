@@ -1,8 +1,7 @@
-import logging
-import ntpath
-import os
+import time
 from tempfile import NamedTemporaryFile
 import unittest
+import vcr
 
 import dxpy
 import dxpy.bindings as dxb
@@ -25,86 +24,53 @@ from stor.tests.shared_obs import SharedOBSFileCases
 
 class TestBasicPathMethods(unittest.TestCase):
     def test_name(self):
-        p = Path('dx://project/path/to/resource')
+        p = Path('dx://project:/path/to/resource')
         self.assertEquals(p.name, 'resource')
 
     def test_parent(self):
-        p = Path('dx://project/path/to/resource')
-        self.assertEquals(p.parent, 'dx://project/path/to')
+        p = Path('dx://project:/path/to/resource')
+        self.assertEquals(p.parent, 'dx://project:/path/to')
 
     def test_dirname(self):
-        p = Path('dx://project/path/to/resource')
-        self.assertEquals(p.dirname(), 'dx://project/path/to')
+        p = Path('dx://project:/path/to/resource')
+        self.assertEquals(p.dirname(), 'dx://project:/path/to')
 
     def test_dirname_top_level(self):
-        p1 = Path('dx://')
-        self.assertEquals(p1.dirname(), 'dx://')
+        p1 = Path('dx://project')
+        self.assertEquals(p1.dirname(), 'dx://project')
 
-        p2 = Path('dx://a')
-        self.assertEquals(p2.dirname(), 'dx://')
+        p2 = Path('dx://project:/')
+        self.assertEquals(p2.dirname(), 'dx://project:/')
 
     def test_basename(self):
-        p = Path('dx://project/path/to/resource')
+        p = Path('dx://project:/path/to/resource')
         self.assertEquals(p.basename(), 'resource')
-
-    def test_to_url(self):
-        p = Path('dx://project/path/to/resource')
-
-        #TODO(akumar) to_url may not make sense for dx paths since DNAnexus uses S3 in backend.
-        #TODO(akumar) Remove this test if so...
-
-        # self.assertEquals(p.to_url(),
-        #                   'https://mybucket.s3.amazonaws.com/path/to/resource')
-
-    def test_failed_new(self):
-        with self.assertRaises(ValueError):
-            DXPath('/bad/dx/path')
-
-    def test_successful_new(self):
-        p = DXPath('dx://project/path')
-        self.assertEquals(p, 'dx://project/path')
-
-    def test_success_dx_id(self):
-        # dnanexus always has 24-chr key
-        # TODO (akumar) does initializing with project id actually initialize with abs dx path?
-        p = DXPath('dx://project-123456789012345678901234')
-        self.assertEqual(len(p.basename()), 32)  # 'project-' and 24-chr key
-
-        p = DXPath('dx://project-123456789012345678901234/file-123456789012345678901234')
-        self.assertEqual(len(p.dirname()), 32)  # 'project-' and 24-chr key
-        self.assertEqual(len(p.basename()), 29)  # 'file-' and 24-chr key
-
-    def test_failed_dx_id(self):
-        with self.assertRaises(ValueError):
-            DXPath('dx://project-1234')
-        with self.assertRaises(ValueError):
-            DXPath('dx://project-123456789012345678901234/file-1234')
 
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
-        dx_p = DXPath('dx://t/c/p')
+        dx_p = DXPath('dx://t:/c/p')
         self.assertEquals(eval(repr(dx_p)), dx_p)
 
 
 class TestPathManipulations(unittest.TestCase):
     def test_add(self):
-        dx_p = DXPath('dx://a')
+        dx_p = DXPath('dx://a:')
         dx_p = dx_p + 'b' + Path('c')
         self.assertTrue(isinstance(dx_p, DXPath))
-        self.assertEquals(dx_p, 'dx://abc')
+        self.assertEquals(dx_p, 'dx://a:bc')
 
     def test_div(self):
-        dx_p = DXPath('dx://t')
+        dx_p = DXPath('dx://t:')
         dx_p = dx_p / 'c' / Path('p')
         self.assertTrue(isinstance(dx_p, DXPath))
-        self.assertEquals(dx_p, 'dx://t/c/p')
+        self.assertEquals(dx_p, 'dx://t:/c/p')
 
 
 class TestProject(unittest.TestCase):
     def test_project_none(self):
-        dx_p = DXPath('dx://')
-        self.assertIsNone(dx_p.project)
+        with self.assertRaises(ValueError):
+            DXPath('dx://')
 
     def test_project_exists(self):
         dx_p = DXPath('dx://project')
@@ -112,41 +78,30 @@ class TestProject(unittest.TestCase):
 
 
 class TestResource(unittest.TestCase):
-    def test_resource_none_no_project(self):
-        dx_p = DXPath('dx://')
-        self.assertIsNone(dx_p.resource)
 
     def test_resource_none_w_project(self):
         dx_p = DXPath('dx://project/')
         self.assertIsNone(dx_p.resource)
 
     def test_resource_object(self):
-        dx_p = DXPath('dx://bucket/obj')
-        self.assertEquals(dx_p.resource, 'obj')
+        dx_p = DXPath('dx://project:/obj')
+        self.assertEquals(dx_p.resource, '/obj')
 
-    def test_resource_single_dir(self):
-        dx_p = DXPath('dx://project/dir/')
-        self.assertEquals(dx_p.resource, 'dir/')
+    def test_resource_trailing_slash(self):
+        dx_p = DXPath('dx://project:/dir/')
+        self.assertEquals(dx_p.resource, '/dir/')
 
     def test_resource_nested_obj(self):
-        dx_p = DXPath('dx://project/nested/obj')
-        self.assertEquals(dx_p.resource, 'nested/obj')
+        dx_p = DXPath('dx://project:/nested/obj.txt')
+        self.assertEquals(dx_p.resource, '/nested/obj.txt')
 
     def test_resource_nested_dir(self):
-        dx_p = DXPath('dx://project/nested/dir/')
+        dx_p = DXPath('dx://project:/nested/dir/')
         self.assertEquals(dx_p.resource, 'nested/dir/')
 
 
-class TestGetDXConnectionCreds(unittest.TestCase):
-    def test_login_token(self):
-        dx_p = DXPath('dx://tenant/')
-        with settings.use({'dx': {'dx_login_token': ''}}):
-            #TODO(akumar) move errors to dx class
-            with self.assertRaises(swift.ConfigurationError):
-                dx_p._get_dx_connection_vars()
-
-
-class TestDXFile(DXTestCase):
+@unittest.skip("skipping")
+class TestDXFile(DXTestCase):  # TODO
 
     def test_read_on_open_file(self):
         d = dxpy.bindings.dxfile_functions.new_dxfile()
@@ -224,10 +179,11 @@ line4
 class TestDXShared(SharedOBSFileCases, DXTestCase):
     drive = 'dx://'
     path_class = DXPath
-    normal_path = DXPath('dx://project/obj')
+    normal_path = DXPath('dx://project:/obj')
 
 
-class TestTempURL(DXTestCase):
+@unittest.skip("demonstrating skipping")
+class TestTempURL(DXTestCase):  # TODO
     def test_success(self):
         dx_p = DXPath('dx://{}/{}'.format(self.project, self.file_handler.name))
         temp_url = dx_p.temp_url()
@@ -236,273 +192,424 @@ class TestTempURL(DXTestCase):
         self.assertIn(str(self.file_handler.name / self.project), temp_url)
 
 
+class TestCanonicalProject(DXTestCase):
+    def test_no_project(self):
+        dx_p = DXPath('dx://Random_Project:/')
+        with self.assertRaises(dx.ProjectNotFoundError):
+            dx_p.canonical_project
+
+    def test_unique_project(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://'+self.project)
+        self.assertTrue(utils.is_valid_dxid(dx_p.canonical_project, 'project'))
+
+    def test_duplicate_projects(self):
+        self.setup_temporary_project()
+        test_proj = dxb.DXProject()
+        test_proj.new(self.new_proj_name())
+        dx_p = DXPath('dx://' + self.project)
+        with self.assertRaises(dx.DuplicateProjectError):
+            dx_p.canonical_project
+        test_proj.destroy()
+
+
+class TestCanonicalResource(DXTestCase):
+    def test_no_resource(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/random.txt')
+        with self.assertRaises(dx.NotFoundError):
+            dx_p.canonical_resource
+
+    def test_unique_resource(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project + ':/temp_file.txt')
+        self.assertTrue(utils.is_valid_dxid(dx_p.canonical_resource, 'file'))
+
+    def test_duplicate_resource(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        with dxpy.new_dxfile(name='folder_file.txt',
+                             folder='/temp_folder',
+                             project=self.proj_id) as ff:
+            ff.write('temp_data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
+        with self.assertRaises(dx.DuplicateError):
+            dx_p.canonical_resource
+
+
+class TestListDir(DXTestCase):
+    def test_listdir_project(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project)
+        results = dx_p.listdir()
+        self.assert_dx_lists_equal(results, [
+            'dx://'+self.project+':/temp_folder',
+            'dx://'+self.project+':/temp_file.txt',
+        ])
+
+    def test_listdir_file(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project+':/temp_file.txt')
+        results = dx_p.listdir()
+        self.assertEquals(results, [])
+
+    def test_listdir_empty_folder(self):
+        self.setup_temporary_project()
+        self.project_handler.new_folder('/temp_folder')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.listdir()
+        self.assertEquals(results, [])
+
+    def test_listdir_folder_w_file(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.listdir()
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
+        ])
+
+    def test_listdir_absent_folder(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/random_folder')
+        with self.assertRaises(dx.NotFoundError):
+            dx_p.listdir()
+
+    def test_listdir_folder_share_filename(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        with dxpy.new_dxfile(name='temp_folder',
+                             project=self.proj_id) as f:
+            f.write('data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.listdir()
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
+        ])
+
+    def test_listdir_canonical(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        results = dx_p.listdir(canonicalize=True)
+        self.assertIn('dx://'+self.proj_id+':/temp_folder', results)
+        self.assertEquals(len(results), 2)
+
+
 class TestList(DXTestCase):
-
-    def test_no_project_error(self):
-        dx_p = DXPath('dx://')
-        with self.assertRaises(ValueError):
-            list(dx_p.list())
-
     def test_list_project(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'path/to/resource1'
-        }, {
-            'name': 'path/to/resource2'
-        }])
-        dx_p = DXPath('dx://test-project')
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
         results = dx_p.list()
-
-        self.assertDXListsEqual(results, [
-            'dx://test-project/path/to/resource1',
-            'dx://test-project/path/to/resourc2'
+        self.assert_dx_lists_equal(results, [
+            'dx://'+self.project+':/temp_folder/folder_file.txt',
+            'dx://'+self.project+':/temp_file.txt'
         ])
 
-    @mock.patch('time.sleep', autospec=True)
-    def test_list_unavailable(self, mock_sleep):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.side_effect = [
-            DXException('unavaiable', http_status=503),
-            ({}, [{
-                'name': 'path/to/resource1'
-            }, {
-                'name': 'path/to/resource2'
-            }])
-        ]
-
-        dx_p = DXPath('dx://project/path')
+    def test_list_file(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project+':/temp_file.txt')
         results = dx_p.list()
-        self.assertDXListsEqual(results, [
-            'dx://project/path/to/resource1',
-            'dx://project/path/to/resource2'
+        self.assertEquals(results, [])
+
+    def test_list_empty_folder(self):
+        self.setup_temporary_project()
+        self.project_handler.new_folder('/temp_folder')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.list()
+        self.assertEquals(results, [])
+
+    def test_list_folder_w_file(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.list()
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
         ])
 
-        # Verify that list was retried one time
-        # self.assertEquals(len(mock_list.call_args_list), 2)
+    def test_list_absent_folder(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/random_folder')
+        results = dx_p.list()
+        self.assertEquals(results, [])
 
-    @mock.patch('time.sleep', autospec=True)
-    def test_list_unauthorized(self, mock_sleep):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.side_effect = DXException(
-            'unauthorized', http_status=403, http_response_headers={'X-Trans-Id': 'transactionid'})
-
-        dx_p = DXPath('dx://project/path')
-        # TODO(akumar) move errors to dx class
-        with self.assertRaises(swift.UnauthorizedError):
-            try:
-                dx_p.list()
-            except swift.UnauthorizedError as exc:
-                self.assertIn('X-Trans-Id: transactionid', str(exc))
-                self.assertIn('X-Trans-Id: transactionid', repr(exc))
-                raise
-
-    def test_listdir(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'subdir': 'path/to/resource1/'
-        }, {
-            'name': 'path/to/resource1'
-        }, {
-            'name': 'path/to/resource2'
-        }, {
-            'name': 'path/to/resource3'
-        }])
-
-        dx_p = DXPath('dx://project/path/to')
-        results = list(dx_p.listdir())
-        self.assertDXListsEqual(results, [
-            'dx://project/path/to/resource1',
-            'dx://project/path/to/resource2',
-            'dx://project/path/to/resource3'
+    def test_list_folder_share_filename(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        with dxpy.new_dxfile(name='temp_folder',
+                             project=self.proj_id) as f:
+            f.write('data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.list()
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
         ])
 
-
-    @mock.patch('os.path', ntpath)
-    def test_list_windows(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'path/to/resource1'
-        }, {
-            'name': 'path/to/resource2'
-        }, {
-            'name': 'path/to/resource3'
-        }, {
-            'name': 'path/to/resource4'
-        }])
-
-        dx_p = DXPath('dx://project/path')
-        results = list(dx_p.list())
-        self.assertDXListsEqual(results, [
-            'dx://project/path/to/resource1',
-            'dx://project/path/to/resource2',
-            'dx://project/path/to/resource3',
-            'dx://project/path/to/resource4'
-        ])
+    def test_list_canonical(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        results = dx_p.list(canonicalize=True)
+        self.assertTrue(all(self.proj_id in result for result in results))
+        self.assertTrue(any(self.file_handler.get_id() in result for result in results))
+        self.assertTrue(any(self.folder_file_handler.get_id() in result for result in results))
 
     def test_list_limit(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'path/to/resource1'
-        }])
-
-        dx_p = DXPath('dx://project/path')
-        results = list(dx_p.list(limit=1))
-        self.assertEquals(results, [
-            'dx://project/path/to/resource1'
-        ])
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        results = dx_p.list(limit=1)
+        self.assertEquals(len(results), 1)
 
     def test_list_starts_with(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'r1'
-        }, {
-            'name': 'r2'
-        }])
-        dx_p = DXPath('dx://project/r')
-        results = list(dx_p.list(starts_with='prefix'))
-        self.assertDXListsEqual(results, [
-            'dx://project/r1',
-            'dx://project/r2'
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        results = dx_p.list(starts_with='temp_folder')
+        self.assert_dx_lists_equal(results, [
+            'dx://'+self.project+':/temp_folder/folder_file.txt'
         ])
-        mock_list.assert_called_once_with('project',
-                                          prefix='r/prefix',
-                                          limit=None,
-                                          full_listing=True)
 
-    def test_list_starts_with_no_resource(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'r1'
-        }, {
-            'name': 'r2'
-        }])
-        dx_p = DXPath('dx://project')
-        results = list(dx_p.list(starts_with='prefix'))
-        self.assertDXListsEqual(results, [
-            'dx://project/r1',
-            'dx://project/r2'
+    def test_list_w_condition(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        results = dx_p.list(starts_with='temp_folder', condition=lambda res: len(res) == 1)
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
         ])
-        mock_list.assert_called_once_with('container',
-                                          prefix='prefix',
-                                          limit=None,
-                                          full_listing=True)
+
+    def test_list_w_category(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        dxpy.new_dxworkflow(title='Workflow', project=self.proj_id)
+        results = dx_p.list(category='file')
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt',
+            'dx://' + self.project + ':/temp_file.txt'
+        ])
 
 
 class TestWalkFiles(DXTestCase):
-    def test_no_pattern_w_dir_markers(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'my/obj1',
-            'content_type': 'application/directory'
-        }, {
-            'name': 'my/obj2',
-            'content_type': 'text/directory'
-        }, {
-            'name': 'my/obj3',
-            'content_type': 'application/octet-stream'
-        }, {
-            'name': 'my/obj4',
-            'content_type': 'application/octet-stream'
-        }])
+    def test_pattern_w_prefix(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project)
+        results = list(dx_p.walkfiles(pattern='fold*'))
+        self.assert_dx_lists_equal(results, [
+            'dx://'+self.project+':/temp_folder/folder_file.txt'
+        ])
 
-        f = list(DXPath('dx://project/').walkfiles())
-        self.assertEquals(set(f), set([
-            DXPath('dx://project/my/obj3'),
-            DXPath('dx://project/my/obj4')
-        ]))
+    def test_pattern_w_suffix(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project)
+        results = list(dx_p.walkfiles(pattern='*p_file.txt'))
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_file.txt'
+        ])
 
-    def test_w_pattern_w_dir_markers(self):
-        mock_list = self.mock_dx_conn.get_iterator
-        mock_list.return_value = ({}, [{
-            'name': 'my/obj1',
-            'content_type': 'application/directory'
-        }, {
-            'name': 'my/obj2',
-            'content_type': 'text/directory'
-        }, {
-            'name': 'my/obj3',
-            'content_type': 'application/octet-stream'
-        }, {
-            'name': 'my/obj4.sh',
-            'content_type': 'application/octet-stream'
-        }, {
-            'name': 'my/other/obj5.sh',
-            'content_type': 'application/octet-stream'
-        }, {
-            'name': 'my/dirwithpattern.sh/obj6',
-            'content_type': 'application/octet-stream'
-        }])
-
-        f = list(DXPath('dx://project').walkfiles('*.sh'))
-        self.assertEquals(set(f), set([
-            DXPath('dx://project/my/obj4.sh'),
-            DXPath('dx://project/my/other/obj5.sh')
-        ]))
-
-
-@mock.patch.object(DXPath, 'list', autospec=True)
-class TestGlob(DXTestCase):
-    def test_valid_pattern(self, mock_list): 
-        dx_p = DXPath('dx://project')
-        dx_p.glob('pattern*')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
-
-    def test_valid_pattern_wo_wildcard(self, mock_list):
-        dx_p = DXPath('dx://project')
-        dx_p.glob('pattern')
-        mock_list.assert_called_once_with(mock.ANY, starts_with='pattern')
-
-    def test_multi_glob_pattern(self, mock_list):
-        dx_p = DXPath('dx://project')
-        with self.assertRaises(ValueError):
-            dx_p.glob('*invalid_pattern*', condition=None)
-
-    def test_invalid_glob_pattern(self, mock_list):
-        dx_p = DXPath('dx://project')
-        with self.assertRaises(ValueError):
-            dx_p.glob('invalid_*pattern', condition=None)
-
-    # TODO(akumar) add tests for retries
+    def test_pattern_w_prefix_suffix(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project)
+        results = list(dx_p.walkfiles(pattern='*file*'))
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_file.txt',
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
+        ])
 
 
 class TestStat(DXTestCase):
-    def test_stat_no_ext(self):
-        with dxb.dxfile_functions.new_dxfile(name='Temp_File3',
-                                             project=self.proj_id) as f:
-            f.write('temp_data')
-        response = DXPath('dx://Temp_Proj:/Temp_File3').stat()
-        self.assertIn('folder', response)  # only files have folders
-        f.remove()
-
     def test_stat_folder(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
         with self.assertRaises(ValueError):
-            DXPath('dx://Temp_Proj:/temp_folder/').stat()
+            DXPath('dx://'+self.project+':/temp_folder/').stat()
+        with self.assertRaises(ValueError):
+            DXPath('dx://'+self.project+':/temp_folder').stat()
 
     def test_stat_project_error(self):
+        self.setup_temporary_project()
         test_proj = dxb.DXProject()
-        test_proj.new('Temp_Proj')
+        test_proj.new(self.new_proj_name())
 
         with self.assertRaises(dx.DuplicateProjectError):
-            DXPath('dx://Temp_Proj:').stat()
+            DXPath('dx://'+self.project+':').stat()
         with self.assertRaises(dx.DuplicateProjectError):
-            DXPath('dx://Temp_Proj:/').stat()
+            DXPath('dx://'+self.project+':/').stat()
         with self.assertRaises(dx.NotFoundError):
             DXPath('dx://Random_Proj:').stat()
 
         test_proj.destroy()
 
-    def test_stat_project(self):
-        dx_p = DXPath('dx://Temp_Proj:/')
+    def test_stat_virtual_project(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://'+self.project)
         response = dx_p.stat()
         self.assertIn('region', response)  # only projects have regions
-        dx_p = DXPath('dx://Temp_Proj:')
+        dx_p = DXPath('dx://'+self.project+':')
+        response = dx_p.stat()
+        self.assertIn('region', response)
+
+    def test_stat_canonical_project(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://'+self.proj_id+':')
         response = dx_p.stat()
         self.assertIn('region', response)
 
     def test_stat_file(self):
-        dx_p = DXPath('dx://Temp_Proj:/Temp_File.txt')
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://'+self.project+':/temp_file.txt')
         response = dx_p.stat()
         self.assertIn('folder', response)  # only files have folders
-        dx_p = DXPath('dx://Temp_Proj:/temp_folder/Temp_File2.txt')
+        dx_p = DXPath('dx://'+self.project+':/temp_folder/folder_file.txt')
         response = dx_p.stat()
         self.assertIn('folder', response)
+
+
+class TestExists(DXTestCase):
+    def test_false(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://'+self.project+':/random.txt')
+        result = dx_p.exists()
+        self.assertFalse(result)
+
+    def test_false_no_folder(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/random_folder/folder_file.txt')
+        result = dx_p.exists()
+        self.assertFalse(result)
+
+    def test_raises_on_duplicate(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        with dxpy.new_dxfile(name='folder_file.txt',
+                             folder='/temp_folder',
+                             project=self.proj_id) as f:
+            f.write('data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
+        with self.assertRaises(dx.DuplicateError):
+            dx_p.exists()
+
+    def test_true_file(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
+        result = dx_p.exists()
+        self.assertTrue(result)
+
+    def test_true_dir_with_no_object(self):
+        self.setup_temporary_project()
+        self.project_handler.new_folder('/temp_folder')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        result = dx_p.exists()
+        self.assertTrue(result)
+
+    def test_true_dir_with_object(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        result = dx_p.exists()
+        self.assertTrue(result)
+
+    def test_project_does_not_exist(self):
+        dx_p = DXPath('dx://random_project:/')
+        result = dx_p.exists()
+        self.assertFalse(result)
+
+
+class TestGlob(DXTestCase):
+    def test_suffix_pattern(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.glob('*file.txt')
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
+        ])
+
+    def test_prefix_pattern(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.glob('file*')
+        self.assertEqual(results, [])
+
+    def test_valid_pattern(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.glob('*fi*le*')
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
+        ])
+
+    def test_valid_pattern_wo_wildcard(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.glob('file')
+        self.assertEqual(results, [])
+
+    def test_glob_cond_met(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        results = dx_p.glob('*fi*le*', condition=lambda res: len(res) == 1)
+        self.assert_dx_lists_equal(results, [
+            'dx://' + self.project + ':/temp_folder/folder_file.txt'
+        ])
+
+    def test_cond_no_met(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        with self.assertRaises(exceptions.ConditionNotMetError):
+            dx_p.glob('*fi*le*', condition=lambda res: len(res) > 1)
+
+
+class TestTempUrl(DXTestCase):
+    def test_fail_on_project(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project)
+        with self.assertRaises(dx.DXError):
+            dx_p.temp_url()
+
+    def test_fail_on_folder(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        with self.assertRaises(dx.DXError):
+            dx_p.temp_url()
+
+    def test_on_file(self):
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        while self.file_handler._get_state().lower() != 'closed':
+            time.sleep(1)
+        dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
+        result = dx_p.temp_url()
+        self.assertIn('dl.dnanex.us', result)
+
+    def test_on_file_timed(self):  # TODO
+        self.setup_temporary_project()
+        self.setup_generic_files()
+        while self.file_handler._get_state().lower() != 'closed':
+            time.sleep(1)
+        dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
+        result = dx_p.temp_url(filename='random.txt', lifetime=1)
+        self.assertIn('dl.dnanex.us', result)
+        self.assertIn('random.txt', result)
+        # TODO (check that link is valid)
+        time.sleep(2)
+        # TODO (check that link is invalid)

@@ -1,9 +1,9 @@
 import mock
 import unittest
 import six
+import os
 
 import dxpy
-import dxpy.bindings as dxb
 from vcr_unittest import VCRMixin
 
 from stor import s3
@@ -197,14 +197,8 @@ class DXTestMixin(VCRMixin):
     def setup_dx_auth(self):
         pass
 
-    def setup_dx_mocks(self):
-        self.mock_dx_conn = mock.Mock() # TODO
-
-    def assertDXListsEqual(self, r1, r2):
-        if six.PY2:
-            return self.assertItemsEqual(r1, r2)
-        else:
-            return self.assertCountEqual(r1, r2)
+    def assert_dx_lists_equal(self, r1, r2):
+        self.assertEquals(sorted(r1), sorted(r2))
 
 
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
@@ -244,40 +238,48 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
         kwargs.update({'filter_headers': ['authorization']})
         return kwargs
 
-    @classmethod
-    def setUpClass(cls):
-        cls.project_handler = cls.setup_project()
-        cls.project = cls.project_handler.name
-        cls.proj_id = cls.project_handler.get_id()
+    def _get_cassette_library_dir(self):
+        cassette_dir = super(DXTestCase, self)._get_cassette_library_dir()
+        return os.path.join(cassette_dir, self.__class__.__name__)
 
+    def _get_cassette_name(self):
+        return '{0}.yaml'.format(self._testMethodName)
 
-    @classmethod
-    def setup_project(cls):
-        test_proj = dxb.DXProject()
-        test_proj.new('Temp_Proj')
+    def new_proj_name(self):
+        return '{0}.{1}'.format(self.__class__.__name__,
+                                self._testMethodName)
+
+    def setup_temporary_project(self):
+        self.project_handler = self.setup_project()
+        self.project = self.project_handler.name
+        self.proj_id = self.project_handler.get_id()
+        self.addCleanup(self.teardown_project)
+
+    def setup_project(self):
+        test_proj = dxpy.DXProject()
+        test_proj.new(self.new_proj_name())
         return test_proj
 
-    def setUp(self):
-        super(DXTestCase, self).setUp()
+    def setup_generic_files(self):
         self.project_handler.new_folder('/temp_folder')
-        with dxb.dxfile_functions.new_dxfile(name='Temp_File.txt',
-                                             project=self.proj_id) as f:
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             project=self.proj_id) as f:
             f.write('data')
-        with dxb.dxfile_functions.new_dxfile(name='Temp_File2.txt',
-                                             folder='/temp_folder',
-                                             project=self.proj_id) as ff:
+        with dxpy.new_dxfile(name='folder_file.txt',
+                             folder='/temp_folder',
+                             project=self.proj_id) as ff:
             ff.write('temp_data')
         self.file_handler = f
         self.folder_file_handler = ff
+        self.addCleanup(self.teardown_files)
 
-    def tearDown(self):
+    def teardown_files(self):
         self.project_handler.remove_folder('/temp_folder', recurse=True, force=True)
         # Temp_File2.txt is already removed above.
         self.folder_file_handler = None
         self.file_handler.remove()
         self.file_handler = None
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.project_handler.destroy()
-        cls.project_handler = None
+    def teardown_project(self):
+        self.project_handler.destroy()
+        self.project_handler = None
