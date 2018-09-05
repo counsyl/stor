@@ -6,6 +6,7 @@ import os
 import dxpy
 from vcr_unittest import VCRMixin
 
+from stor import Path
 from stor import s3
 from stor.s3 import S3Path
 from stor.swift import SwiftPath
@@ -260,25 +261,23 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
         test_proj.new(self.new_proj_name())
         return test_proj
 
-    def setup_generic_files(self):
-        self.project_handler.new_folder('/temp_folder')
-        with dxpy.new_dxfile(name='temp_file.txt',
-                             project=self.proj_id) as f:
-            f.write('data')
-        with dxpy.new_dxfile(name='folder_file.txt',
-                             folder='/temp_folder',
-                             project=self.proj_id) as ff:
-            ff.write('temp_data')
-        self.file_handler = f
-        self.folder_file_handler = ff
-        self.addCleanup(self.teardown_files)
+    def setup_files(self, files):
+        """Sets up files for testing
 
-    def teardown_files(self):
-        self.project_handler.remove_folder('/temp_folder', recurse=True, force=True)
-        # Temp_File2.txt is already removed above.
-        self.folder_file_handler = None
-        self.file_handler.remove()
-        self.file_handler = None
+        Args:
+            files (List[Str]): list of files relative to project root to be created.
+            Only virtual files are allowed
+        """
+        for i, curr_file in enumerate(files):
+            dx_p = Path(curr_file)
+            try:
+                self.project_handler.new_folder(dx_p.parent, parents=True)
+            except dxpy.exceptions.InvalidState:
+                pass
+            with dxpy.new_dxfile(name=dx_p.name,
+                                 folder=dx_p.parent,
+                                 project=self.proj_id) as f:
+                f.write('data'+str(i))
 
     def teardown_project(self):
         self.project_handler.destroy()

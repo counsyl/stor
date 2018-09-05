@@ -85,7 +85,8 @@ class DXPath(OBSPath):
         return parts
 
     def _is_folder(self):
-        return self.resource and not self.resource.ext
+        return self.resource and not self.resource.ext and \
+               not utils.is_valid_dxid(self.resource.lstrip('/'), 'file')
 
     def _noop(attr_name):
         def wrapper(self):
@@ -207,13 +208,13 @@ class DXPath(OBSPath):
                 when the results matches the condition.
 
         Returns:
-             Iter[DXPath]: Iterates over listed files that match an optional pattern.
+             List[DXPath]: Iterates over listed files that match an optional pattern.
         """
         results = list(self.walkfiles(
             canonicalize=canonicalize,
             starts_with=starts_with,
             limit=limit,
-            category=category,
+            category=category
         ))
         if not results or not results[0]:  # when results == [[]]
             results = []
@@ -221,26 +222,63 @@ class DXPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
-    def listdir(self, canonicalize=False):
-        """list the path as a dir, returning top-level directories and files."""
+    def list_iter(self,
+                  canonicalize=False,
+                  starts_with=None,
+                  limit=None,
+                  category=None,
+                  ):
+        """Iterate over contents using the resource of the path as a prefix.
+
+        Args:
+            canonicalize (boolean): whether to return canonicalized paths
+            starts_with (str): Allows for an additional search path to
+                be appended to the resource of the dx path. Note that this
+                resource path is treated as a directory
+            limit (int): Limit the amount of results returned
+            category (str): Restricting class : One of 'record', 'file', 'gtable,
+                'applet', 'workflow'
+
+        Returns:
+             Iter[DXPath]: Iterates over listed files that match an optional pattern.
+        """
+        return self.walkfiles(
+            canonicalize=canonicalize,
+            starts_with=starts_with,
+            limit=limit,
+            category=category
+        )
+
+    def listdir(self, only='all', canonicalize=False):
+        """List the path as a dir, returning top-level directories and files.
+
+        Args:
+            canonicalize (boolean): whether to return canonicalized paths
+            only (str): "objects" for only objects, "folders" for only folder,
+                    "all" for both
+
+        Returns:
+            List[DXPath]: Iterates over listed files directly within the resource
+
+        Raises:
+            NotFoundError: When resource folder is not present on DX platform
+        """
         proj_id = self.canonical_project
         proj_name = self.virtual_project
         ans_list = []
-        if not self.resource:
-            obj_dict = dxpy.DXProject(dxid=proj_id).list_folder(
-                describe={'fields': {'name': True, 'folder': True}}
-            )
-        elif self._is_folder():
-            try:
-                obj_dict = dxpy.DXProject(dxid=proj_id).list_folder(
-                    folder=self.resource,
-                    describe={'fields': {'name': True, 'folder': True}}
-                )
-            except dxpy.exceptions.ResourceNotFound:
-                raise NotFoundError('The specified folder ({}) was not found'.format(
-                    self.resource))
-        else:
+        kwargs = {
+            'only': only,
+            'describe': {'fields': {'name': True, 'folder': True}}
+        }
+        if self._is_folder():
+            kwargs.update({'folder': self.resource})
+        elif self.resource:
             return ans_list
+        try:
+            obj_dict = dxpy.DXProject(dxid=proj_id).list_folder(**kwargs)
+        except dxpy.exceptions.ResourceNotFound:
+            raise NotFoundError('The specified folder ({}) was not found'.format(
+                self.resource))
         for key, values in obj_dict.items():
             for entry in values:
                 if canonicalize:
@@ -255,9 +293,28 @@ class DXPath(OBSPath):
                                         / entry['describe']['name'])
         return ans_list
 
+    def listdir_iter(self, canonicalize=False):
+        """Iterate the path as a dir, returning top-level directories and files.
+
+        Args:
+            canonicalize (boolean): whether to return canonicalized paths
+
+        Returns:
+            Iter[DXPath]: Iterates over listed files directly within the resource
+        """
+        folders = self.listdir(only='folders', canonicalize=canonicalize)
+        for folder in folders:
+            yield folder
+        for data in self.walkfiles(
+                        canonicalize=canonicalize,
+                        recurse=False
+                    ):
+            yield data
+
     def walkfiles(self,
                   pattern=None,
                   canonicalize=False,
+                  recurse=True,
                   starts_with=None,
                   limit=None,
                   category=None):
@@ -266,6 +323,7 @@ class DXPath(OBSPath):
         Args:
             pattern (str): glob pattern to match the filenames against.
             canonicalize (boolean): whether to return canonicalized paths
+            recurse (boolean): whether to look in subfolders of folder as well
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the dx path. Note that this
                 resource path is treated as a directory
@@ -285,6 +343,7 @@ class DXPath(OBSPath):
             # the query performance is similar w/wo describe field,
             # hence no need to customize query based on canonicalize flag
             'describe': {'fields': {'name': True, 'folder': True}},
+            'recurse' : recurse,
             'classname': category,
             'limit': limit,
             'folder': (self.resource or '/') + (starts_with or '')
@@ -391,7 +450,12 @@ class DXVirtualPath(DXPath):
 
     @cached_property
     def canonical_resource(self):
-        """Returns the dx file-ID of the first matched filename"""
+        """Returns the dx file-ID of the uniquely matched filename
+
+        Raises:
+            DuplicateError: if filename is not unique
+            NotFoundError: if resource is not found on DX platform
+        """
         if not self.resource:
             return None
         if self._is_folder():
@@ -411,7 +475,7 @@ class DXVirtualPath(DXPath):
 
     @property
     def canonical_path(self):
-        """Returns the first file that matches the given path"""
+        """Returns the unique file that matches the given path"""
         return DXCanonicalPath(self.drive + self.canonical_project +
                                ':') / (self.canonical_resource or '')
 
@@ -432,7 +496,7 @@ class DXCanonicalPath(DXPath):
         proj = dxpy.DXProject(dxid=self.project)
         virtual_p = DXVirtualPath(self.drive + proj.name + ':/')
         if self.resource:
-            file_h = dxpy.DXFile(dxid=self.resource)
+            file_h = dxpy.DXFile(dxid=self.canonical_resource)
             virtual_p = virtual_p / file_h.folder[1:] / file_h.name
         return virtual_p
 
@@ -442,7 +506,7 @@ class DXCanonicalPath(DXPath):
 
     @property
     def canonical_resource(self):
-        return self.resource
+        return self.resource.lstrip('/') if self.resource else None
 
     @property
     def canonical_path(self):
