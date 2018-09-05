@@ -754,3 +754,59 @@ class TestTempUrl(DXTestCase):
         time.sleep(2)  # for link to expire
         with pytest.raises(urllib.error.HTTPError):
             urllib.request.urlopen(result)
+
+
+class TestRemove(DXTestCase):
+    def test_remove_file(self):
+        self.setup_temporary_project()
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             project=self.proj_id) as f:
+            f.write('data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
+        dx_p.remove()
+        with self.assertRaises(dxpy.exceptions.ResourceNotFound):
+            f.describe()
+
+    def test_fail_remove_folder(self):
+        self.setup_temporary_project()
+        self.project_handler.new_folder('/temp_folder')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        with pytest.raises(ValueError, match='must point to a data object'):
+            dx_p.remove()
+
+    def test_fail_remove_project(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project)
+        with pytest.raises(ValueError, match='must point to a data object'):
+            dx_p.remove()
+
+    def test_fail_rmtree_file(self):
+        self.setup_temporary_project()
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             project=self.proj_id) as f:
+            f.write('data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
+        with pytest.raises(ValueError, match='must point to project or directory'):
+            dx_p.rmtree()
+
+    def test_rmtree_folder(self):
+        self.setup_temporary_project()
+        self.project_handler.new_folder('/temp_folder')
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             folder='/temp_folder',
+                             project=self.proj_id) as f:
+            f.write('data')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        dx_p.rmtree()
+        with self.assertRaises(dxpy.exceptions.ResourceNotFound):
+            f.describe()
+        proj_path = DXPath('dx://' + self.project)
+        self.assertNotIn(dx_p, proj_path.listdir())
+
+    def test_rmtree_project(self):
+        proj_handler = dxpy.DXProject()
+        proj_handler.new('test_rmtree_project.TempProj')
+        proj_path = DXPath('dx://test_rmtree_project.TempProj')
+        proj_path.rmtree()
+        with self.assertRaises(dxpy.exceptions.ResourceNotFound):
+            proj_handler.destroy()

@@ -144,10 +144,32 @@ class DXPath(OBSPath):
         raise NotImplementedError
 
     def remove(self):
-        raise NotImplementedError
+        """
+        Removes a single object.
+
+        Raises:
+            ValueError: The path is invalid.
+        """
+        if not self.resource or self._is_folder():
+            raise ValueError('DXPath must point to a data object to remove a single file')
+        file_handler = dxpy.DXFile(dxid=self.canonical_resource,
+                                   project=self.canonical_project)
+        file_handler.remove()
 
     def rmtree(self):
-        raise NotImplementedError
+        """
+        Removes a resource and all of its contents. The path should point to a project or directory.
+
+        Raises:
+            ValueError: The path points to a file
+        """
+        proj_handler = dxpy.DXProject(self.canonical_project)
+        if not self.resource:
+            proj_handler.destroy()
+        elif self._is_folder():
+            proj_handler.remove_folder(self.resource, recurse=True, force=True)
+        else:
+            raise ValueError('DXPath must point to project or directory to remove trees')
 
     def isdir(self):
         if not self.resource or self._is_folder():
