@@ -523,9 +523,9 @@ class TestWalkFiles(DXTestCase):
     def test_pattern_no_match(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.csv',
-                          '/temp_file.txt'])
+                          '/random_file.txt'])
         dx_p = DXPath('dx://'+self.project)
-        results = list(dx_p.walkfiles(pattern='*tmp*'))
+        results = list(dx_p.walkfiles(pattern='*temp*'))
         self.assertEqual(results, [])
 
 
@@ -675,6 +675,14 @@ class TestGlob(DXTestCase):
         results = dx_p.glob('file')
         self.assertEqual(results, [])
 
+    def test_pattern_no_file_match(self):
+        self.setup_temporary_project()
+        self.setup_files(['/temp_folder/folder_file.csv',
+                          '/random_file.txt'])
+        dx_p = DXPath('dx://'+self.project)
+        results = dx_p.glob('*temp*')
+        self.assertEqual(results, [])
+
     def test_glob_cond_met(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt'])
@@ -709,24 +717,33 @@ class TestTempUrl(DXTestCase):
 
     def test_on_file(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_file.txt'])
-        time.sleep(2)  # to allow for the file state to go to closed after calling close()
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             project=self.proj_id) as f:
+            f.write('data')
+        while f._get_state().lower() != 'closed':
+            time.sleep(1)  # to allow for the file state to go to closed after calling close()
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
         result = dx_p.temp_url()
         self.assertIn('dl.dnanex.us', result)
 
     def test_on_file_canonical(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_file.txt'])
-        time.sleep(2)  # to allow for the file state to go to closed after calling close()
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             project=self.proj_id) as f:
+            f.write('data')
+        while f._get_state().lower() != 'closed':
+            time.sleep(1)  # to allow for the file state to go to closed after calling close()
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt').canonical_path
         result = dx_p.temp_url()
         self.assertIn('dl.dnanex.us', result)
 
     def test_on_file_named_timed(self):  # TODO
         self.setup_temporary_project()
-        self.setup_files(['/temp_file.txt'])
-        time.sleep(2)  # to allow for the file state to go to closed after calling close()
+        with dxpy.new_dxfile(name='temp_file.txt',
+                             project=self.proj_id) as f:
+            f.write('data')
+        while f._get_state().lower() != 'closed':
+            time.sleep(1)  # to allow for the file state to go to closed after calling close()
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
         result = dx_p.temp_url(filename='random.txt', lifetime=1)
         self.assertIn('dl.dnanex.us', result)
