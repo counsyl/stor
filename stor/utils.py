@@ -203,7 +203,7 @@ def is_filesystem_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return not (is_swift_path(p) or is_s3_path(p))
+    return not (is_swift_path(p) or is_s3_path(p) or is_dx_path(p))
 
 
 def is_s3_path(p):
@@ -230,7 +230,7 @@ def is_obs_path(p):
     Returns
         bool: True if p is an OBS path, False otherwise.
     """
-    return is_s3_path(p) or is_swift_path(p)
+    return is_s3_path(p) or is_swift_path(p) or is_dx_path(p)
 
 
 def is_dx_path(p):
@@ -418,7 +418,7 @@ def copy(source, dest, swift_retry_options=None):
     swift_retry_options = swift_retry_options or {}
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
-    if is_obs_path(dest) and dest.is_ambiguous():
+    if (is_s3_path(dest) or is_swift_path(dest)) and dest.is_ambiguous():
         raise ValueError('OBS destination must be file with extension or directory with slash')
 
     if is_filesystem_path(dest):

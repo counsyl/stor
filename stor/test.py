@@ -2,6 +2,7 @@ import mock
 import unittest
 import six
 import os
+import time
 
 import dxpy
 from vcr_unittest import VCRMixin
@@ -265,19 +266,52 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
         """Sets up files for testing
 
         Args:
-            files (List[Str]): list of files relative to project root to be created.
+            files (List[Str]): list of files relative to project root to be created on DX
             Only virtual files are allowed
         """
         for i, curr_file in enumerate(files):
             dx_p = Path(curr_file)
             try:
                 self.project_handler.new_folder(dx_p.parent, parents=True)
-            except dxpy.exceptions.InvalidState:
+            except dxpy.exceptions.InvalidState:  # duplicate folder
                 pass
             with dxpy.new_dxfile(name=dx_p.name,
-                                 folder=dx_p.parent,
+                                 folder='/'+dx_p.parent.lstrip('/'),
                                  project=self.proj_id) as f:
                 f.write('data'+str(i))
+
+    def setup_file(self, obj):
+        dx_p = Path(obj)
+        try:
+            self.project_handler.new_folder(dx_p.parent or '/', parents=True)
+        except dxpy.exceptions.InvalidState:  # duplicate folder
+            pass
+        with dxpy.new_dxfile(name=dx_p.name,
+                             folder='/'+dx_p.parent.lstrip('/'),
+                             project=self.proj_id) as f:
+            f.write('data')
+        i = 0
+        while f._get_state().lower() != 'closed' and i < 15:
+            time.sleep(1)
+            i += 1  # to allow for max of 10s for file state to go to closed
+        return f
+
+    def setup_posix_files(self, files):
+        """Sets up posix files for testing
+
+        Args:
+            files (List[Str]): list of relative posix files to be created.
+        """
+        for i, curr_file in enumerate(files):
+            posix_p = Path('./{test_folder}/{path}'.format(
+                test_folder=self.new_proj_name(), path=curr_file))
+            posix_p.open(mode='w').write('data'+str(i))
+        self.addCleanup(self.teardown_posix_files)
+
+    def teardown_posix_files(self):
+        posix_p = Path('./{test_folder}'.format(
+                test_folder=self.project))
+        posix_p.rmtree()
 
     def teardown_project(self):
         self.project_handler.destroy()
