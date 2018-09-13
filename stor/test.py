@@ -1,6 +1,5 @@
 import mock
 import unittest
-import six
 import os
 import time
 

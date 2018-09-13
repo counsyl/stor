@@ -1,10 +1,9 @@
 from cached_property import cached_property
-import six
-import warnings
+import sys
 
 import dxpy
-import dxpy.exceptions as dx_exceptions
-from dxpy.exceptions import DXError, DXSearchError
+from dxpy.exceptions import DXSearchError
+from dxpy.exceptions import DXError
 
 from stor import exceptions as stor_exceptions
 from stor import Path
@@ -151,10 +150,11 @@ class DXPath(OBSPath):
 
     def rmtree(self):
         """
-        Removes a resource and all of its contents. The path should point to a project or directory.
+        Removes a resource and all of its contents.
+        The path should point to a project or directory.
 
         Raises:
-            ValueError: The path points to a file
+            NotFoundError: The path points to a nonexistent directory
         """
         proj_handler = dxpy.DXProject(self.canonical_project)
         if not self.resource:
@@ -166,13 +166,13 @@ class DXPath(OBSPath):
                                 .format(self), e)
 
     def makedirs_p(self):
-        """Make directories from DX folder paths.
+        """Make directories, including parents on DX from DX folder paths.
 
         The resulting folders will have same access permissions as the project.
         """
         if not self.resource:
             if not self.exists():
-                raise ValueError('Project ({}) cannot be created with makedirs_p'.format(self))
+                raise ValueError('Cannot create a project via makedirs_p()')
             return
         proj_handler = dxpy.DXProject(self.canonical_project)
         proj_handler.new_folder(self.resource, parents=True)
@@ -196,7 +196,7 @@ class DXPath(OBSPath):
 
         Returns (bool) : True if path points to an existing file
         """
-        if not self.resource or self.endswith('/'):
+        if not self.resource or utils.has_trailing_slash(self):
             return False
         try:
             self.stat()
@@ -252,8 +252,8 @@ class DXPath(OBSPath):
             folder_dest.makedirs_p()
 
         new_file_h = file_handler.clone(project=dest.canonical_project,
-                                        folder=(folder_dest.resource or '/'))
-        if not dest_exists and not dest.endswith('/'):
+                                        folder=folder_dest.resource or '/')
+        if not dest_exists and not utils.has_trailing_slash(dest):
             new_file_h.rename(dest.name)
 
     def _move(self, dest):
@@ -271,6 +271,10 @@ class DXPath(OBSPath):
         if dest.canonical_project != self.canonical_project:
             # This can be implemented by clone and remove original
             raise DNAnexusError('Cannot move across different projects')
+
+        if self == dest:
+            return
+
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
         dest_exists = dest.isdir()
@@ -289,7 +293,7 @@ class DXPath(OBSPath):
 
         file_handler.move(folder_dest.resource or '/')
 
-        if not dest_exists and not dest.endswith('/'):
+        if not dest_exists and not utils.has_trailing_slash(dest):
             file_handler.rename(dest.name)
 
     def copy(self, dest, move_within_project=False):
@@ -297,12 +301,14 @@ class DXPath(OBSPath):
 
         Args:
             dest (path|str): The destination file or directory.
-            move_within_project (bool): If True, make new files in DX instead of cloning.
-                Only comes into effect when both source and destination are DXPaths
+            move_within_project (bool): If True, move the file instead of cloning.
+                Only comes into effect when both source and destination are
+                within the same DX Project
 
         Raises:
-            DNAnexusError : When cloning within same project with copy_new=False
+            DNAnexusError : When cloning within same project with move_within_project=False
             DuplicateError : When cloning data object or folder to already existing path
+            NotFoundError : When the source file path doesn't exist
         """
         dest = Path(dest)
         if utils.is_dx_path(dest):
@@ -319,7 +325,140 @@ class DXPath(OBSPath):
         else:
             super(DXPath, self).copy(dest)
 
-    def download_object(self, dest):
+    def copytree(self, dest, move_within_project=False):
+        """Copies a source directory to a destination directory.
+        This is not an atomic operation. Also note that copytree
+        from dx to dx paths doesn't copy empty directories
+
+        Refer to utils.copytree for detailed information.
+
+        Args:
+            dest (path|str): The directory to copy to. Must not exist if
+                its a posix directory
+            move_within_project (bool): If True, move the file instead of cloning.
+                Only comes into effect when both source and destination are
+                within the same DX Project
+
+        Raises:
+            DNAnexusError : When cloning within same project with move_within_project=False
+            DuplicateError : When cloning data object or folder to already existing path
+            NotFoundError : When the source directory path doesn't exist
+        """
+        dest = Path(dest)
+        if utils.is_dx_path(dest):
+            if self.isdir():
+                if dest.canonical_project == self.canonical_project:
+                    if move_within_project:
+                        self._movetree(dest)
+                    else:
+                        raise DNAnexusError('Cannot copytree within same project without flag set')
+                else:
+                    self._clonetree(dest)
+            else:
+                raise NotFoundError('No project or directory was found at path ({})'.format(self))
+        else:
+            super(DXPath, self).copytree(dest)
+
+    def _clonetree(self, dest):
+        """Clones the project or directory into the destination path.
+        The original tree is retained.
+
+        Args:
+            dest (path) : The destination directory path in a different project
+
+        Raises:
+            DuplicateError : When destination directory already exists
+            DNAnexusError : When cloning within same project
+        """
+        if dest.canonical_project == self.canonical_project:
+            raise DNAnexusError('Cannot clonetree within same project')
+        if dest == (self.drive+dest.project):  # need to convert dx://proj to dx://proj:
+            dest = dest + ':'
+        source = utils.remove_trailing_slash(self)
+        dest_exists = dest.isdir()
+        to_rename = True
+
+        if dest_exists or utils.has_trailing_slash(dest):
+            dest = dest / (source.name if source.resource else source.virtual_project)
+            if dest.isdir():
+                raise DuplicateError('Dest path already exists. Do not duplicate!')
+            to_rename = False
+
+        folder_dest = dest.parent
+        if not source.resource or not dest.resource:
+            dest.makedirs_p()
+        elif not dest_exists and folder_dest.resource:  # avoid calling makedirs_p on project
+            folder_dest.makedirs_p()
+
+        project_handler = dxpy.DXProject(source.canonical_project)
+        project_handler.clone(
+            container=dest.canonical_project,
+            destination=(folder_dest.resource or '/') if source.resource else dest.resource,
+            folders=[source.resource or '/']
+        )
+
+        if source.resource and to_rename:
+            moved_folder_path = folder_dest / source.name
+            dxpy.api.project_rename_folder(
+                dest.canonical_project,
+                input_params={
+                    'folder': moved_folder_path.resource,
+                    'name': dest.name
+                }
+            )
+
+    def _movetree(self, dest):
+        """Moves the project or directory to a different folder within project
+
+        Args:
+            dest (path) : The destination directory path within same project
+
+        Raises:
+            DuplicateError : When destination directory already exists
+            DNAnexusError : When attempting to move across projects
+        """
+        if dest.canonical_project != self.canonical_project:
+            raise DNAnexusError('Cannot movetree across different projects')
+        if not self.resource:
+            raise DNAnexusError('Cannot move root folder within same project on DX')
+        if self == dest:
+            return
+        if dest == (self.drive+dest.project):  # need to convert dx://proj to dx://proj:
+            dest = dest + ':'
+
+        source = utils.remove_trailing_slash(self)
+        dest_exists = dest.isdir()
+        to_rename = True
+
+        if dest_exists or utils.has_trailing_slash(dest):
+            dest = dest / source.name
+            if dest.isdir():
+                raise DuplicateError('Dest path already exists. Do not duplicate!')
+            to_rename = False
+
+        folder_dest = dest.parent
+        if not dest.resource:
+            dest.makedirs_p()
+        elif not dest_exists and folder_dest.resource:  # avoid calling makedirs_p on project
+            folder_dest.makedirs_p()
+
+        project_handler = dxpy.DXProject(source.canonical_project)
+        project_handler.move_folder(
+            folder=source.resource,
+            destination=folder_dest.resource or '/'
+        )
+
+        if to_rename:
+            moved_folder_path = folder_dest / source.name
+            dxpy.api.project_rename_folder(
+                dest.canonical_project,
+                input_params={
+                    'folder': moved_folder_path.resource,
+                    'name': dest.name
+                }
+            )
+
+    def download_object(self, dest, **kwargs):
         """Download a single path or object to file.
 
         Args:
@@ -329,14 +468,15 @@ class DXPath(OBSPath):
             ValueError: When source path is not a file
         """
         if not self.isfile():
-            raise ValueError('can only call download_object on object path')
+            raise NotFoundError('No data object was found at given path ({}) on DNAnexus'
+                                .format(self))
         dxpy.download_dxfile(
             dxid=self.canonical_resource,
             filename=dest,
             project=self.canonical_project
         )
 
-    def download(self, dest):
+    def download(self, dest, **kwargs):
         """Download a directory.
 
         Args:
@@ -346,14 +486,15 @@ class DXPath(OBSPath):
             ValueError: When source or dest path is not a directory
         """
         if not self.isdir():
-            raise ValueError('can only call download on folder or project paths')
+            raise NotFoundError('No folder or project was found at given path ({}) on DNAnexus'
+                                .format(self))
         dxpy.download_folder(
             project=self.canonical_project,
             destdir=dest,
             folder=self.resource or '/'
         )
 
-    def upload(self, to_upload):
+    def upload(self, to_upload, **kwargs):
         """Upload a list of files and directories to a directory.
 
         Note that unlike swift, this is not a batch level operation.
@@ -376,8 +517,8 @@ class DXPath(OBSPath):
         ])
         dx_upload_objects.extend([
             OBSUploadObject(f,
-                            object_name=(self.resource or Path(''))
-                            / utils.file_name_to_object_name(f))
+                            object_name=(self.resource or Path('')) /
+                            utils.file_name_to_object_name(f))
             for f in all_files_to_upload
         ])
         for upload_obj in dx_upload_objects:
@@ -388,16 +529,23 @@ class DXPath(OBSPath):
                 path=upload_obj.object_name))
 
             dest_exists = dest_file.isdir()
+            if upload_obj.source.isdir():
+                if dest_exists:
+                    raise DuplicateError('Dest path already exists. Do not duplicate!')
+                else:
+                    dest_file.makedirs_p()
+                    continue
+
             if dest_exists:
                 new_dest = dest_file / upload_obj.source.name
                 if new_dest.isfile():
-                    raise ValueError('Dest path already exists. Do not duplicate!')
+                    raise DuplicateError('Dest path already exists. Do not duplicate!')
                 folder_dest = dest_file
                 file_name = upload_obj.source.name
             else:
                 folder_dest = dest_file.parent
                 file_name = upload_obj.object_name.name
-            print(upload_obj.source, upload_obj.object_name.name, folder_dest.resource)
+
             dxpy.upload_local_file(
                 filename=upload_obj.source,
                 project=self.canonical_project,
@@ -423,7 +571,7 @@ class DXPath(OBSPath):
         """List contents using the resource of the path as a prefix.
 
         Args:
-            canonicalize (boolean): whether to return canonicalized paths
+            canonicalize (bool, default False): if True, return canonical paths
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the dx path. Note that this
                 resource path is treated as a directory
@@ -457,7 +605,7 @@ class DXPath(OBSPath):
         """Iterate over contents using the resource of the path as a prefix.
 
         Args:
-            canonicalize (boolean): whether to return canonicalized paths
+            canonicalize (bool, default False): if True, return canonical paths
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the dx path. Note that this
                 resource path is treated as a directory
@@ -479,7 +627,7 @@ class DXPath(OBSPath):
         """List the path as a dir, returning top-level directories and files.
 
         Args:
-            canonicalize (boolean): whether to return canonicalized paths
+            canonicalize (bool, default False): if True, return canonical paths
             only (str): "objects" for only objects, "folders" for only folder,
                     "all" for both
 
@@ -512,18 +660,19 @@ class DXPath(OBSPath):
                         ans_list.append(DXVirtualPath('{drive}{proj_name}:{folder}'.format(
                             drive=self.drive, proj_name=proj_name, folder=entry)))
                     else:
-                        ans_list.append(DXVirtualPath('{drive}{proj_name}:{folder}/{name}'
-                                                      .format(drive=self.drive,
-                                                              proj_name=proj_name,
-                                                              folder=entry['describe']['folder'].rstrip('/'),
-                                                              name=entry['describe']['name'])))
+                        ans_list.append(DXVirtualPath('{drive}{proj_name}:{folder}/{name}'.format(
+                            drive=self.drive,
+                            proj_name=proj_name,
+                            folder=entry['describe']['folder'].rstrip('/'),
+                            name=entry['describe']['name']))
+                        )
         return ans_list
 
     def listdir_iter(self, canonicalize=False):
         """Iterate the path as a dir, returning top-level directories and files.
 
         Args:
-            canonicalize (boolean): whether to return canonicalized paths
+            canonicalize (bool, default False): if True, return canonical paths
 
         Returns:
             Iter[DXPath]: Iterates over listed files directly within the resource
@@ -548,8 +697,8 @@ class DXPath(OBSPath):
 
         Args:
             pattern (str): glob pattern to match the filenames against.
-            canonicalize (boolean): whether to return canonicalized paths
-            recurse (boolean): whether to look in subfolders of folder as well
+            canonicalize (bool, default False): if True, return canonical paths
+            recurse (bool, default True): if True, look in subfolders of folder as well
             starts_with (str): Allows for an additional search path to
                 be appended to the resource of the dx path. Note that this
                 resource path is treated as a directory
@@ -569,7 +718,7 @@ class DXPath(OBSPath):
             # the query performance is similar w/wo describe field,
             # hence no need to customize query based on canonicalize flag
             'describe': {'fields': {'name': True, 'folder': True}},
-            'recurse' : recurse,
+            'recurse': recurse,
             'classname': classname,
             'limit': limit,
             'folder': (self.resource or '/') + (starts_with or '')
@@ -579,11 +728,12 @@ class DXPath(OBSPath):
             if canonicalize:
                 yield DXCanonicalPath('dx://{}:/{}'.format(obj['project'], obj['id']))
             else:
-                yield DXVirtualPath('{drive}{proj_name}:{folder}/{name}'
-                                                      .format(drive=self.drive,
-                                                              proj_name=proj_name,
-                                                              folder=obj['describe']['folder'].rstrip('/'),
-                                                              name=obj['describe']['name']))
+                yield DXVirtualPath('{drive}{proj_name}:{folder}/{name}'.format(
+                    drive=self.drive,
+                    proj_name=proj_name,
+                    folder=obj['describe']['folder'].rstrip('/'),
+                    name=obj['describe']['name'])
+                )
 
     def glob(self, pattern, condition=None, canonicalize=False):
         """ Glob for pattern relative to this directory."""
@@ -691,8 +841,9 @@ class DXVirtualPath(DXPath):
         """
         if not self.resource:
             return None
-        if self.endswith('/'):
-            raise ValueError('Cannot call on folder path ({})'.format(self))
+        if utils.has_trailing_slash(self):
+            raise ValueError('Invalid operation ({method}) on folder path ({path})'
+                             .format(path=self, method=sys._getframe(2).f_code.co_name))
         objects = [{
             'name': self.name,
             'folder': self.resource.parent,
@@ -701,7 +852,8 @@ class DXVirtualPath(DXPath):
         }]
         results = dxpy.resolve_data_objects(objects=objects)[0]
         if len(results) > 1:
-            raise DuplicateError('The virtual resource is not unique on DNAnexus')
+            raise DuplicateError('Multiple objects found at path ({}). '
+                                 'Try using a canonical ID instead'.format(self))
         elif len(results) == 1:
             return results[0]['id']
         else:

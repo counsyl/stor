@@ -42,9 +42,9 @@ class TestBasics(unittest.TestCase):
             p = DXPath(path_str)
             self.assertIsInstance(p, DXCanonicalPath, 'Expected canonical DXPath for (%s)' % p)
             self.assertEqual(p.project, 'project-123456789012345678901234',
-                'Project parsing unsuccessful for %s' % p)
+                             'Project parsing unsuccessful for %s' % p)
             self.assertEqual(p.resource, '/file-123456789012345678901234',
-                'Resource parsing error for %s' % p)
+                             'Resource parsing error for %s' % p)
 
     def test_virtual_construct_wo_resource(self):
         for path_str in [
