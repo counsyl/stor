@@ -180,7 +180,8 @@ class DXPath(OBSPath):
     def isdir(self):
         """Determine if path is an existing directory
 
-        Returns (bool) : True if path is an existing folder path or project
+        Returns:
+            bool: True if path is an existing folder path or project
         """
         if not self.resource and self.exists():  # path could be a project
             return True
@@ -194,7 +195,8 @@ class DXPath(OBSPath):
     def isfile(self):
         """Determine if path is an existing file
 
-        Returns (bool) : True if path points to an existing file
+        Returns:
+            bool: True if path points to an existing file
         """
         if not self.resource or utils.has_trailing_slash(self):
             return False
@@ -211,7 +213,7 @@ class DXPath(OBSPath):
             new_name (str): New name of the object
 
         Raises:
-            ValueError : When trying to rename a project
+            ValueError: When trying to rename a project
         """
         if not self.resource:
             raise ValueError('Cannot rename project ({})'.format(self))
@@ -226,11 +228,11 @@ class DXPath(OBSPath):
         The original file is retained.
 
         Args:
-            dest (path) : The destination file/folder path in a different project
+            dest (path): The destination file/folder path in a different project
 
         Raises:
-            ValueError : If attempting to clone a project
-            DNAnexusError : If cloning within same project
+            ValueError: If attempting to clone a project
+            DNAnexusError: If cloning within same project
         """
         if not self.resource:
             raise ValueError('Cannot clone project ({})'.format(self))
@@ -260,11 +262,11 @@ class DXPath(OBSPath):
         """Moves the data object to a different folder within project
 
         Args:
-            dest (path) : The destination file/folder path within same project
+            dest (path): The destination file/folder path within same project
 
         Raises:
-            ValueError : When attempting to move projects
-            DNAnexusError : If attempting to move across projects
+            ValueError: When attempting to move projects
+            DNAnexusError: If attempting to move across projects
         """
         if not self.resource:
             raise ValueError('Cannot move project ({})'.format(self))
@@ -306,9 +308,9 @@ class DXPath(OBSPath):
                 within the same DX Project
 
         Raises:
-            DNAnexusError : When cloning within same project with move_within_project=False
-            DuplicateError : When cloning data object or folder to already existing path
-            NotFoundError : When the source file path doesn't exist
+            DNAnexusError: When cloning within same project with move_within_project=False
+            DuplicateError: When cloning data object or folder to already existing path
+            NotFoundError: When the source file path doesn't exist
         """
         dest = Path(dest)
         if utils.is_dx_path(dest):
@@ -340,9 +342,9 @@ class DXPath(OBSPath):
                 within the same DX Project
 
         Raises:
-            DNAnexusError : When cloning within same project with move_within_project=False
-            DuplicateError : When cloning data object or folder to already existing path
-            NotFoundError : When the source directory path doesn't exist
+            DNAnexusError: When cloning within same project with move_within_project=False
+            DuplicateError: When cloning data object or folder to already existing path
+            NotFoundError: When the source directory path doesn't exist
         """
         dest = Path(dest)
         if utils.is_dx_path(dest):
@@ -364,11 +366,11 @@ class DXPath(OBSPath):
         The original tree is retained.
 
         Args:
-            dest (path) : The destination directory path in a different project
+            dest (path): The destination directory path in a different project
 
         Raises:
-            DuplicateError : When destination directory already exists
-            DNAnexusError : When cloning within same project
+            DuplicateError: When destination directory already exists
+            DNAnexusError: When cloning within same project
         """
         if dest.canonical_project == self.canonical_project:
             raise DNAnexusError('Cannot clonetree within same project')
@@ -411,11 +413,11 @@ class DXPath(OBSPath):
         """Moves the project or directory to a different folder within project
 
         Args:
-            dest (path) : The destination directory path within same project
+            dest (path): The destination directory path within same project
 
         Raises:
-            DuplicateError : When destination directory already exists
-            DNAnexusError : When attempting to move across projects
+            DuplicateError: When destination directory already exists
+            DNAnexusError: When attempting to move across projects
         """
         if dest.canonical_project != self.canonical_project:
             raise DNAnexusError('Cannot movetree across different projects')
@@ -811,8 +813,8 @@ class DXVirtualPath(DXPath):
         If no match is found, returns None
 
         Raises:
-            DuplicateProjectError - if project name is not unique on DX platform
-            NotFoundError - If project name doesn't exist on DNAnexus
+            DuplicateProjectError: If project name is not unique on DX platform
+            NotFoundError: If project name doesn't exist on DNAnexus
         """
         if utils.is_valid_dxid(self.project, 'project'):
             return self.project
@@ -837,7 +839,7 @@ class DXVirtualPath(DXPath):
         Raises:
             DuplicateError: if filename is not unique
             NotFoundError: if resource is not found on DX platform
-            ValueError : if path is folder path
+            ValueError: if path is folder path
         """
         if not self.resource:
             return None
