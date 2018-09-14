@@ -16,20 +16,6 @@ DNAnexusError = stor_exceptions.RemoteError
 NotFoundError = stor_exceptions.NotFoundError
 
 
-# def _parse_dx_error(exc, **kwargs):
-#     """
-#     Parses DXError exceptions to throw a more informative exception.
-#     """
-#     msg = exc.message
-#     exc_type = type(exc)
-#
-#     if exc_type is dx_exceptions.DXSearchError:
-#         if msg and 'found more' in msg.lower():
-#             return DuplicateError(msg, exc)
-#         elif msg and 'found none' in msg.lower():
-#             return NotFoundError(msg, exc)
-
-
 class DuplicateError(DNAnexusError):
     """Thrown when multiple objects exist with the same name
 
@@ -720,11 +706,10 @@ class DXPath(OBSPath):
                 drive=self.drive, project=self.canonical_project,
                 path=upload_obj.object_name))
 
-            dest_is_dir = dest_file.isdir()
-            dest_is_file = dest_file.isfile()
             source_is_file = upload_obj.source.isfile()
-            source_is_dir = upload_obj.source.isdir()
+            source_is_dir = upload_obj.source.isdir
             if source_is_file:
+                dest_is_file = dest_file.isfile()
                 if dest_is_file:
                     raise TargetExistsError(
                         'Destination path ({}) already exists, will not cause '
@@ -739,7 +724,8 @@ class DXPath(OBSPath):
                         parents=True,
                         name=dest_file.name
                     )
-            elif source_is_dir:
+            elif source_is_dir():
+                dest_is_dir = dest_file.isdir()
                 if dest_is_dir:
                     raise TargetExistsError(
                         'Destination path ({}) already exists, will not cause '
