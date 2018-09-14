@@ -937,7 +937,7 @@ class TestCopy(DXTestCase):
         true_dx_p = DXPath('dx://' + self.project + ':/temp_folder/random.txt')
         self.assertTrue(true_dx_p.exists())
 
-    def test_dx_folder_to_posix_error(self):
+    def test_dx_dir_to_posix_error(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
         posix_folder_p = Path('./{test_folder}'.format(
@@ -949,7 +949,7 @@ class TestCopy(DXTestCase):
         with pytest.raises(dx.NotFoundError, match='No data object'):
             dx_p.copy(posix_p)
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/')
-        with pytest.raises(dx.NotFoundError, match='No data object'):
+        with pytest.raises(ValueError, match='Invalid operation'):
             dx_p.copy(posix_p)
 
     def test_dx_to_dx_file(self):
@@ -1010,7 +1010,7 @@ class TestCopy(DXTestCase):
             dx_p.copy(new_dx_p)
 
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/random_file.txt')
-        with pytest.raises(dx.DuplicateError, match='duplicate'):
+        with pytest.raises(dx.TargetExistsError, match='duplicate'):
             dx_p.copy(new_dx_p, move_within_project=True)
 
     def test_dx_to_dx_within_project_pass(self):
@@ -1120,9 +1120,8 @@ class TestCopyTree(DXTestCase):
         self.assertTrue(dx_file_p.exists())
 
         dx_p_3 = DXPath('dx://' + self.project + ':/temp_folder')  # already exists
-        posix_p.copytree(dx_p_3)
-        dx_file_p = DXPath('dx://' + self.project + ':/temp_folder/folder/file.txt')
-        self.assertFalse(dx_file_p.exists())
+        with pytest.raises(dx.TargetExistsError, match='will not cause duplicate'):
+            posix_p.copytree(dx_p_3)
 
     def test_dx_to_other_obs(self):
         self.setup_temporary_project()
@@ -1193,7 +1192,7 @@ class TestCopyTree(DXTestCase):
         proj_p = DXPath('dx://test_dx_to_dx_file.TempProj:/folder2')
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         proj_handler.new_folder('/folder2/temp_folder', parents=True)
-        with pytest.raises(dx.DuplicateError, match='Dest path already exists'):
+        with pytest.raises(dx.TargetExistsError, match='Destination path'):
             dx_p.copytree(proj_p)
 
     def test_dx_dir_to_dx_root(self):
@@ -1238,6 +1237,21 @@ class TestCopyTree(DXTestCase):
                              'temp_folder/folder_file')
         self.assertTrue(proj_file_p.exists())
 
+    def test_dx_root_to_existing_dx_dir(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_folder/folder_file')
+        self.setup_file('/temp_folder/another_folder/temp_file.txt')
+        proj_handler = dxpy.DXProject()
+        proj_handler.new('test_dx_to_dx_file.TempProj')
+        self.addCleanup(proj_handler.destroy)
+        proj_handler.new_folder('/folder')
+        proj_p = DXPath('dx://test_dx_to_dx_file.TempProj:/folder')
+        dx_p = DXPath('dx://' + self.project)
+        dx_p.copytree(proj_p)
+        proj_file_p = DXPath('dx://test_dx_to_dx_file.TempProj:/folder/{}/'
+                             'temp_folder/folder_file'.format(self.project))
+        self.assertTrue(proj_file_p.exists())
+
     def test_dx_root_to_dx_dir_w_slash(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file')
@@ -1258,7 +1272,7 @@ class TestCopyTree(DXTestCase):
                           '/temp_folder/another_folder/temp_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         new_dx_p = DXPath('dx://' + self.project + ':/new_folder')
-        with pytest.raises(dx.DNAnexusError, match='within same project'):
+        with pytest.raises(dx.DNAnexusError, match='same project'):
             dx_p.copytree(new_dx_p)
 
     def test_dx_dir_to_dx_dir_same_project(self):

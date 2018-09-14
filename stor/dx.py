@@ -39,6 +39,13 @@ class DuplicateError(DNAnexusError):
     pass
 
 
+class TargetExistsError(DuplicateError):
+    """Thrown when a destination target already exists on DX for a file or folder
+    that is being uploaded/copied/moved, etc.
+    """
+    pass
+
+
 class DuplicateProjectError(DuplicateError):
     """Thrown when multiple projects exist with the same name
 
@@ -216,7 +223,7 @@ class DXPath(OBSPath):
             ValueError: When trying to rename a project
         """
         if not self.resource:
-            raise ValueError('Cannot rename project ({})'.format(self))
+            raise ValueError('Projects cannot be renamed')
         if new_name == self.name:
             return
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
@@ -227,12 +234,51 @@ class DXPath(OBSPath):
         """Clones the data object into the destination path.
         The original file is retained.
 
+        For example, assume the following file hierarchy::
+
+            dxProject/
+            - a/
+            - - 1.txt
+
+            anotherDxProject/
+
+        Doing a clone of ``1.txt`` to a new destination of ``b.txt`` is
+        performed with::
+
+            Path('dx://dxProject:/a/1.txt')._clone(Path('dx://anotherDxProject/b.txt'))
+
+        The end result for anotherDxProject looks like::
+
+            anotherDxProject/
+            - b.txt
+
+        If the dest already exists as a directory, the file is moved inside it, retaining
+        its original name. Thus, if the original project structure is
+
+            dxProject/
+            - a/
+            - - 1.txt
+
+            anotherDxProject/
+            - b.txt/
+
+        Performing clone with following command::
+
+            Path('dx://dxProject:/a/1.txt')._clone(Path('dx://anotherDxProject/b.txt'))
+
+        Will yield the resulting structure to be:
+
+            anotherDxProject/
+            - b.txt/
+            - - 1.txt
+
         Args:
-            dest (path): The destination file/folder path in a different project
+            dest (Path): The destination file/folder path in a different project
 
         Raises:
             ValueError: If attempting to clone a project
             DNAnexusError: If cloning within same project
+            TargetExistsError: When all possible destinations for source file already exist
         """
         if not self.resource:
             raise ValueError('Cannot clone project ({})'.format(self))
@@ -240,33 +286,46 @@ class DXPath(OBSPath):
             raise DNAnexusError('Cannot clone within same project')
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        dest_exists = dest.isdir()
-        if dest_exists:
+        dest_is_dir = dest.isdir()
+        if dest_is_dir:
             new_dest = dest / self.name
             if new_dest.isfile():
-                raise DuplicateError('Dest path already exists. Do not duplicate!')
+                raise TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate file objects to exist. Remove the original first'
+                    .format(new_dest))
             folder_dest = dest
         else:
             if dest.isfile():
-                raise DuplicateError('Dest path ({}) already exists. Do not duplicate!'
-                                     .format(dest))
+                raise TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate file objects to exist. Remove the original first'
+                    .format(dest)
+                )
             folder_dest = dest.parent
             folder_dest.makedirs_p()
 
         new_file_h = file_handler.clone(project=dest.canonical_project,
                                         folder=folder_dest.resource or '/')
-        if not dest_exists and not utils.has_trailing_slash(dest):
+        if not dest_is_dir and not utils.has_trailing_slash(dest):
             new_file_h.rename(dest.name)
 
     def _move(self, dest):
-        """Moves the data object to a different folder within project
+        """Moves the data object to a different folder within project.
+        Similar to _clone except it moves the source file within the same project.
+
+        Like _clone, if the destination exists as a folder already, the file is
+        moved inside that folder with its original name.
+
+        Refer to _clone for detailed information.
 
         Args:
-            dest (path): The destination file/folder path within same project
+            dest (Path): The destination file/folder path within same project
 
         Raises:
             ValueError: When attempting to move projects
             DNAnexusError: If attempting to move across projects
+            TargetExistsError: When all possible destinations for source file already exist
         """
         if not self.resource:
             raise ValueError('Cannot move project ({})'.format(self))
@@ -279,37 +338,87 @@ class DXPath(OBSPath):
 
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        dest_exists = dest.isdir()
-        if dest_exists:
+        dest_is_dir = dest.isdir()
+        if dest_is_dir:
             new_dest = dest / self.name
             if new_dest.isfile():
-                raise DuplicateError('Dest path ({}) already exists. Do not duplicate!'
-                                     .format(new_dest))
+                raise TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate file objects to exist. Remove the original first'
+                    .format(new_dest)
+                )
             folder_dest = dest
         else:
             if dest.isfile():
-                raise DuplicateError('Dest path ({}) already exists. Do not duplicate!'
-                                     .format(dest))
+                raise TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate file objects to exist. Remove the original first'
+                    .format(dest)
+                )
             folder_dest = dest.parent
             folder_dest.makedirs_p()
 
         file_handler.move(folder_dest.resource or '/')
 
-        if not dest_exists and not utils.has_trailing_slash(dest):
+        if not dest_is_dir and not utils.has_trailing_slash(dest):
             file_handler.rename(dest.name)
 
     def copy(self, dest, move_within_project=False):
         """Copies data object to destination path.
 
+        If dest already exists as a directory on the DX platform, the file is copied
+        underneath dest directory with original name.
+
+        For example, assume the following file hierarchy::
+
+            dxProject/
+            - a/
+            - - 1.txt
+
+            anotherDxProject/
+
+        Doing a copy of ``1.txt`` to a new destination of ``b.txt`` is
+        performed with::
+
+            Path('dx://dxProject:/a/1.txt').copy('dx://anotherDxProject/b.txt')
+
+        The end result for anotherDxProject looks like::
+
+            anotherDxProject/
+            - b.txt
+
+        And, if the destination already exists as a directory, i.e. we have
+
+            dxProject/
+            - a/
+            - - 1.txt
+
+            anotherDxProject/
+            - b.txt/
+
+        Performing copy with following command::
+
+            Path('dx://dxProject:/a/1.txt').copy('dx://anotherDxProject/b.txt')
+
+        Will yield the resulting structure to be:
+
+            anotherDxProject/
+            - b.txt/
+            - - 1.txt
+
+        If the source file and destination belong to the same project, the files are
+        moved instead of copied, if the move_within_project flag is set; because
+        the same underlying file cannot appear in two locations in the same project.
+
         Args:
-            dest (path|str): The destination file or directory.
+            dest (Path|str): The destination file or directory.
             move_within_project (bool): If True, move the file instead of cloning.
-                Only comes into effect when both source and destination are
+                Only takes effect when both source and destination are
                 within the same DX Project
 
         Raises:
-            DNAnexusError: When cloning within same project with move_within_project=False
-            DuplicateError: When cloning data object or folder to already existing path
+            DNAnexusError: When copying within same project with move_within_project=False
+            TargetExistsError: When all possible destinations for source file already exist
             NotFoundError: When the source file path doesn't exist
         """
         dest = Path(dest)
@@ -319,23 +428,50 @@ class DXPath(OBSPath):
                     if move_within_project:
                         self._move(dest)
                     else:
-                        raise DNAnexusError('Cannot copy within same project without flag set')
+                        raise DNAnexusError('Source and destination are in same project. '
+                                            'Set move_within_project=True to allow this.')
                 else:
                     self._clone(dest)
             else:
                 raise NotFoundError('No data object was found for the given path on DNAnexus')
         else:
-            super(DXPath, self).copy(dest)
+            super(DXPath, self).copy(dest)  # for other filesystems, refer utils.copy
 
     def copytree(self, dest, move_within_project=False):
         """Copies a source directory to a destination directory.
-        This is not an atomic operation. Also note that copytree
-        from dx to dx paths doesn't copy empty directories
+        This is not an atomic operation.
+
+        If the destination path already exists as a directory, the source tree
+        including the root folder is copied over as a subfolder of the destination.
+
+        If the source and destination directories belong to the same project,
+        the tree is moved instead of copied. Also, in such cases, the root folder
+        of the project cannot be the source path. Please listdir the root folder
+        and copy/copytree individual items if needed.
+
+        For example, assume the following file hierarchy::
+
+            project1/
+            - b/
+            - - 1.txt
+
+            project2/
+
+        Doing a copytree from ``project1:/b/`` to a new dx destination of
+        ``project2:/c`` is performed with::
+
+            Path('dx://project1:/b').copytree('dx://project2:/c')
+
+        The end result for project2 looks like::
+
+            project2/
+            - c/
+            - - 1.txt
 
         Refer to utils.copytree for detailed information.
 
         Args:
-            dest (path|str): The directory to copy to. Must not exist if
+            dest (Path|str): The directory to copy to. Must not exist if
                 its a posix directory
             move_within_project (bool): If True, move the file instead of cloning.
                 Only comes into effect when both source and destination are
@@ -343,7 +479,7 @@ class DXPath(OBSPath):
 
         Raises:
             DNAnexusError: When cloning within same project with move_within_project=False
-            DuplicateError: When cloning data object or folder to already existing path
+            TargetExistsError: When all possible destinations for source directory already exist
             NotFoundError: When the source directory path doesn't exist
         """
         dest = Path(dest)
@@ -353,23 +489,62 @@ class DXPath(OBSPath):
                     if move_within_project:
                         self._movetree(dest)
                     else:
-                        raise DNAnexusError('Cannot copytree within same project without flag set')
+                        raise DNAnexusError('Source and destination are in same project. '
+                                            'Set move_within_project=True to allow this.')
                 else:
                     self._clonetree(dest)
             else:
                 raise NotFoundError('No project or directory was found at path ({})'.format(self))
         else:
-            super(DXPath, self).copytree(dest)
+            super(DXPath, self).copytree(dest)  # for other filesystems, refer utils.copytree
 
     def _clonetree(self, dest):
         """Clones the project or directory into the destination path.
         The original tree is retained.
 
+        If the destination path already exists as a directory, the source tree
+        including the root folder is copied over as a subfolder of the destination.
+
+        For example, assume the following file hierarchy::
+
+            project1/
+            - b/
+            - - 1.txt
+
+            project2/
+
+        Doing a _clonetree from ``project1:/b/`` to a new dx destination of
+        ``project2:/c`` is performed with::
+
+            Path('dx://project1:/b')._clonetree(Path('dx://project2:/c'))
+
+        The end result for project2 looks like::
+
+            project2/
+            - c/
+            - - 1.txt
+
+        If the source root folder is cloned to an existing destination directory
+        or to root folder of destination, the tree is moved under project name.
+
+        For example, suppose the above original file structure, and the following cmd:
+
+            Path('dx://project1')._clonetree(Path('dx://project2'))
+
+        The end result for project2 looks like::
+
+            project2/
+            - c/
+            - - 1.txt
+            - project1/
+            - - b/
+            - - - 1.txt
+
         Args:
-            dest (path): The destination directory path in a different project
+            dest (Path): The destination directory path in a different project
 
         Raises:
-            DuplicateError: When destination directory already exists
+            TargetExistsError: When all possible destinations for source directory already exist
             DNAnexusError: When cloning within same project
         """
         if dest.canonical_project == self.canonical_project:
@@ -377,19 +552,23 @@ class DXPath(OBSPath):
         if dest == (self.drive+dest.project):  # need to convert dx://proj to dx://proj:
             dest = dest + ':'
         source = utils.remove_trailing_slash(self)
-        dest_exists = dest.isdir()
+        dest_is_dir = dest.isdir()
         to_rename = True
 
-        if dest_exists or utils.has_trailing_slash(dest):
+        if dest_is_dir or utils.has_trailing_slash(dest):
             dest = dest / (source.name if source.resource else source.virtual_project)
             if dest.isdir():
-                raise DuplicateError('Dest path already exists. Do not duplicate!')
+                raise TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate file objects to exist. Remove the original first'
+                    .format(dest)
+                )
             to_rename = False
 
         folder_dest = dest.parent
         if not source.resource or not dest.resource:
             dest.makedirs_p()
-        elif not dest_exists and folder_dest.resource:  # avoid calling makedirs_p on project
+        elif not dest_is_dir and folder_dest.resource:  # avoid calling makedirs_p on project
             folder_dest.makedirs_p()
 
         project_handler = dxpy.DXProject(source.canonical_project)
@@ -410,13 +589,21 @@ class DXPath(OBSPath):
             )
 
     def _movetree(self, dest):
-        """Moves the project or directory to a different folder within project
+        """Moves the project or directory to a different folder within project.
+        Similar to _clonetree except it moves the source tree within the same project.
+
+        Like copytree, if the destination exists as a folder already, the source dir is
+        moved inside that dest folder with its original name.
+
+        The source cannot be the root directory.
+
+        Refer to _clonetree or copytree for detailed information.
 
         Args:
-            dest (path): The destination directory path within same project
+            dest (Path): The destination directory path within same project
 
         Raises:
-            DuplicateError: When destination directory already exists
+            TargetExistsError: When destination directory already exists
             DNAnexusError: When attempting to move across projects
         """
         if dest.canonical_project != self.canonical_project:
@@ -429,19 +616,23 @@ class DXPath(OBSPath):
             dest = dest + ':'
 
         source = utils.remove_trailing_slash(self)
-        dest_exists = dest.isdir()
+        dest_is_dir = dest.isdir()
         to_rename = True
 
-        if dest_exists or utils.has_trailing_slash(dest):
+        if dest_is_dir or utils.has_trailing_slash(dest):
             dest = dest / source.name
             if dest.isdir():
-                raise DuplicateError('Dest path already exists. Do not duplicate!')
+                raise TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate file objects to exist. Remove the original first'
+                    .format(dest)
+                )
             to_rename = False
 
         folder_dest = dest.parent
         if not dest.resource:
             dest.makedirs_p()
-        elif not dest_exists and folder_dest.resource:  # avoid calling makedirs_p on project
+        elif not dest_is_dir and folder_dest.resource:  # avoid calling makedirs_p on project
             folder_dest.makedirs_p()
 
         project_handler = dxpy.DXProject(source.canonical_project)
@@ -469,9 +660,6 @@ class DXPath(OBSPath):
         Raises:
             ValueError: When source path is not a file
         """
-        if not self.isfile():
-            raise NotFoundError('No data object was found at given path ({}) on DNAnexus'
-                                .format(self))
         dxpy.download_dxfile(
             dxid=self.canonical_resource,
             filename=dest,
@@ -503,11 +691,12 @@ class DXPath(OBSPath):
         If some file errors, the files before will remain uploaded
 
         Args:
-            to_upload (List): A list of file names, directory names, or
-                OBSUploadObject objects to upload.
+            to_upload (List[Union[str, OBSUploadObject]]): A list of posix file names,
+                directory names, or OBSUploadObject objects to upload.
 
         Raises:
             ValueError: When source path is not a directory
+            TargetExistsError: When destination directory already exists
         """
         dx_upload_objects = [
             name for name in to_upload
@@ -523,6 +712,7 @@ class DXPath(OBSPath):
                             utils.file_name_to_object_name(f))
             for f in all_files_to_upload
         ])
+
         for upload_obj in dx_upload_objects:
             upload_obj.object_name = Path(upload_obj.object_name)
             upload_obj.source = Path(upload_obj.source)
@@ -530,31 +720,38 @@ class DXPath(OBSPath):
                 drive=self.drive, project=self.canonical_project,
                 path=upload_obj.object_name))
 
-            dest_exists = dest_file.isdir()
-            if upload_obj.source.isdir():
-                if dest_exists:
-                    raise DuplicateError('Dest path already exists. Do not duplicate!')
+            dest_is_dir = dest_file.isdir()
+            dest_is_file = dest_file.isfile()
+            source_is_file = upload_obj.source.isfile()
+            source_is_dir = upload_obj.source.isdir()
+            if source_is_file:
+                if dest_is_file:
+                    raise TargetExistsError(
+                        'Destination path ({}) already exists, will not cause '
+                        'duplicate file objects to exist. Remove the original first'
+                        .format(dest_file)
+                    )
+                else:
+                    dxpy.upload_local_file(
+                        filename=upload_obj.source,
+                        project=self.canonical_project,
+                        folder=dest_file.parent.resource or '/',
+                        parents=True,
+                        name=dest_file.name
+                    )
+            elif source_is_dir:
+                if dest_is_dir:
+                    raise TargetExistsError(
+                        'Destination path ({}) already exists, will not cause '
+                        'duplicate folders to exist. Remove the original first'
+                        .format(dest_file)
+                    )
                 else:
                     dest_file.makedirs_p()
                     continue
-
-            if dest_exists:
-                new_dest = dest_file / upload_obj.source.name
-                if new_dest.isfile():
-                    raise DuplicateError('Dest path already exists. Do not duplicate!')
-                folder_dest = dest_file
-                file_name = upload_obj.source.name
             else:
-                folder_dest = dest_file.parent
-                file_name = upload_obj.object_name.name
-
-            dxpy.upload_local_file(
-                filename=upload_obj.source,
-                project=self.canonical_project,
-                folder=folder_dest.resource or '/',
-                parents=True,
-                name=file_name
-            )
+                raise NotFoundError('Source path ({}) does not exist. Please provide '
+                                    'a valid source'.format(upload_obj.source))
 
     def open(self, mode='r', encoding=None):
         """
@@ -859,7 +1056,8 @@ class DXVirtualPath(DXPath):
         elif len(results) == 1:
             return results[0]['id']
         else:
-            raise NotFoundError('No data object was found for the given path on DNAnexus')
+            raise NotFoundError('No data object was found for the given path ({}) on DNAnexus'
+                                .format(self))
 
     @property
     def canonical_path(self):
