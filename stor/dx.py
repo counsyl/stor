@@ -68,7 +68,11 @@ def _dx_error_to_descriptive_exception(client_exception):
     """Converts dxpy errors to more descriptive exceptions with
     transaction ID"""
     http_status = getattr(client_exception, 'code', None)
-    exc_str = '{} - {}'.format(client_exception.name, client_exception.msg or client_exception.message)
+    if isinstance(client_exception, dxpy.DXAPIError):
+        exc_str = '{} - {}'.format(client_exception.name or '',
+                                   client_exception.msg or client_exception.message or '')
+    else:
+        exc_str = str(client_exception)
     if http_status == 403 or http_status == 401:
         logger.error('unauthorized error in dxpy operation - %s', exc_str)
         return UnauthorizedError(exc_str, client_exception)

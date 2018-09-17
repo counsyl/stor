@@ -1091,7 +1091,7 @@ class TestCopyTree(DXTestCase):
             test_folder=self.project, path='folder.txt/another_folder/temp_file.txt'))
         self.assertTrue(posix_p.exists())
 
-        with pytest.raises(dxpy.exceptions.DXFileError, match='already exists'):
+        with pytest.raises(dx.DNAnexusError, match='already exists'):
             dx_p.copytree(posix_folder_p_2)  # folder already exists
 
     def test_posix_file_to_dx(self):
