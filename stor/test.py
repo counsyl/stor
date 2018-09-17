@@ -289,10 +289,7 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
                              folder='/'+dx_p.parent.lstrip('/'),
                              project=self.proj_id) as f:
             f.write('data')
-        i = 0
-        while f._get_state().lower() != 'closed' and i < 15:
-            time.sleep(1)
-            i += 1  # to allow for max of 10s for file state to go to closed
+        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
         return f
 
     def setup_posix_files(self, files):
