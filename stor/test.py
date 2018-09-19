@@ -1,7 +1,6 @@
 import mock
 import unittest
 import os
-import time
 
 import dxpy
 from vcr_unittest import VCRMixin
@@ -188,18 +187,14 @@ class S3TestMixin(object):
         self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()
 
 
-# TODO(akumar)
 class DXTestMixin(VCRMixin):
-    """A mixin with helpers for mocking out swift.
+    """A mixin with helpers for testing dxpy.
 
     DXTestMixin should be used to create base test classes for anything
-    that accesses swift.
+    that accesses DNAnexus.
     """
-    def setup_dx_auth(self):
-        pass
-
     def assert_dx_lists_equal(self, r1, r2):
-        self.assertEquals(sorted(r1), sorted(r2))
+        self.assertEqual(sorted(r1), sorted(r2))
 
 
 class SwiftTestCase(unittest.TestCase, SwiftTestMixin):
@@ -262,33 +257,34 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
         return test_proj
 
     def setup_files(self, files):
-        """Sets up files for testing
+        """Sets up files for testing.
+        This does not assume the files will be closed by the end of this function.
 
         Args:
-            files (List[Str]): list of files relative to project root to be created on DX
-            Only virtual files are allowed
+            files (List[str]): list of files relative to project root to be created on DX
+            Only virtual paths are allowed. Path must start with '/'
         """
         for i, curr_file in enumerate(files):
             dx_p = Path(curr_file)
-            try:
-                self.project_handler.new_folder(dx_p.parent, parents=True)
-            except dxpy.exceptions.InvalidState:  # duplicate folder
-                pass
+            self.project_handler.new_folder(dx_p.parent, parents=True)
             with dxpy.new_dxfile(name=dx_p.name,
                                  folder='/'+dx_p.parent.lstrip('/'),
                                  project=self.proj_id) as f:
-                f.write('data'+str(i))
+                f.write('data{}'.format(i).encode())
 
     def setup_file(self, obj):
+        """Set up a closed file for testing.
+
+        Args:
+            obj (str): file relative to project root to be created on DX
+            Only virtual paths are allowed. Path must start with '/'
+        """
         dx_p = Path(obj)
-        try:
-            self.project_handler.new_folder(dx_p.parent or '/', parents=True)
-        except dxpy.exceptions.InvalidState:  # duplicate folder
-            pass
+        self.project_handler.new_folder(dx_p.parent, parents=True)
         with dxpy.new_dxfile(name=dx_p.name,
                              folder='/'+dx_p.parent.lstrip('/'),
                              project=self.proj_id) as f:
-            f.write('data')
+            f.write('data'.encode())
         f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
         return f
 

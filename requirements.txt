@@ -1,6 +1,9 @@
 # have to explicitly ban certain requests versions to match keystoneauth1 package
 requests!=2.12.2,!=2.13.0,>=2.10.0
 boto3>=1.4.0
+cached-property
+contextlib2
+git+https://github.com/dnanexus/dx-toolkit.git#egg=dxpy&subdirectory=/src/python
 python-keystoneclient>=1.8.1
 python-swiftclient
 six

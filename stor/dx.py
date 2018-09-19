@@ -1,5 +1,5 @@
 from cached_property import cached_property
-from functools import wraps
+from contextlib2 import contextmanager
 import logging
 import sys
 
@@ -64,7 +64,7 @@ class InconsistentUploadDownloadError(DNAnexusError):
     pass
 
 
-def _dx_error_to_descriptive_exception(client_exception):
+def _dx_error_to_descriptive_exception(client_exception):  # pragma: no cover
     """Converts dxpy errors to more descriptive exceptions with
     transaction ID"""
     http_status = getattr(client_exception, 'code', None)
@@ -92,16 +92,14 @@ def _dx_error_to_descriptive_exception(client_exception):
         return DNAnexusError(exc_str, client_exception)
 
 
-def _propagate_dx_exceptions(func):
-    """Bubbles all swift exceptions as `SwiftError` classes
+@contextmanager
+def _propagate_dx_exceptions():
+    """Bubbles all dxpy exceptions as `DNAnexusError` classes
     """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except DXError as e:
-            six.raise_from(_dx_error_to_descriptive_exception(e), e)
-    return wrapper
+    try:
+        yield
+    except DXError as e:
+        six.raise_from(_dx_error_to_descriptive_exception(e), e)
 
 
 class DXPath(OBSPath):
@@ -147,7 +145,6 @@ class DXPath(OBSPath):
         parts = self._get_parts()
         return parts[0] if len(parts) > 0 and parts[0] else None
 
-    @_propagate_dx_exceptions
     def temp_url(self, lifetime=300, filename=None):
         """Obtains a temporary URL to a DNAnexus data-object.
 
@@ -159,14 +156,15 @@ class DXPath(OBSPath):
         """
         if not self.resource:
             raise ValueError('DX Projects cannot have a temporary download url')
-        file_handler = dxpy.DXFile(dxid=self.canonical_resource,
-                                   project=self.canonical_project)
-        return file_handler.get_download_url(
-            duration=lifetime,
-            preauthenticated=True,
-            filename=filename,
-            project=self.canonical_project
-        )[0]
+        with _propagate_dx_exceptions():
+            file_handler = dxpy.DXFile(dxid=self.canonical_resource,
+                                       project=self.canonical_project)
+            return file_handler.get_download_url(
+                duration=lifetime,
+                preauthenticated=True,
+                filename=filename,
+                project=self.canonical_project
+            )[0]
 
     @property
     def resource(self):
@@ -181,7 +179,6 @@ class DXPath(OBSPath):
         else:
             return super(DXPath, self).dirname()
 
-    @_propagate_dx_exceptions
     def remove(self):
         """Removes a single object from DX platform
 
@@ -192,9 +189,10 @@ class DXPath(OBSPath):
             raise ValueError('DXPath must point to single data object to call remove')
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        file_handler.remove()
+        with _propagate_dx_exceptions():
+            file_handler.remove()
 
-    @_propagate_dx_exceptions
+    @_propagate_dx_exceptions()
     def rmtree(self):
         """
         Removes a resource and all of its contents.
@@ -212,7 +210,6 @@ class DXPath(OBSPath):
             raise NotFoundError('No folders were found with the given path ({})'
                                 .format(self), e)
 
-    @_propagate_dx_exceptions
     def makedirs_p(self):
         """Make directories, including parents on DX from DX folder paths.
 
@@ -223,7 +220,8 @@ class DXPath(OBSPath):
                 raise ValueError('Cannot create a project via makedirs_p()')
             return
         proj_handler = dxpy.DXProject(self.canonical_project)
-        proj_handler.new_folder(self.resource, parents=True)
+        with _propagate_dx_exceptions():
+            proj_handler.new_folder(self.resource, parents=True)
 
     def isdir(self):
         """Determine if path is an existing directory
@@ -254,7 +252,6 @@ class DXPath(OBSPath):
         except NotFoundError:
             return False
 
-    @_propagate_dx_exceptions
     def rename(self, new_name):
         """Rename a data object on the DX platform
 
@@ -270,9 +267,9 @@ class DXPath(OBSPath):
             return
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        file_handler.rename(new_name)
+        with _propagate_dx_exceptions():
+            file_handler.rename(new_name)
 
-    @_propagate_dx_exceptions
     def _clone(self, dest):
         """Clones the data object into the destination path.
         The original file is retained.
@@ -348,12 +345,12 @@ class DXPath(OBSPath):
             folder_dest = dest.parent
             folder_dest.makedirs_p()
 
-        new_file_h = file_handler.clone(project=dest.canonical_project,
-                                        folder=folder_dest.resource or '/')
-        if not dest_is_dir and not utils.has_trailing_slash(dest):
-            new_file_h.rename(dest.name)
+        with _propagate_dx_exceptions():
+            new_file_h = file_handler.clone(project=dest.canonical_project,
+                                            folder=folder_dest.resource or '/')
+            if not dest_is_dir and not utils.has_trailing_slash(dest):
+                new_file_h.rename(dest.name)
 
-    @_propagate_dx_exceptions
     def _move(self, dest):
         """Moves the data object to a different folder within project.
         Similar to _clone except it moves the source file within the same project.
@@ -402,10 +399,10 @@ class DXPath(OBSPath):
             folder_dest = dest.parent
             folder_dest.makedirs_p()
 
-        file_handler.move(folder_dest.resource or '/')
-
-        if not dest_is_dir and not utils.has_trailing_slash(dest):
-            file_handler.rename(dest.name)
+        with _propagate_dx_exceptions():
+            file_handler.move(folder_dest.resource or '/')
+            if not dest_is_dir and not utils.has_trailing_slash(dest):
+                file_handler.rename(dest.name)
 
     def copy(self, dest, move_within_project=False):
         """Copies data object to destination path.
@@ -542,7 +539,6 @@ class DXPath(OBSPath):
         else:
             super(DXPath, self).copytree(dest)  # for other filesystems, refer utils.copytree
 
-    @_propagate_dx_exceptions
     def _clonetree(self, dest):
         """Clones the project or directory into the destination path.
         The original tree is retained.
@@ -611,29 +607,28 @@ class DXPath(OBSPath):
             to_rename = False
 
         folder_dest = dest.parent
-        if not source.resource or not dest.resource:
+        if not source.resource:
             dest.makedirs_p()
         elif not dest_is_dir and folder_dest.resource:  # avoid calling makedirs_p on project
             folder_dest.makedirs_p()
 
         project_handler = dxpy.DXProject(source.canonical_project)
-        project_handler.clone(
-            container=dest.canonical_project,
-            destination=(folder_dest.resource or '/') if source.resource else dest.resource,
-            folders=[source.resource or '/']
-        )
-
-        if source.resource and to_rename:
-            moved_folder_path = folder_dest / source.name
-            dxpy.api.project_rename_folder(
-                dest.canonical_project,
-                input_params={
-                    'folder': moved_folder_path.resource,
-                    'name': dest.name
-                }
+        with _propagate_dx_exceptions():
+            project_handler.clone(
+                container=dest.canonical_project,
+                destination=(folder_dest.resource or '/') if source.resource else dest.resource,
+                folders=[source.resource or '/']
             )
+            if source.resource and to_rename:
+                moved_folder_path = folder_dest / source.name
+                dxpy.api.project_rename_folder(
+                    dest.canonical_project,
+                    input_params={
+                        'folder': moved_folder_path.resource,
+                        'name': dest.name
+                    }
+                )
 
-    @_propagate_dx_exceptions
     def _movetree(self, dest):
         """Moves the project or directory to a different folder within project.
         Similar to _clonetree except it moves the source tree within the same project.
@@ -670,34 +665,33 @@ class DXPath(OBSPath):
             if dest.isdir():
                 raise TargetExistsError(
                     'Destination path ({}) already exists, will not cause '
-                    'duplicate file objects to exist. Remove the original first'
+                    'duplicate folders to exist. Remove the original first'
                     .format(dest)
                 )
             to_rename = False
 
         folder_dest = dest.parent
-        if not dest.resource:
-            dest.makedirs_p()
-        elif not dest_is_dir and folder_dest.resource:  # avoid calling makedirs_p on project
+        if not dest_is_dir and folder_dest.resource:  # avoid calling makedirs_p on project
             folder_dest.makedirs_p()
 
         project_handler = dxpy.DXProject(source.canonical_project)
-        project_handler.move_folder(
-            folder=source.resource,
-            destination=folder_dest.resource or '/'
-        )
 
-        if to_rename:
-            moved_folder_path = folder_dest / source.name
-            dxpy.api.project_rename_folder(
-                dest.canonical_project,
-                input_params={
-                    'folder': moved_folder_path.resource,
-                    'name': dest.name
-                }
+        with _propagate_dx_exceptions():
+            project_handler.move_folder(
+                folder=source.resource,
+                destination=folder_dest.resource or '/'
             )
+            if to_rename:
+                moved_folder_path = folder_dest / source.name
+                dxpy.api.project_rename_folder(
+                    dest.canonical_project,
+                    input_params={
+                        'folder': moved_folder_path.resource,
+                        'name': dest.name
+                    }
+                )
 
-    @_propagate_dx_exceptions
+    @_propagate_dx_exceptions()
     def download_object(self, dest, **kwargs):
         """Download a single path or object to file.
 
@@ -713,7 +707,6 @@ class DXPath(OBSPath):
             project=self.canonical_project
         )
 
-    @_propagate_dx_exceptions
     def download(self, dest, **kwargs):
         """Download a directory.
 
@@ -726,13 +719,13 @@ class DXPath(OBSPath):
         if not self.isdir():
             raise NotFoundError('No folder or project was found at given path ({}) on DNAnexus'
                                 .format(self))
-        dxpy.download_folder(
-            project=self.canonical_project,
-            destdir=dest,
-            folder=self.resource or '/'
-        )
+        with _propagate_dx_exceptions():
+            dxpy.download_folder(
+                project=self.canonical_project,
+                destdir=dest,
+                folder=self.resource or '/'
+            )
 
-    @_propagate_dx_exceptions
     def upload(self, to_upload, **kwargs):
         """Upload a list of files and directories to a directory.
 
@@ -780,13 +773,14 @@ class DXPath(OBSPath):
                         .format(dest_file)
                     )
                 else:
-                    dxpy.upload_local_file(
-                        filename=upload_obj.source,
-                        project=self.canonical_project,
-                        folder=dest_file.parent.resource or '/',
-                        parents=True,
-                        name=dest_file.name
-                    )
+                    with _propagate_dx_exceptions():
+                        dxpy.upload_local_file(
+                            filename=upload_obj.source,
+                            project=self.canonical_project,
+                            folder=dest_file.parent.resource or '/',
+                            parents=True,
+                            name=dest_file.name
+                        )
             elif source_is_dir():
                 dest_is_dir = dest_file.isdir()
                 if dest_is_dir:
@@ -871,7 +865,6 @@ class DXPath(OBSPath):
             classname=classname
         )
 
-    @_propagate_dx_exceptions
     def listdir(self, only='all', canonicalize=False):
         """List the path as a dir, returning top-level directories and files.
 
@@ -894,11 +887,8 @@ class DXPath(OBSPath):
             'describe': {'fields': {'name': True, 'folder': True}},
             'folder': self.resource or '/'
         }
-        try:
+        with _propagate_dx_exceptions():
             obj_dict = dxpy.DXProject(dxid=proj_id).list_folder(**kwargs)
-        except dxpy.exceptions.ResourceNotFound:
-            raise NotFoundError('The specified folder ({}) was not found'.format(
-                self.resource))
         for key, values in obj_dict.items():
             for entry in values:
                 if canonicalize:
@@ -935,7 +925,6 @@ class DXPath(OBSPath):
                     ):
             yield data
 
-    @_propagate_dx_exceptions
     def walkfiles(self,
                   pattern=None,
                   canonicalize=False,
@@ -973,7 +962,8 @@ class DXPath(OBSPath):
             'limit': limit,
             'folder': (self.resource or '/') + (starts_with or '')
         }
-        list_gen = dxpy.find_data_objects(**kwargs)
+        with _propagate_dx_exceptions():
+            list_gen = dxpy.find_data_objects(**kwargs)
         for obj in list_gen:
             if canonicalize:
                 yield DXCanonicalPath('dx://{}:/{}'.format(obj['project'], obj['id']))
@@ -1026,7 +1016,7 @@ class DXPath(OBSPath):
         else:
             return self.stat()['size']
 
-    @_propagate_dx_exceptions
+    @_propagate_dx_exceptions()
     def stat(self):
         """Performs a stat on the path.
 
@@ -1043,10 +1033,10 @@ class DXVirtualPath(DXPath):
     """Class Handler for DXPath of form 'dx://project-{ID}:/a/b/c' or 'dx://a:/b/c'"""
 
     @property
-    @_propagate_dx_exceptions
     def virtual_project(self):
         if utils.is_valid_dxid(self.project, 'project'):
-            return dxpy.DXProject(dxid=self.project).name
+            with _propagate_dx_exceptions():
+                return dxpy.DXProject(dxid=self.project).name
         return self.project
 
     @property
@@ -1058,7 +1048,6 @@ class DXVirtualPath(DXPath):
         return self
 
     @cached_property
-    @_propagate_dx_exceptions
     def canonical_project(self):
         """Returns the unique project that matches the name that user has view access to.
         If no match is found, returns None
@@ -1070,12 +1059,13 @@ class DXVirtualPath(DXPath):
         if utils.is_valid_dxid(self.project, 'project'):
             return self.project
 
-        try:
-            proj_dict = dxpy.find_one_project(
-                name=self.project, level='VIEW', zero_ok=True, more_ok=False)
-        except DXSearchError as e:
-            raise DuplicateProjectError('Duplicate projects were found with given name ({})'
-                                        .format(self.project), e)
+        with _propagate_dx_exceptions():
+            try:
+                proj_dict = dxpy.find_one_project(
+                    name=self.project, level='VIEW', zero_ok=True, more_ok=False)
+            except DXSearchError as e:
+                raise DuplicateProjectError('Duplicate projects were found with given name ({})'
+                                            .format(self.project), e)
 
         if proj_dict is None:
             raise ProjectNotFoundError('No projects were found with given name ({})'
@@ -1084,7 +1074,6 @@ class DXVirtualPath(DXPath):
         return proj_dict['id']
 
     @cached_property
-    @_propagate_dx_exceptions
     def canonical_resource(self):
         """Returns the dx file-ID of the uniquely matched filename
 
@@ -1104,7 +1093,8 @@ class DXVirtualPath(DXPath):
             'project': self.canonical_project,
             'batchsize': 2
         }]
-        results = dxpy.resolve_data_objects(objects=objects)[0]
+        with _propagate_dx_exceptions():
+            results = dxpy.resolve_data_objects(objects=objects)[0]
         if len(results) > 1:
             raise DuplicateError('Multiple objects found at path ({}). '
                                  'Try using a canonical ID instead'.format(self))
@@ -1134,7 +1124,7 @@ class DXCanonicalPath(DXPath):
         return self.virtual_path.resource
 
     @cached_property
-    @_propagate_dx_exceptions
+    @_propagate_dx_exceptions()
     def virtual_path(self):
         proj = dxpy.DXProject(dxid=self.project)
         virtual_p = DXVirtualPath(self.drive + proj.name + ':/')
