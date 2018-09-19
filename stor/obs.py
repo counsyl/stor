@@ -265,7 +265,7 @@ class OBSFile(object):
 
     Just like with Python file objects, it's good practice to use it in a contextmanager::
 
-        with Path('swift://tenant/container/object').open(mode='r') as obj:
+        with Path('swift://tenant/container/object').open(mode='w') as obj:
             obj.write('Hello world!')
 
     .. note::

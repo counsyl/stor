@@ -373,7 +373,7 @@ def is_writeable(path, swift_retry_options=None):
     return answer
 
 
-def copy(source, dest, swift_retry_options=None):
+def copy(source, dest, swift_retry_options=None, **kwargs):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either OBS, posix, or
@@ -416,6 +416,8 @@ def copy(source, dest, swift_retry_options=None):
     source = Path(source)
     dest = Path(dest)
     swift_retry_options = swift_retry_options or {}
+    if is_dx_path(source) and is_dx_path(dest):
+        return source.copy(dest, **kwargs)
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
     if (is_s3_path(dest) or is_swift_path(dest)) and dest.is_ambiguous():
@@ -444,7 +446,7 @@ def copy(source, dest, swift_retry_options=None):
 
 
 def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
-             condition=None, **retry_args):
+             condition=None, **kwargs):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
@@ -500,6 +502,8 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
             used instead of shutil.copytree
         use_manifest (bool, default False): See `SwiftPath.upload` and
             `SwiftPath.download`.
+        condition (function(results) -> bool): See `SwiftPath.upload` and
+            `SwiftPath.download`.
         headers (List[str]): See `SwiftPath.upload`.
 
     Raises:
@@ -510,6 +514,8 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
 
     source = Path(source)
     dest = Path(dest)
+    if is_dx_path(source) and is_dx_path(dest):
+        return source.copytree(dest, **kwargs)
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
     from stor.windows import WindowsPath
@@ -520,7 +526,7 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
         dest.expand().abspath().parent.makedirs_p()
         if is_obs_path(source):
             source.download(dest, use_manifest=use_manifest,
-                            condition=condition, **retry_args)
+                            condition=condition, **kwargs)
         else:
             if copy_cmd:
                 copy_cmd = shlex.split(copy_cmd)
@@ -533,7 +539,7 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
     else:
         with source:
             dest.upload(['.'], use_manifest=use_manifest, headers=headers,
-                        condition=condition, **retry_args)
+                        condition=condition, **kwargs)
 
 
 def _safe_get_size(name):
