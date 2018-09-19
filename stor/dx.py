@@ -139,6 +139,11 @@ class DXPath(OBSPath):
     realpath = _noop('realpath')
     expanduser = _noop('expanduser')
 
+    def invalidate_cached_properties(self):
+        for prop in ('canonical_project', 'canonical_resource', 'virtual_path'):
+            if prop in self.__dict__:
+                del self.__dict__[prop]
+
     @property
     def project(self):
         """Returns the project name from the path or None"""
@@ -191,6 +196,7 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         with _propagate_dx_exceptions():
             file_handler.remove()
+        self.invalidate_cached_properties()
 
     @_propagate_dx_exceptions()
     def rmtree(self):
@@ -209,6 +215,7 @@ class DXPath(OBSPath):
         except dxpy.exceptions.ResourceNotFound as e:
             raise NotFoundError('No folders were found with the given path ({})'
                                 .format(self), e)
+        self.invalidate_cached_properties()
 
     def makedirs_p(self):
         """Make directories, including parents on DX from DX folder paths.
@@ -269,6 +276,7 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         with _propagate_dx_exceptions():
             file_handler.rename(new_name)
+        self.invalidate_cached_properties()
 
     def _clone(self, dest):
         """Clones the data object into the destination path.
@@ -403,6 +411,7 @@ class DXPath(OBSPath):
             file_handler.move(folder_dest.resource or '/')
             if not dest_is_dir and not utils.has_trailing_slash(dest):
                 file_handler.rename(dest.name)
+        self.invalidate_cached_properties()
 
     def copy(self, dest, move_within_project=False):
         """Copies data object to destination path.
@@ -690,6 +699,7 @@ class DXPath(OBSPath):
                         'name': dest.name
                     }
                 )
+        self.invalidate_cached_properties()
 
     @_propagate_dx_exceptions()
     def download_object(self, dest, **kwargs):
@@ -1021,7 +1031,9 @@ class DXPath(OBSPath):
         """Performs a stat on the path.
 
         Raises:
-            NotFoundError: When the project or resource cannot be found.
+            DuplicateError: If project or resource is not unique
+            NotFoundError: When the project or resource cannot be found
+            ValueError: If path is folder path
         """
         if not self.resource:
             return dxpy.DXProject(dxid=self.canonical_project).describe()

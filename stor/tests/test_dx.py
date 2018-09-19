@@ -1199,16 +1199,15 @@ class TestCopy(DXTestCase):
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/fold_file.txt')
         dx_p.copy(new_dx_p, move_within_project=True)
         self.assertTrue(new_dx_p.exists())
-        dx_p = DXPath(dx_p)  # to avoid cached describe values
         self.assertFalse(dx_p.exists())
         new_folder_dx_p = DXPath('dx://' + self.project + ':/another_folder/')
         with pytest.raises(dx.NotFoundError, match='No data object'):
             dx_p.copy(new_folder_dx_p, move_within_project=True)
         new_dx_p.copy(dx_p, move_within_project=True)  # restoring to original state
         dx_p.copy(new_folder_dx_p, move_within_project=True)
-        dx_p = DXPath(dx_p)
-        self.assertTrue(new_dx_p.exists())
+        new_dx_p = DXPath('dx://' + self.project + ':/another_folder/file.txt')
         self.assertFalse(dx_p.exists())
+        self.assertTrue(new_dx_p.exists())
 
     def test_dx_to_other_obs(self):
         self.setup_temporary_project()
