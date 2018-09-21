@@ -1,7 +1,6 @@
 import os
 import pytest
 import time
-from tempfile import NamedTemporaryFile
 import unittest
 
 import dxpy
@@ -9,6 +8,7 @@ import dxpy.bindings as dxb
 import mock
 import six.moves.urllib as urllib
 
+import stor
 from stor import exceptions
 from stor import Path
 from stor import utils
@@ -169,35 +169,57 @@ class TestRename(DXTestCase):
         self.assertTrue(dx_p.exists())
 
 
-@unittest.skip("skipping")
-class TestDXFile(DXTestCase):  # TODO
+class TestOpen(DXTestCase):
+    def test_append_mode_fail(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':temp_file')
+        with pytest.raises(ValueError, match='Append mode'):
+            dx_p.open(mode='a')
 
-    def test_read_on_open_file(self):
-        d = dxpy.bindings.dxfile_functions.new_dxfile()
-        self.assertEqual(d.describe()['state'], 'open')
-
-        dx_p = DXPath('dx://{}/{}'.format(self.project, d.name))
-        with self.assertRaisesRegexp(ValueError, 'not in closed state'):
-            dx_p.read_object()
-
-        d.remove()
-
-    def test_read_success_on_closed_file(self):
-        dx_p = DXPath('dx://{}/{}'.format(self.project, self.file_handler.name))
+    def test_read_on_open_buffer(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_folder/folder_file')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file')
+        with dx_p.open() as f:
+            content = f.read()
+        self.assertEqual(content, 'data')
+        with dx_p.open(mode='rb') as f:
+            content = f.read()
+        self.assertEqual(content, b'data')
         self.assertEqual(dx_p.read_object(), b'data')
-        self.assertEqual(dx_p.open().read(), 'data')
 
-    def test_iterating_over_files(self):
+    def test_read_fail_on_closed_buffer(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_folder/folder_file')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file')
+        f = dx_p.open()
+        f.close()
+        with pytest.raises(ValueError, match='closed file'):
+            f.read()
+
+    def test_read_on_open_dx_file(self):
+        self.setup_temporary_project()
+        dxpy.new_dxfile(name='temp_file',
+                        folder='/',
+                        project=self.proj_id)
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
+        with pytest.raises(dx.DNAnexusError, match='Cannot read from file'):
+            dx_p.open().read()
+
+    def test_write_read_over_files(self):
+        self.setup_temporary_project()
         data = b'''\
 line1
 line2
 line3
 line4
 '''
-        with dxpy.bindings.dxfile_functions.new_dxfile() as d:
-            d.write(data)
-        d.state = 'closed'
-        dx_p = DXPath('dx://{}/{}'.format(self.project, d.name))
+        dx_p = DXPath('dx://' + self.project + ':temp_file')
+        with dx_p.open(mode='wb') as f:
+            f.write(data)
+        f = dxpy.DXFile(dxid=dx_p.canonical_resource,
+                        project=dx_p.canonical_project)
+        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
         # open().read() should return str for r
         self.assertEqual(dx_p.open('r').read(), data.decode('ascii'))
         # open().read() should return bytes for rb
@@ -210,46 +232,58 @@ line4
         self.assertEqual(next(dx_p.open()), 'line1\n')
         self.assertEqual(next(iter(dx_p.open())), 'line1\n')
 
-    def test_write_multiple_w_context_manager(self, mock_upload):
-        dx_p = DXPath('dx://{}/{}'.format(self.project, self.file_handler.name))
+    def test_write_multiple_wo_context_manager(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
+        obj = dx_p.open(mode='wb')
+        obj.write(b'hello')
+        obj.write(b' world')
+        obj.close()
+        f = dxpy.DXFile(dxid=dx_p.canonical_resource,
+                        project=dx_p.canonical_project)
+        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
+        self.assertEqual(b'hello world', dx_p.read_object())
+
+    def test_write_multiple_flush_multiple_upload(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
         with dx_p.open(mode='wb') as obj:
             obj.write(b'hello')
+            obj.flush()
             obj.write(b' world')
-        self.assertIn(b'hello world', dx_p.read_object())
+            obj.flush()
+        f = dxpy.DXFile(dxid=dx_p.canonical_resource,
+                        project=dx_p.canonical_project)
+        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
+        self.assertEqual(dx_p.open().read(), 'hello world')
 
-    @mock.patch('time.sleep', autospec=True)
-    @mock.patch.object(DXPath, 'upload', autospec=True)
-    def test_write_multiple_flush_multiple_upload(self, mock_upload):
-        dx_p = DXPath('dx://project/obj')
-        with NamedTemporaryFile(delete=False) as ntf1,\
-                NamedTemporaryFile(delete=False) as ntf2,\
-                NamedTemporaryFile(delete=False) as ntf3:
-            with mock.patch('tempfile.NamedTemporaryFile', autospec=True) as ntf:
-                ntf.side_effect = [ntf1, ntf2, ntf3]
-                with dx_p.open(mode='wb') as obj:
-                    obj.write(b'hello')
-                    obj.flush()
-                    obj.write(b' world')
-                    obj.flush()
-                u1, u2, u3 = mock_upload.call_args_list
-                u1[0][1][0].source == ntf1.name
-                u2[0][1][0].source == ntf2.name
-                u3[0][1][0].source == ntf3.name
-                u1[0][1][0].object_name == dx_p.resource
-                u2[0][1][0].object_name == dx_p.resource
-                u3[0][1][0].object_name == dx_p.resource
-                self.assertEqual(open(ntf1.name).read(), 'hello')
-                self.assertEqual(open(ntf2.name).read(), 'hello world')
-                # third call happens because we don't care about checking for
-                # additional file change
-                self.assertEqual(open(ntf3.name).read(), 'hello world')
+    def test_read_dir_fail(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_folder/file')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        with pytest.raises(dx.NotFoundError, match='No data object'):
+            dx_p.open().read()
+        dx_p = DXPath('dx://' + self.project)
+        with pytest.raises(ValueError, match='Cannot read project'):
+            dx_p.open().read()
+
+    def test_write_to_project_fail(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project)
+        with pytest.raises(ValueError, match='Cannot write to project'):
+            with dx_p.open(mode='wb') as f:
+                f.write(b'data')
 
 
-@unittest.skip("skipping")
 class TestDXShared(SharedOBSFileCases, DXTestCase):
-    drive = 'dx://'
+    drive = 'dx://project:'  # project is required for DX paths
     path_class = DXPath
     normal_path = DXPath('dx://project:/obj')
+
+    def test_makedirs_p_does_nothing(self):
+        # skipping dumb test...because our project doesn't exist on DNAnexus
+        # Hence why to not have dumb tests.
+        pass
 
 
 class TestCanonicalProject(DXTestCase):
@@ -1197,7 +1231,7 @@ class TestCopy(DXTestCase):
                           '/another_folder/random_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/file.txt')
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/fold_file.txt')
-        dx_p.copy(new_dx_p, move_within_project=True)
+        stor.copy(dx_p, new_dx_p, move_within_project=True)
         self.assertTrue(new_dx_p.exists())
         self.assertFalse(dx_p.exists())
         new_folder_dx_p = DXPath('dx://' + self.project + ':/another_folder/')
@@ -1526,7 +1560,7 @@ class TestCopyTree(DXTestCase):
         self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         new_dx_p = DXPath('dx://' + self.project + ':/new_folder/folder2')
-        dx_p.copytree(new_dx_p, move_within_project=True)
+        stor.copytree(dx_p, new_dx_p, move_within_project=True)
         self.assertTrue(new_dx_p.isdir())
         new_file_dx_p = DXPath('dx://' + self.project + ':/new_folder/folder2/folder_file')
         self.assertTrue(new_file_dx_p.exists())

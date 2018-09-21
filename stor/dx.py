@@ -1,7 +1,10 @@
 from cached_property import cached_property
 from contextlib2 import contextmanager
+import locale
 import logging
 import sys
+import tempfile
+import warnings
 
 import dxpy
 from dxpy.exceptions import DXSearchError
@@ -11,6 +14,7 @@ import six
 from stor import exceptions as stor_exceptions
 from stor import Path
 from stor import utils
+from stor.obs import OBSFile
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 
@@ -824,12 +828,60 @@ class DXPath(OBSPath):
                 raise NotFoundError('Source path ({}) does not exist. Please provide '
                                     'a valid source'.format(upload_obj.source))
 
-    def open(self, mode='r', encoding=None):
+    def open(self, mode='r', encoding=None, **kwargs):
         """
-        Opens a OBSFile that can be read or written to and is uploaded to
-        the remote service.
+        Args:
+            mode (str): The mode of the resource. Can be "r" for
+                reading the resource, "w" for writing the
+                resource, and "a" for appending to the open resource.
+            encoding (str): the text encoding to use on read/write, defaults to
+                ``locale.getpreferredencoding(False)`` if not set. We *strongly* encourage you to
+                explicitly set an encoding when reading/writing text (because
+                writers from different computers may store data on DNAnexus in different ways).
+                Python 3 only.
         """
-        raise NotImplementedError
+        if mode == 'a':
+            raise ValueError('Append mode not supported for DX resources.')
+        self.encoding = encoding or locale.getpreferredencoding(False)
+        return OBSFile(self, mode=mode, encoding=encoding, **kwargs)
+
+    def read_object(self):
+        """Reads an individual object from DX.
+
+        Returns:
+            bytes: the raw bytes from the object on DX.
+        """
+        if not self.resource:
+            raise ValueError('Cannot read project. Please provide a valid file path')
+        file_handler = dxpy.DXFile(dxid=self.canonical_resource,
+                                   project=self.canonical_project)
+        with _propagate_dx_exceptions():
+            return file_handler.read(project=self.canonical_project)
+
+    def write_object(self, content, **kwargs):
+        """Writes an individual object to DX.
+
+        Note that this method writes the provided content to a temporary
+        file before uploading. This allows us to reuse code from DXPath's
+        uploader (static large object support, etc.).
+
+        Args:
+            content (bytes): raw bytes to write to OBS
+            **kwargs: Keyword arguments to pass to
+                `DXPath.upload`
+        """
+        if not self.resource:
+            raise ValueError('Cannot write to project. Please provide a file path')
+        if not isinstance(content, bytes):  # pragma: no cover
+            warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
+        mode = 'wb' if type(content) == bytes else 'wt'
+        if self.isfile():
+            self.remove()
+        with tempfile.NamedTemporaryFile(mode=mode) as fp:
+            fp.write(content)
+            fp.flush()
+            suo = OBSUploadObject(fp.name, object_name=self.resource)
+            return self.upload([suo], **kwargs)
 
     def list(self,
              canonicalize=False,
