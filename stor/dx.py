@@ -119,13 +119,11 @@ class DXPath(OBSPath):
 
     def _get_parts(self):
         """Returns the path parts (excluding the drive) as a list of strings."""
-        parts = super(DXPath, self)._get_parts()
-        if len(parts) > 0 and parts[0]:
-            # first part can be 'proj:file' or 'proj:' or 'proj'
-            parts_first = parts[0].split(':')
-            parts[0] = parts_first[0]
-            if len(parts_first) > 1 and parts_first[1]:
-                parts.insert(1, parts_first[1])
+        colon_pieces = self[len(self.drive):].split(':', 1)
+        project = colon_pieces[0]
+        resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')
+        parts = resource.split('/')
+        parts.insert(0, project)
         return parts
 
     def _noop(attr_name):
@@ -173,6 +171,7 @@ class DXPath(OBSPath):
 
     @property
     def resource(self):
+        """Returns the resource as a ``PosixPath`` object or None."""
         parts = self._get_parts()
         joined_resource = '/'.join(parts[1:]) if len(parts) > 1 else None
         return self.parts_class('/'+joined_resource) if joined_resource else None
@@ -182,7 +181,26 @@ class DXPath(OBSPath):
         if not self.resource:
             return self
         else:
-            return super(DXPath, self).dirname()
+            parts = self._get_parts()
+            if len(parts) == 2:  # paths like ('dx://proj:file') need different logic
+                parts[0] += ':'
+                new_path = '/'.join(parts)
+                return self.path_class(self.drive + self.path_module.dirname(new_path))
+            else:
+                return super(DXPath, self).dirname()
+
+    @property
+    def name(self):
+        """Returns base name of path. Returns empty string if path is a project or
+        has trailing slash
+        """
+        parts = self._get_parts()
+        if len(parts) == 2 and parts[1]:  # paths like ('dx://proj:file') need different logic
+            parts[0] += ':'
+            new_path = '/'.join(parts)
+            return self.parts_class(self.path_module.basename(new_path))
+        else:
+            return super(DXPath, self).name
 
     def remove(self):
         """Removes a single object from DX platform

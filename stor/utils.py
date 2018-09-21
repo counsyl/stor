@@ -415,7 +415,7 @@ def copy(source, dest, swift_retry_options=None, **kwargs):
 
     source = Path(source)
     dest = Path(dest)
-    swift_retry_options = swift_retry_options or {}
+    swift_retry_options = kwargs or {}
     if is_dx_path(source) and is_dx_path(dest):
         return source.copy(dest, **kwargs)
     if is_obs_path(source) and is_obs_path(dest):
