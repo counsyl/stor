@@ -124,16 +124,16 @@ Suppose we are trying to copy a file to a destination path::
 
 The outcome of the above commands is determined by the file/folder structure
 already present at the destination. If ``project2:/new_folder`` is an already
-existing directory, stor will attempt to copy the file under that folder (i.e.
-as ``dx://project2:/new_folder/file.txt``. However, if this final destination
-path also exists, it raises a `TargetExistsError`.
+existing directory, stor will set the new destination of the file as under that
+folder (i.e. as ``dx://project2:/new_folder/file.txt``). If the final destination
+path already exists, it deletes this file and copies the new file there.
 Conversely, if ``project2:/new_folder`` is not an existing directory, stor
 attempts to copy ``file.txt`` to ``project2:/new_folder`` as a file (remember:
 files without extensions are allowed, hence stor has no reason to believe
 ``new_folder`` is not a filename we're trying to copy to). Thus, stor will
-copy that file to the *file* ``project2:/new_folder``. The caveat here again
-is that if ``project2:/new_folder`` already existed as a file, a
-`TargetExistsError` is thrown.
+copy our file to the *file* ``project2:/new_folder``. The caveat here again
+is that if ``project2:/new_folder`` already existed as a file, it is deleted,
+before a copy is attempted.
 
 Copytree also works in a similar fashion, wherein directory names are compared,
 instead of filenames. Suppose we are trying to copytree a directory::
@@ -142,11 +142,13 @@ instead of filenames. Suppose we are trying to copytree a directory::
     OR
     Path('dx://project1:/folder').copytree('dx://project2:/new_folder')
 
-Again, if the ``project2:/new_folder`` is an already existing directory,stor
-will attempt to copy the folder as a subfolder to that directory (i.e. as
-``dx://project2:/new_folder/folder``. If this new destination is also already
-present, a `TargetExistsError` is raised. If ``project2:/new_folder`` is not
-originally present, then the folder is copied to this path.
+Again, if the ``project2:/new_folder`` is an already existing directory, stor
+will set the new destination for the folder as a subfolder to that directory
+(i.e. as ``dx://project2:/new_folder/folder``. However, if this new destination is
+already present, a `TargetExistsError` is raised, instead of deleting it like in
+`copy`, because we don't wish to delete full directories through copytree
+(use `DXPath.rmtree` for that) or merge two directories. If ``project2:/new_folder``
+is not originally present, then the folder is copied to this path.
 
 The above discussion was for DNAnexus to DNAnexus paths. The scenario shifts
 for posix to DX or DX to posix paths. For posix to DX paths, the destination
@@ -158,3 +160,19 @@ is raised. Similarly for copytree on a directory. This behavior is the same
 as other OBS services (SwiFT/S3) that has been traditionally applied.
 For DX to posix paths also, the traditional behavior has been followed,
 to maintain consistency on posix systems.
+
+Open on stor
+------------
+The `DXPath.open` functionality in stor works by returning an instance of
+``stor.obs.OBSFile`` like with other OBS paths(Swift/S3). Although the python
+package of DNAnexus ``dxpy`` also has an open functionality on their DXFile,
+this is not carried over to stor. One of the main reasons to do this is to wrap
+the scope of dxfile.open to what is expected of stor. As an example, ``dxpy``'s
+version of ``DXFile.open`` does not have ``readline`` and ``readlines`` methods
+for reading the file. On the other hand, ``dxpy`` does support an 'append' mode
+to their ``DXFile.open`` which can be confusing to a stor user, because there
+are very restricted scenarios this can be used in, and the user would have to
+know the different internal states of a file on the DNAnexus platform,
+what they mean, when they happen, what operations are allowed on them, etc.
+By instantiating ``stor.obs.OBSFile`` for `DXPath.open`, we maintain the
+support that is standard by stor, without any real decrease in functionality.
