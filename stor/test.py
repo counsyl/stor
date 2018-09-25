@@ -1,9 +1,11 @@
+import inspect
 import mock
 import unittest
 import os
+import sys
 
 import dxpy
-from vcr_unittest import VCRMixin
+import vcr
 
 from stor import Path
 from stor import s3
@@ -187,12 +189,42 @@ class S3TestMixin(object):
         self.mock_get_s3_transfer_config = s3_transfer_config_patcher.start()
 
 
-class DXTestMixin(VCRMixin):
+class DXTestMixin(object):
     """A mixin with helpers for testing dxpy.
 
     DXTestMixin should be used to create base test classes for anything
     that accesses DNAnexus.
     """
+    vcr_enabled = True  # switch this to False to deactivate vcr recording
+
+    def setUp(self):
+        super(DXTestMixin, self).setUp()
+        if self.vcr_enabled:
+            kwargs = self._get_vcr_kwargs()
+            myvcr = self._get_vcr(**kwargs)
+            cm = myvcr.use_cassette(self._get_cassette_name())
+            self.cassette = cm.__enter__()
+            self.addCleanup(cm.__exit__, None, None, None)
+
+    def _get_vcr_kwargs(self, **kwargs):
+        # kwargs.update({'record_mode': 'new_episodes'})
+        kwargs.update({'filter_headers': ['authorization']})
+        return kwargs
+
+    def _get_vcr(self, **kwargs):
+        if 'cassette_library_dir' not in kwargs:
+            kwargs['cassette_library_dir'] = self._get_cassette_library_dir()
+        myvcr = vcr.VCR(**kwargs)
+        return myvcr
+
+    def _get_cassette_library_dir(self):
+        testdir = os.path.dirname(inspect.getfile(self.__class__))
+        cassette_dir = os.path.join(testdir, 'cassettes_py{}'.format(sys.version_info[0]))
+        return os.path.join(cassette_dir, self.__class__.__name__)
+
+    def _get_cassette_name(self):
+        return '{}.yaml'.format(self._testMethodName)
+
     def assert_dx_lists_equal(self, r1, r2):
         self.assertEqual(sorted(r1), sorted(r2))
 
@@ -226,20 +258,12 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
 
 
 class DXTestCase(DXTestMixin, unittest.TestCase):
-    """A TestCase class that sets up DNAnexus vars and provides additional assertions"""
+    """A TestCase class that sets up DNAnexus vars and provides additional assertions.
 
-    def _get_vcr_kwargs(self):
-        kwargs = super(DXTestCase, self)._get_vcr_kwargs()
-        kwargs.update({'record_mode': 'new_episodes'})
-        kwargs.update({'filter_headers': ['authorization']})
-        return kwargs
-
-    def _get_cassette_library_dir(self):
-        cassette_dir = super(DXTestCase, self)._get_cassette_library_dir()
-        return os.path.join(cassette_dir, self.__class__.__name__)
-
-    def _get_cassette_name(self):
-        return '{0}.yaml'.format(self._testMethodName)
+    Since DXTestCase inherits from DXTestMixin, all the tests under DXTestCase are
+    auto-wrapped with VCRpy, and hence use cassettes for playback.
+    Look into `DXTestMixin` to turn off VCRpy and additional details.
+    """
 
     def new_proj_name(self):
         return '{0}.{1}'.format(self.__class__.__name__,

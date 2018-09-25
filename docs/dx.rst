@@ -146,7 +146,7 @@ Again, if the ``project2:/new_folder`` is an already existing directory, stor
 will set the new destination for the folder as a subfolder to that directory
 (i.e. as ``dx://project2:/new_folder/folder``. However, if this new destination is
 already present, a `TargetExistsError` is raised, instead of deleting it like in
-`copy`, because we don't wish to delete full directories through copytree
+`DXPath.copy`, because we don't wish to delete full directories through copytree
 (use `DXPath.rmtree` for that) or merge two directories. If ``project2:/new_folder``
 is not originally present, then the folder is copied to this path.
 
@@ -163,7 +163,7 @@ to maintain consistency on posix systems.
 
 Open on stor
 ------------
-The `DXPath.open` functionality in stor works by returning an instance of
+The ``open`` functionality in stor works by returning an instance of
 ``stor.obs.OBSFile`` like with other OBS paths(Swift/S3). Although the python
 package of DNAnexus ``dxpy`` also has an open functionality on their DXFile,
 this is not carried over to stor. One of the main reasons to do this is to wrap
@@ -174,5 +174,5 @@ to their ``DXFile.open`` which can be confusing to a stor user, because there
 are very restricted scenarios this can be used in, and the user would have to
 know the different internal states of a file on the DNAnexus platform,
 what they mean, when they happen, what operations are allowed on them, etc.
-By instantiating ``stor.obs.OBSFile`` for `DXPath.open`, we maintain the
+By instantiating ``stor.obs.OBSFile`` for ``open``, we maintain the
 support that is standard by stor, without any real decrease in functionality.

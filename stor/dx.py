@@ -1,6 +1,5 @@
 from cached_property import cached_property
 from contextlib2 import contextmanager
-import locale
 import logging
 import sys
 import tempfile
@@ -14,7 +13,6 @@ import six
 from stor import exceptions as stor_exceptions
 from stor import Path
 from stor import utils
-from stor.obs import OBSFile
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 
@@ -109,13 +107,13 @@ def _propagate_dx_exceptions():
 class DXPath(OBSPath):
     """
         Provides the ability to manipulate and access resources on DNAnexus
-        with a similar interface to the path library.
+        servers with stor interfaces.
         """
 
     def __new__(cls, path):
         """Custom __new__ method so that the validation checks happen during creation
 
-        This ensures invalid dx paths like DXPath('dx://) are never initialized
+        This ensures invalid dx paths like DXPath('dx://') are never initialized
         """
         return super(DXPath, cls).__new__(Path, path)
 
@@ -141,7 +139,7 @@ class DXPath(OBSPath):
     realpath = _noop('realpath')
     expanduser = _noop('expanduser')
 
-    def invalidate_cached_properties(self):
+    def clear_cached_properties(self):
         for prop in ('canonical_project', 'canonical_resource', 'virtual_path'):
             if prop in self.__dict__:
                 del self.__dict__[prop]
@@ -218,7 +216,7 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         with _propagate_dx_exceptions():
             file_handler.remove()
-        self.invalidate_cached_properties()
+        self.clear_cached_properties()
 
     @_propagate_dx_exceptions()
     def rmtree(self):
@@ -237,7 +235,7 @@ class DXPath(OBSPath):
         except dxpy.exceptions.ResourceNotFound as e:
             raise NotFoundError('No folders were found with the given path ({})'
                                 .format(self), e)
-        self.invalidate_cached_properties()
+        self.clear_cached_properties()
 
     def makedirs_p(self):
         """Make directories, including parents on DX from DX folder paths.
@@ -298,7 +296,7 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         with _propagate_dx_exceptions():
             file_handler.rename(new_name)
-        self.invalidate_cached_properties()
+        self.clear_cached_properties()
 
     def _clone(self, dest):
         """Clones the data object into the destination path.
@@ -433,9 +431,9 @@ class DXPath(OBSPath):
             file_handler.move(folder_dest.resource or '/')
             if not dest_is_dir and not utils.has_trailing_slash(dest):
                 file_handler.rename(dest.name)
-        self.invalidate_cached_properties()
+        self.clear_cached_properties()
 
-    def copy(self, dest, move_within_project=False):
+    def copy(self, dest, move_within_project=True):
         """Copies data object to destination path.
 
         If dest already exists as a directory on the DX platform, the file is copied
@@ -459,7 +457,7 @@ class DXPath(OBSPath):
             anotherDxProject/
             - b.txt
 
-        And, if the destination already exists as a directory, i.e. we have
+        And, if the destination already exists as a directory, i.e. we have::
 
             dxProject/
             - a/
@@ -472,7 +470,7 @@ class DXPath(OBSPath):
 
             Path('dx://dxProject:/a/1.txt').copy('dx://anotherDxProject/b.txt')
 
-        Will yield the resulting structure to be:
+        Will yield the resulting structure to be::
 
             anotherDxProject/
             - b.txt/
@@ -507,9 +505,9 @@ class DXPath(OBSPath):
             else:
                 raise NotFoundError('No data object was found for the given path on DNAnexus')
         else:
-            super(DXPath, self).copy(dest)  # for other filesystems, refer utils.copy
+            super(DXPath, self).copy(dest)  # for other filesystems, delegate to utils.copy
 
-    def copytree(self, dest, move_within_project=False):
+    def copytree(self, dest, move_within_project=True):
         """Copies a source directory to a destination directory.
         This is not an atomic operation.
 
@@ -632,7 +630,7 @@ class DXPath(OBSPath):
             if dest.isdir():
                 raise TargetExistsError(
                     'Destination path ({}) already exists, will not cause '
-                    'duplicate file objects to exist. Remove the original first'
+                    'duplicate folders to exist. Remove the original first'
                     .format(dest)
                 )
             to_rename = False
@@ -721,7 +719,7 @@ class DXPath(OBSPath):
                         'name': dest.name
                     }
                 )
-        self.invalidate_cached_properties()
+        self.clear_cached_properties()
 
     @_propagate_dx_exceptions()
     def download_object(self, dest, **kwargs):
@@ -827,23 +825,6 @@ class DXPath(OBSPath):
             else:
                 raise NotFoundError('Source path ({}) does not exist. Please provide '
                                     'a valid source'.format(upload_obj.source))
-
-    def open(self, mode='r', encoding=None, **kwargs):
-        """
-        Args:
-            mode (str): The mode of the resource. Can be "r" for
-                reading the resource, "w" for writing the
-                resource, and "a" for appending to the open resource.
-            encoding (str): the text encoding to use on read/write, defaults to
-                ``locale.getpreferredencoding(False)`` if not set. We *strongly* encourage you to
-                explicitly set an encoding when reading/writing text (because
-                writers from different computers may store data on DNAnexus in different ways).
-                Python 3 only.
-        """
-        if mode == 'a':
-            raise ValueError('Append mode not supported for DX resources.')
-        self.encoding = encoding or locale.getpreferredencoding(False)
-        return OBSFile(self, mode=mode, encoding=encoding, **kwargs)
 
     def read_object(self):
         """Reads an individual object from DX.
@@ -1112,10 +1093,11 @@ class DXPath(OBSPath):
 
 
 class DXVirtualPath(DXPath):
-    """Class Handler for DXPath of form 'dx://project-{ID}:/a/b/c' or 'dx://a:/b/c'"""
+    """Class Handler for DXPath of form 'dx://project-{dxID}:/a/b/c' or 'dx://a:/b/c'"""
 
     @property
     def virtual_project(self):
+        """Returns the virtual name of the project associated with the DXVirtualPath"""
         if utils.is_valid_dxid(self.project, 'project'):
             with _propagate_dx_exceptions():
                 return dxpy.DXProject(dxid=self.project).name
@@ -1123,16 +1105,18 @@ class DXVirtualPath(DXPath):
 
     @property
     def virtual_resource(self):
+        """Returns the human readable path of the resource associated with the DXVirtualPath"""
         return self.resource
 
     @property
     def virtual_path(self):
+        """Returns the DXVirtualPath instance"""
         return self
 
     @cached_property
     def canonical_project(self):
-        """Returns the unique project that matches the name that user has view access to.
-        If no match is found, returns None
+        """Returns the ID of the unique project that matches the name that user has at least
+        view access to. If no match is found, returns None
 
         Raises:
             DuplicateProjectError: If project name is not unique on DX platform
@@ -1188,26 +1172,31 @@ class DXVirtualPath(DXPath):
 
     @property
     def canonical_path(self):
-        """Returns the unique file that matches the given path"""
+        """Returns the unique file or project that matches the given path"""
         return DXCanonicalPath('{drive}{proj_id}:/{resource}'.format(
             drive=self.drive, proj_id=self.canonical_project,
             resource=(self.canonical_resource or '')))
 
 
 class DXCanonicalPath(DXPath):
-    """Class Handler for DXPath of form 'dx://project-{ID}:/file-{ID}' or 'dx://project-{ID}:'"""
+    """Class Handler for DXPath in canonicalized form:
+    'dx://project-{dxID}:/file-{dxID}' or 'dx://project-{dxID}:'
+    """
 
     @property
     def virtual_project(self):
+        """Returns the virtual name of the project associated with the DXCanonicalPath"""
         return self.virtual_path.project
 
     @property
     def virtual_resource(self):
+        """Returns the human readable path of the resource associated with the DXCanonicalPath"""
         return self.virtual_path.resource
 
     @cached_property
     @_propagate_dx_exceptions()
     def virtual_path(self):
+        """Returns the DXVirtualPath instance equivalent to the DXCanonicalPath"""
         proj = dxpy.DXProject(dxid=self.project)
         virtual_p = DXVirtualPath(self.drive + proj.name + ':/')
         if self.resource:
@@ -1218,12 +1207,15 @@ class DXCanonicalPath(DXPath):
 
     @property
     def canonical_project(self):
+        """Returns the canonical dxID of the project"""
         return self.project
 
     @property
     def canonical_resource(self):
+        """Returns the canonical dxID of the file resource"""
         return self.resource.lstrip('/') if self.resource else None
 
     @property
     def canonical_path(self):
+        """Returns the DXCanonicalPath instance"""
         return self

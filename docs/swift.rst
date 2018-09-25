@@ -77,13 +77,6 @@ Note that if you want to combine multiple conditions, you can do this easily as:
   condition = lambda results: all(f(results) for f in my_list_of_conditions)
 
 
-SwiftFile
----------
-
-.. autoclass:: SwiftFile
-  :members:
-
-
 SwiftUploadObject
 -----------------
 

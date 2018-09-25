@@ -54,7 +54,6 @@ from stor import is_swift_path
 from stor import settings
 from stor import utils
 from stor.base import Path
-from stor.obs import OBSFile
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
@@ -102,7 +101,6 @@ ConditionNotMetError = stor_exceptions.ConditionNotMetError
 ConflictError = stor_exceptions.ConflictError
 UnavailableError = stor_exceptions.UnavailableError
 UnauthorizedError = stor_exceptions.UnauthorizedError
-SwiftFile = OBSFile
 SwiftUploadObject = OBSUploadObject
 
 
@@ -671,31 +669,6 @@ class SwiftPath(OBSPath):
             fp.flush()
             suo = OBSUploadObject(fp.name, object_name=self.resource)
             return self.upload([suo], **swift_upload_args)
-
-    def open(self, mode='r', encoding=None, swift_upload_options=None):
-        """Opens a `SwiftFile` that can be read or written to.
-
-        For examples of reading and writing opened objects, view
-        `SwiftFile`.
-
-        Args:
-            mode (str): The mode of object IO. Currently supports reading
-                ("r" or "rb") and writing ("w", "wb")
-            encoding (str): text encoding to use. Defaults to
-                ``locale.getpreferredencoding(False)`` (Python 3 only)
-            swift_upload_options (dict): DEPRECATED (use `stor.settings.use()`
-                instead). A dictionary of arguments that will be
-                passed as keyword args to `SwiftPath.upload` if any writes
-                occur on the opened resource.
-
-        Returns:
-            SwiftFile: The swift object.
-
-        Raises:
-            SwiftError: A swift client error occurred.
-        """
-        swift_upload_options = swift_upload_options or {}
-        return SwiftFile(self, mode=mode, encoding=encoding, **swift_upload_options)
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self,

@@ -142,12 +142,35 @@ class OBSPath(Path):
         """
         raise NotImplementedError
 
-    def open(self, mode='r', encoding=None):
+    def open(self, mode='r', encoding=None, **kwargs):
         """
         Opens a OBSFile that can be read or written to and is uploaded to
         the remote service.
+
+        For examples of reading and writing opened objects, view
+        OBSFile.
+
+        Args:
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
+            encoding (str): text encoding to use. Defaults to
+                ``locale.getpreferredencoding(False)`` (Python 3 only)
+            kwargs (dict): DEPRECATED FOR SWIFT (use `stor.settings.use()`
+                instead). A dictionary of arguments that will be
+                passed as keyword args to `SwiftPath.upload` or `DXPath.upload`
+                if any writes occur on the opened resource.
+
+        Returns:
+            OBSFile: The file object for Swift/S3/DX.
+
+        Raises:
+            SwiftError: A swift client error occurred.
+            DNAnexusError: A dxpy client error occured.
+            RemoteError: A s3 client error occurred.
         """
-        raise NotImplementedError
+        swift_upload_options = kwargs.pop('swift_upload_options', {})
+        kwargs.update(**swift_upload_options)
+        return OBSFile(self, mode=mode, encoding=encoding, **kwargs)
 
     def list(self):
         """List contents using the resource of the path as a prefix."""
