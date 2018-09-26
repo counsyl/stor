@@ -197,7 +197,7 @@ class DXTestMixin(object):
     """
     vcr_enabled = True  # switch this to False to deactivate vcr recording
 
-    def setUp(self):
+    def setUp(self):  # pragma: no cover
         super(DXTestMixin, self).setUp()
         if self.vcr_enabled:
             kwargs = self._get_vcr_kwargs()
@@ -212,7 +212,7 @@ class DXTestMixin(object):
         return kwargs
 
     def _get_vcr(self, **kwargs):
-        if 'cassette_library_dir' not in kwargs:
+        if 'cassette_library_dir' not in kwargs: # pragma: no cover
             kwargs['cassette_library_dir'] = self._get_cassette_library_dir()
         myvcr = vcr.VCR(**kwargs)
         return myvcr

@@ -148,14 +148,14 @@ class TestRename(DXTestCase):
 
     def test_rename_folder_fail(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file')
+        self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         with pytest.raises(dx.NotFoundError, match='No data object was found'):
             dx_p.rename('folder')
 
     def test_rename_file_pass(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file')
+        self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file')
         dx_p.rename('folder_file.txt')
         new_dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
@@ -163,7 +163,7 @@ class TestRename(DXTestCase):
 
     def test_rename_to_self(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file')
+        self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file')
         dx_p.rename('folder_file')
         self.assertTrue(dx_p.exists())
@@ -259,7 +259,7 @@ line4
 
     def test_read_dir_fail(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/file')
+        self.setup_files(['/temp_folder/file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         with pytest.raises(dx.NotFoundError, match='No data object'):
             dx_p.open().read()
@@ -329,7 +329,7 @@ class TestCanonicalResource(DXTestCase):
 
     def test_unique_resource(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_file.txt')
+        self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://'+self.project + ':/temp_file.txt')
         self.assertTrue(utils.is_valid_dxid(dx_p.canonical_resource, 'file'))
 
@@ -348,7 +348,7 @@ class TestCanonicalResource(DXTestCase):
 
     def test_virtual_on_virtual(self):
         self.setup_temporary_project()
-        self.setup_file('/folder_file')
+        self.setup_files(['/folder_file'])
         dx_p = DXPath('dx://' + self.proj_id + ':/folder_file')
         self.assertEqual(dx_p.virtual_path, dx_p)
         self.assertEqual(dx_p.virtual_resource, '/folder_file')
@@ -369,7 +369,7 @@ class TestListDir(DXTestCase):
 
     def test_listdir_file(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_file.txt')
+        self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://'+self.project+':/temp_file.txt')
         with pytest.raises(dx.NotFoundError, match='specified folder'):
             dx_p.listdir()
@@ -430,7 +430,7 @@ class TestListDir(DXTestCase):
 
     def test_listdir_on_canonical_resource(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_file.txt')
+        self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt').canonical_path
         with pytest.raises(dx.NotFoundError, match='specified folder'):
             dx_p.listdir()
@@ -470,7 +470,7 @@ class TestList(DXTestCase):
 
     def test_list_file(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_file.txt')
+        self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://'+self.project+':/temp_file.txt')
         results = dx_p.list()
         self.assertEqual(results, [])
@@ -579,7 +579,7 @@ class TestList(DXTestCase):
 
     def test_list_on_canonical_resource(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_file.txt')
+        self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt').canonical_path
         results = dx_p.list()
         self.assertEqual(results, [])
@@ -650,8 +650,7 @@ class TestWalkFiles(DXTestCase):
 
     def test_pattern_no_match(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_folder/folder_file.csv',
-                          '/random_file.txt'])
+        self.setup_files(['/temp_folder/folder_file.csv'])
         dx_p = DXPath('dx://'+self.project)
         results = list(dx_p.walkfiles(pattern='*temp*'))
         self.assertEqual(results, [])
@@ -660,7 +659,7 @@ class TestWalkFiles(DXTestCase):
 class TestStat(DXTestCase):
     def test_stat_folder(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file.csv')
+        self.setup_files(['/temp_folder/folder_file.csv'])
         with pytest.raises(ValueError, match='Invalid operation'):
             DXPath('dx://'+self.project+':/temp_folder/').stat()
         with pytest.raises(dx.NotFoundError, match='No data object was found'):
@@ -725,32 +724,9 @@ class TestExists(DXTestCase):
         result = dx_p.exists()
         self.assertFalse(result)
 
-    def test_false_folder_w_file(self):
-        self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file.txt')
-        dx_p = DXPath('dx://' + self.project + ':/random_folder/folder_file.txt')
-        result = dx_p.exists()
-        self.assertFalse(result)
-
-    def test_raises_on_duplicate(self):
-        self.setup_temporary_project()
-        self.setup_files(['/temp_folder/folder_file.txt',
-                          '/temp_folder/folder_file.txt'])
-        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
-        with pytest.raises(dx.DuplicateError, match='Multiple objects found'):
-            dx_p.exists()
-
-    def test_true_file_folder_share_name(self):
-        self.setup_temporary_project()
-        self.setup_files(['/temp_folder/folder_file.txt',
-                          '/temp_folder'])
-        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        result = dx_p.exists()
-        self.assertTrue(result)
-
     def test_true_file(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file.txt')
+        self.setup_files(['/temp_folder/folder_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
         result = dx_p.exists()
         self.assertTrue(result)
@@ -764,10 +740,11 @@ class TestExists(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/')
         result = dx_p.exists()
         self.assertTrue(result)
+        self.assertFalse(dx_p.isfile())
 
     def test_true_dir_with_object(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file.txt')
+        self.setup_files(['/temp_folder/folder_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         result = dx_p.exists()
         self.assertTrue(result)
@@ -1238,8 +1215,7 @@ class TestCopy(DXTestCase):
 
     def test_dx_to_dx_within_project_pass(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_folder/file.txt',
-                          '/another_folder/random_file.txt'])
+        self.setup_files(['/temp_folder/file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/file.txt')
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/fold_file.txt')
         stor.copy(dx_p, new_dx_p)
@@ -1330,8 +1306,8 @@ class TestCopyTree(DXTestCase):
 
     def test_dx_dir_to_posix(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_folder/folder_file.txt',
-                          '/temp_folder/another_folder/temp_file.txt'])
+        self.setup_file('/temp_folder/folder_file.txt')
+        self.setup_file('/temp_folder/another_folder/temp_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/')
         posix_folder_p = Path('./{test_folder}/'.format(
             test_folder=self.project))
@@ -1384,8 +1360,7 @@ class TestCopyTree(DXTestCase):
         self.setup_temporary_project()
         self.setup_posix_files(['/folder/file.txt',
                                 '/folder/file2.txt'])
-        self.setup_files(['/temp_folder/folder/file.txt',
-                          '/temp_folder/file.txt'])
+        self.setup_files(['/temp_folder/file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')  # already exists
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='folder/'))
@@ -1575,8 +1550,7 @@ class TestCopyTree(DXTestCase):
 
     def test_dx_dir_to_dx_root_same_project(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_folder/another_folder/folder_file',
-                          '/temp_folder/another_folder/temp_file.txt'])
+        self.setup_files(['/temp_folder/another_folder/temp_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/another_folder')
         to_dx_p = DXPath('dx://' + self.project)
         dx_p.copytree(to_dx_p)
@@ -1608,7 +1582,7 @@ class TestGetSize(DXTestCase):
 
     def test_folder(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_folder/folder_file')
+        self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         with pytest.raises(dx.NotFoundError, match='No data object was found'):
             dx_p.getsize()
