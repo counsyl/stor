@@ -956,6 +956,12 @@ class TestMakedirsP(DXTestCase):
         with pytest.raises(ValueError, match='Cannot create a project'):
             DXPath('dx://project:').makedirs_p()
 
+    def test_makedirs_p_project_exists(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project)
+        dx_p.makedirs_p()
+        self.assertTrue(dx_p.exists())
+
     def test_makedirs_p_folder(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
@@ -1172,9 +1178,7 @@ class TestCopy(DXTestCase):
 
     def test_dx_to_dx_within_project_fail(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_folder/folder_file.txt',
-                          '/another_folder/random_file.txt',
-                          '/another_folder/folder_file.txt'])
+        self.setup_files(['/temp_folder/folder_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
 
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/file.txt')
@@ -1185,13 +1189,19 @@ class TestCopy(DXTestCase):
         with pytest.raises(dx.DNAnexusError, match='same project'):
             dx_p.copy(new_dx_p, move_within_project=False)
 
+    def test_dx_to_dx_same_project_exist_dest(self):
+        self.setup_temporary_project()
+        self.setup_files(['/temp_folder/folder_file.txt',
+                          '/another_folder/random_file.txt',
+                          '/another_folder/folder_file.txt'])
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/random_file.txt')
-        with pytest.raises(dx.TargetExistsError, match='duplicate'):
-            dx_p.copy(new_dx_p)
-
+        dx_p.copy(new_dx_p)
+        self.assertTrue(new_dx_p.exists())
+        new_dx_p.copy(dx_p)  # restore to original state
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder')
-        with pytest.raises(dx.TargetExistsError, match='duplicate'):
-            dx_p.copy(new_dx_p)
+        dx_p.copy(new_dx_p)
+        self.assertTrue(new_dx_p.exists())
 
     def test_dx_to_same_dx_pass(self):
         self.setup_temporary_project()
@@ -1200,7 +1210,7 @@ class TestCopy(DXTestCase):
         dx_p.copy(dx_p)
         self.assertTrue(dx_p.exists())
 
-    def test_dx_to_dx_diff_project_fail(self):
+    def test_dx_to_dx_diff_project_exist_file(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt'])
         proj_handler = dxpy.DXProject()
@@ -1219,12 +1229,12 @@ class TestCopy(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
 
         proj_p = DXPath('dx://test_dx_to_dx_diff_project_fail.TempProj:/dest_file.txt')
-        with pytest.raises(dx.TargetExistsError, match='duplicate'):
-            dx_p.copy(proj_p)
+        dx_p.copy(proj_p)
+        self.assertTrue(proj_p.exists())
 
         proj_p = DXPath('dx://test_dx_to_dx_diff_project_fail.TempProj:/folder2')
-        with pytest.raises(dx.TargetExistsError, match='duplicate'):
-            dx_p.copy(proj_p)
+        dx_p.copy(proj_p)
+        self.assertTrue(proj_p.exists())
 
     def test_dx_to_dx_within_project_pass(self):
         self.setup_temporary_project()
@@ -1232,7 +1242,7 @@ class TestCopy(DXTestCase):
                           '/another_folder/random_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/file.txt')
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/fold_file.txt')
-        stor.copy(dx_p, new_dx_p, move_within_project=True)
+        stor.copy(dx_p, new_dx_p)
         self.assertTrue(new_dx_p.exists())
         self.assertFalse(dx_p.exists())
         new_folder_dx_p = DXPath('dx://' + self.project + ':/another_folder/')
