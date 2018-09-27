@@ -540,7 +540,7 @@ class DXPath(OBSPath):
 
         if not source.resource:
             target_dest.makedirs_p()
-        elif not dest_is_dir and target_dest.parent.resource:  # avoid calling makedirs_p on project
+        elif not dest_is_dir and target_dest.parent.resource:  # don't call makedirs_p on project
             target_dest.parent.makedirs_p()
 
         moved_folder_path = target_dest.parent / source.name

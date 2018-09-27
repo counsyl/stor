@@ -212,7 +212,7 @@ class DXTestMixin(object):
         return kwargs
 
     def _get_vcr(self, **kwargs):
-        if 'cassette_library_dir' not in kwargs: # pragma: no cover
+        if 'cassette_library_dir' not in kwargs:  # pragma: no cover
             kwargs['cassette_library_dir'] = self._get_cassette_library_dir()
         myvcr = vcr.VCR(**kwargs)
         return myvcr
@@ -296,6 +296,13 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
                                  project=self.proj_id) as f:
                 f.write('data{}'.format(i).encode())
 
+    @staticmethod
+    def mock_time_sleep(should_mock, func, *args, **kwargs):
+        if should_mock:
+            with mock.patch('time.sleep', autospec=True):
+                return func(*args, **kwargs)
+        return func(*args, **kwargs)
+
     def setup_file(self, obj):
         """Set up a closed file for testing.
 
@@ -309,7 +316,9 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
                              folder='/'+dx_p.parent.lstrip('/'),
                              project=self.proj_id) as f:
             f.write('data'.encode())
-        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
+
+        should_mock = self.cassette.rewound
+        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         return f
 
     def setup_posix_files(self, files):

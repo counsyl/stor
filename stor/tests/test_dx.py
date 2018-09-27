@@ -219,7 +219,9 @@ line4
             f.write(data)
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
+        should_mock = self.cassette.rewound
+        # to allow for max of 20s for file state to go to closed
+        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         # open().read() should return str for r
         self.assertEqual(dx_p.open('r').read(), data.decode('ascii'))
         # open().read() should return bytes for rb
@@ -241,7 +243,9 @@ line4
         obj.close()
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
+        should_mock = self.cassette.rewound
+        # to allow for max of 20s for file state to go to closed
+        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         self.assertEqual(b'hello world', dx_p.read_object())
 
     def test_write_multiple_flush_multiple_upload(self):
@@ -254,7 +258,9 @@ line4
             obj.flush()
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        f.wait_on_close(20)  # to allow for max of 20s for file state to go to closed
+        should_mock = self.cassette.rewound
+        # to allow for max of 20s for file state to go to closed
+        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         self.assertEqual(dx_p.open().read(), 'hello world')
 
     def test_read_dir_fail(self):
@@ -1197,11 +1203,13 @@ class TestCopy(DXTestCase):
                              folder='/folder2',
                              project=proj_handler.get_id()) as f:
             f.write(b'data')
-        f.wait_on_close(20)
+        should_mock = self.cassette.rewound
+        # to allow for max of 20s for file state to go to closed
+        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         with dxpy.new_dxfile(name='dest_file.txt',
                              project=proj_handler.get_id()) as f:
             f.write(b'data')
-        f.wait_on_close(20)
+        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         self.addCleanup(proj_handler.destroy)
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
 
