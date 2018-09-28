@@ -868,7 +868,9 @@ class TestTempUrl(DXTestCase):
         url = urllib.request.urlopen(result)
         self.assertIn('attachment', url.headers['content-disposition'])
         self.assertIn('random.txt', url.headers['content-disposition'])
-        time.sleep(2)  # for link to expire
+        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
+        # to allow for max of 2s for link to expire
+        self.mock_time_sleep(should_mock, time.sleep, 2)
         with pytest.raises(urllib.error.HTTPError):
             urllib.request.urlopen(result)
 

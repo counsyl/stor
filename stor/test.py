@@ -298,7 +298,7 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
 
     @staticmethod
     def mock_time_sleep(should_mock, func, *args, **kwargs):
-        if should_mock:
+        if should_mock:  # pragma: no cover
             with mock.patch('time.sleep', autospec=True):
                 return func(*args, **kwargs)
         return func(*args, **kwargs)
