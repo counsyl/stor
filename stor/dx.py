@@ -15,6 +15,7 @@ from stor import Path
 from stor import utils
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
+from stor import settings
 
 
 DNAnexusError = stor_exceptions.RemoteError
@@ -25,6 +26,13 @@ UnavailableError = stor_exceptions.UnavailableError
 UnauthorizedError = stor_exceptions.UnauthorizedError
 
 logger = logging.getLogger(__name__)
+
+options = settings.get()['dx']
+auth_token = options.get('login_token')
+dxpy.set_security_context({
+    'auth_token_type': 'Bearer',
+    'auth_token': auth_token
+})
 
 
 class DuplicateError(DNAnexusError):

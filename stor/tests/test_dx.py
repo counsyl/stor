@@ -219,7 +219,7 @@ line4
             f.write(data)
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        should_mock = self.cassette.rewound
+        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
         self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         # open().read() should return str for r
@@ -243,7 +243,7 @@ line4
         obj.close()
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        should_mock = self.cassette.rewound
+        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
         self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         self.assertEqual(b'hello world', dx_p.read_object())
@@ -258,7 +258,7 @@ line4
             obj.flush()
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        should_mock = self.cassette.rewound
+        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
         self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         self.assertEqual(dx_p.open().read(), 'hello world')
@@ -281,7 +281,7 @@ line4
                 f.write(b'data')
 
 
-class TestDXOBSFile(SharedOBSFileCases, DXTestCase):
+class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
     drive = 'dx://project:'  # project is required for DX paths
     path_class = DXPath
     normal_path = DXPath('dx://project:/obj')
@@ -1203,7 +1203,7 @@ class TestCopy(DXTestCase):
                              folder='/folder2',
                              project=proj_handler.get_id()) as f:
             f.write(b'data')
-        should_mock = self.cassette.rewound
+        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
         self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         with dxpy.new_dxfile(name='dest_file.txt',

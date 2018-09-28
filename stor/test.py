@@ -317,7 +317,7 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
                              project=self.proj_id) as f:
             f.write('data'.encode())
 
-        should_mock = self.cassette.rewound
+        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         self.mock_time_sleep(should_mock, f.wait_on_close, 20)
         return f
 
