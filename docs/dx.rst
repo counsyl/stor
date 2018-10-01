@@ -182,5 +182,6 @@ DX on Python 3
 DNAnexus is in the process of supporting Python 3 for their platform. As a result,
 some of the functions will not work on stor for Python 3 until support is
 provided. This includes the copy function to DX paths, and copy/copytree
-from posix to dx paths. In general, other stor functions *should* work but any
-function that uses dxpy's 'upload' and/or 'clone' methods is prone to fail.
+from posix to dx paths. In general, other stor functions *should* work but
+there are currently 2 open PRs to fix issues with Python 3 in dxpy. This means
+that any uploads or clones on the platform will fail.

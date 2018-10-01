@@ -219,9 +219,8 @@ line4
             f.write(data)
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
-        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
+        f.wait_on_close(20)
         # open().read() should return str for r
         self.assertEqual(dx_p.open('r').read(), data.decode('ascii'))
         # open().read() should return bytes for rb
@@ -243,9 +242,8 @@ line4
         obj.close()
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
-        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
+        f.wait_on_close(20)
         self.assertEqual(b'hello world', dx_p.read_object())
 
     def test_write_multiple_flush_multiple_upload(self):
@@ -258,9 +256,8 @@ line4
             obj.flush()
         f = dxpy.DXFile(dxid=dx_p.canonical_resource,
                         project=dx_p.canonical_project)
-        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
-        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
+        f.wait_on_close(20)
         self.assertEqual(dx_p.open().read(), 'hello world')
 
     def test_read_dir_fail(self):
@@ -307,7 +304,7 @@ class TestCanonicalProject(DXTestCase):
     def test_duplicate_projects(self):
         self.setup_temporary_project()
         test_proj = dxb.DXProject()
-        test_proj.new(self.new_proj_name())
+        test_proj.new(self.project)
         self.addCleanup(test_proj.destroy)
         dx_p = DXPath('dx://' + self.project)
         with pytest.raises(dx.DuplicateProjectError, match='Duplicate projects'):
@@ -674,7 +671,7 @@ class TestStat(DXTestCase):
     def test_stat_project_error(self):
         self.setup_temporary_project()  # creates project with name in self.project
         test_proj = dxb.DXProject()
-        test_proj.new(self.new_proj_name())  # creates duplicate project
+        test_proj.new(self.project)  # creates duplicate project
         self.addCleanup(test_proj.destroy)
         with pytest.raises(dx.DuplicateProjectError, match='Duplicate projects'):
             DXPath('dx://'+self.project+':').stat()
@@ -868,9 +865,8 @@ class TestTempUrl(DXTestCase):
         url = urllib.request.urlopen(result)
         self.assertIn('attachment', url.headers['content-disposition'])
         self.assertIn('random.txt', url.headers['content-disposition'])
-        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 2s for link to expire
-        self.mock_time_sleep(should_mock, time.sleep, 2)
+        time.sleep(2)
         with pytest.raises(urllib.error.HTTPError):
             urllib.request.urlopen(result)
 
@@ -1075,6 +1071,16 @@ class TestCopy(DXTestCase):
         with pytest.raises(dx.NotFoundError, match='provide a valid source'):
             posix_p.copy(dx_p)
 
+    def test_posix_to_existing_dx_fail(self):
+        self.setup_temporary_project()
+        self.setup_files(['/temp_folder/file.txt'])
+        self.setup_posix_files(['/rand/file.txt'])
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        posix_p = Path('./{test_folder}/{path}'.format(
+            test_folder=self.project, path='rand/file.txt'))
+        with pytest.raises(dx.TargetExistsError, match='will not cause duplicate file'):
+            posix_p.copy(dx_p)
+
     def test_posix_to_dx_folder(self):
         self.setup_temporary_project()
         self.setup_posix_files(['/rand/random.txt'])
@@ -1205,13 +1211,12 @@ class TestCopy(DXTestCase):
                              folder='/folder2',
                              project=proj_handler.get_id()) as f:
             f.write(b'data')
-        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
         # to allow for max of 20s for file state to go to closed
-        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
+        f.wait_on_close(20)
         with dxpy.new_dxfile(name='dest_file.txt',
                              project=proj_handler.get_id()) as f:
             f.write(b'data')
-        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
+        f.wait_on_close(20)
         self.addCleanup(proj_handler.destroy)
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
 
@@ -1351,8 +1356,8 @@ class TestCopyTree(DXTestCase):
         self.setup_posix_files(['/folder/file.txt',
                                 '/folder/file2.txt'])
         Path('./{test_folder}/{path}'.format(
-            test_folder=self.new_proj_name(), path='/folder/folder2')).makedirs_p()
-        dx_p = DXPath('dx://' + self.project + ':/temp_folder/')
+            test_folder=self.project, path='/folder/folder2')).makedirs_p()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='folder/'))
         posix_p.copytree(dx_p)
@@ -1361,27 +1366,43 @@ class TestCopyTree(DXTestCase):
         dx_folder_p = DXPath('dx://' + self.project + ':/temp_folder/folder2')
         self.assertTrue(dx_folder_p.exists())
 
-        dx_p_2 = DXPath('dx://' + self.project + ':/temp_folder/another')
-        posix_p.copytree(dx_p_2)
-        dx_file_p = DXPath('dx://' + self.project + ':/temp_folder/another/file.txt')
+    def test_posix_dir_to_dx_nested(self):
+        self.setup_temporary_project()
+        self.setup_posix_files(['/folder/file.txt',
+                                '/folder/file2.txt'])
+        Path('./{test_folder}/{path}'.format(
+            test_folder=self.project, path='/folder/folder2')).makedirs_p()
+        posix_p = Path('./{test_folder}/{path}'.format(
+            test_folder=self.project, path='folder/'))
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/')
+        posix_p.copytree(dx_p)
+        dx_file_p = DXPath('dx://' + self.project + ':/temp_folder/folder/file.txt')
         self.assertTrue(dx_file_p.exists())
+        dx_folder_p = DXPath('dx://' + self.project + ':/temp_folder/folder/folder2')
+        self.assertTrue(dx_folder_p.exists())
+
+    def test_posix_dir_to_dx_existing(self):
+        self.setup_temporary_project()
+        self.setup_files(['/existing_folder/file'])
+        self.setup_posix_files(['/folder/file.txt',
+                                '/folder/file2.txt'])
+        Path('./{test_folder}/{path}'.format(
+            test_folder=self.project, path='/folder/folder2')).makedirs_p()
+        posix_p = Path('./{test_folder}/{path}'.format(
+            test_folder=self.project, path='folder'))
+        dx_p = DXPath('dx://' + self.project + ':/existing_folder')
+        posix_p.copytree(dx_p)
+        dx_file_p = DXPath('dx://' + self.project + ':/existing_folder/folder/file.txt')
+        self.assertTrue(dx_file_p.exists())
+        dx_folder_p = DXPath('dx://' + self.project + ':/existing_folder/folder/folder2')
+        self.assertTrue(dx_folder_p.exists())
 
     def test_posix_dir_to_dx_fail(self):
         self.setup_temporary_project()
         self.setup_posix_files(['/folder/file.txt',
                                 '/folder/file2.txt'])
-        self.setup_files(['/temp_folder/file.txt'])
+        self.setup_files(['/temp_folder/folder/file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')  # already exists
-        posix_p = Path('./{test_folder}/{path}'.format(
-            test_folder=self.project, path='folder/'))
-        with pytest.raises(dx.TargetExistsError, match='will not cause duplicate file'):
-            posix_p.copytree(dx_p)
-
-        self.project_handler.new_folder('/another_folder/folder2', parents=True)
-        posix_folder_p = Path('./{test_folder}/{path}'.format(
-            test_folder=self.project, path='/folder/folder2/'))
-        posix_folder_p.makedirs_p()
-        dx_p = DXPath('dx://' + self.project + ':/another_folder')  # already exists
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='folder/'))
         with pytest.raises(dx.TargetExistsError, match='will not cause duplicate folders'):

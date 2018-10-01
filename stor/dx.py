@@ -24,15 +24,17 @@ ConditionNotMetError = stor_exceptions.ConditionNotMetError
 ConflictError = stor_exceptions.ConflictError
 UnavailableError = stor_exceptions.UnavailableError
 UnauthorizedError = stor_exceptions.UnauthorizedError
+TargetExistsError = stor_exceptions.TargetExistsError
 
 logger = logging.getLogger(__name__)
 
 options = settings.get()['dx']
 auth_token = options.get('login_token')
-dxpy.set_security_context({
-    'auth_token_type': 'Bearer',
-    'auth_token': auth_token
-})
+if auth_token:
+    dxpy.set_security_context({
+        'auth_token_type': 'Bearer',
+        'auth_token': auth_token
+    })
 
 
 class DuplicateError(DNAnexusError):
@@ -40,13 +42,6 @@ class DuplicateError(DNAnexusError):
 
     Currently, we throw this when trying to get the canonical project
     from virtual path and two or more projects were found with same name
-    """
-    pass
-
-
-class TargetExistsError(DNAnexusError):
-    """Thrown when a destination target already exists on DX for a file or folder
-    that is being uploaded/copied/moved, etc.
     """
     pass
 
@@ -729,16 +724,7 @@ class DXPath(OBSPath):
                             name=dest_file.name
                         )
             elif source_is_dir():
-                dest_is_dir = dest_file.isdir()
-                if dest_is_dir:
-                    raise TargetExistsError(
-                        'Destination path ({}) already exists, will not cause '
-                        'duplicate folders to exist. Remove the original first'
-                        .format(dest_file)
-                    )
-                else:
-                    dest_file.makedirs_p()
-                    continue
+                dest_file.makedirs_p()
             else:
                 raise NotFoundError('Source path ({}) does not exist. Please provide '
                                     'a valid source'.format(upload_obj.source))

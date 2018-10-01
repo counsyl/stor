@@ -373,7 +373,7 @@ def is_writeable(path, swift_retry_options=None):
     return answer
 
 
-def copy(source, dest, swift_retry_options=None, **kwargs):
+def copy(source, dest, **kwargs):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either OBS, posix, or
@@ -415,7 +415,8 @@ def copy(source, dest, swift_retry_options=None, **kwargs):
 
     source = Path(source)
     dest = Path(dest)
-    swift_retry_options = kwargs or {}
+    swift_retry_options = kwargs.pop('swift_retry_options', {})
+    kwargs.update(**swift_retry_options)
     if is_dx_path(source) and is_dx_path(dest):
         return source.copy(dest, **kwargs)
     if is_obs_path(source) and is_obs_path(dest):
@@ -537,6 +538,14 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
             else:
                 shutil.copytree(source, dest)
     else:
+        if is_dx_path(dest) and (dest.isdir() or dest.endswith('/')):
+            dest = dest / remove_trailing_slash(source).name
+            if dest.isdir():
+                raise exceptions.TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate folders to exist. Remove the original first'
+                    .format(dest)
+                )
         with source:
             dest.upload(['.'], use_manifest=use_manifest, headers=headers,
                         condition=condition, **kwargs)

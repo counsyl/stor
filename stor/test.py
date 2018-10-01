@@ -199,12 +199,17 @@ class DXTestMixin(object):
 
     def setUp(self):  # pragma: no cover
         super(DXTestMixin, self).setUp()
+        self.cassette = None
         if self.vcr_enabled:
             kwargs = self._get_vcr_kwargs()
             myvcr = self._get_vcr(**kwargs)
             cm = myvcr.use_cassette(self._get_cassette_name())
             self.cassette = cm.__enter__()
             self.addCleanup(cm.__exit__, None, None, None)
+        if self.cassette and self.cassette.rewound:
+            patcher = mock.patch('time.sleep')
+            self.addCleanup(patcher.stop)
+            patcher.start()
 
     def _get_vcr_kwargs(self, **kwargs):
         # kwargs.update({'record_mode': 'new_episodes'})
@@ -296,13 +301,6 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
                                  project=self.proj_id) as f:
                 f.write('data{}'.format(i).encode())
 
-    @staticmethod
-    def mock_time_sleep(should_mock, func, *args, **kwargs):
-        if should_mock:  # pragma: no cover
-            with mock.patch('time.sleep', autospec=True):
-                return func(*args, **kwargs)
-        return func(*args, **kwargs)
-
     def setup_file(self, obj):
         """Set up a closed file for testing.
 
@@ -316,9 +314,8 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
                              folder='/'+dx_p.parent.lstrip('/'),
                              project=self.proj_id) as f:
             f.write('data'.encode())
-
-        should_mock = self.cassette.rewound if hasattr(self, 'cassette') else False
-        self.mock_time_sleep(should_mock, f.wait_on_close, 20)
+        # to allow for max of 20s for file state to go to closed
+        f.wait_on_close(20)
         return f
 
     def setup_posix_files(self, files):
