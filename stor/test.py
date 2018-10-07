@@ -193,7 +193,9 @@ class DXTestMixin(object):
     """A mixin with helpers for testing dxpy.
 
     DXTestMixin should be used to create base test classes for anything
-    that accesses DNAnexus.
+    that accesses DNAnexus. This Mixin introduces vcrpy into the test case
+    which records all http interactions for playback. To update the cassettes,
+    the easiest way free of error is to delete and rerecord them.
     """
     vcr_enabled = True  # switch this to False to deactivate vcr recording
 
@@ -212,7 +214,6 @@ class DXTestMixin(object):
             patcher.start()
 
     def _get_vcr_kwargs(self, **kwargs):
-        # kwargs.update({'record_mode': 'new_episodes'})
         kwargs.update({'filter_headers': ['authorization']})
         return kwargs
 

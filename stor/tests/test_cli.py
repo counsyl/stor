@@ -132,7 +132,7 @@ class TestCliBasics(BaseCliTest):
                 'use_slo': True
             },
             'dx': {
-                'login_token': 'fake_token'
+                'auth_token': 'fake_token'
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')

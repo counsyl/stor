@@ -27,10 +27,10 @@ UnauthorizedError = stor_exceptions.UnauthorizedError
 TargetExistsError = stor_exceptions.TargetExistsError
 
 logger = logging.getLogger(__name__)
+progress_logger = logging.getLogger('%s.progress' % __name__)
 
-options = settings.get()['dx']
-auth_token = options.get('login_token')
-if auth_token:
+auth_token = settings.get()['dx']['auth_token']
+if auth_token:  # pragma: no cover
     dxpy.set_security_context({
         'auth_token_type': 'Bearer',
         'auth_token': auth_token
@@ -380,7 +380,7 @@ class DXPath(OBSPath):
                 file_handler.rename(dest.name)
         self.clear_cached_properties()
 
-    def copy(self, dest, move_within_project=True):
+    def copy(self, dest, move_within_project=True, **kwargs):
         """Copies data object to destination path.
 
         If dest already exists as a directory on the DX platform, the file is copied
@@ -456,7 +456,7 @@ class DXPath(OBSPath):
         else:
             super(DXPath, self).copy(dest)  # for other filesystems, delegate to utils.copy
 
-    def copytree(self, dest, move_within_project=True):
+    def copytree(self, dest, move_within_project=True, **kwargs):
         """Copies a source directory to a destination directory.
         This is not an atomic operation.
 
@@ -774,7 +774,8 @@ class DXPath(OBSPath):
              classname=None,
              condition=None
              ):
-        """List contents using the resource of the path as a prefix.
+        """List contents using the resource of the path as a prefix. This will only
+        list the file resources (and not empty directories like other OBS).
 
         Args:
             canonicalize (bool, default False): if True, return canonical paths

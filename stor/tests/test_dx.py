@@ -45,7 +45,7 @@ class TestBasicPathMethods(unittest.TestCase):
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
-        from stor.dx import DXVirtualPath
+        from stor.dx import DXVirtualPath  # flake8: noqa
         dx_p = DXPath('dx://t:/c/p')
         self.assertEqual(eval(repr(dx_p)), dx_p)
 

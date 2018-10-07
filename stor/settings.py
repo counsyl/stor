@@ -17,7 +17,7 @@ _ENV_VARS = {
         'num_retries': 'OS_NUM_RETRIES'
     },
     'dx': {
-        'login_token': 'DXPY_LOGIN_TOKEN'
+        'auth_token': 'DX_AUTH_TOKEN'
     }
 }
 """
