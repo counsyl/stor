@@ -1,7 +1,9 @@
 import os
 import pytest
+import six
 import time
 import unittest
+from unittest import skipIf
 
 import dxpy
 import dxpy.bindings as dxb
@@ -976,6 +978,57 @@ class TestMakedirsP(DXTestCase):
         self.assert_dx_lists_equal(result, [dx_p])
 
 
+class TestDownloadObjects(DXTestCase):
+    def test_local_paths(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_folder/file1.txt')
+        self.setup_file('/temp_folder/file2.txt')
+        self.setup_file('/temp_folder/folder/file3.txt')
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        posix_folder_p = Path('./{test_folder}'.format(
+            test_folder=self.project))
+        self.addCleanup(posix_folder_p.rmtree)
+        r = dx_p.download_objects(self.project,
+                                  ['file1.txt',
+                                   'file2.txt',
+                                   'folder/file3.txt'])
+        self.assertEquals(r, {
+            'file1.txt': self.project + '/file1.txt',
+            'file2.txt': self.project + '/file2.txt',
+            'folder/file3.txt': self.project + '/folder/file3.txt'
+        })
+
+    def test_absolute_paths(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_folder/file1.txt')
+        self.setup_file('/temp_folder/file2.txt')
+        self.setup_file('/temp_folder/folder/file3.txt')
+        dx_p = DXPath('dx://' + self.project)
+        posix_folder_p = Path('./{test_folder}'.format(
+            test_folder=self.project))
+        self.addCleanup(posix_folder_p.rmtree)
+        r = dx_p.download_objects(self.project, [
+            'dx://' + self.project + ':/temp_folder/file1.txt',
+            'dx://' + self.project + ':/temp_folder/file2.txt',
+            'dx://' + self.project + ':/temp_folder/folder/file3.txt'])
+        self.assertEquals(r, {
+            'dx://' + self.project + ':/temp_folder/file1.txt':
+                self.project + '/temp_folder/file1.txt',
+            'dx://' + self.project + ':/temp_folder/file2.txt':
+                self.project + '/temp_folder/file2.txt',
+            'dx://' + self.project + ':/temp_folder/folder/file3.txt':
+                self.project + '/temp_folder/folder/file3.txt'
+        })
+
+    def test_absolute_paths_not_child_of_download_path(self):
+        dx_p = DXPath('dx://project:/folder')
+        with pytest.raises(ValueError, match='child'):
+            dx_p.download_objects('output_dir', [
+                'dx://project:/bad/e/f.txt',
+                'dx://project:/bad/e/f/g.txt'
+            ])
+
+
 class TestCopy(DXTestCase):
     def test_clone_move_project_fail(self):
         self.setup_temporary_project()
@@ -1122,6 +1175,7 @@ class TestCopy(DXTestCase):
         with pytest.raises(ValueError, match='Invalid operation'):
             dx_p.copy(posix_p)
 
+    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_file(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1133,6 +1187,7 @@ class TestCopy(DXTestCase):
         dx_p.copy(proj_p)
         self.assertTrue(proj_p.exists())
 
+    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_folder(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1145,6 +1200,7 @@ class TestCopy(DXTestCase):
         expected_p = DXPath('dx://test_dx_to_dx_folder.TempProj:/random/folder_file.txt')
         self.assertTrue(expected_p.exists())
 
+    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_file_folder_no_ext(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1201,6 +1257,7 @@ class TestCopy(DXTestCase):
         dx_p.copy(dx_p)
         self.assertTrue(dx_p.exists())
 
+    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_diff_project_exist_file(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt'])
@@ -1261,6 +1318,7 @@ class TestCopy(DXTestCase):
         with pytest.raises(ValueError, match='cannot copy'):
             obs_p.copy(dx_p)
 
+    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_canonical_to_dx_file(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/temp_file.txt')

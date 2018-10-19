@@ -3,6 +3,7 @@ import mock
 import unittest
 import os
 import sys
+import uuid
 
 import dxpy
 import vcr
@@ -272,8 +273,13 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
     """
 
     def new_proj_name(self):
-        return '{0}.{1}'.format(self.__class__.__name__,
-                                self._testMethodName)
+        """Output a unique project name for each test case.
+        Should only be called once within a test case, and the result reused
+        everywhere within a test case.
+        """
+        return '{0}.{1}.{2}'.format(self.__class__.__name__,
+                                    self._testMethodName,
+                                    str(uuid.uuid4())[:8])
 
     def setup_temporary_project(self):
         self.project_handler = self.setup_project()
@@ -327,7 +333,7 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
         """
         for i, curr_file in enumerate(files):
             posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.new_proj_name(), path=curr_file))
+                test_folder=self.project, path=curr_file))
             posix_p.open(mode='w').write('data'+str(i))
         self.addCleanup(self.teardown_posix_files)
 

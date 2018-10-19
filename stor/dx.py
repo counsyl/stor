@@ -12,10 +12,11 @@ import six
 
 from stor import exceptions as stor_exceptions
 from stor import Path
+from stor import settings
 from stor import utils
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
-from stor import settings
+from stor.posix import PosixPath
 
 
 DNAnexusError = stor_exceptions.RemoteError
@@ -314,7 +315,7 @@ class DXPath(OBSPath):
         should_rename = not dest_is_dir and not utils.has_trailing_slash(dest)
         return target_dest, should_rename
 
-    def _clone(self, dest):
+    def _clone(self, dest):  # pragma: no cover
         """Clones the data object into the destination path.
         The original file is retained.
 
@@ -442,7 +443,7 @@ class DXPath(OBSPath):
         """
         dest = Path(dest)
         if utils.is_dx_path(dest):
-            if self.isfile():
+            if self.isfile():  # pragma: no cover
                 if dest.canonical_project == self.canonical_project:
                     if move_within_project:
                         self._move(dest)
@@ -648,6 +649,82 @@ class DXPath(OBSPath):
             filename=dest,
             project=self.canonical_project
         )
+
+    def download_objects(self,
+                         dest,
+                         objects):
+        """Downloads a list of objects to a destination folder.
+
+        Note that this method takes a list of complete relative or absolute
+        paths to objects (in contrast to taking a prefix). If any object
+        does not exist, the call will fail with partially downloaded objects
+        residing in the destination path.
+
+        Args:
+            dest (str): The destination folder to download to. The directory
+                will be created if it doesnt exist.
+            objects (List[str|PosixPath|SwiftPath]): The list of objects to
+                download. The objects can paths relative to the download path
+                or absolute dx paths. Any absolute dx path must be
+                children of the download path
+
+        Returns:
+            dict: A mapping of all requested ``objs`` to their location on
+                disk
+
+        Examples:
+
+            To download a objects to a ``dest/folder`` destination::
+
+                from stor import Path
+                p = Path('dx://project:/dir/')
+                results = p.download_objects('dest/folder', ['subdir/f1.txt',
+                                                             'subdir/f2.txt'])
+                print results
+                {
+                    'subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
+
+            To download full dx paths relative to a download path::
+
+                from stor import Path
+                p = Path('dx://project:/dir/')
+                results = p.download_objects('dest/folder', [
+                    'dx://project:/dir/subdir/f1.txt',
+                    'dx://project:/dir/subdir/f2.txt'
+                ])
+                print results
+                {
+                    'dx://project:/dir/subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'dx://project:/dir/subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
+        """
+        def dx_parent_dir(dx_obj1, dx_obj2):
+            """Checks if dx_obj2 is a sub-path of dx_obj1"""
+            if not dx_obj1.resource:
+                return dx_obj2.resource and dx_obj2.project == dx_obj1.project
+            return dx_obj2.startswith(utils.with_trailing_slash(dx_obj1))
+        source = self
+        if source == (self.drive+self.project):  # need to convert dx://proj to dx://proj:
+            source = DXPath(self + ':')
+
+        for obj in objects:
+            if utils.is_dx_path(obj) and not dx_parent_dir(source, DXPath(obj)):
+                    raise ValueError(
+                        '"%s" must be child of download path "%s"' % (obj, self))
+        # Convert requested download objects to full object paths
+        objs_to_download = {
+            obj: DXPath(obj) if utils.is_dx_path(obj) else source / obj
+            for obj in objects
+        }
+        results = {}
+        for obj, dx_obj in objs_to_download.items():
+            dest_resource = dx_obj[len(source):].lstrip('/')
+            dest_obj = PosixPath(dest) / dest_resource
+            dx_obj.copy(dest_obj)
+            results[obj] = dest_obj
+        return results
 
     def download(self, dest, **kwargs):
         """Download a directory.
