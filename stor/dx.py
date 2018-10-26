@@ -1185,7 +1185,7 @@ class DXVirtualPath(DXPath):
 
 
 class DXCanonicalPath(DXPath):
-    """Class Handler for DXPath in canonicalized form:
+    """Represents fully canonicalized DNAnexus paths:
     'dx://project-{dxID}:/file-{dxID}' or 'dx://project-{dxID}:'
     """
 
