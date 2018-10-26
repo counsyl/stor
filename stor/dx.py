@@ -732,7 +732,7 @@ class DXPath(OBSPath):
             return dx_obj.startswith(utils.with_trailing_slash(possible_parent))
 
         source = self
-        if source == (self.drive+self.project):  # need to convert dx://proj to dx://proj:
+        if source == (self.drive + self.project):  # need to convert dx://proj to dx://proj:
             source = DXPath(self + ':')
 
         for obj in objects:
