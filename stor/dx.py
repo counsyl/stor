@@ -1116,7 +1116,7 @@ class DXVirtualPath(DXPath):
 
     @property
     def virtual_path(self):
-        """Returns the DXVirtualPath instance"""
+        """Path as DXVirtualPath"""
         return self
 
     @cached_property
