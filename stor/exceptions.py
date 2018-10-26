@@ -84,7 +84,7 @@ class ConflictError(RemoteError):
 
 
 class TargetExistsError(RemoteError):
-    """Thrown when a destination target already exists on DX for a file or folder
+    """Thrown when a destination target already exists on DX for a folder
     that is being uploaded/copied/moved, etc.
     """
     pass

@@ -886,61 +886,6 @@ class SwiftPath(OBSPath):
     def download_objects(self,
                          dest,
                          objects):
-        """Downloads a list of objects to a destination folder.
-
-        Note that this method takes a list of complete relative or absolute
-        paths to objects (in contrast to taking a prefix). If any object
-        does not exist, the call will fail with partially downloaded objects
-        residing in the destination path.
-
-        This method retries ``num_retries`` times if swift is unavailable.
-        View `module-level documentation <swiftretry>` for more information
-        about configuring retry logic at the module or method level.
-
-        Args:
-            dest (str): The destination folder to download to. The directory
-                will be created if it doesnt exist.
-            objects (List[str|PosixPath|SwiftPath]): The list of objects to
-                download. The objects can paths relative to the download path
-                or absolute swift paths. Any absolute swift path must be
-                children of the download path
-
-        Returns:
-            dict: A mapping of all requested ``objs`` to their location on
-                disk
-
-        Raises:
-            ValueError: This method was called on a path that has no
-                container
-
-        Examples:
-
-            To download a objects to a ``dest/folder`` destination::
-
-                from stor import path
-                p = path('swift://tenant/container/dir/')
-                results = p.download_objects('dest/folder', ['subdir/f1.txt',
-                                                             'subdir/f2.txt'])
-                print results
-                {
-                    'subdir/f1.txt': 'dest/folder/subdir/f1.txt',
-                    'subdir/f2.txt': 'dest/folder/subdir/f2.txt'
-                }
-
-            To download full swift paths relative to a download path::
-
-                from stor import path
-                p = path('swift://tenant/container/dir/')
-                results = p.download_objects('dest/folder', [
-                    'swift://tenant/container/dir/subdir/f1.txt',
-                    'swift://tenant/container/dir/subdir/f2.txt'
-                ])
-                print results
-                {
-                    'swift://tenant/container/dir/subdir/f1.txt': 'dest/folder/subdir/f1.txt',
-                    'swift://tenant/container/dir/subdir/f2.txt': 'dest/folder/subdir/f2.txt'
-                }
-        """
         if not self.container:
             raise ValueError('cannot call download_objects on tenant with no container')
 

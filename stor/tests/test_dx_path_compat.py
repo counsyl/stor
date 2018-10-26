@@ -43,7 +43,7 @@ class TestBasics(unittest.TestCase):
             self.assertIsInstance(p, DXCanonicalPath, 'Expected canonical DXPath for (%s)' % p)
             self.assertEqual(p.project, 'project-123456789012345678901234',
                              'Project parsing unsuccessful for %s' % p)
-            self.assertEqual(p.resource, '/file-123456789012345678901234',
+            self.assertEqual(p.resource, 'file-123456789012345678901234',
                              'Resource parsing error for %s' % p)
 
     def test_virtual_construct_wo_resource(self):
@@ -66,7 +66,7 @@ class TestBasics(unittest.TestCase):
             self.assertIsInstance(p, DXVirtualPath, 'Expected virtual DXPath for (%s)' % p)
             self.assertEqual(p.project, 'proj123',
                              'Project parsing unsuccessful for %s' % p)
-            self.assertEqual(str(p.resource), '/a.ext',
+            self.assertEqual(str(p.resource), 'a.ext',
                              'Resource parsing error for %s' % p)
 
         for path_str in [
@@ -77,7 +77,7 @@ class TestBasics(unittest.TestCase):
             self.assertIsInstance(p, DXVirtualPath, 'Expected virtual DXPath for (%s)' % p)
             self.assertEqual(p.project, 'project-123456789012345678901234',
                              'Project parsing unsuccessful for %s' % p)
-            self.assertEqual(p.resource, '/a.ext',
+            self.assertEqual(p.resource, 'a.ext',
                              'Resource parsing error for %s' % p)
 
     def test_virtual_construct_w_folder(self):
@@ -89,7 +89,7 @@ class TestBasics(unittest.TestCase):
             self.assertIsInstance(p, DXVirtualPath, 'Expected virtual DXPath for (%s)' % p)
             self.assertEqual(p.project, 'proj123',
                              'Project parsing unsuccessful for %s' % p)
-            self.assertEqual(p.resource, '/b/c/a.ext',
+            self.assertEqual(p.resource, 'b/c/a.ext',
                              'Resource parsing error for %s' % p)
 
         for path_str in [
@@ -100,7 +100,7 @@ class TestBasics(unittest.TestCase):
             self.assertIsInstance(p, DXVirtualPath, 'Expected virtual DXPath for (%s)' % p)
             self.assertEqual(p.project, 'project-123456789012345678901234',
                              'Project parsing unsuccessful for %s' % p)
-            self.assertEqual(p.resource, '/b/c/a.ext',
+            self.assertEqual(p.resource, 'b/c/a.ext',
                              'Resource parsing error for %s' % p)
 
     def test_string_compatibility(self):

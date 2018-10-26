@@ -10,18 +10,9 @@ where project and file can be virtual paths (i.e., human names) or canonical pat
 
 Canonical Paths on DNAnexus
 ---------------------------
-Every file resource on DNAnexus is given a canonical ID to refer it by. This is
-internally given by the platform and is not determined by stor. However, stor
-does provide the option of referring to the resource through their canonical IDs.
-Each individual project and file has a canonical ID associated with it. This
-ID consists of 24 case-sensitive characters from ``0123456789BFGJKPQVXYZbfgjkpqvxyz``
-prepended with 'project-' or 'file-' respectively. Example canonical IDs are
-``project-j47b1k3z8Jqqv001213v312j1``, and ``file-47jK67093475061g3v95369p``.
-
-Each individual file with its unique ID, can be present only at a single location within
-a project. This is because the metadata associated with the file in that project
-can only have one path to the file. Also, since the canonicalized path to the
-file on DNAnexus is represented by::
+Files on DNAnexus have a globally unique immutable handle (called a dxid) and also a
+virtual path in each project. DNAnexus only allows one copy of a file to be in a specific
+project. Also, since the canonicalized path to the file on DNAnexus is represented by::
 
     'project-j47b1k3z8Jqqv001213v312j1:file-47jK67093475061g3v95369p'
 
@@ -46,12 +37,12 @@ Thus, stor has two subclass implementations of `DXPath`: `DXCanonicalPath` and
     Path('dx://myproject:path/to/file.txt')
 
 You can obtain the `DXCanonicalPath` from a `DXVirtualPath` and vice versa, like so::
-    >>> stor.Path('dx://StorTesting').canonical_path
-    DXCanonicalPath("dx://project-FJq288j0GPJbFJZX43fV5YP1:/")
-    >>> stor.Path('dx://StorTesting:').canonical_path.canonical_path
-    DXCanonicalPath("dx://project-FJq288j0GPJbFJZX43fV5YP1:/")
-    >>> stor.Path('dx://StorTesting:').virtual_path.canonical_path
-    DXCanonicalPath("dx://project-FJq288j0GPJbFJZX43fV5YP1:/")
+    >>> stor.Path('dx://StorTesting:/1.bam').canonical_path
+    DXCanonicalPath("dx://project-FJq288j0GPJbFJZX43fV5YP1:/file-FKzjPgQ0FZ3VpBkpKJz4Vb70")
+    >>> stor.Path('dx://StorTesting:1.bam').canonical_path.canonical_path
+    DXCanonicalPath("dx://project-FJq288j0GPJbFJZX43fV5YP1:/file-FKzjPgQ0FZ3VpBkpKJz4Vb70")
+    >>> stor.Path('dx://StorTesting:/1.bam').virtual_path.canonical_path
+    DXCanonicalPath("dx://project-FJq288j0GPJbFJZX43fV5YP1:/file-FKzjPgQ0FZ3VpBkpKJz4Vb70")
 
     >>> stor.Path('dx://project-FJq288j0GPJbFJZX43fV5YP1:/file-FKzjPgQ0FZ3VpBkpKJz4Vb70').virtual_path
     DXVirtualPath("dx://StorTesting:/1.bam")
@@ -143,40 +134,32 @@ deletes the metadata and leaves the file untouched in other projects.
 
 DXPath on stor
 --------------
-All `DXPath` instances on stor must have a project. The project is the first part
-of the path and is determined by a trailing ``:``. Thus, paths without a project
-like::
+Project is always required for DNAnexus instances::
 
-    Path('dx://')
-    OR
-    Path('dx://path/to/file')
+    >>> Path('dx://path/to/file')
+    Traceback (most recent call last):
+    ...
+    <exception>
 
-can never be initialized on stor. Trying so will result in an error. The one and
-only exception to this scenario is when only a project is mentioned. Thus,::
+but projects are normalized::
 
-    Path('dx://myproject:')
-    OR
-    Path('dx://myproject')
+    >>> Path('dx://myproject')
+    DXVirtualPath('dx://myproject:')
 
-both are valid, and essentially refer to the same project path.
+Duplicate names on DNAnexus
+---------------------------
 
-Files and directories can have the same name on the DX platform. This is because
-files without extentions and/or directories with extensions are allowed. A
-`DXPath` instance on stor can be ambiguous as a result. For example, the path::
+A single virtual path can refer to multiple files (and even a folder) simultaneously!
+Currently, stor will error if a specific virtual path resolves to multiple files (use
+the dx-tool in these cases), but you can always use a canonical path.::
 
-    Path('dx://myproject:/path/to/folder_file')
+    $ dx upload myfile.txt -o MyProject:/myfile.txt
+    $ dx upload anotherfile.txt -o MyProject:/myfile.txt
+    $ stor cat dx://MyProject:/myfile.txt
+    # MultipleObjectSameNameError: Multiple objects found at path (dx://StorTesting:/1.bam). Try using a canonical ID instead
 
-can refer to a file and/or a folder, since ``folder_file`` can be a folder and/or
-a file. Hence different operations may refer to the different underlying object.
-As an example, `DXPath.listdir` would treat the above path as a folder, while
-`DXPath.stat` would treat the same path as a file.
-
-DNAnexus also allows two objects to have duplicate file names within the same absolute
-path (same project and directory), because the underlying objects are different.
-However, given a virtual path which resolves to two namesake file objects, stor cannot
-distinguish between the two and will raise a `DuplicateError` if operations are made on
-such a virtual path. Such duplicate objects can only be handled through their canonical
-paths on stor. Use the dx-toolkit to determine their unique IDs.
+When a folder has the same name as a file, stor uses the method you call to check for
+a folder or a file (i.e., `DXPath.listdir` will assume folder, `DXPath.stat` will assume file).
 
 DXPath
 -------
@@ -184,43 +167,24 @@ DXPath
 .. automodule:: stor.dx
     :members:
 
-Behavior of copy and copytree
+Copy and copytree by example
 -----------------------------
-Since there are directories on DNAnexus, and  a file and a folder with the
-same path can also have duplicate names, copy and copytree work differently
-on the platform compared to other OBS services (Swift/S3).
+copy and copytree behave differently when the target output path exists and is a folder. (this holds DX -> DX and also POSIX -> DX)
 
-Suppose we are trying to copy a file to a destination path::
+..  list-table:: Copy/copytree example
+    :header-rows: 1
 
-    stor.copy('dx://project1:/folder/file.txt', 'dx://project2:/new_folder')
+    * - command
+      - output path (no folder)
+      - output path (folder exists)
+    * - stor cp  myfile.vcf dx://project2:/call
+      - dx://project2:/call
+      - dx://project2:/call/myfile.vcf
+    * - stor cp -r ./trip-photos dx://newproject:/all
+      - dx://newproject:/all
+      - dx://newproject/all/trip-photos
 
-The outcome of the above commands is determined by the file/folder structure
-already present at the destination. If ``project2:/new_folder`` is an already
-existing directory, stor will set the new destination of the file as under that
-folder (i.e. as ``dx://project2:/new_folder/file.txt``). If the final destination
-path already exists, it deletes this file and copies the new file there.
-Conversely, if ``project2:/new_folder`` is not an existing directory, stor
-attempts to copy ``file.txt`` to ``project2:/new_folder`` as a file (remember:
-files without extensions are allowed, hence stor has no reason to believe
-``new_folder`` is not a filename we're trying to copy to). Thus, stor will
-copy our file to the *file* ``project2:/new_folder``.
-
-Copytree also works in a similar fashion, wherein directory names are compared,
-instead of filenames. Suppose we are trying to copytree a directory::
-
-    stor.copytree('dx://project1:/folder', 'dx://project2:/new_folder')
-
-Again, if the ``project2:/new_folder`` is an already existing directory, stor
-will set the new destination for the folder as a subfolder to that directory
-(i.e. as ``dx://project2:/new_folder/folder``. However, if this new destination is
-already present, a `TargetExistsError` is raised, instead of deleting it like in
-`DXPath.copy`, because we don't wish to delete full directories through copytree
-(use `DXPath.rmtree` for that) or merge two directories. If ``project2:/new_folder``
-is not originally present, then the folder is copied to this path.
-
-The above discussion holds true for DX to DX paths, as well as posix to DX paths.
-For DX to posix paths also, the traditional behavior with OBS is followed,
-to maintain consistency on posix systems.
+Note that if the output path exists and is a file, the file will be *overwritten*
 
 Open on stor
 ------------
@@ -238,9 +202,3 @@ what they mean, when they happen, what operations are allowed on them, etc.
 By instantiating ``stor.obs.OBSFile`` for ``open``, we maintain the
 support that is standard by stor, without any real decrease in functionality.
 
-DX on Python 3
---------------
-DNAnexus is in the process of supporting Python 3 for their platform. Even though
-stor has been tested with Python 3, and all documented functions are supported, until
-full support is provided, you *may* end up seeing some errors while manipulating
-DX resources. Please report the error if you come across one.

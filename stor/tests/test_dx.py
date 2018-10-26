@@ -88,19 +88,19 @@ class TestResource(unittest.TestCase):
 
     def test_resource_object(self):
         dx_p = DXPath('dx://project:/obj')
-        self.assertEqual(dx_p.resource, '/obj')
+        self.assertEqual(dx_p.resource, 'obj')
 
     def test_resource_trailing_slash(self):
         dx_p = DXPath('dx://project:/dir/')
-        self.assertEqual(dx_p.resource, '/dir/')
+        self.assertEqual(dx_p.resource, 'dir/')
 
     def test_resource_nested_obj(self):
         dx_p = DXPath('dx://project:/nested/obj.txt')
-        self.assertEqual(dx_p.resource, '/nested/obj.txt')
+        self.assertEqual(dx_p.resource, 'nested/obj.txt')
 
     def test_resource_nested_dir(self):
         dx_p = DXPath('dx://project:/nested/dir/')
-        self.assertEqual(dx_p.resource, '/nested/dir/')
+        self.assertEqual(dx_p.resource, 'nested/dir/')
 
 
 class TestCompatHelpers(unittest.TestCase):
@@ -267,7 +267,7 @@ line4
         with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.open().read()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='Cannot read project'):
+        with pytest.raises(ValueError, match='not a project'):
             dx_p.open().read()
 
     def test_write_to_project_fail(self):
@@ -293,7 +293,7 @@ class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
 class TestCanonicalProject(DXTestCase):
     def test_no_project(self):
         dx_p = DXPath('dx://Random_Project:/')
-        with pytest.raises(dx.ProjectNotFoundError, match='No projects'):
+        with pytest.raises(dx.ProjectNotFoundError, match='no projects'):
             dx_p.canonical_project
 
     def test_unique_project(self):
@@ -307,7 +307,7 @@ class TestCanonicalProject(DXTestCase):
         test_proj.new(self.project)
         self.addCleanup(test_proj.destroy)
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(dx.DuplicateProjectError, match='Duplicate projects'):
+        with pytest.raises(dx.MultipleObjectSameNameError, match='Found more than one project'):
             dx_p.canonical_project
 
     def test_canonical_path(self):
@@ -318,7 +318,7 @@ class TestCanonicalProject(DXTestCase):
         self.assertEqual(dx_p.canonical_resource, f.get_id())
         self.assertEqual(dx_p.canonical_path, dx_p)
         self.assertEqual(dx_p.virtual_project, self.project)
-        self.assertEqual(dx_p.virtual_resource, '/folder_file')
+        self.assertEqual(dx_p.virtual_resource, 'folder_file')
         dx_virtual_p = DXPath('dx://' + self.project + ':/folder_file')
         self.assertEqual(dx_p.virtual_path, dx_virtual_p)
 
@@ -341,7 +341,7 @@ class TestCanonicalResource(DXTestCase):
         self.setup_files(['/temp_folder/folder_file.txt',
                           '/temp_folder/folder_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
-        with pytest.raises(dx.DuplicateError, match='Multiple objects found'):
+        with pytest.raises(dx.MultipleObjectSameNameError, match='Multiple objects found'):
             dx_p.canonical_resource
 
     def test_project(self):
@@ -354,7 +354,7 @@ class TestCanonicalResource(DXTestCase):
         self.setup_files(['/folder_file'])
         dx_p = DXPath('dx://' + self.proj_id + ':/folder_file')
         self.assertEqual(dx_p.virtual_path, dx_p)
-        self.assertEqual(dx_p.virtual_resource, '/folder_file')
+        self.assertEqual(dx_p.virtual_resource, 'folder_file')
         self.assertEqual(dx_p.virtual_project, self.project)
 
 
@@ -673,11 +673,11 @@ class TestStat(DXTestCase):
         test_proj = dxb.DXProject()
         test_proj.new(self.project)  # creates duplicate project
         self.addCleanup(test_proj.destroy)
-        with pytest.raises(dx.DuplicateProjectError, match='Duplicate projects'):
+        with pytest.raises(dx.MultipleObjectSameNameError, match='Found more than one project'):
             DXPath('dx://'+self.project+':').stat()
-        with pytest.raises(dx.DuplicateProjectError, match='Duplicate projects'):
+        with pytest.raises(dx.MultipleObjectSameNameError, match='Found more than one project'):
             DXPath('dx://'+self.project+':/').stat()
-        with pytest.raises(exceptions.NotFoundError, match='No projects'):
+        with pytest.raises(exceptions.NotFoundError, match='Found no projects'):
             DXPath('dx://Random_Proj:').stat()
 
     def test_stat_virtual_project(self):
@@ -890,7 +890,7 @@ class TestRemove(DXTestCase):
     def test_fail_remove_project(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='must point to single data object'):
+        with pytest.raises(ValueError, match='can only be called on single object'):
             dx_p.remove()
 
     def test_fail_remove_nonexistent_file(self):
@@ -928,7 +928,7 @@ class TestRemove(DXTestCase):
     def test_fail_remove_nonexistent_project(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://RandomProject:/')
-        with pytest.raises(exceptions.NotFoundError, match='No projects were found'):
+        with pytest.raises(exceptions.NotFoundError, match='Found no projects'):
             dx_p.rmtree()
 
 
@@ -1367,7 +1367,7 @@ class TestCopyTree(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/file.txt')
         posix_p = Path('./{test_folder}/'.format(
             test_folder=self.project))
-        with pytest.raises(exceptions.NotFoundError, match='No folder or project was found'):
+        with pytest.raises(dx.DNAnexusError, match='not found'):
             dx_p.copytree(posix_p)
 
     def test_dx_dir_to_posix(self):
