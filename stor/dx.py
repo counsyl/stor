@@ -529,7 +529,7 @@ class DXPath(OBSPath):
                 within the same DX Project
 
         Raises:
-            DNAnexusError: When cloning within same project with raise_if_same_project=False
+            DNAnexusError: Attempt to clone within same project and raise_if_same_project=True
             TargetExistsError: When all possible destinations for source directory already exist
             NotFoundError: source directory path doesn't exist
         """
