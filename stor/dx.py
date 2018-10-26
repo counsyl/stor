@@ -1147,7 +1147,7 @@ class DXVirtualPath(DXPath):
 
     @cached_property
     def canonical_resource(self):
-        """Returns the dx file-ID of the uniquely matched filename
+        """The dxid of the file at this path
 
         Raises:
             DuplicateError: if filename is not unique
