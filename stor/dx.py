@@ -1223,5 +1223,5 @@ class DXCanonicalPath(DXPath):
 
     @property
     def canonical_path(self):
-        """Returns the DXCanonicalPath instance"""
+        """Get DXCanonicalPath instance for path"""
         return self
