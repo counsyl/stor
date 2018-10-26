@@ -1218,7 +1218,7 @@ class DXCanonicalPath(DXPath):
 
     @property
     def canonical_resource(self):
-        """Returns the canonical dxID of the file resource"""
+        """The canonical dxID of the file resource"""
         return self.resource.lstrip('/') if self.resource else None
 
     @property
