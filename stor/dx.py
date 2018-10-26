@@ -1152,7 +1152,7 @@ class DXVirtualPath(DXPath):
         Raises:
             DuplicateError: if filename is not unique
             NotFoundError: if resource is not found on DX platform
-            ValueError: if path is folder path
+            ValueError: if path looks like a folder path (i.e., ends with trailing slash)
         """
         if not self.resource:
             return None
