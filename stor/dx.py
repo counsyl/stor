@@ -1202,7 +1202,7 @@ class DXCanonicalPath(DXPath):
     @cached_property
     @_propagate_dx_exceptions()
     def virtual_path(self):
-        """Returns the DXVirtualPath instance equivalent to the DXCanonicalPath"""
+        """The DXVirtualPath instance equivalent to the canonical path within the specified project"""
         proj = dxpy.DXProject(dxid=self.project)
         virtual_p = DXVirtualPath(self.drive + proj.name + ':/')
         if self.resource:
