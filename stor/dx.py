@@ -531,7 +531,7 @@ class DXPath(OBSPath):
         Raises:
             DNAnexusError: When cloning within same project with raise_if_same_project=False
             TargetExistsError: When all possible destinations for source directory already exist
-            NotFoundError: When the source directory path doesn't exist
+            NotFoundError: source directory path doesn't exist
         """
         dest = Path(dest)
         if utils.is_dx_path(dest):
