@@ -1213,7 +1213,7 @@ class DXCanonicalPath(DXPath):
 
     @property
     def canonical_project(self):
-        """Returns the canonical dxID of the project"""
+        """The canonical dxid for the project"""
         return self.project
 
     @property
