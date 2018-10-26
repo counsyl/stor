@@ -1111,7 +1111,7 @@ class DXVirtualPath(DXPath):
 
     @property
     def virtual_resource(self):
-        """Returns the human readable path of the resource associated with the DXVirtualPath"""
+        """Human-readable path to the object in its DNAnexus Project (as PosixPath)"""
         return self.resource
 
     @property
