@@ -1191,7 +1191,7 @@ class DXCanonicalPath(DXPath):
 
     @property
     def virtual_project(self):
-        """Returns the virtual name of the project associated with the DXCanonicalPath"""
+        """The virtual (human-readable) name of the project associated with this path"""
         return self.virtual_path.project
 
     @property
