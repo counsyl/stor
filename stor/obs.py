@@ -381,7 +381,6 @@ class OBSFile(object):
         self.mode = mode
         self._kwargs = kwargs
         self.encoding = encoding or locale.getpreferredencoding(False)
-        self._path.encoding = self.encoding
 
     def __enter__(self):
         if self.closed:
