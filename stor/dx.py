@@ -22,13 +22,6 @@ from stor.posix import PosixPath
 logger = logging.getLogger(__name__)
 progress_logger = logging.getLogger('%s.progress' % __name__)
 
-auth_token = settings.get()['dx']['auth_token']
-if auth_token:  # pragma: no cover
-    dxpy.set_security_context({
-        'auth_token_type': 'Bearer',
-        'auth_token': auth_token
-    })
-
 
 class DNAnexusError(stor_exceptions.RemoteError):
     """Base class for all remote errors thrown by this DX module"""
@@ -82,9 +75,15 @@ def _dx_error_to_descriptive_exception(client_exception):
 
 
 @contextmanager
-def _propagate_dx_exceptions():
+def _wrap_dx_calls():
     """Bubbles all dxpy exceptions as `DNAnexusError` classes
     """
+    auth_token = settings.get()['dx']['auth_token']
+    if auth_token:  # pragma: no cover
+        dxpy.set_security_context({
+            'auth_token_type': 'Bearer',
+            'auth_token': auth_token
+        })
     try:
         yield
     except DXError as e:
@@ -177,7 +176,7 @@ class DXPath(OBSPath):
         """
         if not self.resource:
             raise ValueError('DX Projects cannot have a temporary download url')
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                        project=self.canonical_project)
             return file_handler.get_download_url(
@@ -246,11 +245,11 @@ class DXPath(OBSPath):
             raise ValueError('DXPath.remove() can only be called on single object')
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             file_handler.remove()
         self.clear_cached_properties()
 
-    @_propagate_dx_exceptions()
+    @_wrap_dx_calls()
     def rmtree(self):
         """
         Removes a resource and all of its contents.
@@ -281,7 +280,7 @@ class DXPath(OBSPath):
                 raise ValueError('Cannot create a project via makedirs_p()')
             return
         proj_handler = dxpy.DXProject(self.canonical_project)
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             proj_handler.new_folder('/' + self.resource, parents=True)
 
     def isdir(self):
@@ -330,7 +329,7 @@ class DXPath(OBSPath):
             return
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             file_handler.rename(new_name)
         self.clear_cached_properties()
 
@@ -367,7 +366,7 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         target_dest, should_rename = self._prep_for_copy(dest)
 
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             new_file_h = file_handler.clone(project=dest.canonical_project,
                                             folder='/' + (target_dest.parent.resource or ''))
             # no need to rename if we changed destination to include original name
@@ -396,7 +395,7 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         target_dest, should_rename = self._prep_for_copy(dest)
 
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             file_handler.move('/' + (target_dest.parent.resource or ''))
             if should_rename:
                 file_handler.rename(dest.name)
@@ -603,7 +602,7 @@ class DXPath(OBSPath):
         target_dest, should_rename, moved_folder_path = self._prep_for_copytree(dest)
 
         project_handler = dxpy.DXProject(self.canonical_project)
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             project_handler.clone(
                 container=dest.canonical_project,
                 destination=('/' + (target_dest.parent.resource or '')
@@ -647,7 +646,7 @@ class DXPath(OBSPath):
         target_dest, should_rename, moved_folder_path = self._prep_for_copytree(dest)
 
         project_handler = dxpy.DXProject(self.canonical_project)
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             project_handler.move_folder(
                 folder='/' + self.resource,
                 destination='/' + (target_dest.parent.resource or '')
@@ -662,7 +661,7 @@ class DXPath(OBSPath):
                 )
         self.clear_cached_properties()
 
-    @_propagate_dx_exceptions()
+    @_wrap_dx_calls()
     def download_object(self, dest, **kwargs):
         """Download a single path or object to file.
 
@@ -709,7 +708,7 @@ class DXPath(OBSPath):
             results[obj] = dest_obj
         return results
 
-    @_propagate_dx_exceptions()
+    @_wrap_dx_calls()
     def download(self, dest, **kwargs):
         """Download a directory.
 
@@ -771,7 +770,7 @@ class DXPath(OBSPath):
                         .format(dest_file)
                     )
                 else:
-                    with _propagate_dx_exceptions():
+                    with _wrap_dx_calls():
                         dxpy.upload_local_file(
                             filename=upload_obj.source,
                             project=self.canonical_project,
@@ -798,7 +797,7 @@ class DXPath(OBSPath):
             raise ValueError('Can only read_object() on a file path, not a project')
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             result = file_handler.read()
         if six.PY3:  # pragma: no cover
             # TODO (akumar): allow other encoding after update of dxpy3
@@ -929,7 +928,7 @@ class DXPath(OBSPath):
             'describe': {'fields': {'name': True, 'folder': True}},
             'folder': '/' + (self.resource or '')
         }
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             obj_dict = dxpy.DXProject(dxid=proj_id).list_folder(**kwargs)
         for key, values in obj_dict.items():
             for entry in values:
@@ -1004,7 +1003,7 @@ class DXPath(OBSPath):
             'limit': limit,
             'folder': ('/' + (self.resource or '')) + (starts_with or '')
         }
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             list_gen = dxpy.find_data_objects(**kwargs)
         for obj in list_gen:
             if canonicalize:
@@ -1058,7 +1057,7 @@ class DXPath(OBSPath):
         else:
             return self.stat()['size']
 
-    @_propagate_dx_exceptions()
+    @_wrap_dx_calls()
     def stat(self):
         """Performs a stat on the path.
 
@@ -1080,7 +1079,7 @@ class DXVirtualPath(DXPath):
     def virtual_project(self):
         """Returns the virtual name of the project associated with the DXVirtualPath"""
         if utils.is_valid_dxid(self.project, 'project'):
-            with _propagate_dx_exceptions():
+            with _wrap_dx_calls():
                 return dxpy.DXProject(dxid=self.project).name
         return self.project
 
@@ -1106,7 +1105,7 @@ class DXVirtualPath(DXPath):
         if utils.is_valid_dxid(self.project, 'project'):
             return self.project
 
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             try:
                 proj_dict = dxpy.find_one_project(
                     name=self.project, level='VIEW', zero_ok=True, more_ok=False)
@@ -1140,7 +1139,7 @@ class DXVirtualPath(DXPath):
             'project': self.canonical_project,
             'batchsize': 2
         }]
-        with _propagate_dx_exceptions():
+        with _wrap_dx_calls():
             results = dxpy.resolve_data_objects(objects=objects)[0]
         if len(results) > 1:
             raise MultipleObjectSameNameError('Multiple objects found at path ({}). '
@@ -1175,7 +1174,7 @@ class DXCanonicalPath(DXPath):
         return self.virtual_path.resource
 
     @cached_property
-    @_propagate_dx_exceptions()
+    @_wrap_dx_calls()
     def virtual_path(self):
         """The DXVirtualPath instance equivalent to the canonical path within the specified project
         """
