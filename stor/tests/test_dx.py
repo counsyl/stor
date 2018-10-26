@@ -1,9 +1,7 @@
 import os
 import pytest
-import six
 import time
 import unittest
-from unittest import skipIf
 
 import dxpy
 import dxpy.bindings as dxb
@@ -146,20 +144,20 @@ class TestRename(DXTestCase):
     def test_rename_project_fail(self):
         dx_p = DXPath('dx://Random_Project:/')
         with pytest.raises(ValueError, match='cannot be renamed'):
-            dx_p.rename('RandomProject2:')
+            dx_p._rename('RandomProject2:')
 
     def test_rename_folder_fail(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
-            dx_p.rename('folder')
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
+            dx_p._rename('folder')
 
     def test_rename_file_pass(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file')
-        dx_p.rename('folder_file.txt')
+        dx_p._rename('folder_file.txt')
         new_dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
         self.assertTrue(new_dx_p.exists())
 
@@ -167,7 +165,7 @@ class TestRename(DXTestCase):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file')
-        dx_p.rename('folder_file')
+        dx_p._rename('folder_file')
         self.assertTrue(dx_p.exists())
 
 
@@ -266,7 +264,7 @@ line4
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        with pytest.raises(dx.NotFoundError, match='No data object'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.open().read()
         dx_p = DXPath('dx://' + self.project)
         with pytest.raises(ValueError, match='Cannot read project'):
@@ -329,7 +327,7 @@ class TestCanonicalResource(DXTestCase):
     def test_no_resource(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':/random.txt')
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
             dx_p.canonical_resource
 
     def test_unique_resource(self):
@@ -376,7 +374,7 @@ class TestListDir(DXTestCase):
         self.setup_temporary_project()
         self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://'+self.project+':/temp_file.txt')
-        with pytest.raises(dx.NotFoundError, match='specified folder'):
+        with pytest.raises(exceptions.NotFoundError, match='specified folder'):
             dx_p.listdir()
 
     def test_listdir_empty_folder(self):
@@ -400,7 +398,7 @@ class TestListDir(DXTestCase):
     def test_listdir_absent_folder(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':/random_folder')
-        with pytest.raises(dx.NotFoundError, match='specified folder'):
+        with pytest.raises(exceptions.NotFoundError, match='specified folder'):
             dx_p.listdir()
 
     def test_listdir_folder_share_filename(self):
@@ -437,7 +435,7 @@ class TestListDir(DXTestCase):
         self.setup_temporary_project()
         self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt').canonical_path
-        with pytest.raises(dx.NotFoundError, match='specified folder'):
+        with pytest.raises(exceptions.NotFoundError, match='specified folder'):
             dx_p.listdir()
 
     def test_listdir_iter_project(self):
@@ -667,7 +665,7 @@ class TestStat(DXTestCase):
         self.setup_files(['/temp_folder/folder_file.csv'])
         with pytest.raises(ValueError, match='Invalid operation'):
             DXPath('dx://'+self.project+':/temp_folder/').stat()
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
             DXPath('dx://'+self.project+':/temp_folder').stat()
 
     def test_stat_project_error(self):
@@ -679,7 +677,7 @@ class TestStat(DXTestCase):
             DXPath('dx://'+self.project+':').stat()
         with pytest.raises(dx.DuplicateProjectError, match='Duplicate projects'):
             DXPath('dx://'+self.project+':/').stat()
-        with pytest.raises(dx.NotFoundError, match='No projects'):
+        with pytest.raises(exceptions.NotFoundError, match='No projects'):
             DXPath('dx://Random_Proj:').stat()
 
     def test_stat_virtual_project(self):
@@ -840,7 +838,7 @@ class TestTempUrl(DXTestCase):
         with pytest.raises(ValueError, match='Invalid operation'):
             dx_p.temp_url()
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
             dx_p.temp_url()
 
     def test_on_file(self):
@@ -886,7 +884,7 @@ class TestRemove(DXTestCase):
         self.setup_temporary_project()
         self.project_handler.new_folder('/temp_folder')
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
             dx_p.remove()
 
     def test_fail_remove_project(self):
@@ -898,14 +896,14 @@ class TestRemove(DXTestCase):
     def test_fail_remove_nonexistent_file(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
             dx_p.remove()
 
     def test_fail_rmtree_file(self):
         self.setup_temporary_project()
         self.setup_file('/temp_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
-        with pytest.raises(dx.NotFoundError, match='No folders were found'):
+        with pytest.raises(exceptions.NotFoundError, match='No folders were found'):
             dx_p.rmtree()
 
     def test_rmtree_folder(self):
@@ -930,7 +928,7 @@ class TestRemove(DXTestCase):
     def test_fail_remove_nonexistent_project(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://RandomProject:/')
-        with pytest.raises(dx.NotFoundError, match='No projects were found'):
+        with pytest.raises(exceptions.NotFoundError, match='No projects were found'):
             dx_p.rmtree()
 
 
@@ -1121,7 +1119,7 @@ class TestCopy(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/')
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='random'))
-        with pytest.raises(dx.NotFoundError, match='provide a valid source'):
+        with pytest.raises(exceptions.NotFoundError, match='provide a valid source'):
             posix_p.copy(dx_p)
 
     def test_posix_to_existing_dx_fail(self):
@@ -1131,7 +1129,7 @@ class TestCopy(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='rand/file.txt'))
-        with pytest.raises(dx.TargetExistsError, match='will not cause duplicate file'):
+        with pytest.raises(exceptions.TargetExistsError, match='will not cause duplicate file'):
             posix_p.copy(dx_p)
 
     def test_posix_to_dx_folder(self):
@@ -1169,13 +1167,12 @@ class TestCopy(DXTestCase):
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='random.txt'))
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        with pytest.raises(dx.NotFoundError, match='No data object'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.copy(posix_p)
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/')
         with pytest.raises(ValueError, match='Invalid operation'):
             dx_p.copy(posix_p)
 
-    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_file(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1187,7 +1184,6 @@ class TestCopy(DXTestCase):
         dx_p.copy(proj_p)
         self.assertTrue(proj_p.exists())
 
-    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_folder(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1200,7 +1196,6 @@ class TestCopy(DXTestCase):
         expected_p = DXPath('dx://test_dx_to_dx_folder.TempProj:/random/folder_file.txt')
         self.assertTrue(expected_p.exists())
 
-    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_file_folder_no_ext(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1230,11 +1225,11 @@ class TestCopy(DXTestCase):
 
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/file.txt')
         with pytest.raises(dx.DNAnexusError, match='same project'):
-            dx_p.copy(new_dx_p, move_within_project=False)
+            dx_p.copy(new_dx_p, raise_if_same_project=True)
 
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder/')
         with pytest.raises(dx.DNAnexusError, match='same project'):
-            dx_p.copy(new_dx_p, move_within_project=False)
+            dx_p.copy(new_dx_p, raise_if_same_project=True)
 
     def test_dx_to_dx_same_project_exist_dest(self):
         self.setup_temporary_project()
@@ -1257,7 +1252,6 @@ class TestCopy(DXTestCase):
         dx_p.copy(dx_p)
         self.assertTrue(dx_p.exists())
 
-    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_to_dx_diff_project_exist_file(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt'])
@@ -1294,7 +1288,7 @@ class TestCopy(DXTestCase):
         self.assertTrue(new_dx_p.exists())
         self.assertFalse(dx_p.exists())
         new_folder_dx_p = DXPath('dx://' + self.project + ':/another_folder/')
-        with pytest.raises(dx.NotFoundError, match='No data object'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.copy(new_folder_dx_p)
         new_dx_p.copy(dx_p)  # restoring to original state
         dx_p.copy(new_folder_dx_p)
@@ -1318,7 +1312,6 @@ class TestCopy(DXTestCase):
         with pytest.raises(ValueError, match='cannot copy'):
             obs_p.copy(dx_p)
 
-    @skipIf(six.PY3, "clone errors on dxpy for Python3")  # pragma: no cover
     def test_dx_canonical_to_dx_file(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/temp_file.txt')
@@ -1365,7 +1358,7 @@ class TestCopyTree(DXTestCase):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
-        with pytest.raises(dx.NotFoundError, match='No project or directory was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No project or directory was found'):
             dx_p.copytree(dx_p)
 
     def test_dx_file_to_posix(self):
@@ -1374,7 +1367,7 @@ class TestCopyTree(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/file.txt')
         posix_p = Path('./{test_folder}/'.format(
             test_folder=self.project))
-        with pytest.raises(dx.NotFoundError, match='No folder or project was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No folder or project was found'):
             dx_p.copytree(posix_p)
 
     def test_dx_dir_to_posix(self):
@@ -1463,7 +1456,7 @@ class TestCopyTree(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')  # already exists
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='folder/'))
-        with pytest.raises(dx.TargetExistsError, match='will not cause duplicate folders'):
+        with pytest.raises(exceptions.TargetExistsError, match='will not cause duplicate folders'):
             posix_p.copytree(dx_p)
 
     def test_dx_to_other_obs(self):
@@ -1541,7 +1534,7 @@ class TestCopyTree(DXTestCase):
         proj_p = DXPath('dx://test_dx_to_existing_dx_dest_fail.TempProj:/folder2')
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
         proj_handler.new_folder('/folder2/temp_folder', parents=True)
-        with pytest.raises(dx.TargetExistsError, match='Destination path'):
+        with pytest.raises(exceptions.TargetExistsError, match='Destination path'):
             dx_p.copytree(proj_p)
 
     def test_dx_dir_to_dx_root(self):
@@ -1621,10 +1614,10 @@ class TestCopyTree(DXTestCase):
 
         new_dx_p = DXPath('dx://' + self.project + ':/new_folder')
         with pytest.raises(dx.DNAnexusError, match='same project'):
-            dx_p.copytree(new_dx_p, move_within_project=False)
+            dx_p.copytree(new_dx_p, raise_if_same_project=True)
 
         new_dx_p = DXPath('dx://' + self.project + ':/another_folder')
-        with pytest.raises(dx.TargetExistsError, match='duplicate folders'):
+        with pytest.raises(exceptions.TargetExistsError, match='duplicate folders'):
             dx_p.copytree(new_dx_p)
 
     def test_dx_dir_to_dx_dir_same_project(self):
@@ -1673,5 +1666,61 @@ class TestGetSize(DXTestCase):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        with pytest.raises(dx.NotFoundError, match='No data object was found'):
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
             dx_p.getsize()
+
+
+class TestRaiseError(unittest.TestCase):
+    def test_error_403(self):
+        content = {
+            'error': {
+                'type': 'Unauthorized',
+                'message': 'Permission denied'
+            }
+        }
+        dx_error = dxpy.DXAPIError(content, 403)
+        result = dx._dx_error_to_descriptive_exception(dx_error)
+        print(result)
+        self.assertEqual(type(result), exceptions.UnauthorizedError)
+        self.assertEqual(str(result), 'Unauthorized - Permission denied')
+        self.assertEqual(result.caught_exception, dx_error)
+
+    def test_error_404(self):
+        content = {
+            'error': {
+                'type': 'Not Found',
+                'message': 'Resource missing'
+            }
+        }
+        dx_error = dxpy.DXAPIError(content, 404)
+        result = dx._dx_error_to_descriptive_exception(dx_error)
+        self.assertEqual(type(result), exceptions.NotFoundError)
+        self.assertEqual(str(result), 'Not Found - Resource missing')
+        self.assertEqual(result.caught_exception, dx_error)
+
+    def test_error_409(self):
+        content = {
+            'error': {
+                'type': 'Conflict',
+                'message': 'Conflict error mssg'
+            }
+        }
+        dx_error = dxpy.DXAPIError(content, 409)
+        result = dx._dx_error_to_descriptive_exception(dx_error)
+        self.assertEqual(type(result), exceptions.ConflictError)
+        self.assertEqual(str(result), 'Conflict - Conflict error mssg')
+        self.assertEqual(result.caught_exception, dx_error)
+
+    def test_error_checksum_mismatch(self):
+        dx_error = dxpy.DXFileError('DXChecksumMismatchError - mismatch')
+        result = dx._dx_error_to_descriptive_exception(dx_error)
+        self.assertEqual(type(result), dx.InconsistentUploadDownloadError)
+        self.assertEqual(str(result), 'DXChecksumMismatchError - mismatch')
+        self.assertEqual(result.caught_exception, dx_error)
+
+    def test_random_error(self):
+        dx_error = Exception('Random dxpy error')
+        result = dx._dx_error_to_descriptive_exception(dx_error)
+        self.assertEqual(type(result), dx.DNAnexusError)
+        self.assertEqual(str(result), 'Random dxpy error')
+        self.assertEqual(result.caught_exception, dx_error)

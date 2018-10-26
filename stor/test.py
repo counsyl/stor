@@ -195,12 +195,18 @@ class DXTestMixin(object):
 
     DXTestMixin should be used to create base test classes for anything
     that accesses DNAnexus. This Mixin introduces vcrpy into the test case
-    which records all http interactions for playback. To update the cassettes,
-    the easiest way free of error is to delete and rerecord them.
+    which records all http interactions for playback.
     """
     vcr_enabled = True  # switch this to False to deactivate vcr recording
 
     def setUp(self):  # pragma: no cover
+        """Sets us vcr cassettes if enabled, and starts patcher for time.sleep.
+        To update the cassettes, the easiest error-free way is to delete
+        the cassettes and rerecord them.
+
+        Note that changing the record_mode to 'all' temporarily updates the cassettes,
+        but playback from two same set of requests errors in certain scenarios.
+        """
         super(DXTestMixin, self).setUp()
         self.cassette = None
         if self.vcr_enabled:
@@ -225,6 +231,10 @@ class DXTestMixin(object):
         return myvcr
 
     def _get_cassette_library_dir(self):
+        """Sets up different directories for Python 2 and 3, as well as by TestClass
+        subdir, because cassette recording and playback are in different formats
+        (unicode/binary) in Python 2 vs 3, making them incompatible with each other.
+        """
         testdir = os.path.dirname(inspect.getfile(self.__class__))
         cassette_dir = os.path.join(testdir, 'cassettes_py{}'.format(sys.version_info[0]))
         return os.path.join(cassette_dir, self.__class__.__name__)
