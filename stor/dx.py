@@ -1196,7 +1196,7 @@ class DXCanonicalPath(DXPath):
 
     @property
     def virtual_resource(self):
-        """Returns the human readable path of the resource associated with the DXCanonicalPath"""
+        """The virtual (human-readable) path of the resource associated with this path"""
         return self.virtual_path.resource
 
     @cached_property
