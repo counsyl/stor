@@ -515,7 +515,7 @@ class DXPath(OBSPath):
         as a subfolder of the destination. If this new destination also exists,
         a TargetExistsError is raised.
 
-        If the source ris a root folder, and is cloned to an existing destination directory
+        If the source is a root folder, and is cloned to an existing destination directory
         or if the destination is also a root folder, the tree is moved under project name.
 
         Refer to utils.copytree for detailed information.
