@@ -1680,7 +1680,6 @@ class TestRaiseError(unittest.TestCase):
         }
         dx_error = dxpy.DXAPIError(content, 403)
         result = dx._dx_error_to_descriptive_exception(dx_error)
-        print(result)
         self.assertEqual(type(result), exceptions.UnauthorizedError)
         self.assertEqual(str(result), 'Unauthorized - Permission denied')
         self.assertEqual(result.caught_exception, dx_error)
