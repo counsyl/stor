@@ -21,12 +21,14 @@ OBS services (currently swift and s3) using the ``cd`` subcommand::
 
     $ stor cd s3://bucket
     $ stor cd swift://tenant/container
+    $ stor cd dx://myproject:/dir
 
 To check the current working directory, use the ``pwd`` subcommand::
 
     $ stor pwd
     s3://bucket
     swift://tenant/container
+    dx://myproject:/dir
 
 To clear the current working directory, use the ``clear`` subcommand::
 
@@ -34,6 +36,7 @@ To clear the current working directory, use the ``clear`` subcommand::
     $ stor pwd
     s3://
     swift://
+    dx://myproject:
 
 This also means that relative paths can be used. Relative paths are indicated
 by omitting the ``//`` in the path and instead indicating a relative path, as
@@ -69,8 +72,8 @@ subcommand::
     $ stor cat s3://my/file1
     hello world
 
-Direct file transfer between OBS services or within one OBS service (server-side copy)
-is not yet supported.
+Direct file transfer between OBS services is not yet supported,
+and within one OBS service (server-side copy) is only supported for DX.
 """
 import argparse
 import copy
@@ -94,7 +97,7 @@ from stor import utils
 from stor.extensions import swiftstack
 
 PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'url', 'convert-swiftstack')
-SERVICES = ('s3', 'swift')
+SERVICES = ('s3', 'swift', 'dx')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
 PKG_ENV_FILE = os.path.join(os.path.dirname(__file__), 'default.env')
@@ -186,10 +189,13 @@ def _env_chdir(pth):
     """Sets the new current working directory."""
     parser = _get_env()
     if utils.is_obs_path(pth):
-        service = Path(pth).drive.rstrip(':/')
+        if pth == 'dx://':
+            service = 'dx'
+        else:
+            service = Path(pth).drive.rstrip(':/')
     else:
         raise ValueError('%s is an invalid path' % pth)
-    if pth != Path(pth).drive:
+    if pth != 'dx://' and pth != Path(pth).drive:
         if not Path(pth).isdir():
             raise ValueError('%s is not a directory' % pth)
         pth = utils.remove_trailing_slash(pth)
@@ -271,7 +277,7 @@ def get_path(pth, mode=None):
 
 def _to_url(path):
     if stor.is_filesystem_path(path):
-        raise ValueError('must be swift or s3 path')
+        raise ValueError('must be swift or s3 or dx path')
     return stor.Path(path).to_url()
 
 
@@ -389,9 +395,11 @@ def create_parser():
                                          ' will be cleared if SERVICE is omitted.' % clear_msg)
     parser_clear.add_argument('service', nargs='?', type=str, metavar='SERVICE')
     parser_clear.set_defaults(func=_clear_env)
+
     url_parser = subparsers.add_parser('url', help='generate URI for path')
     url_parser.add_argument('path')
     url_parser.set_defaults(func=_to_url)
+
     parser_swiftstack = subparsers.add_parser('convert-swiftstack',
                                               help='convert swiftstack paths')
     parser_swiftstack.add_argument('path')
@@ -415,6 +423,8 @@ def process_args(args):
         for key, val in args_copy.items() if val
     }
     try:
+        if func == stor.list and utils.is_dx_path(pth):
+            func = stor.walkfiles
         if pth:
             return func(pth, **func_kwargs)
         return func(**func_kwargs)
