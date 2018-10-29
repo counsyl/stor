@@ -9,19 +9,20 @@ import dxpy
 import mock
 import six
 
-import stor
-import stor.dx as dx
+from stor import exceptions
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.dx import DXPath
 from stor.test import DXTestCase
 from stor.tests.shared import assert_same_data
-import stor.tests.test_integration as test_integration
 from stor.tests.test_integration import BaseIntegrationTest
+import stor
+import stor.tests.test_integration as test_integration
 
 
 class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
     def setUp(self):
+        self.vcr_enabled = False  # don't want vcr playback for integration tests
         super(DXIntegrationTest, self).setUp()
         if not os.environ.get('DX_AUTH_TOKEN'):
             raise unittest.SkipTest(
@@ -47,7 +48,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
                 'auth_token': 'PUBLIC'
             }
             mock_auth.side_effect = lambda x: mock_header(x, mock_auth.security_context)
-            with pytest.raises(dx.NotFoundError, match='No projects were found'):
+            with pytest.raises(exceptions.NotFoundError, match='no projects'):
                 self.test_dir.makedirs_p()
             self.assertEqual(mock_auth.call_count, 1)
         self.test_dir.makedirs_p()
@@ -63,11 +64,6 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
         with stor.open(test_file, mode='rb') as fp:
             result = fp.read()
         assert result == test_integration.BYTE_STRING
-
-    def test_gzip_on_remote(self):
-        # tried making gzip files work with vcr without success
-        # moved this test case to separate class without vcr
-        pass
 
     def test_copy_to_from_dir(self):
         num_test_objs = 5
@@ -91,7 +87,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
             stor.copytree(
                 '.',
                 self.test_dir)
-        time.sleep(2)  # for uploaded files to close
+        time.sleep(10)  # for uploaded files to close
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.test_dir.copytree(
                 'test')
@@ -154,7 +150,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
             open('.hidden_dir/nested/file2', 'w').close()
             Path('.').copytree(self.test_dir)
 
-        time.sleep(2)  # for uploaded files to close
+        time.sleep(10)  # for uploaded files to close
         with NamedTemporaryDirectory(change_dir=True):
             self.test_dir.copytree('test')
             self.assertTrue(Path('test/.hidden_file').isfile())
@@ -178,23 +174,10 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
             result = fp.read()
         assert result == test_integration.STRING_STRING
 
-    @skipIf(six.PY2, 'explicit encoding currently only supported on Python 3')
     def test_custom_encoding_text(self):
-        test_file = self.test_dir / 'test_file.txt'
-        with stor.open(test_file, mode='w', encoding='utf-16') as fp:
-            fp.write(test_integration.STRING_STRING)
-
-        file_h = dxpy.DXFile(dxid=test_file.canonical_resource,
-                             project=test_file.canonical_project)
-        file_h.wait_on_close(20)  # wait for file to go to closed state
-
-        with stor.open(test_file, mode='r', encoding='utf-16') as fp:
-            result = fp.read()
-        assert result == test_integration.STRING_STRING
-
-        with pytest.raises(UnicodeDecodeError):
-            with stor.open(test_file, mode='r', encoding='utf-8') as fp:
-                result = fp.read()
+        # explicit encoding is only supported for py3 in general
+        # dxpy3 assumes the encoding is utf-8. can't support other encoding for dx
+        pass
 
     def test_over_100_files(self):
         num_test_objs = 123
@@ -207,6 +190,8 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
         self.assertEquals(123, len(self.test_dir.list()))
         self.assertEquals(120, len(self.test_dir.list(limit=120)))
         self.assertTrue(self.test_dir.isdir())
+
+        time.sleep(10)  # for uploaded files to close
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.test_dir.download('./')
@@ -317,32 +302,14 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
                     time.sleep(.5)
                 self.assertFalse((self.test_dir / which_obj).exists())
 
-
-class TestGzip(unittest.TestCase):
-    def setUp(self):
-        super(TestGzip, self).setUp()
-        if not os.environ.get('DX_AUTH_TOKEN'):
-            raise unittest.SkipTest(
-                'DX_AUTH_TOKEN env var not set. Skipping integration test')
-
-    def tearDown(self):
-        super(TestGzip, self).tearDown()
-
-    def new_proj_name(self):
-        return '{0}.{1}'.format(self.__class__.__name__,
-                                self._testMethodName)
-
+    @skipIf(six.PY3, 'dxpy3 assumes utf-8 encoding, not suitable for gzip')
     def test_gzip_on_remote(self):
-        test_proj = dxpy.DXProject()
-        test_proj.new(self.new_proj_name())
-        self.test_dir = DXPath('dx://' + test_proj.name + ':/test')
-        self.addCleanup(test_proj.destroy)
+        self._skip_if_filesystem_python3(self.test_dir)
         local_gzip = os.path.join(os.path.dirname(__file__),
                                   'file_data/s_3_2126.bcl.gz')
         remote_gzip = stor.join(self.test_dir,
                                 stor.basename(local_gzip))
         stor.copy(local_gzip, remote_gzip)
-
         file_h = dxpy.DXFile(dxid=remote_gzip.canonical_resource,
                              project=remote_gzip.canonical_project)
         file_h.wait_on_close(20)  # wait for file to go to closed state
