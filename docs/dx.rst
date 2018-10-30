@@ -156,7 +156,7 @@ the dx-tool in these cases), but you can always use a canonical path.::
     $ dx upload myfile.txt -o MyProject:/myfile.txt
     $ dx upload anotherfile.txt -o MyProject:/myfile.txt
     $ stor cat dx://MyProject:/myfile.txt
-    # MultipleObjectSameNameError: Multiple objects found at path (dx://StorTesting:/1.bam). Try using a canonical ID instead
+    # MultipleObjectsSameNameError: Multiple objects found at path (dx://StorTesting:/1.bam). Try using a canonical ID instead
 
 When a folder has the same name as a file, stor uses the method you call to check for
 a folder or a file (i.e., `DXPath.listdir` will assume folder, `DXPath.stat` will assume file).

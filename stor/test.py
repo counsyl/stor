@@ -210,8 +210,8 @@ class DXTestMixin(object):
         super(DXTestMixin, self).setUp()
         self.cassette = None
         if self.vcr_enabled:
-            kwargs = self._get_vcr_kwargs()
-            myvcr = self._get_vcr(**kwargs)
+            myvcr = vcr.VCR(cassette_library_dir=self._get_cassette_library_dir(),
+                            filter_headers=['authorization'])
             cm = myvcr.use_cassette(self._get_cassette_name())
             self.cassette = cm.__enter__()
             self.addCleanup(cm.__exit__, None, None, None)
@@ -219,16 +219,6 @@ class DXTestMixin(object):
             patcher = mock.patch('time.sleep')
             self.addCleanup(patcher.stop)
             patcher.start()
-
-    def _get_vcr_kwargs(self, **kwargs):
-        kwargs.update({'filter_headers': ['authorization']})
-        return kwargs
-
-    def _get_vcr(self, **kwargs):
-        if 'cassette_library_dir' not in kwargs:  # pragma: no cover
-            kwargs['cassette_library_dir'] = self._get_cassette_library_dir()
-        myvcr = vcr.VCR(**kwargs)
-        return myvcr
 
     def _get_cassette_library_dir(self):
         """Sets up different directories for Python 2 and 3, as well as by TestClass

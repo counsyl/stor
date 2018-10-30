@@ -886,6 +886,22 @@ class SwiftPath(OBSPath):
     def download_objects(self,
                          dest,
                          objects):
+        """See baseclass for complete method documentation
+
+        Args:
+            dest (str): The destination folder to download to. The directory
+                will be created if it doesnt exist.
+            objects (List[str|PosixPath|SwiftPath]): The list of objects to
+                download. The objects can paths relative to the download path
+                or absolute swift paths. Any absolute swift path must be
+                children of the download path
+        Returns:
+            dict: A mapping of all requested ``objs`` to their location on
+                disk
+        Raises:
+            ValueError: This method was called on a path that has no
+                container
+        """
         if not self.container:
             raise ValueError('cannot call download_objects on tenant with no container')
 

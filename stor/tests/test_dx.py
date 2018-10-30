@@ -307,7 +307,7 @@ class TestCanonicalProject(DXTestCase):
         test_proj.new(self.project)
         self.addCleanup(test_proj.destroy)
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(dx.MultipleObjectSameNameError, match='Found more than one project'):
+        with pytest.raises(dx.MultipleObjectsSameNameError, match='Found more than one project'):
             dx_p.canonical_project
 
     def test_canonical_path(self):
@@ -321,6 +321,14 @@ class TestCanonicalProject(DXTestCase):
         self.assertEqual(dx_p.virtual_resource, 'folder_file')
         dx_virtual_p = DXPath('dx://' + self.project + ':/folder_file')
         self.assertEqual(dx_p.virtual_path, dx_virtual_p)
+
+    def test_canonical_path_on_dir(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        dx_p.makedirs_p()
+        self.assertEqual(dx_p.canonical_project, self.proj_id)
+        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
+            dx_p.canonical_path
 
 
 class TestCanonicalResource(DXTestCase):
@@ -341,7 +349,7 @@ class TestCanonicalResource(DXTestCase):
         self.setup_files(['/temp_folder/folder_file.txt',
                           '/temp_folder/folder_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
-        with pytest.raises(dx.MultipleObjectSameNameError, match='Multiple objects found'):
+        with pytest.raises(dx.MultipleObjectsSameNameError, match='Multiple objects found'):
             dx_p.canonical_resource
 
     def test_project(self):
@@ -673,9 +681,9 @@ class TestStat(DXTestCase):
         test_proj = dxb.DXProject()
         test_proj.new(self.project)  # creates duplicate project
         self.addCleanup(test_proj.destroy)
-        with pytest.raises(dx.MultipleObjectSameNameError, match='Found more than one project'):
+        with pytest.raises(dx.MultipleObjectsSameNameError, match='Found more than one project'):
             DXPath('dx://'+self.project+':').stat()
-        with pytest.raises(dx.MultipleObjectSameNameError, match='Found more than one project'):
+        with pytest.raises(dx.MultipleObjectsSameNameError, match='Found more than one project'):
             DXPath('dx://'+self.project+':/').stat()
         with pytest.raises(exceptions.NotFoundError, match='Found no projects'):
             DXPath('dx://Random_Proj:').stat()
@@ -859,16 +867,17 @@ class TestTempUrl(DXTestCase):
         self.setup_temporary_project()
         self.setup_file('/temp_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
-        result = dx_p.temp_url(filename='random.txt', lifetime=1)
-        self.assertIn('dl.dnanex.us', result)
-        self.assertIn('random.txt', result)
-        url = urllib.request.urlopen(result)
+        actual_url = dx_p.temp_url(filename='random.txt', lifetime=1)
+        self.assertIn('dl.dnanex.us', actual_url)
+        self.assertIn('random.txt', actual_url)
+        url = urllib.request.urlopen(actual_url)
         self.assertIn('attachment', url.headers['content-disposition'])
         self.assertIn('random.txt', url.headers['content-disposition'])
         # to allow for max of 2s for link to expire
         time.sleep(2)
         with pytest.raises(urllib.error.HTTPError):
-            urllib.request.urlopen(result)
+            r = urllib.request.urlopen(actual_url)
+            assert not r.ok_
 
 
 class TestRemove(DXTestCase):
@@ -901,7 +910,7 @@ class TestRemove(DXTestCase):
 
     def test_fail_rmtree_file(self):
         self.setup_temporary_project()
-        self.setup_file('/temp_file.txt')
+        self.setup_files(['/temp_file.txt'])
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
         with pytest.raises(exceptions.NotFoundError, match='No folders were found'):
             dx_p.rmtree()
@@ -918,12 +927,14 @@ class TestRemove(DXTestCase):
         self.assertNotIn(dx_p, proj_path.listdir())
 
     def test_rmtree_project(self):
-        proj_handler = dxpy.DXProject()
-        proj_handler.new('test_rmtree_project.TempProj')
-        proj_path = DXPath('dx://test_rmtree_project.TempProj')
+        self.setup_temporary_project()
+        self.project_handler.new_folder('/temp_folder')
+        self.setup_files(['/temp_file.txt',
+                          '/folder2/file'])
+        proj_path = DXPath('dx://' + self.project)
         proj_path.rmtree()
-        with self.assertRaises(dxpy.exceptions.ResourceNotFound):
-            proj_handler.destroy()
+        self.assertEqual(len(proj_path.listdir()), 0)
+        self.assertTrue(proj_path.exists())
 
     def test_fail_remove_nonexistent_project(self):
         self.setup_temporary_project()
@@ -1723,3 +1734,27 @@ class TestRaiseError(unittest.TestCase):
         self.assertEqual(type(result), dx.DNAnexusError)
         self.assertEqual(str(result), 'Random dxpy error')
         self.assertEqual(result.caught_exception, dx_error)
+
+
+class TestLoginAuth(DXTestCase):
+    def test_login_auth(self):
+        def mock_header(r, security_context):
+            auth_header = security_context["auth_token_type"] + " " + \
+                          security_context["auth_token"]
+            r.headers[b'Authorization'] = auth_header.encode()
+            return r
+
+        self.setup_temporary_project()
+        self.test_dir = DXPath('dx://' + self.project + ':test')
+        # dxpy.AUTH_HELPER gets set upon login and called with each api which we mock out here
+        with mock.patch('dxpy.AUTH_HELPER', autospec=True) as mock_auth:
+            mock_auth.security_context = {
+                'auth_token_type': 'Bearer',
+                'auth_token': 'PUBLIC'
+            }
+            mock_auth.side_effect = lambda x: mock_header(x, mock_auth.security_context)
+            with pytest.raises(exceptions.NotFoundError, match='no projects'):
+                self.test_dir.makedirs_p()
+            self.assertEqual(mock_auth.call_count, 1)
+        self.test_dir.makedirs_p()
+        self.assertTrue(self.test_dir.isdir())

@@ -35,25 +35,6 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
     def tearDown(self):
         super(DXIntegrationTest, self).tearDown()
 
-    def test_login_auth(self):
-        def mock_header(r, security_context):
-            auth_header = security_context["auth_token_type"] + " " + \
-                          security_context["auth_token"]
-            r.headers[b'Authorization'] = auth_header.encode()
-            return r
-        # dxpy.AUTH_HELPER gets set upon login and called with each api which we mock out here
-        with mock.patch('dxpy.AUTH_HELPER', autospec=True) as mock_auth:
-            mock_auth.security_context = {
-                'auth_token_type': 'Bearer',
-                'auth_token': 'PUBLIC'
-            }
-            mock_auth.side_effect = lambda x: mock_header(x, mock_auth.security_context)
-            with pytest.raises(exceptions.NotFoundError, match='no projects'):
-                self.test_dir.makedirs_p()
-            self.assertEqual(mock_auth.call_count, 1)
-        self.test_dir.makedirs_p()
-        self.assertTrue(self.test_dir.isdir())
-
     def test_read_bytes_from_binary(self):
         test_file = self.test_dir / 'test_file.txt'
         with stor.open(test_file, mode='wb') as fp:

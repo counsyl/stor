@@ -35,7 +35,7 @@ class DNAnexusError(stor_exceptions.RemoteError):
     pass
 
 
-class MultipleObjectSameNameError(DNAnexusError):
+class MultipleObjectsSameNameError(DNAnexusError):
     """Thrown when multiple objects exist with the same name
 
     Currently, we throw this when trying to get the canonical project
@@ -261,7 +261,13 @@ class DXPath(OBSPath):
         """
         proj_handler = dxpy.DXProject(self.canonical_project)
         if not self.resource:
-            return proj_handler.destroy()
+            folders = self.listdir(only='folders')
+            files = self.listdir(only='objects')
+            for folder_p in folders:
+                folder_p.rmtree()
+            for file_p in files:
+                file_p.remove()
+            return
         try:
             proj_handler.remove_folder('/' + self.resource, recurse=True)
         except dxpy.exceptions.ResourceNotFound as e:
@@ -1063,7 +1069,7 @@ class DXPath(OBSPath):
         """Performs a stat on the path.
 
         Raises:
-            MultipleObjectSameNameError: If project or resource is not unique
+            MultipleObjectsSameNameError: If project or resource is not unique
             NotFoundError: When the project or resource cannot be found
             ValueError: If path is folder path
         """
@@ -1100,7 +1106,7 @@ class DXVirtualPath(DXPath):
         project user has access to.
 
         Raises:
-            MultipleObjectSameNameError: If project name is not unique on DX platform
+            MultipleObjectsSameNameError: If project name is not unique on DX platform
             NotFoundError: If project name doesn't exist on DNAnexus
         """
         if utils.is_valid_dxid(self.project, 'project'):
@@ -1111,7 +1117,7 @@ class DXVirtualPath(DXPath):
                 proj_dict = dxpy.find_one_project(
                     name=self.project, level='VIEW', zero_ok=True, more_ok=False)
             except DXSearchError as e:
-                raise MultipleObjectSameNameError('Found more than one project for given name: '
+                raise MultipleObjectsSameNameError('Found more than one project for given name: '
                                                   '{!r}'.format(self.project), e)
 
         if proj_dict is None:
@@ -1125,7 +1131,7 @@ class DXVirtualPath(DXPath):
         """The dxid of the file at this path
 
         Raises:
-            MultipleObjectSameNameError: if filename is not unique
+            MultipleObjectsSameNameError: if filename is not unique
             NotFoundError: if resource is not found on DX platform
             ValueError: if path looks like a folder path (i.e., ends with trailing slash)
         """
@@ -1143,7 +1149,7 @@ class DXVirtualPath(DXPath):
         with _propagate_dx_exceptions():
             results = dxpy.resolve_data_objects(objects=objects)[0]
         if len(results) > 1:
-            raise MultipleObjectSameNameError('Multiple objects found at path ({}). '
+            raise MultipleObjectsSameNameError('Multiple objects found at path ({}). '
                                               'Try using a canonical ID instead'.format(self))
         elif len(results) == 1:
             return results[0]['id']

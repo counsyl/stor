@@ -22,7 +22,7 @@ SwiftPath
 .. autoclass:: SwiftPath
   :members:
 
-  .. automethod:: open(mode='r', swift_upload_options=None)
+  .. automethod:: open(mode='r')
 
   .. automethod:: glob(pattern, num_objs_cond=None, \**retry_args)
 
