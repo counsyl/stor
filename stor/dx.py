@@ -1118,7 +1118,7 @@ class DXVirtualPath(DXPath):
                     name=self.project, level='VIEW', zero_ok=True, more_ok=False)
             except DXSearchError as e:
                 raise MultipleObjectsSameNameError('Found more than one project for given name: '
-                                                  '{!r}'.format(self.project), e)
+                                                   '{!r}'.format(self.project), e)
 
         if proj_dict is None:
             raise ProjectNotFoundError('Found no projects for name: {!r}'
@@ -1150,7 +1150,7 @@ class DXVirtualPath(DXPath):
             results = dxpy.resolve_data_objects(objects=objects)[0]
         if len(results) > 1:
             raise MultipleObjectsSameNameError('Multiple objects found at path ({}). '
-                                              'Try using a canonical ID instead'.format(self))
+                                               'Try using a canonical ID instead'.format(self))
         elif len(results) == 1:
             return results[0]['id']
         else:

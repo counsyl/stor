@@ -1,15 +1,12 @@
 import gzip
 import os
-import pytest
 import time
 import unittest
 from unittest import skipIf
 
 import dxpy
-import mock
 import six
 
-from stor import exceptions
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.dx import DXPath
