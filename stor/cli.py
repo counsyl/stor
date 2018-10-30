@@ -432,8 +432,6 @@ def process_args(args):
         for key, val in args_copy.items() if val
     }
     try:
-        if func == stor.list and utils.is_dx_path(pth):
-            func = stor.walkfiles
         if pth:
             return func(pth, **func_kwargs)
         return func(**func_kwargs)
