@@ -454,6 +454,9 @@ def main():
     swift_logger = logging.getLogger('stor.swift.progress')
     swift_logger.setLevel(logging.INFO)
     swift_logger.addHandler(handler)
+    dx_logger = logging.getLogger('stor.dx.progress')
+    dx_logger.setLevel(logging.INFO)
+    dx_logger.addHandler(handler)
 
     settings._initialize()
     parser = create_parser()

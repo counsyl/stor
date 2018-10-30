@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: !!python/unicode '{"name": "TestCanonicalResource.test_project.0a4f1251"}'
+    headers:
+      Content-Type: [application/json]
+      DNAnexus-API: [1.0.0]
+      User-Agent: [dxpy/0.267.0 (Darwin-18.0.0-x86_64-i386-64bit)]
+    method: POST
+    uri: https://api.dnanexus.com/project/new
+  response:
+    body: {string: !!python/unicode '{"id":"project-FP9k2000y7PPvv365P3k8ZpY"}'}
+    headers:
+      connection: [keep-alive]
+      content-length: ['41']
+      content-type: [application/json; charset=utf-8]
+      date: ['Fri, 26 Oct 2018 22:11:12 GMT']
+      server: [nginx]
+      x-content-type-options: [nosniff]
+      x-powered-by: [Express]
+      x-request-id: [1540591872056-704187]
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type: [application/json]
+      DNAnexus-API: [1.0.0]
+      User-Agent: [dxpy/0.267.0 (Darwin-18.0.0-x86_64-i386-64bit)]
+    method: POST
+    uri: https://api.dnanexus.com/project-FP9k2000y7PPvv365P3k8ZpY/describe
+  response:
+    body: {string: !!python/unicode '{"id":"project-FP9k2000y7PPvv365P3k8ZpY","name":"TestCanonicalResource.test_project.0a4f1251","class":"project","created":1540591872000,"modified":1540591872000,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'}
+    headers:
+      connection: [keep-alive]
+      content-length: ['656']
+      content-type: [application/json; charset=utf-8]
+      date: ['Fri, 26 Oct 2018 22:11:12 GMT']
+      server: [nginx]
+      x-content-type-options: [nosniff]
+      x-powered-by: [Express]
+      x-request-id: [1540591872208-875942]
+    status: {code: 200, message: OK}
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type: [application/json]
+      DNAnexus-API: [1.0.0]
+      User-Agent: [dxpy/0.267.0 (Darwin-18.0.0-x86_64-i386-64bit)]
+    method: POST
+    uri: https://api.dnanexus.com/project-FP9k2000y7PPvv365P3k8ZpY/destroy
+  response:
+    body: {string: !!python/unicode '{"id":"project-FP9k2000y7PPvv365P3k8ZpY"}'}
+    headers:
+      connection: [keep-alive]
+      content-length: ['41']
+      content-type: [application/json; charset=utf-8]
+      date: ['Fri, 26 Oct 2018 22:11:15 GMT']
+      server: [nginx]
+      x-content-type-options: [nosniff]
+      x-powered-by: [Express]
+      x-request-id: [1540591872326-867556]
+    status: {code: 200, message: OK}
+version: 1

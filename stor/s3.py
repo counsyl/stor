@@ -20,7 +20,6 @@ from stor import exceptions
 from stor import settings
 from stor import utils
 from stor.base import Path
-from stor.obs import OBSFile
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 
@@ -29,8 +28,6 @@ _thread_local = threading.local()
 
 logger = logging.getLogger(__name__)
 progress_logger = logging.getLogger('%s.progress' % __name__)
-
-S3File = OBSFile
 
 
 def _parse_s3_error(exc, **kwargs):
@@ -227,27 +224,6 @@ class S3Path(OBSPath):
             six.raise_from(exceptions.FailedUploadError(str(e), e), e)
         except boto3_exceptions.RetriesExceededError as e:
             six.raise_from(exceptions.FailedDownloadError(str(e), e), e)
-
-    def open(self, mode='r', encoding=None):
-        """
-        Opens a S3File that can be read or written to.
-
-        For examples of reading and writing opened objects, view
-        S3File.
-
-        Args:
-            mode (str): The mode of object IO. Currently supports reading
-                ("r" or "rb") and writing ("w", "wb")
-            encoding (str): text encoding to use. Defaults to
-                ``locale.getpreferredencoding(False)`` (Python 3 only).
-
-        Returns:
-            S3File: The s3 object.
-
-        Raises:
-            RemoteError: A s3 client error occurred.
-        """
-        return S3File(self, mode=mode, encoding=encoding)
 
     def list(self,
              starts_with=None,

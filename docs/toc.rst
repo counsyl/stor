@@ -10,6 +10,7 @@ Table of Contents
    main_interface
    swift
    s3
+   dx
    posix
    windows
    exceptions

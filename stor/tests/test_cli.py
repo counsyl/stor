@@ -130,6 +130,9 @@ class TestCliBasics(BaseCliTest):
                 'segment_threads': 10,
                 'skip_identical': False,
                 'use_slo': True
+            },
+            'dx': {
+                'auth_token': 'fake_token'
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')

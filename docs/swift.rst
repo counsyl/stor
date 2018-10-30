@@ -22,7 +22,7 @@ SwiftPath
 .. autoclass:: SwiftPath
   :members:
 
-  .. automethod:: open(mode='r', swift_upload_options=None)
+  .. automethod:: open(mode='r')
 
   .. automethod:: glob(pattern, num_objs_cond=None, \**retry_args)
 
@@ -75,13 +75,6 @@ until finally throwing a `ConditionNotMetError` if the condition is not met. If 
 Note that if you want to combine multiple conditions, you can do this easily as::
 
   condition = lambda results: all(f(results) for f in my_list_of_conditions)
-
-
-SwiftFile
----------
-
-.. autoclass:: SwiftFile
-  :members:
 
 
 SwiftUploadObject

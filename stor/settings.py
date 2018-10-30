@@ -15,6 +15,9 @@ _ENV_VARS = {
         'auth_url': 'OS_AUTH_URL',
         'temp_url_key': 'OS_TEMP_URL_KEY',
         'num_retries': 'OS_NUM_RETRIES'
+    },
+    'dx': {
+        'auth_token': 'DX_AUTH_TOKEN'
     }
 }
 """

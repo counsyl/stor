@@ -8,6 +8,9 @@ import shutil
 from subprocess import check_call
 import tempfile
 
+from dxpy.bindings import verify_string_dxid
+from dxpy.exceptions import DXError
+
 from stor import exceptions
 
 logger = logging.getLogger(__name__)
@@ -200,7 +203,7 @@ def is_filesystem_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    return not (is_swift_path(p) or is_s3_path(p))
+    return not (is_swift_path(p) or is_s3_path(p) or is_dx_path(p))
 
 
 def is_s3_path(p):
@@ -227,7 +230,65 @@ def is_obs_path(p):
     Returns
         bool: True if p is an OBS path, False otherwise.
     """
-    return is_s3_path(p) or is_swift_path(p)
+    return is_s3_path(p) or is_swift_path(p) or is_dx_path(p)
+
+
+def is_dx_path(p):
+    """Determines if the path is a DX path.
+
+    All DX paths start with ``dx://``
+
+    Args:
+        p (str): The path string
+
+    Returns
+        bool: True if p is a DX path, False otherwise.
+    """
+    from stor.dx import DXPath
+    return p.startswith(DXPath.drive)
+
+
+def is_valid_dxid(dxid, expected_classes):
+    """wrapper class for verify_string_dxid, because
+    verify_string_dxid returns None if success, raises error if failed
+
+    Args: Accepts same args as verify_string_dxid
+
+    Returns
+        bool: Whether given dxid is a valid path of one of expected_classes
+    """
+    try:
+        return verify_string_dxid(dxid, expected_classes) is None
+    except DXError:
+        return False
+
+
+def find_dx_class(p):
+    """Finds the class of the DX path : DXVirtualPath or DXCanonicalPath
+
+    Args:
+        p (str): The path string
+
+    Returns
+        cls: DXVirtualPath or DXCanonicalPath
+    """
+    from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
+    colon_pieces = p[len(DXPath.drive):].split(':', 1)
+    if not colon_pieces or not colon_pieces[0] or '/' in colon_pieces[0]:
+        raise ValueError('Project is required to construct a DXPath')
+    project = colon_pieces[0]
+    resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')
+    resource_parts = resource.split('/')
+    root_name, rest = resource_parts[0], resource_parts[1:]
+    canonical_resource = is_valid_dxid(root_name, 'file') or not resource
+    if canonical_resource and rest:
+        raise ValueError('DX folder paths that start with a valid file dxid are ambiguous')
+    canonical_project = is_valid_dxid(project, 'project')
+
+    if canonical_project and canonical_resource:
+        return DXCanonicalPath
+    else:
+        return DXVirtualPath
 
 
 def is_writeable(path, swift_retry_options=None):
@@ -312,7 +373,7 @@ def is_writeable(path, swift_retry_options=None):
     return answer
 
 
-def copy(source, dest, swift_retry_options=None):
+def copy(source, dest, **kwargs):
     """Copies a source file to a destination file.
 
     Note that this utility can be called from either OBS, posix, or
@@ -354,10 +415,13 @@ def copy(source, dest, swift_retry_options=None):
 
     source = Path(source)
     dest = Path(dest)
-    swift_retry_options = swift_retry_options or {}
+    swift_retry_options = kwargs.pop('swift_retry_options', {})
+    kwargs.update(**swift_retry_options)
+    if is_dx_path(source) and is_dx_path(dest):
+        return source.copy(dest, **kwargs)
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
-    if is_obs_path(dest) and dest.is_ambiguous():
+    if (is_s3_path(dest) or is_swift_path(dest)) and dest.is_ambiguous():
         raise ValueError('OBS destination must be file with extension or directory with slash')
 
     if is_filesystem_path(dest):
@@ -368,7 +432,9 @@ def copy(source, dest, swift_retry_options=None):
         else:
             shutil.copy(source, dest)
     else:
-        dest_file = dest if not dest.endswith('/') else dest / source.name
+        dest_file = dest if not dest.endswith('/') and not (
+                is_dx_path(dest) and dest.isdir()
+        ) else dest / source.name
         if is_swift_path(dest) and not dest_file.parent.container:
             raise ValueError((
                 'cannot copy to tenant "%s" and file '
@@ -381,7 +447,7 @@ def copy(source, dest, swift_retry_options=None):
 
 
 def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
-             condition=None, **retry_args):
+             condition=None, **kwargs):
     """Copies a source directory to a destination directory. Assumes that
     paths are capable of being copied to/from.
 
@@ -437,6 +503,8 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
             used instead of shutil.copytree
         use_manifest (bool, default False): See `SwiftPath.upload` and
             `SwiftPath.download`.
+        condition (function(results) -> bool): See `SwiftPath.upload` and
+            `SwiftPath.download`.
         headers (List[str]): See `SwiftPath.upload`.
 
     Raises:
@@ -447,6 +515,8 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
 
     source = Path(source)
     dest = Path(dest)
+    if is_dx_path(source) and is_dx_path(dest):
+        return source.copytree(dest, **kwargs)
     if is_obs_path(source) and is_obs_path(dest):
         raise ValueError('cannot copy one OBS path to another OBS path')
     from stor.windows import WindowsPath
@@ -457,7 +527,7 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
         dest.expand().abspath().parent.makedirs_p()
         if is_obs_path(source):
             source.download(dest, use_manifest=use_manifest,
-                            condition=condition, **retry_args)
+                            condition=condition, **kwargs)
         else:
             if copy_cmd:
                 copy_cmd = shlex.split(copy_cmd)
@@ -468,9 +538,17 @@ def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
             else:
                 shutil.copytree(source, dest)
     else:
+        if is_dx_path(dest) and (dest.isdir() or dest.endswith('/')):
+            dest = dest / remove_trailing_slash(source).name
+            if dest.isdir():
+                raise exceptions.TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate folders to exist. Remove the original first'
+                    .format(dest)
+                )
         with source:
             dest.upload(['.'], use_manifest=use_manifest, headers=headers,
-                        condition=condition, **retry_args)
+                        condition=condition, **kwargs)
 
 
 def _safe_get_size(name):

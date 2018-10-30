@@ -298,16 +298,13 @@ line4
                             autospec=True) as ntf_mock:
                 ntf_mock.side_effect = [fp]
                 swift_p = SwiftPath('swift://tenant/container/obj')
-                obj = swift_p.open(mode='wb', swift_upload_options={
-                    'use_manifest': True
-                })
+                obj = swift_p.open(mode='wb')
                 obj.write(b'hello')
                 obj.write(b' world')
                 obj.close()
             upload, = mock_upload.call_args_list
             self.assertEquals(upload[0][1][0].source, fp.name)
             self.assertEquals(upload[0][1][0].object_name, swift_p.resource)
-            self.assertEquals(upload[1]['use_manifest'], True)
             self.assertEqual(open(fp.name).read(), 'hello world')
 
     @mock.patch('time.sleep', autospec=True)
