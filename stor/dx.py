@@ -76,7 +76,8 @@ def _dx_error_to_descriptive_exception(client_exception):
 
 @contextmanager
 def _wrap_dx_calls():
-    """Bubbles all dxpy exceptions as `DNAnexusError` classes
+    """Updates the dx_auth_token from settings for dxpy
+    Bubbles all dxpy exceptions as `DNAnexusError` classes
     """
     auth_token = settings.get()['dx']['auth_token']
     if auth_token:  # pragma: no cover
