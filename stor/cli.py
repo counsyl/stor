@@ -36,7 +36,7 @@ To clear the current working directory, use the ``clear`` subcommand::
     $ stor pwd
     s3://
     swift://
-    dx://myproject:
+    dx://
 
 This also means that relative paths can be used. Relative paths are indicated
 by omitting the ``//`` in the path and instead indicating a relative path, as
@@ -275,6 +275,15 @@ def get_path(pth, mode=None):
     return prefix / path_part.split(rel_part, depth)[depth].lstrip('/')
 
 
+def _wrapped_list(path, **kwargs):
+    """Use iterative walkfiles for DX paths, rather than trying to generate full list first"""
+    if utils.is_dx_path(path):
+        func = stor.walkfiles
+    else:
+        func = stor.list
+    return func(path, **kwargs)
+
+
 def _to_url(path):
     if stor.is_filesystem_path(path):
         raise ValueError('must be swift or s3 path')
@@ -292,15 +301,6 @@ def _convert_swiftstack(path, bucket=None):
         return swiftstack.s3_to_swift(path)
     else:
         raise ValueError("invalid path for conversion: '%s'" % path)
-
-
-def _wrapped_list(path, **kwargs):
-    """Use iterative walkfiles for DX paths, rather than trying to generate full list first"""
-    if utils.is_dx_path(path):
-        func = stor.walkfiles
-    else:
-        func = stor.list
-    return func(path, **kwargs)
 
 
 def create_parser():
