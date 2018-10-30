@@ -1143,16 +1143,6 @@ class TestCopy(DXTestCase):
         with pytest.raises(exceptions.TargetExistsError, match='will not cause duplicate file'):
             posix_p.copy(dx_p)
 
-    def test_posix_to_existing_dx_fail(self):
-        self.setup_temporary_project()
-        self.setup_files(['/temp_folder/file.txt'])
-        self.setup_posix_files(['/rand/file.txt'])
-        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
-        posix_p = Path('./{test_folder}/{path}'.format(
-            test_folder=self.project, path='rand/file.txt'))
-        with pytest.raises(dx.TargetExistsError, match='will not cause duplicate file'):
-            posix_p.copy(dx_p)
-
     def test_posix_to_dx_folder(self):
         self.setup_temporary_project()
         self.setup_posix_files(['/rand/random.txt'])
