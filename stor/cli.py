@@ -277,7 +277,7 @@ def get_path(pth, mode=None):
 
 def _to_url(path):
     if stor.is_filesystem_path(path):
-        raise ValueError('must be swift or s3 or dx path')
+        raise ValueError('must be swift or s3 path')
     return stor.Path(path).to_url()
 
 
