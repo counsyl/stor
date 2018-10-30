@@ -1,5 +1,6 @@
 import os
 import pytest
+import traceback
 import time
 import unittest
 
@@ -1746,7 +1747,7 @@ class TestLoginAuth(DXTestCase):
         self.setup_temporary_project()
         self.test_dir = DXPath('dx://' + self.project + ':test')
         # dxpy.AUTH_HELPER gets set upon login and called with each api which we mock out here
-        with mock.patch('dxpy.AUTH_HELPER', autospec=True) as mock_auth:
+        with mock.patch('dxpy.AUTH_HELPER') as mock_auth:
             mock_auth.security_context = {
                 'auth_token_type': 'Bearer',
                 'auth_token': 'PUBLIC'
