@@ -303,6 +303,15 @@ def _convert_swiftstack(path, bucket=None):
         raise ValueError("invalid path for conversion: '%s'" % path)
 
 
+def _wrapped_list(path, **kwargs):
+    """Use iterative walkfiles for DX paths, rather than trying to generate full list first"""
+    if utils.is_dx_path(path):
+        func = stor.walkfiles
+    else:
+        func = stor.list
+    return func(path, **kwargs)
+
+
 def create_parser():
     parser = argparse.ArgumentParser(description='A command line interface for stor.')
 
