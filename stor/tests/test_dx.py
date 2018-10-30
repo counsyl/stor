@@ -877,7 +877,6 @@ class TestTempUrl(DXTestCase):
         time.sleep(2)
         with pytest.raises(urllib.error.HTTPError):
             r = urllib.request.urlopen(actual_url)
-            assert not r.ok_
 
 
 class TestRemove(DXTestCase):
