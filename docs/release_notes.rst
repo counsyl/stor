@@ -3,7 +3,7 @@ Release Notes
 
 v2.1.4
 ------
-* Add api and cli support for manipulating resources on DNAnexus platform.
+* Add API and CLI support for manipulating resources on DNAnexus platform via the ``DXPath`` (i.e., the ``DXVirtualPath`` and ``DXCanonicalPath``) classes.
 * `stor.open` api changed to only accept ``mode`` and ``encoding`` parameters. Other arguments including
   ``swift_upload_options`` removed.
 
