@@ -43,7 +43,7 @@ def _get_env_vars():
     """
     Update settings with environment variables, if applicable.
 
-    Currently handles swift credentials.
+    Currently handles swift and dx credentials.
     """
     new_settings = {}
     for section in _ENV_VARS:

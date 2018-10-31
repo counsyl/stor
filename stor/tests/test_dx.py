@@ -218,10 +218,6 @@ line4
         dx_p = DXPath('dx://' + self.project + ':temp_file')
         with dx_p.open(mode='wb') as f:
             f.write(data)
-        f = dxpy.DXFile(dxid=dx_p.canonical_resource,
-                        project=dx_p.canonical_project)
-        # to allow for max of 20s for file state to go to closed
-        f.wait_on_close(20)
         # open().read() should return str for r
         self.assertEqual(dx_p.open('r').read(), data.decode('ascii'))
         # open().read() should return bytes for rb
@@ -241,10 +237,6 @@ line4
         obj.write(b'hello')
         obj.write(b' world')
         obj.close()
-        f = dxpy.DXFile(dxid=dx_p.canonical_resource,
-                        project=dx_p.canonical_project)
-        # to allow for max of 20s for file state to go to closed
-        f.wait_on_close(20)
         self.assertEqual(b'hello world', dx_p.read_object())
 
     def test_write_multiple_flush_multiple_upload(self):
@@ -255,10 +247,6 @@ line4
             obj.flush()
             obj.write(b' world')
             obj.flush()
-        f = dxpy.DXFile(dxid=dx_p.canonical_resource,
-                        project=dx_p.canonical_project)
-        # to allow for max of 20s for file state to go to closed
-        f.wait_on_close(20)
         self.assertEqual(dx_p.open().read(), 'hello world')
 
     def test_read_dir_fail(self):
@@ -278,11 +266,36 @@ line4
             with dx_p.open(mode='wb') as f:
                 f.write(b'data')
 
+    def test_write_w_settings_no_timeout(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
+        with stor.settings.use({'dx': {'wait_on_close': 0}}):
+            with dx_p.open(mode='wb') as obj:
+                obj.write(b'hello world')
+        with pytest.raises(dx.DNAnexusError, match='closed'):
+            dx_p.open().read()
+        time.sleep(30)  # wait for file to go to closed
+        self.assertEqual(dx_p.open().read(), 'hello world')
+
+    def test_write_w_settings_big_timeout(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
+        with stor.settings.use({'dx': {'wait_on_close': 30}}):
+            with dx_p.open(mode='wb') as obj:
+                obj.write(b'hello world')
+        self.assertEqual(dx_p.open().read(), 'hello world')
+
 
 class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
     drive = 'dx://project:'  # project is required for DX paths
     path_class = DXPath
     normal_path = DXPath('dx://project:/obj')
+
+    def setUp(self):
+        super(TestDXOBSFile, self).setUp()
+        patcher = mock.patch('stor.obs.OBSFile.dx_close_helper')
+        self.addCleanup(patcher.stop)
+        patcher.start()
 
     def test_makedirs_p_does_nothing(self):
         # skipping dumb test in superClass SharedOBSFileCases...

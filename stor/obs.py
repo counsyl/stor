@@ -2,6 +2,7 @@ import locale
 import posixpath
 import sys
 
+import dxpy
 import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
@@ -9,6 +10,7 @@ from swiftclient.service import SwiftUploadObject
 from stor.base import Path
 from stor.posix import PosixPath
 from stor import utils
+import stor
 
 
 def _delegate_to_buffer(attr_name, valid_modes=None):
@@ -450,6 +452,22 @@ class OBSFile(object):
                 self.flush()
             self._buffer.close()
         self.closed = True
+        # we want to wait_on_close on DXPath only if no error was thrown while writing the file
+        if not any(sys.exc_info()):  # pragma: no cover
+            self.dx_close_helper()
+
+    def dx_close_helper(self):
+        if isinstance(self._path, stor.dx.DXPath):
+            wait_on_close = stor.settings.get()['dx']['wait_on_close']
+            if wait_on_close:
+                f = dxpy.DXFile(dxid=self._path.canonical_resource,
+                                project=self._path.canonical_project)
+                try:
+                    f.wait_on_close(wait_on_close)
+                # ignore timeout because we want client code to deal with it
+                except dxpy.DXError as e:  # pragma: no cover
+                    if 'timeout' not in str(e):
+                        raise
 
     def flush(self):
         """Flushes the write buffer to the OBS path (if it exists)"""
