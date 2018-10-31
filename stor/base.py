@@ -262,7 +262,7 @@ class Path(text_type):
         """
         return self.path_class(self.path_module.join(self, *others))
 
-    def open(self, *args, **kwargs):
+    def open(self, mode=None, encoding=None):
         """Open a file-like object.
 
         The only cross-compatible arguments for this function are listed below.
@@ -371,7 +371,7 @@ class FileSystemPath(Path):
     In particular: allows changing directory when used as contextmanager and
     wraps Python's builtin open() to be compatible with swift_upload_args.
     """
-    def open(self, *args, **kwargs):
+    def open(self, mode=None, encoding=None):
         """
         Opens a path and retains interface compatibility with
         `SwiftPath` by popping the unused ``swift_upload_args`` keyword
@@ -379,9 +379,13 @@ class FileSystemPath(Path):
 
         Creates parent directory if it does not exist.
         """
-        kwargs.pop('swift_upload_kwargs', None)
         self.parent.makedirs_p()
-        return builtins.open(self, *args, **kwargs)
+        kwargs = {}
+        if mode:
+            kwargs['mode'] = mode
+        if encoding:
+            kwargs['encoding'] = encoding
+        return builtins.open(self, **kwargs)
 
     def __enter__(self):
         self._old_dir = os.getcwd()

@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v3.0.0
+------
+
+API Breaks
+^^^^^^^^^^
+
+* ``swift_upload_kwargs``  / ``swift_upload_options`` are no longer allowed in ``OBSFile()`` or ``stor.open()``
+* The only permitted arguments/keyword arguments to ``open()`` are now ``mode`` and ``encoding``.
+
 v2.1.3
 ------
 
