@@ -4,11 +4,18 @@ Release Notes
 v3.0.0
 ------
 
+API Additions
+^^^^^^^^^^^^^
+
+* Add API and CLI support for manipulating resources on DNAnexus platform via the ``DXPath``
+  (i.e., the ``DXVirtualPath`` and ``DXCanonicalPath``) classes.
+
 API Breaks
 ^^^^^^^^^^
 
 * ``swift_upload_kwargs``  / ``swift_upload_options`` are no longer allowed in ``OBSFile()`` or ``stor.open()``
-* The only permitted arguments/keyword arguments to ``open()`` are now ``mode`` and ``encoding``.
+* ``stor.open`` api changed to only accept ``mode`` and ``encoding`` parameters. Other arguments
+  including ``swift_upload_options`` removed.
 
 v2.1.3
 ------
