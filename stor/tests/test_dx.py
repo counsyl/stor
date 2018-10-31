@@ -293,7 +293,7 @@ class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
 
     def setUp(self):
         super(TestDXOBSFile, self).setUp()
-        patcher = mock.patch('stor.obs.OBSFile.dx_close_helper')
+        patcher = mock.patch('stor.obs.OBSFile._wait_on_close')
         self.addCleanup(patcher.stop)
         patcher.start()
 
