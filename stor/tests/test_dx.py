@@ -134,7 +134,7 @@ class TestCompatHelpers(unittest.TestCase):
     def test_normpath(self):
         self.assertEqual(DXPath('dx://project:/another/../b').normpath(),
                          DXPath('dx://project:/b'))
-        # test '../' on root folder defaults to root folder
+        # how projects should be normalized
         self.assertEqual(DXPath('dx://project:/..').normpath(),
                          DXPath('dx://project:/'))
         self.assertEqual(DXPath('dx://project:/folder/..').normpath(),
@@ -145,13 +145,13 @@ class TestCompatHelpers(unittest.TestCase):
                          DXPath('dx://project:/'))
         self.assertEqual(DXPath('dx://project:a/b').normpath(),
                          DXPath('dx://project:/a/b'))
-        # test virtual paths are normalized to canonical paths when appropriate
+        # ../ on root should not change project
         self.assertEqual(DXPath(
             'dx://project-123456789012345678901234:../file-123456789012345678901234'
         ).normpath(),
              DXPath(
                  'dx://project-123456789012345678901234:file-123456789012345678901234'))
-        # test normpath removes leading slash for canonical paths
+        # leading slash removed from canonical paths
         self.assertEqual(DXPath(
             'dx://project-123456789012345678901234:/file-123456789012345678901234'
         ).normpath(),
