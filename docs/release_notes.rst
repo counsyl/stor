@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v2.1.4
+------
+* Add api and cli support for manipulating resources on DNAnexus platform
+
 v2.1.3
 ------
 
