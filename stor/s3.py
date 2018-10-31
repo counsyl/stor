@@ -486,7 +486,11 @@ class S3Path(OBSPath):
             content (bytes): raw bytes to write to OBS
         """
         if not isinstance(content, bytes):  # pragma: no cover
-            warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
+            if six.PY2:
+                # bytes/unicode a little confused so allow it
+                warnings.warn('future versions of stor (and Python 3) will raise a TypeError if content is not bytes')
+            else:
+                raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if isinstance(content, bytes) else 'w'
         with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)

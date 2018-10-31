@@ -662,7 +662,11 @@ class SwiftPath(OBSPath):
                 `SwiftPath.upload`
         """
         if not isinstance(content, bytes):  # pragma: no cover
-            warnings.warn('future versions of stor will raise a TypeError if content is not bytes')
+            if six.PY2:
+                # bytes/unicode a little confused so allow it
+                warnings.warn('future versions of stor (and Python 3) will raise a TypeError if content is not bytes')
+            else:
+                raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if type(content) == bytes else 'wt'
         with tempfile.NamedTemporaryFile(mode=mode) as fp:
             fp.write(content)

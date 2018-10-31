@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v3.0.0
+------
+
+API Breaks
+^^^^^^^^^^
+
+* ``write_object()`` *only* allows ``bytes`` data in Python 3 (it will raise a
+  ``TypeError`` otherwise). Behavior in Python 2 is unchanged.
+
 v2.1.3
 ------
 
