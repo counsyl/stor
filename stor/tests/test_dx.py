@@ -1,6 +1,6 @@
 import os
 import pytest
-import traceback
+import requests
 import time
 import unittest
 
@@ -132,13 +132,31 @@ class TestCompatHelpers(unittest.TestCase):
         self.assertEqual(expanded2, other)
 
     def test_normpath(self):
-        original = DXPath('dx://project:/another/../b')
-        self.assertEqual(original.normpath(),
+        self.assertEqual(DXPath('dx://project:/another/../b').normpath(),
                          DXPath('dx://project:/b'))
-        with pytest.raises(ValueError, match='Project is required'):
-            DXPath("dx://project:/..").normpath()
-        self.assertEqual(DXPath("dx://project:/folder/..").normpath(),
-                         DXPath("dx://project:"))
+        # how projects should be normalized
+        self.assertEqual(DXPath('dx://project:/..').normpath(),
+                         DXPath('dx://project:/'))
+        self.assertEqual(DXPath('dx://project:/folder/..').normpath(),
+                         DXPath('dx://project:/'))
+        self.assertEqual(DXPath('dx://project:dir///..///').normpath(),
+                         DXPath('dx://project:/'))
+        self.assertEqual(DXPath('dx://project:///..//..///..').normpath(),
+                         DXPath('dx://project:/'))
+        self.assertEqual(DXPath('dx://project:a/b').normpath(),
+                         DXPath('dx://project:/a/b'))
+        # ../ on root should not change project
+        self.assertEqual(DXPath(
+            'dx://project-123456789012345678901234:../file-123456789012345678901234'
+        ).normpath(),
+             DXPath(
+                 'dx://project-123456789012345678901234:file-123456789012345678901234'))
+        # leading slash removed from canonical paths
+        self.assertEqual(DXPath(
+            'dx://project-123456789012345678901234:/file-123456789012345678901234'
+        ).normpath(),
+             DXPath(
+                 'dx://project-123456789012345678901234:file-123456789012345678901234'))
 
 
 class TestRename(DXTestCase):
@@ -867,15 +885,15 @@ class TestTempUrl(DXTestCase):
         self.setup_temporary_project()
         self.setup_file('/temp_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
-        result = dx_p.temp_url()
-        self.assertIn('dl.dnanex.us', result)
+        actual_url = dx_p.temp_url()
+        self.assertIn('dl.dnanex.us', actual_url)
 
     def test_on_file_canonical(self):
         self.setup_temporary_project()
         self.setup_file('/temp_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt').canonical_path
-        result = dx_p.temp_url()
-        self.assertIn('dl.dnanex.us', result)
+        actual_url = dx_p.temp_url()
+        self.assertIn('dl.dnanex.us', actual_url)
 
     def test_on_file_named_timed(self):
         self.setup_temporary_project()
@@ -884,13 +902,13 @@ class TestTempUrl(DXTestCase):
         actual_url = dx_p.temp_url(filename='random.txt', lifetime=1)
         self.assertIn('dl.dnanex.us', actual_url)
         self.assertIn('random.txt', actual_url)
-        url = urllib.request.urlopen(actual_url)
+        url = requests.get(actual_url)
         self.assertIn('attachment', url.headers['content-disposition'])
         self.assertIn('random.txt', url.headers['content-disposition'])
         # to allow for max of 2s for link to expire
         time.sleep(2)
-        with pytest.raises(urllib.error.HTTPError):
-            r = urllib.request.urlopen(actual_url)
+        r = requests.get(actual_url)
+        assert not r.ok
 
 
 class TestRemove(DXTestCase):

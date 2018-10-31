@@ -156,6 +156,9 @@ class DXPath(OBSPath):
     def canonical_path(self):
         raise NotImplementedError
 
+    def normpath(self):
+        raise NotImplementedError
+
     @property
     def project(self):
         """The project name from the path or None"""
@@ -1164,6 +1167,13 @@ class DXVirtualPath(DXPath):
             drive=self.drive, proj_id=self.canonical_project,
             resource=(self.canonical_resource or '')))
 
+    def normpath(self):
+        normed_resource = self.path_module.normpath('/' + self.resource)[1:]
+        norm_pth = self.path_class(self.drive + self.project + ':/' + normed_resource)
+        if isinstance(norm_pth, DXCanonicalPath):
+            return norm_pth.normpath()
+        return norm_pth
+
 
 class DXCanonicalPath(DXPath):
     """Represents fully canonicalized DNAnexus paths:
@@ -1207,3 +1217,6 @@ class DXCanonicalPath(DXPath):
     def canonical_path(self):
         """Get DXCanonicalPath instance for path"""
         return self
+
+    def normpath(self):
+        return self.path_class(self.drive + self.project + ':' + self.resource)
