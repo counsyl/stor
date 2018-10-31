@@ -32,17 +32,6 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
     def tearDown(self):
         super(DXIntegrationTest, self).tearDown()
 
-    def test_read_bytes_from_binary(self):
-        test_file = self.test_dir / 'test_file.txt'
-        with stor.open(test_file, mode='wb') as fp:
-            fp.write(test_integration.BYTE_STRING)
-        file_h = dxpy.DXFile(dxid=test_file.canonical_resource,
-                             project=test_file.canonical_project)
-        file_h.wait_on_close(20)  # wait for file to go to closed state
-        with stor.open(test_file, mode='rb') as fp:
-            result = fp.read()
-        assert result == test_integration.BYTE_STRING
-
     def test_copy_to_from_dir(self):
         num_test_objs = 5
         min_obj_size = 100
@@ -169,7 +158,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
         self.assertEquals(120, len(self.test_dir.list(limit=120)))
         self.assertTrue(self.test_dir.isdir())
 
-        time.sleep(10)  # for uploaded files to close
+        time.sleep(20)  # for uploaded files to close
 
         with NamedTemporaryDirectory(change_dir=True) as tmp_d:
             self.test_dir.download('./')
