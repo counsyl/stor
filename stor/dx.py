@@ -156,6 +156,9 @@ class DXPath(OBSPath):
     def canonical_path(self):
         raise NotImplementedError
 
+    def normpath(self):
+        raise NotImplementedError
+
     @property
     def project(self):
         """The project name from the path or None"""
@@ -203,18 +206,6 @@ class DXPath(OBSPath):
         parts = self._get_parts()
         joined_resource = '/'.join(parts[1:]) if len(parts) > 1 else None
         return self.parts_class(joined_resource) if joined_resource else None
-
-    def normpath(self):
-        colon_pieces = self[len(self.drive):].split(':', 1)
-        project = colon_pieces[0]
-        resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')
-        normed_resource = self.path_module.normpath('/' + resource)[1:]
-        norm_pth = self.path_class(self.drive + project + ':/' + normed_resource)
-        if isinstance(norm_pth, DXCanonicalPath):
-            return self.path_class(self.drive + project + ':' + normed_resource)
-        if not norm_pth.resource:
-            norm_pth = utils.with_trailing_slash(norm_pth)
-        return norm_pth
 
     def dirname(self):
         """Returns directory name of path. Returns self if path is a project.
@@ -1176,6 +1167,13 @@ class DXVirtualPath(DXPath):
             drive=self.drive, proj_id=self.canonical_project,
             resource=(self.canonical_resource or '')))
 
+    def normpath(self):
+        normed_resource = self.path_module.normpath('/' + self.resource)[1:]
+        norm_pth = self.path_class(self.drive + self.project + ':/' + normed_resource)
+        if isinstance(norm_pth, DXCanonicalPath):
+            return norm_pth.normpath()
+        return norm_pth
+
 
 class DXCanonicalPath(DXPath):
     """Represents fully canonicalized DNAnexus paths:
@@ -1219,3 +1217,6 @@ class DXCanonicalPath(DXPath):
     def canonical_path(self):
         """Get DXCanonicalPath instance for path"""
         return self
+
+    def normpath(self):
+        return self.path_class(self.drive + self.project + ':' + self.resource)
