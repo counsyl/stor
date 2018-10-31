@@ -1,11 +1,11 @@
 Release Notes
 =============
 
-v2.1.4
+v3.0.0
 ------
 * Add api and cli support for manipulating resources on DNAnexus platform.
-* `stor.open` api changed to only accept ``mode`` and ``encoding`` parameters. Other arguments including
-  ``swift_upload_options`` removed.
+* ``stor.open`` api changed to only accept ``mode`` and ``encoding`` parameters. Other arguments
+  including ``swift_upload_options`` removed.
 
 v2.1.3
 ------
