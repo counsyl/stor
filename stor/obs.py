@@ -358,7 +358,7 @@ class OBSFile(object):
     # to know whether we need to close the underlying buffer
     _buffer = None
 
-    def __init__(self, pth, mode='r', encoding=None, **kwargs):
+    def __init__(self, pth, mode='r', encoding=None):
         """Initializes a file object
 
         Args:
@@ -379,7 +379,6 @@ class OBSFile(object):
             raise TypeError('encoding not supported in Python 2')
         self._path = pth
         self.mode = mode
-        self._kwargs = kwargs
         self.encoding = encoding or locale.getpreferredencoding(False)
 
     def __enter__(self):
