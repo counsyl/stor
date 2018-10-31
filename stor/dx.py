@@ -204,6 +204,18 @@ class DXPath(OBSPath):
         joined_resource = '/'.join(parts[1:]) if len(parts) > 1 else None
         return self.parts_class(joined_resource) if joined_resource else None
 
+    def normpath(self):
+        colon_pieces = self[len(self.drive):].split(':', 1)
+        project = colon_pieces[0]
+        resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')
+        normed_resource = self.path_module.normpath('/' + resource)[1:]
+        norm_pth = self.path_class(self.drive + project + ':/' + normed_resource)
+        if isinstance(norm_pth, DXCanonicalPath):
+            return self.path_class(self.drive + project + ':' + normed_resource)
+        if not norm_pth.resource:
+            norm_pth = utils.with_trailing_slash(norm_pth)
+        return norm_pth
+
     def dirname(self):
         """Returns directory name of path. Returns self if path is a project.
 
