@@ -207,7 +207,7 @@ class TestCopytree(unittest.TestCase):
 class TestOpen(unittest.TestCase):
     def test_functional_open(self):
         with tempfile.NamedTemporaryFile() as f:
-            with stor.open(f.name, 'w', swift_upload_kwargs={}) as f:
+            with stor.open(f.name, 'w') as f:
                 f.write('blah')
 
     def test_open_works(self):
