@@ -380,11 +380,8 @@ class FileSystemPath(Path):
         Creates parent directory if it does not exist.
         """
         self.parent.makedirs_p()
-        kwargs = {}
-        if mode:
-            kwargs['mode'] = mode
-        if encoding:
-            kwargs['encoding'] = encoding
+        # only set kwargs if they aren't set to avoid overwriting defaults
+        kwargs = {k: v for k, v in [('mode', mode), ('encoding', encoding)] if v}
         return builtins.open(self, **kwargs)
 
     def __enter__(self):
