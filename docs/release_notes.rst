@@ -13,9 +13,10 @@ API Additions
 API Breaks
 ^^^^^^^^^^
 
-* ``swift_upload_kwargs``  / ``swift_upload_options`` are no longer allowed in ``OBSFile()`` or ``stor.open()``
 * ``stor.open`` api changed to only accept ``mode`` and ``encoding`` parameters. Other arguments
-  including ``swift_upload_options`` removed.
+  (including ``swift_upload_options``  / ``swift_upload_kwargs`` / ``swift_download_kwargs``) removed.
+* ``write_object()`` *only* allows ``bytes`` data in Python 3 (it will raise a
+  ``TypeError`` otherwise). Behavior in Python 2 is unchanged.
 
 v2.1.3
 ------
