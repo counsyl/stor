@@ -486,4 +486,4 @@ class OBSFile(object):
         if self.mode == 'w':
             self._path.write_object(self._buffer.getvalue().encode(self.encoding))
         else:
-            self._path.write_object(self._buffer.getvalue(), **self._kwargs)
+            self._path.write_object(self._buffer.getvalue())
