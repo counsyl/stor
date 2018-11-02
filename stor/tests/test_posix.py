@@ -205,19 +205,12 @@ class TestCopytree(unittest.TestCase):
 
 
 class TestOpen(unittest.TestCase):
-    def test_open_works_w_swift_params(self):
-        with tempfile.NamedTemporaryFile() as f:
-            p = Path(f.name).open(swift_upload_kwargs={
-                'use_slo': True
-            })
-            p.close()
-
     def test_functional_open(self):
         with tempfile.NamedTemporaryFile() as f:
-            with stor.open(f.name, 'w', swift_upload_kwargs={}) as f:
+            with stor.open(f.name, 'w') as f:
                 f.write('blah')
 
-    def test_open_works_wo_swift_params(self):
+    def test_open_works(self):
         with tempfile.NamedTemporaryFile() as f:
             p = stor.Path(f.name).open()
             p.close()

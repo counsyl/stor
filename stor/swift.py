@@ -646,7 +646,7 @@ class SwiftPath(OBSPath):
                                  '&'.join(query),
                                  auth_url_parts.fragment))
 
-    def write_object(self, content, **swift_upload_args):
+    def write_object(self, content):
         """Writes an individual object.
 
         Note that this method writes the provided content to a temporary
@@ -658,8 +658,6 @@ class SwiftPath(OBSPath):
 
         Args:
             content (bytes): raw bytes to write to OBS
-            **swift_upload_args: Keyword arguments to pass to
-                `SwiftPath.upload`
         """
         if not isinstance(content, bytes):  # pragma: no cover
             if six.PY2:
@@ -673,7 +671,7 @@ class SwiftPath(OBSPath):
             fp.write(content)
             fp.flush()
             suo = OBSUploadObject(fp.name, object_name=self.resource)
-            return self.upload([suo], **swift_upload_args)
+            return self.upload([suo])
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def list(self,

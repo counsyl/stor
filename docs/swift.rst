@@ -34,7 +34,7 @@ SwiftPath
 
   .. automethod:: copy(dest, swift_retry_args=None)
 
-  .. automethod:: copytree(dest, copy_cmd='cp -r', swift_upload_options=None, swift_download_options=None)
+  .. automethod:: copytree(dest, copy_cmd='cp -r')
 
   .. automethod:: upload(to_upload, segment_size=DEFAULT_SEGMENT_SIZE, use_slo=True, segment_container=None, leave_segments=False, changed=False, object_name=None, object_threads=10, segment_threads=10, condition=None, use_manifest=False, \**retry_args)
 
