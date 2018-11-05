@@ -12,7 +12,7 @@ from stor import exceptions
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor import settings
-from stor import swift
+from stor_swift import swift
 from stor import utils
 from stor.tests.test_integration import BaseIntegrationTest
 

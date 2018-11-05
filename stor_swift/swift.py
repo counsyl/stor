@@ -17,7 +17,7 @@ Examples:
     A basic example of configuring the swift authentication parameters
     and downloading a directory::
 
-    >>> from stor import swift
+    >>> from stor_swift import swift
     >>> from stor import settings
     >>> settings.update({
     ...     'swift': {
@@ -953,7 +953,7 @@ class SwiftPath(OBSPath):
 
         This method retries ``num_retries`` times if swift is unavailable or if
         the returned download result does not match the ``condition``
-        condition. View `module-level documentation <stor.swift>`
+        condition. View `module-level documentation <stor_swift.swift>`
         for more information about configuring retry logic at the module or
         method level.
 
@@ -1033,7 +1033,7 @@ class SwiftPath(OBSPath):
 
         This method retries ``num_retries`` times if swift is unavailable or if
         the returned upload result does not match the ``condition``
-        condition. View `module-level documentation <stor.swift>`
+        condition. View `module-level documentation <stor_swift.swift>`
         for more information about configuring retry logic at the module or
         method level.
 
@@ -1192,7 +1192,7 @@ class SwiftPath(OBSPath):
     def rmtree(self):
         """Removes a resource and all of its contents.
         This method retries ``num_retries`` times if swift is unavailable.
-        View `module-level documentation <stor.swift>` for more
+        View `module-level documentation <stor_swift.swift>` for more
         information about configuring retry logic at the module or method
         level.
 

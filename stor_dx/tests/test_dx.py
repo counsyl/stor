@@ -8,14 +8,14 @@ import dxpy
 import dxpy.bindings as dxb
 import mock
 
-import stor
 from stor import exceptions
 from stor import Path
 from stor import utils
-from stor.dx import DXPath
-import stor.dx as dx
-from stor.test import DXTestCase
 from stor.tests.shared_obs import SharedOBSFileCases
+from stor_dx.dx import DXPath
+from stor_dx.test import DXTestCase
+import stor
+import stor_dx.dx as dx
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestBasicPathMethods(unittest.TestCase):
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
-        from stor.dx import DXVirtualPath  # flake8: noqa
+        from stor_dx.dx import DXVirtualPath  # flake8: noqa
         dx_p = DXPath('dx://t:/c/p')
         self.assertEqual(eval(repr(dx_p)), dx_p)
 

@@ -9,10 +9,11 @@ import unittest
 from testfixtures import LogCapture
 
 import stor
+import stor_swift
 from stor import Path
 from stor.posix import PosixPath
-from stor.s3 import S3Path
-from stor.swift import SwiftPath
+from stor_s3.s3 import S3Path
+from stor_swift.swift import SwiftPath
 from stor.windows import WindowsPath
 from stor import utils
 
@@ -357,7 +358,7 @@ class TestIsWriteableSwift(unittest.TestCase):
     def setUp(self):
         super(TestIsWriteableSwift, self).setUp()
 
-        mock_exists_patcher = mock.patch('stor.swift.SwiftPath.exists', autospec=True)
+        mock_exists_patcher = mock.patch('stor_swift.swift.SwiftPath.exists', autospec=True)
         self.mock_exists = mock_exists_patcher.start()
         self.addCleanup(mock_exists_patcher.stop)
 
@@ -366,7 +367,7 @@ class TestIsWriteableSwift(unittest.TestCase):
         self.addCleanup(mock_copy_patcher.stop)
 
         mock_remove_container_patcher = mock.patch(
-            'stor.swift.SwiftPath.remove_container', autospec=True)
+            'stor_swift.swift.SwiftPath.remove_container', autospec=True)
         self.mock_remove_container = mock_remove_container_patcher.start()
         self.addCleanup(mock_remove_container_patcher.stop)
 
@@ -404,7 +405,7 @@ class TestIsWriteableSwift(unittest.TestCase):
         self.assertFalse(self.mock_remove_container.called)
 
     def test_path_no_perms(self):
-        self.mock_copy.side_effect = stor.swift.UnauthorizedError('foo')
+        self.mock_copy.side_effect = stor_swift.swift.UnauthorizedError('foo')
         self.assertFalse(utils.is_writeable('swift://AUTH_stor_test/container/test/'))
 
     def test_disable_backoff(self):
@@ -427,7 +428,7 @@ class TestIsWriteableSwift(unittest.TestCase):
         # Simulate that container doesn't exist at the beginning, but is created after the
         # is_writeable is called.
         self.mock_exists.side_effect = [False, True]
-        self.mock_remove_container.side_effect = stor.swift.ConflictError('foo')
+        self.mock_remove_container.side_effect = stor_swift.swift.ConflictError('foo')
         self.assertTrue(utils.is_writeable('swift://AUTH_stor_test/container/'))
 
 
