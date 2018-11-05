@@ -1,11 +1,11 @@
 interactions:
 - request:
-    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.a553db78"}'
+    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.dfaf85ee"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -22,17 +22,17 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/project/new
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4"}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['41']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:23 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:19 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983367-267926]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457199754-865895]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -41,7 +41,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -56,29 +56,29 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/describe
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/describe
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","name":"TestOpen.test_write_multiple_flush_multiple_upload.a553db78","class":"project","created":1541007983000,"modified":1541007983000,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","name":"TestOpen.test_write_multiple_flush_multiple_upload.dfaf85ee","class":"project","created":1541457199000,"modified":1541457199000,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['672']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:23 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:19 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983464-916196]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457199855-724290]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.a553db78",
+    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.dfaf85ee",
       "level": "VIEW", "limit": 2}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -95,27 +95,27 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/system/findProjects
   response:
-    body: {string: '{"results":[{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","level":"ADMINISTER","permissionSources":["user-akumar_counsyl"],"public":false}],"next":null}'}
+    body: {string: '{"results":[{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","level":"ADMINISTER","permissionSources":["user-akumar_counsyl"],"public":false}],"next":null}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['147']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:23 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:20 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983562-940447]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457199968-870358]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -137,22 +137,22 @@ interactions:
       Connection: [keep-alive]
       Content-Length: ['16']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:23 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:20 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983677-451346]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457200544-383857]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -174,22 +174,22 @@ interactions:
       Connection: [keep-alive]
       Content-Length: ['16']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:23 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:20 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983767-445808]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457200648-461832]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4", "folder": "/", "parents":
-      true, "name": "temp_file", "nonce": "b''db42c4218a3184894fb19ca386b97f26ad135fed3417b1d660df4739bc7d26a1''1541007983.814313"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp", "folder": "/", "parents":
+      true, "name": "temp_file", "nonce": "b''34c4a1fb82c08e1a0dbc1ff15f297816055c678f829c55bcaec26617ebff6606''1541457200.712153"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -206,17 +206,17 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/file/new
   response:
-    body: {string: '{"id":"file-FPGyZqj08VX9VyjgP7GKB2v6"}'}
+    body: {string: '{"id":"file-FPQGBG00zzzKpQz06bPx2j4x"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['38']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:23 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:20 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983856-64328]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457200755-342257]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -225,7 +225,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -240,19 +240,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/describe
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/describe
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['205']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:24 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:20 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007983980-202477]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457200890-606820]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -261,7 +261,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -276,19 +276,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZqj08VX9VyjgP7GKB2v6/upload
+    uri: https://api.dnanexus.com/file-FPQGBG00zzzKpQz06bPx2j4x/upload
   response:
-    body: {string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/e1b9/file/open/file-FPGyZqj08VX9VyjgP7GKB2v6/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181031T174624Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=012216a7d0484069d488bd6a280c14e9b3d3c6b7b47702b31e461b7552a0eabf","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"XUFAKrxLKna5cZ2REBfFkg==","content-length":"5"},"expires":1541008104107}'}
+    body: {string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/a52c/file/open/file-FPQGBG00zzzKpQz06bPx2j4x/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181105T223321Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=a44e1539d90b8907e765e6aa99b3a9550391a6ed88e75cb4180cadfa36de2fe4","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"XUFAKrxLKna5cZ2REBfFkg==","content-length":"5"},"expires":1541457321050}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['692']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:24 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:21 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007984090-873741]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457201035-275029]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -316,17 +316,17 @@ interactions:
       : - !!binary |
           QUVTMjU2
     method: PUT
-    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/e1b9/file/open/file-FPGyZqj08VX9VyjgP7GKB2v6/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181031T174624Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=012216a7d0484069d488bd6a280c14e9b3d3c6b7b47702b31e461b7552a0eabf
+    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/a52c/file/open/file-FPQGBG00zzzKpQz06bPx2j4x/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181105T223321Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=a44e1539d90b8907e765e6aa99b3a9550391a6ed88e75cb4180cadfa36de2fe4
   response:
     body: {string: ''}
     headers:
       Content-Length: ['0']
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       ETag: ['"5d41402abc4b2a76b9719d911017c592"']
       Server: [AmazonS3]
-      x-amz-expiration: ['expiry-date="Thu, 22 Nov 2018 00:00:00 GMT", rule-id="3weekpurge"']
-      x-amz-id-2: [0K4WOlqa5hO1LKE3dSPi1RrezqktjyolPxC9UNyn+7uZ+CyPNjHV8shYpQEDVU+G+6bOp/gq2VM=]
-      x-amz-request-id: [C902B96771A4DF18]
+      x-amz-expiration: ['expiry-date="Tue, 27 Nov 2018 00:00:00 GMT", rule-id="3weekpurge"']
+      x-amz-id-2: [O459m0KEua52+fFiMs9w4cFxJGdHREnXjYdKTiuSz7NwqS+aWYpx84maAQI6eiqOIAm4YGXjWLg=]
+      x-amz-request-id: [7B107B972B20D771]
       x-amz-server-side-encryption: [AES256]
     status: {code: 200, message: OK}
 - request:
@@ -335,7 +335,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -350,29 +350,29 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZqj08VX9VyjgP7GKB2v6/close
+    uri: https://api.dnanexus.com/file-FPQGBG00zzzKpQz06bPx2j4x/close
   response:
-    body: {string: '{"id":"file-FPGyZqj08VX9VyjgP7GKB2v6"}'}
+    body: {string: '{"id":"file-FPQGBG00zzzKpQz06bPx2j4x"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['38']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:24 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:21 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007984557-257144]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457201475-447342]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -389,26 +389,26 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/system/resolveDataObjects
   response:
-    body: {string: '{"results":[[{"project":"project-FPGyZqj08VX0kK5VP6vf47b4","id":"file-FPGyZqj08VX9VyjgP7GKB2v6"}]]}'}
+    body: {string: '{"results":[[{"project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","id":"file-FPQGBG00zzzKpQz06bPx2j4x"}]]}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['99']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:24 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:21 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007984671-7275]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457201592-91826]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -423,28 +423,28 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZqj08VX9VyjgP7GKB2v6/describe
+    uri: https://api.dnanexus.com/file-FPQGBG00zzzKpQz06bPx2j4x/describe
   response:
-    body: {string: '{"id":"file-FPGyZqj08VX9VyjgP7GKB2v6","project":"project-FPGyZqj08VX0kK5VP6vf47b4","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closing","hidden":false,"links":[],"folder":"/","tags":[],"created":1541007983000,"modified":1541007984571,"createdBy":{"user":"user-akumar_counsyl"},"media":"","archivalState":"live"}'}
+    body: {string: '{"id":"file-FPQGBG00zzzKpQz06bPx2j4x","project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closing","hidden":false,"links":[],"folder":"/","tags":[],"created":1541457200000,"modified":1541457201491,"createdBy":{"user":"user-akumar_counsyl"},"media":"","archivalState":"live"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['339']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:24 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:21 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007984765-685339]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457201686-294501]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": ["file-FPGyZqj08VX9VyjgP7GKB2v6"]}'
+    body: '{"objects": ["file-FPQGBG00zzzKpQz06bPx2j4x"]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -459,29 +459,29 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/removeObjects
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/removeObjects
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4"}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['41']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:24 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:21 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007984857-697078]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457201781-578236]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.a553db78",
+    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.dfaf85ee",
       "level": "VIEW", "limit": 2}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -498,27 +498,27 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/system/findProjects
   response:
-    body: {string: '{"results":[{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","level":"ADMINISTER","permissionSources":["user-akumar_counsyl"],"public":false}],"next":null}'}
+    body: {string: '{"results":[{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","level":"ADMINISTER","permissionSources":["user-akumar_counsyl"],"public":false}],"next":null}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['147']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:21 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985012-163790]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457201924-721158]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -540,22 +540,22 @@ interactions:
       Connection: [keep-alive]
       Content-Length: ['16']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985121-277256]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202043-216814]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4", "folder": "/", "parents":
-      true, "name": "temp_file", "nonce": "b''83d6da7fb612fe43479e9d0a7d587b8aeff57bf1d07518289fc869e0dce7b47d''1541007985.169922"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp", "folder": "/", "parents":
+      true, "name": "temp_file", "nonce": "b''5877fe98be49892b798b4353bba09ecfddaf82f678c969f5b7ad520d57e4a7f6''1541457202.091684"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -572,17 +572,17 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/file/new
   response:
-    body: {string: '{"id":"file-FPGyZv808VXG0z77P6bK85By"}'}
+    body: {string: '{"id":"file-FPQGBGQ0zzz5Pgv11Xb3f8gZ"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['38']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985211-749698]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202134-536011]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -591,7 +591,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -606,19 +606,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/describe
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/describe
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['205']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985322-623699]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202310-101284]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -627,7 +627,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -642,19 +642,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZv808VXG0z77P6bK85By/upload
+    uri: https://api.dnanexus.com/file-FPQGBGQ0zzz5Pgv11Xb3f8gZ/upload
   response:
-    body: {string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/68d9/file/open/file-FPGyZv808VXG0z77P6bK85By/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181031T174625Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=f664f22bf33dcb9bf80930275256af5f5ef1461e105aa8b8d611958c1d54ae1d","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"XrY7u+Ae7tCTyyK7j1rNww==","content-length":"11"},"expires":1541008105432}'}
+    body: {string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/40e7/file/open/file-FPQGBGQ0zzz5Pgv11Xb3f8gZ/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181105T223322Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=0f5ae71edcb09ed7f5d37d296cb8ccfb8487ddb8df7c11c65bea5731bc13c774","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"XrY7u+Ae7tCTyyK7j1rNww==","content-length":"11"},"expires":1541457322430}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['693']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985419-437921]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202417-507924]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -682,17 +682,17 @@ interactions:
       : - !!binary |
           QUVTMjU2
     method: PUT
-    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/68d9/file/open/file-FPGyZv808VXG0z77P6bK85By/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181031T174625Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=f664f22bf33dcb9bf80930275256af5f5ef1461e105aa8b8d611958c1d54ae1d
+    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/40e7/file/open/file-FPQGBGQ0zzz5Pgv11Xb3f8gZ/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181105T223322Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=0f5ae71edcb09ed7f5d37d296cb8ccfb8487ddb8df7c11c65bea5731bc13c774
   response:
     body: {string: ''}
     headers:
       Content-Length: ['0']
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       ETag: ['"5eb63bbbe01eeed093cb22bb8f5acdc3"']
       Server: [AmazonS3]
-      x-amz-expiration: ['expiry-date="Thu, 22 Nov 2018 00:00:00 GMT", rule-id="3weekpurge"']
-      x-amz-id-2: [ncBuF/m8LI/ipCnNSCMj2TL2ByBs/mzH2n93TE6wjZoJFD0ZMO8a0scPd4wL3effLTTPi+ti9Ko=]
-      x-amz-request-id: [0925558BCB9ECC6A]
+      x-amz-expiration: ['expiry-date="Tue, 27 Nov 2018 00:00:00 GMT", rule-id="3weekpurge"']
+      x-amz-id-2: [XTw2l4MJrFe00mgxC2KvOa5RkX8bxYiK3lEIfdXxNR0ZHHpItaUIWotujhm6v9HB0p8GOhdrh2I=]
+      x-amz-request-id: [3AAF80EDD11747F1]
       x-amz-server-side-encryption: [AES256]
     status: {code: 200, message: OK}
 - request:
@@ -701,7 +701,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -716,29 +716,29 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZv808VXG0z77P6bK85By/close
+    uri: https://api.dnanexus.com/file-FPQGBGQ0zzz5Pgv11Xb3f8gZ/close
   response:
-    body: {string: '{"id":"file-FPGyZv808VXG0z77P6bK85By"}'}
+    body: {string: '{"id":"file-FPQGBGQ0zzz5Pgv11Xb3f8gZ"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['38']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985620-491929]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202605-597702]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -755,26 +755,26 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/system/resolveDataObjects
   response:
-    body: {string: '{"results":[[{"project":"project-FPGyZqj08VX0kK5VP6vf47b4","id":"file-FPGyZv808VXG0z77P6bK85By"}]]}'}
+    body: {string: '{"results":[[{"project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","id":"file-FPQGBGQ0zzz5Pgv11Xb3f8gZ"}]]}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['99']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985723-397469]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202720-810873]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -789,28 +789,28 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZv808VXG0z77P6bK85By/describe
+    uri: https://api.dnanexus.com/file-FPQGBGQ0zzz5Pgv11Xb3f8gZ/describe
   response:
-    body: {string: '{"id":"file-FPGyZv808VXG0z77P6bK85By","project":"project-FPGyZqj08VX0kK5VP6vf47b4","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closing","hidden":false,"links":[],"folder":"/","tags":[],"created":1541007985000,"modified":1541007985632,"createdBy":{"user":"user-akumar_counsyl"},"media":"","archivalState":"live"}'}
+    body: {string: '{"id":"file-FPQGBGQ0zzz5Pgv11Xb3f8gZ","project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closing","hidden":false,"links":[],"folder":"/","tags":[],"created":1541457202000,"modified":1541457202618,"createdBy":{"user":"user-akumar_counsyl"},"media":"","archivalState":"live"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['339']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:25 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:22 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985834-682318]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202810-886675]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": ["file-FPGyZv808VXG0z77P6bK85By"]}'
+    body: '{"objects": ["file-FPQGBGQ0zzz5Pgv11Xb3f8gZ"]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -825,29 +825,29 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/removeObjects
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/removeObjects
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4"}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['41']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007985929-631832]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457202914-14620]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.a553db78",
+    body: '{"name": "TestOpen.test_write_multiple_flush_multiple_upload.dfaf85ee",
       "level": "VIEW", "limit": 2}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -864,27 +864,27 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/system/findProjects
   response:
-    body: {string: '{"results":[{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","level":"ADMINISTER","permissionSources":["user-akumar_counsyl"],"public":false}],"next":null}'}
+    body: {string: '{"results":[{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","level":"ADMINISTER","permissionSources":["user-akumar_counsyl"],"public":false}],"next":null}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['147']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986101-58946]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457203205-273764]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -906,22 +906,22 @@ interactions:
       Connection: [keep-alive]
       Content-Length: ['16']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986208-84921]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457203365-513512]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4", "folder": "/", "parents":
-      true, "name": "temp_file", "nonce": "b''65346ab4944c6624be0d170313d0b1a3f14209265acb36bab9925b05fd17c897''1541007986.254379"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp", "folder": "/", "parents":
+      true, "name": "temp_file", "nonce": "b''3131c7d5859376c56bc9bbcef3745d49812200062c521a2403250dd30bb1499f''1541457203.418228"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -938,17 +938,17 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/file/new
   response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8"}'}
+    body: {string: '{"id":"file-FPQGBGj0zzzP3qQKBKKbbZ49"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['38']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986296-816943]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457203459-549915]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -957,7 +957,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -972,19 +972,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/describe
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/describe
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['205']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986404-292506]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457203578-634439]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -993,7 +993,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1008,19 +1008,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/upload
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/upload
   response:
-    body: {string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/fee4/file/open/file-FPGyZvQ08VX9VyjgP7GKB2v8/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181031T174626Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=15480e3c513fce10d3e3d3f236b0ce2605c08c79e4066a39faa527e37a0fc549","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"XrY7u+Ae7tCTyyK7j1rNww==","content-length":"11"},"expires":1541008106531}'}
+    body: {string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/543e/file/open/file-FPQGBGj0zzzP3qQKBKKbbZ49/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181105T223323Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=9ae88bf4bf1c53c429183f71ec1dee2a4e0a57036ed2c50b3cd2e062d123f07c","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"XrY7u+Ae7tCTyyK7j1rNww==","content-length":"11"},"expires":1541457323706}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['693']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986514-611036]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457203694-503426]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
@@ -1048,17 +1048,17 @@ interactions:
       : - !!binary |
           QUVTMjU2
     method: PUT
-    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/fee4/file/open/file-FPGyZvQ08VX9VyjgP7GKB2v8/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181031%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181031T174626Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=15480e3c513fce10d3e3d3f236b0ce2605c08c79e4066a39faa527e37a0fc549
+    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/543e/file/open/file-FPQGBGj0zzzP3qQKBKKbbZ49/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20181105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20181105T223323Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=9ae88bf4bf1c53c429183f71ec1dee2a4e0a57036ed2c50b3cd2e062d123f07c
   response:
     body: {string: ''}
     headers:
       Content-Length: ['0']
-      Date: ['Wed, 31 Oct 2018 17:46:27 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:24 GMT']
       ETag: ['"5eb63bbbe01eeed093cb22bb8f5acdc3"']
       Server: [AmazonS3]
-      x-amz-expiration: ['expiry-date="Thu, 22 Nov 2018 00:00:00 GMT", rule-id="3weekpurge"']
-      x-amz-id-2: [C7nYTV3VqSFxsevuCC+ZKlCwA6UCjxZkFlWhED4tig0iYle4h5WBG4si023JB1B+LbiJ1gS32lE=]
-      x-amz-request-id: [BB48A33959FB17A7]
+      x-amz-expiration: ['expiry-date="Tue, 27 Nov 2018 00:00:00 GMT", rule-id="3weekpurge"']
+      x-amz-id-2: [d36FE6G+c1RSI+WMx/SkOJBd+6InS9T7tLK1+m+XawF4HysdLFel2hDNCJCrFAI7iS8s9ToKhEg=]
+      x-amz-request-id: [F80000881648E8E6]
       x-amz-server-side-encryption: [AES256]
     status: {code: 200, message: OK}
 - request:
@@ -1067,7 +1067,7 @@ interactions:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1082,29 +1082,29 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/close
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/close
   response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8"}'}
+    body: {string: '{"id":"file-FPQGBGj0zzzP3qQKBKKbbZ49"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['38']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:23 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986717-920583]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457203926-639815]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPGyZqj08VX0kK5VP6vf47b4",
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp",
       "batchsize": 2}]}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1121,26 +1121,26 @@ interactions:
     method: POST
     uri: https://api.dnanexus.com/system/resolveDataObjects
   response:
-    body: {string: '{"results":[[{"project":"project-FPGyZqj08VX0kK5VP6vf47b4","id":"file-FPGyZvQ08VX9VyjgP7GKB2v8"}]]}'}
+    body: {string: '{"results":[[{"project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","id":"file-FPQGBGj0zzzP3qQKBKKbbZ49"}]]}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['99']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:24 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986816-962079]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457204041-141718]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"fields": {"state": true}, "project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"fields": {"state": true}, "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1155,28 +1155,28 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/describe
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/describe
   response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8","state":"closing"}'}
+    body: {string: '{"id":"file-FPQGBGj0zzzP3qQKBKKbbZ49","state":"closing"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['56']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:26 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:24 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007986908-474570]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457204133-581987]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"fields": {"state": true}, "project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"fields": {"state": true}, "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1191,28 +1191,28 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/describe
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/describe
   response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8","state":"closed"}'}
+    body: {string: '{"id":"file-FPQGBGj0zzzP3qQKBKKbbZ49","state":"closed"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['55']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:29 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:26 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007989006-197136]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457206239-441979]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1227,28 +1227,28 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/describe
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/describe
   response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8","project":"project-FPGyZqj08VX0kK5VP6vf47b4","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closed","hidden":false,"links":[],"folder":"/","tags":[],"created":1541007986000,"modified":1541007987513,"createdBy":{"user":"user-akumar_counsyl"},"media":"text/plain","archivalState":"live","size":11}'}
+    body: {string: '{"id":"file-FPQGBGj0zzzP3qQKBKKbbZ49","project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closed","hidden":false,"links":[],"folder":"/","tags":[],"created":1541457203000,"modified":1541457204749,"createdBy":{"user":"user-akumar_counsyl"},"media":"text/plain","archivalState":"live","size":11}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['358']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:29 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:26 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007989096-114022]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457206337-695858]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1263,28 +1263,28 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/describe
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/describe
   response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8","project":"project-FPGyZqj08VX0kK5VP6vf47b4","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closed","hidden":false,"links":[],"folder":"/","tags":[],"created":1541007986000,"modified":1541007987513,"createdBy":{"user":"user-akumar_counsyl"},"media":"text/plain","archivalState":"live","size":11}'}
+    body: {string: '{"id":"file-FPQGBGj0zzzP3qQKBKKbbZ49","project":"project-FPQGBFj0zzz45fPGPBPXF6Bp","class":"file","sponsored":false,"name":"temp_file","types":[],"state":"closed","hidden":false,"links":[],"folder":"/","tags":[],"created":1541457203000,"modified":1541457204749,"createdBy":{"user":"user-akumar_counsyl"},"media":"text/plain","archivalState":"live","size":11}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['358']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:29 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:26 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007989187-656453]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457206437-106329]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 - request:
-    body: '{"preauthenticated": false, "project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
+    body: '{"preauthenticated": false, "project": "project-FPQGBFj0zzz45fPGPBPXF6Bp"}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1299,23 +1299,23 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/download
+    uri: https://api.dnanexus.com/file-FPQGBGj0zzzP3qQKBKKbbZ49/download
   response:
-    body: {string: '{"url":"https://dl.dnanex.us/F/D2PRJ/file-FPGyZvQ08VX9VyjgP7GKB2v8/project-FPGyZqj08VX0kK5VP6vf47b4","headers":{"X-Authorization":"xvikWJf5EfyoFK7ts58Kg01M23eflOAq"}}'}
+    body: {string: '{"url":"https://dl.dnanex.us/F/D2PRJ/file-FPQGBGj0zzzP3qQKBKKbbZ49/project-FPQGBFj0zzz45fPGPBPXF6Bp","headers":{"X-Authorization":"xvikWJf5EfyoFK7ts58Kg01M23eflOAq"}}'}
     headers:
       Access-Control-Allow-Credentials: ['true']
       Connection: [keep-alive]
       Content-Length: ['166']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:29 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:26 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007989300-542163]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457206538-912418]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
       set-cookie: [authorization=xvikWJf5EfyoFK7ts58Kg01M23eflOAq; Domain=dl.dnanex.us;
-          Path=/F/D2PRJ/file-FPGyZvQ08VX9VyjgP7GKB2v8/project-FPGyZqj08VX0kK5VP6vf47b4;
+          Path=/F/D2PRJ/file-FPQGBGj0zzzP3qQKBKKbbZ49/project-FPQGBFj0zzz45fPGPBPXF6Bp;
           Max-Age=86400; HttpOnly; Secure]
     status: {code: 200, message: OK}
 - request:
@@ -1339,7 +1339,7 @@ interactions:
       : - !!binary |
           eHZpa1dKZjVFZnlvRks3dHM1OEtnMDFNMjNlZmxPQXE=
     method: GET
-    uri: https://dl.dnanex.us/F/D2PRJ/file-FPGyZvQ08VX9VyjgP7GKB2v8/project-FPGyZqj08VX0kK5VP6vf47b4
+    uri: https://dl.dnanex.us/F/D2PRJ/file-FPQGBGj0zzzP3qQKBKKbbZ49/project-FPQGBFj0zzz45fPGPBPXF6Bp
   response:
     body: {string: hello world}
     headers:
@@ -1350,53 +1350,17 @@ interactions:
       Content-Length: ['11']
       Content-Range: [bytes 0-10/11]
       Content-Type: [text/plain]
-      Date: ['Wed, 31 Oct 2018 17:46:29 GMT']
-      Last-Modified: ['Wed, 31 Oct 2018 17:46:28 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:26 GMT']
+      Last-Modified: ['Mon, 05 Nov 2018 22:33:25 GMT']
       content-disposition: [attachment]
     status: {code: 206, message: Partial Content}
-- request:
-    body: '{"fields": {"state": true}, "project": "project-FPGyZqj08VX0kK5VP6vf47b4"}'
-    headers:
-      ? !!binary |
-        QXV0aG9yaXphdGlvbg==
-      : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
-      ? !!binary |
-        Q29udGVudC1UeXBl
-      : - !!binary |
-          YXBwbGljYXRpb24vanNvbg==
-      ? !!binary |
-        RE5BbmV4dXMtQVBJ
-      : - !!binary |
-          MS4wLjA=
-      ? !!binary |
-        VXNlci1BZ2VudA==
-      : - !!binary |
-          ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
-          dCk=
-    method: POST
-    uri: https://api.dnanexus.com/file-FPGyZvQ08VX9VyjgP7GKB2v8/describe
-  response:
-    body: {string: '{"id":"file-FPGyZvQ08VX9VyjgP7GKB2v8","state":"closed"}'}
-    headers:
-      Connection: [keep-alive]
-      Content-Length: ['55']
-      Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:29 GMT']
-      Server: [nginx]
-      X-Content-Type-Options: [nosniff]
-      X-Powered-By: [Express]
-      X-Request-ID: [1541007989742-528833]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
-          You can download it from https://wiki.dnanexus.com/Downloads#Install']
-    status: {code: 200, message: OK}
 - request:
     body: '{}'
     headers:
       ? !!binary |
         QXV0aG9yaXphdGlvbg==
       : - !!binary |
-          QmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
+          YmVhcmVyIHh2aWtXSmY1RWZ5b0ZLN3RzNThLZzAxTTIzZWZsT0Fx
       ? !!binary |
         Q29udGVudC1UeXBl
       : - !!binary |
@@ -1411,19 +1375,19 @@ interactions:
           ZHhweS8wLjI2NS4wLTgwLWc0YjYwMTY4NyAoRGFyd2luLTE4LjAuMC14ODZfNjQtaTM4Ni02NGJp
           dCk=
     method: POST
-    uri: https://api.dnanexus.com/project-FPGyZqj08VX0kK5VP6vf47b4/destroy
+    uri: https://api.dnanexus.com/project-FPQGBFj0zzz45fPGPBPXF6Bp/destroy
   response:
-    body: {string: '{"id":"project-FPGyZqj08VX0kK5VP6vf47b4"}'}
+    body: {string: '{"id":"project-FPQGBFj0zzz45fPGPBPXF6Bp"}'}
     headers:
       Connection: [keep-alive]
       Content-Length: ['41']
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Wed, 31 Oct 2018 17:46:32 GMT']
+      Date: ['Mon, 05 Nov 2018 22:33:32 GMT']
       Server: [nginx]
       X-Content-Type-Options: [nosniff]
       X-Powered-By: [Express]
-      X-Request-ID: [1541007989837-330168]
-      X-Upgrade-Info: ['A recommended update (v0.267.0) is available for your client/SDK.
+      X-Request-ID: [1541457207070-775680]
+      X-Upgrade-Info: ['A recommended update (v0.267.1) is available for your client/SDK.
           You can download it from https://wiki.dnanexus.com/Downloads#Install']
     status: {code: 200, message: OK}
 version: 1
