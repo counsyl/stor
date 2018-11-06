@@ -189,6 +189,9 @@ class TestRename(DXTestCase):
 
 
 class TestOpen(DXTestCase):
+    # we need to give enough time for file to enter `closed` state so we can read it
+    DX_WAIT_SETTINGS = {'dx': {'wait_on_close': 20}}
+
     def test_append_mode_fail(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':temp_file')
@@ -234,8 +237,9 @@ line3
 line4
 '''
         dx_p = DXPath('dx://' + self.project + ':temp_file')
-        with dx_p.open(mode='wb') as f:
-            f.write(data)
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            with dx_p.open(mode='wb') as f:
+                f.write(data)
         # open().read() should return str for r
         self.assertEqual(dx_p.open('r').read(), data.decode('ascii'))
         # open().read() should return bytes for rb
@@ -254,17 +258,19 @@ line4
         obj = dx_p.open(mode='wb')
         obj.write(b'hello')
         obj.write(b' world')
-        obj.close()
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            obj.close()
         self.assertEqual(b'hello world', dx_p.read_object())
 
     def test_write_multiple_flush_multiple_upload(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':/temp_file')
-        with dx_p.open(mode='wb') as obj:
-            obj.write(b'hello')
-            obj.flush()
-            obj.write(b' world')
-            obj.flush()
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            with dx_p.open(mode='wb') as obj:
+                obj.write(b'hello')
+                obj.flush()
+                obj.write(b' world')
+                obj.flush()
         self.assertEqual(dx_p.open().read(), 'hello world')
 
     def test_read_dir_fail(self):

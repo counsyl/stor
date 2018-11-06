@@ -188,7 +188,7 @@ Note that if the output path exists and is a file, the file will be *overwritten
 
 Open on stor
 ------------
-The ``open`` functionality in stor works by returning an instance of
+The ``open`` functionality in dx works by returning an instance of
 ``stor.obs.OBSFile`` like with other OBS paths(Swift/S3). Although the python
 package of DNAnexus ``dxpy`` also has an open functionality on their DXFile,
 this is not carried over to stor. One of the main reasons to do this is to wrap
@@ -202,3 +202,11 @@ what they mean, when they happen, what operations are allowed on them, etc.
 By instantiating ``stor.obs.OBSFile`` for ``open``, we maintain the
 support that is standard by stor, without any real decrease in functionality.
 
+The dx variable exposed as a setting 'wait_on_close', has a default value of 0 (seconds). This variable
+determines how long an ``stor.open`` action waits for the file to go to 'closed' state on DNAnexus.
+If a file is not in the 'closed' state internally on the platform, it cannot be read from, or
+downloaded. If you need consistency from reading right after writing, then you should set
+wait_on_close to be a value > 0. The default is kept so that in the event of multiple uploads,
+each upload doesn't wait for *wait_on_close* seconds before initiating the next upload. However,
+setting *wait_on_close* > 0 can cause unexpected performance issues, depending on the performance of
+the DNAnexus platform, so you need to know what you're doing when changing this.
