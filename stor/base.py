@@ -14,7 +14,7 @@ from six import string_types
 from six import PY3
 
 from stor import utils
-
+from stor_dx.utils import find_dx_class
 
 class TreeWalkWarning(Warning):
     pass
@@ -45,7 +45,7 @@ class Path(text_type):
             if not hasattr(path, 'startswith'):
                 raise TypeError('must be a string like')
             if utils.is_dx_path(path):
-                cls = utils.find_dx_class(path)
+                cls = find_dx_class(path)
             elif utils.is_swift_path(path):
                 from stor_swift.swift import SwiftPath
 

@@ -8,10 +8,10 @@ import shutil
 from subprocess import check_call
 import tempfile
 
-from dxpy.bindings import verify_string_dxid
-from dxpy.exceptions import DXError
-
 from stor import exceptions
+# from stor_dx.utils import is_dx_path
+# from stor_s3.utils import is_s3_path
+# from stor_swift.utils import is_swift_path
 
 logger = logging.getLogger(__name__)
 
@@ -179,21 +179,6 @@ def validate_manifest_list(expected_objs, list_results):
     return set(expected_objs).issubset(listed_objs)
 
 
-def is_swift_path(p):
-    """Determines if the path is a Swift path.
-
-    All Swift paths start with swift://
-
-    Args:
-        p (str): The path string
-
-    Returns:
-        bool: True if p is a Swift path, False otherwise.
-    """
-    from stor_swift.swift import SwiftPath
-    return p.startswith(SwiftPath.drive)
-
-
 def is_filesystem_path(p):
     """Determines if the path is posix or windows filesystem.
 
@@ -206,21 +191,6 @@ def is_filesystem_path(p):
     return not (is_swift_path(p) or is_s3_path(p) or is_dx_path(p))
 
 
-def is_s3_path(p):
-    """Determines if the path is a S3 path.
-
-    All S3 paths start with ``s3://``
-
-    Args:
-        p (str): The path string
-
-    Returns
-        bool: True if p is a S3 path, False otherwise.
-    """
-    from stor_s3.s3 import S3Path
-    return p.startswith(S3Path.drive)
-
-
 def is_obs_path(p):
     """Determines if the path is an OBS path (an S3 or Swift path).
 
@@ -231,64 +201,6 @@ def is_obs_path(p):
         bool: True if p is an OBS path, False otherwise.
     """
     return is_s3_path(p) or is_swift_path(p) or is_dx_path(p)
-
-
-def is_dx_path(p):
-    """Determines if the path is a DX path.
-
-    All DX paths start with ``dx://``
-
-    Args:
-        p (str): The path string
-
-    Returns
-        bool: True if p is a DX path, False otherwise.
-    """
-    from stor_dx.dx import DXPath
-    return p.startswith(DXPath.drive)
-
-
-def is_valid_dxid(dxid, expected_classes):
-    """wrapper class for verify_string_dxid, because
-    verify_string_dxid returns None if success, raises error if failed
-
-    Args: Accepts same args as verify_string_dxid
-
-    Returns
-        bool: Whether given dxid is a valid path of one of expected_classes
-    """
-    try:
-        return verify_string_dxid(dxid, expected_classes) is None
-    except DXError:
-        return False
-
-
-def find_dx_class(p):
-    """Finds the class of the DX path : DXVirtualPath or DXCanonicalPath
-
-    Args:
-        p (str): The path string
-
-    Returns
-        cls: DXVirtualPath or DXCanonicalPath
-    """
-    from stor_dx.dx import DXPath, DXCanonicalPath, DXVirtualPath
-    colon_pieces = p[len(DXPath.drive):].split(':', 1)
-    if not colon_pieces or not colon_pieces[0] or '/' in colon_pieces[0]:
-        raise ValueError('Project is required to construct a DXPath')
-    project = colon_pieces[0]
-    resource = (colon_pieces[1] if len(colon_pieces) == 2 else '').lstrip('/')
-    resource_parts = resource.split('/')
-    root_name, rest = resource_parts[0], resource_parts[1:]
-    canonical_resource = is_valid_dxid(root_name, 'file') or not resource
-    if canonical_resource and rest:
-        raise ValueError('DX folder paths that start with a valid file dxid are ambiguous')
-    canonical_project = is_valid_dxid(project, 'project')
-
-    if canonical_project and canonical_resource:
-        return DXCanonicalPath
-    else:
-        return DXVirtualPath
 
 
 def is_writeable(path, swift_retry_options=None):
@@ -322,55 +234,10 @@ def is_writeable(path, swift_retry_options=None):
     Returns:
         bool: Whether ``path`` is writeable or not.
     """
-    from stor import basename
-    from stor import join
     from stor import Path
-    from stor import remove
-    from stor_swift.swift import ConflictError
-    from stor_swift.swift import SwiftPath
-    from stor_swift.swift import UnauthorizedError
-    from stor_swift.swift import UnavailableError
-
     path = with_trailing_slash(Path(path))
 
-    if is_filesystem_path(path):
-        return os.access(path, os.W_OK)
-
-    container_path = None
-    container_existed = None
-    if is_swift_path(path):
-        # We want this function to behave as a no-op with regards to the underlying
-        # container structure. Therefore we need to remove any containers created by this
-        # function that were not present when it was called. The `container_existed`
-        # defined below will store whether the container that we're checking existed when
-        # calling this function, so that we know if it should be removed at the end.
-        container_path = Path('{}{}/{}/'.format(
-            SwiftPath.drive,
-            path.tenant,
-            path.container
-        ))
-        container_existed = container_path.exists()
-
-    with tempfile.NamedTemporaryFile() as tmpfile:
-        try:
-            # Attempt to create a file in the `path`.
-            copy(tmpfile.name, path, swift_retry_options=swift_retry_options)
-            # Remove the file that was created.
-            remove(join(path, basename(tmpfile.name)))
-            answer = True
-        except (UnauthorizedError, UnavailableError, IOError, OSError, exceptions.FailedUploadError):  # nopep8
-            answer = False
-
-    # Remove the Swift container if it didn't exist when calling this function, but exists
-    # now. This way this function remains a no-op with regards to container structure.
-    if container_existed is False and container_path.exists():
-        try:
-            container_path.remove_container()
-        except ConflictError:
-            # Ignore if some other thread/user created the container in the meantime.
-            pass
-
-    return answer
+    return os.access(path, os.W_OK)
 
 
 def copy(source, dest, **kwargs):
@@ -653,6 +520,51 @@ def NamedTemporaryDirectory(suffix='', prefix='tmp', dir=None,
             yield tempdir
     finally:
         tempdir.rmtree()
+
+
+def is_s3_path(p):
+    """Determines if the path is a S3 path.
+
+    All S3 paths start with ``s3://``
+
+    Args:
+        p (str): The path string
+
+    Returns
+        bool: True if p is a S3 path, False otherwise.
+    """
+    from stor_s3.s3 import S3Path
+    return p.startswith(S3Path.drive)
+
+
+def is_swift_path(p):
+    """Determines if the path is a Swift path.
+
+    All Swift paths start with swift://
+
+    Args:
+        p (str): The path string
+
+    Returns:
+        bool: True if p is a Swift path, False otherwise.
+    """
+    from stor_swift.swift import SwiftPath
+    return p.startswith(SwiftPath.drive)
+
+
+def is_dx_path(p):
+    """Determines if the path is a DX path.
+
+    All DX paths start with ``dx://``
+
+    Args:
+        p (str): The path string
+
+    Returns
+        bool: True if p is a DX path, False otherwise.
+    """
+    from stor_dx.dx import DXPath
+    return p.startswith(DXPath.drive)
 
 
 class ClassProperty(property):

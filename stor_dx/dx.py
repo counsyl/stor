@@ -10,13 +10,16 @@ from dxpy.exceptions import DXError
 from dxpy.exceptions import DXSearchError
 import six
 
+import stor
 from stor import exceptions as stor_exceptions
 from stor import Path
 from stor import settings
-from stor import utils
+from stor import utils as stor_utils
+from stor.obs import OBSFile
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
+from stor_dx import utils
 
 
 logger = logging.getLogger(__name__)
@@ -315,7 +318,7 @@ class DXPath(OBSPath):
         Returns:
             bool: True if path points to an existing file
         """
-        if not self.resource or utils.has_trailing_slash(self):
+        if not self.resource or stor_utils.has_trailing_slash(self):
             return False
         try:
             self.stat()
@@ -348,13 +351,13 @@ class DXPath(OBSPath):
         and deleting existing target, common to _clone and _move"""
         dest_is_dir = dest.isdir()
         target_dest = dest
-        if dest_is_dir or utils.has_trailing_slash(dest):
+        if dest_is_dir or stor_utils.has_trailing_slash(dest):
             target_dest = dest / self.name
         if not dest_is_dir and target_dest.parent.resource:
             target_dest.parent.makedirs_p()
         if target_dest.isfile():
             target_dest.remove()
-        should_rename = not dest_is_dir and not utils.has_trailing_slash(dest)
+        should_rename = not dest_is_dir and not stor_utils.has_trailing_slash(dest)
         return target_dest, should_rename
 
     def _clone(self, dest):
@@ -490,7 +493,7 @@ class DXPath(OBSPath):
                 raise stor_exceptions.NotFoundError(
                     'No data object was found for the given path on DNAnexus')
         else:
-            super(DXPath, self).copy(dest)  # for other filesystems, delegate to utils.copy
+            super(DXPath, self).copy(dest)  # for other filesystems, delegate to stor_utils.copy
 
     def copytree(self, dest, raise_if_same_project=False, **kwargs):
         """Copies a source directory to a destination directory.
@@ -560,17 +563,17 @@ class DXPath(OBSPath):
                 raise stor_exceptions.NotFoundError(
                     'No project or directory was found at path ({})'.format(self))
         else:
-            super(DXPath, self).copytree(dest)  # for other filesystems, delegate to utils.copytree
+            super(DXPath, self).copytree(dest)  # for other filesystems, delegate to stor_utils.copytree
 
     def _prep_for_copytree(self, dest):
         """Handles logic, for finalizing target destination, making parent folders
         and checking for clashes, common to _clonetree and _movetree"""
-        source = utils.remove_trailing_slash(self)
+        source = stor_utils.remove_trailing_slash(self)
         dest_is_dir = dest.isdir()
         should_rename = True
         target_dest = dest
 
-        if dest_is_dir or utils.has_trailing_slash(dest):
+        if dest_is_dir or stor_utils.has_trailing_slash(dest):
             target_dest = dest / (source.name if source.resource else source.virtual_project)
             if target_dest.isdir():
                 raise stor_exceptions.TargetExistsError(
@@ -695,7 +698,7 @@ class DXPath(OBSPath):
             if not possible_parent.resource:
                 return possible_child.resource and \
                        possible_child.project == possible_parent.project
-            return possible_child.startswith(utils.with_trailing_slash(possible_parent))
+            return possible_child.startswith(stor_utils.with_trailing_slash(possible_parent))
 
         source = self
         if source == (self.drive + self.project):  # need to convert dx://proj to dx://proj:
@@ -752,7 +755,7 @@ class DXPath(OBSPath):
             name for name in to_upload
             if isinstance(name, OBSUploadObject)
         ]
-        all_files_to_upload = utils.walk_files_and_dirs([
+        all_files_to_upload = stor_utils.walk_files_and_dirs([
             name for name in to_upload
             if not isinstance(name, OBSUploadObject)
         ])
@@ -760,7 +763,7 @@ class DXPath(OBSPath):
             OBSUploadObject(f,
                             object_name=('/' + self.resource if self.resource
                                          else Path('')) /
-                            utils.file_name_to_object_name(f))
+                            stor_utils.file_name_to_object_name(f))
             for f in all_files_to_upload
         ])
 
@@ -794,6 +797,31 @@ class DXPath(OBSPath):
                 raise stor_exceptions.NotFoundError(
                     'Source path ({}) does not exist. Please provide a valid source'
                     .format(upload_obj.source))
+
+    def open(self, mode='r', encoding=None):
+        """
+        Opens a DXFile that can be read or written to and is uploaded to
+        the remote service.
+
+        For examples of reading and writing opened objects, view
+        OBSFile.
+
+        Args:
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
+            encoding (str): text encoding to use.
+                Is currently not functional for DXPaths`` (Python 3 only)
+
+        Returns:
+            DXFile: The file object for DX.
+
+        Raises:
+            DNAnexusError: A dxpy client error occured.
+        """
+        if six.PY3 and encoding and encoding not in ('utf-8', 'utf8'):  # pragma: no cover
+            raise ValueError('For DNAnexus paths in Python 3, encoding is always assumed to be '
+                             'utf-8. Please switch your encoding or Python version')
+        return DXFile(self, mode=mode, encoding=encoding)
 
     def read_object(self):
         """Reads an individual object from DX.
@@ -884,8 +912,8 @@ class DXPath(OBSPath):
         ))
         if not results or not results[0]:  # when results == [[]]
             results = []
-        utils.validate_condition(condition)
-        utils.check_condition(condition, results)
+        stor_utils.validate_condition(condition)
+        stor_utils.check_condition(condition, results)
         return results
 
     def list_iter(self,
@@ -1037,8 +1065,8 @@ class DXPath(OBSPath):
         ))
         if not results or not results[0]:  # when results == [[]]
             results = []
-        utils.validate_condition(condition)
-        utils.check_condition(condition, results)
+        stor_utils.validate_condition(condition)
+        stor_utils.check_condition(condition, results)
         return results
 
     def exists(self):
@@ -1142,7 +1170,7 @@ class DXVirtualPath(DXPath):
         """
         if not self.resource:
             return None
-        if utils.has_trailing_slash(self):
+        if stor_utils.has_trailing_slash(self):
             raise ValueError('Invalid operation ({method}) on folder path ({path})'
                              .format(path=self, method=sys._getframe(2).f_code.co_name))
         objects = [{
@@ -1222,3 +1250,24 @@ class DXCanonicalPath(DXPath):
 
     def normpath(self):
         return self.path_class(self.drive + self.project + ':' + self.resource)
+
+
+class DXFile(OBSFile):
+    """Class handler for handling open functionality over DX paths"""
+    def close(self):
+        """Custom close method to wait for file to go to closed state on DNAnexus platform"""
+        super(DXFile, self).close()
+        self._wait_on_close()
+
+    def _wait_on_close(self):
+        wait_on_close = stor.settings.get()['dx']['wait_on_close']
+        if wait_on_close:
+            with _wrap_dx_calls():  # this will raise an error too
+                f = dxpy.DXFile(dxid=self._path.canonical_resource,
+                                project=self._path.canonical_project)
+                try:
+                    f.wait_on_close(wait_on_close)
+                # ignore timeout because we want client code to deal with it
+                except dxpy.DXError as e:  # pragma: no cover
+                    if 'timeout' not in str(e):
+                        raise

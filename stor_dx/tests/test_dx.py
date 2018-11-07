@@ -10,8 +10,8 @@ import mock
 
 from stor import exceptions
 from stor import Path
-from stor import utils
 from stor.tests.shared_obs import SharedOBSFileCases
+from stor_dx import utils
 from stor_dx.dx import DXPath
 from stor_dx.test import DXTestCase
 import stor
@@ -316,7 +316,7 @@ class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
 
     def setUp(self):
         super(TestDXOBSFile, self).setUp()
-        patcher = mock.patch('stor.obs.OBSFile._wait_on_close')
+        patcher = mock.patch('stor_dx.dx.DXFile._wait_on_close')
         self.addCleanup(patcher.stop)
         patcher.start()
 

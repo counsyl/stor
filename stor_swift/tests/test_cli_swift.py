@@ -9,8 +9,6 @@ from tempfile import NamedTemporaryFile
 import six
 
 from stor import cli
-from stor import settings
-from stor.posix import PosixPath
 from stor_swift.swift import SwiftPath
 from stor_swift import test
 
