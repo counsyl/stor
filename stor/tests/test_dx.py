@@ -7,7 +7,6 @@ import unittest
 import dxpy
 import dxpy.bindings as dxb
 import mock
-import six.moves.urllib as urllib
 
 import stor
 from stor import exceptions
@@ -1784,14 +1783,15 @@ class TestLoginAuth(DXTestCase):
         self.setup_temporary_project()
         self.test_dir = DXPath('dx://' + self.project + ':test')
         # dxpy.AUTH_HELPER gets set upon login and called with each api which we mock out here
-        with mock.patch('dxpy.AUTH_HELPER') as mock_auth:
-            mock_auth.security_context = {
-                'auth_token_type': 'Bearer',
-                'auth_token': 'PUBLIC'
-            }
-            mock_auth.side_effect = lambda x: mock_header(x, mock_auth.security_context)
-            with pytest.raises(exceptions.NotFoundError, match='no projects'):
-                self.test_dir.makedirs_p()
-            self.assertEqual(mock_auth.call_count, 1)
+        with stor.settings.use({'dx': {'auth_token': ''}}):
+            with mock.patch('dxpy.AUTH_HELPER') as mock_auth:
+                mock_auth.security_context = {
+                    'auth_token_type': 'Bearer',
+                    'auth_token': 'PUBLIC'
+                }
+                mock_auth.side_effect = lambda x: mock_header(x, mock_auth.security_context)
+                with pytest.raises(exceptions.NotFoundError, match='no projects'):
+                    self.test_dir.makedirs_p()
+                self.assertEqual(mock_auth.call_count, 1)
         self.test_dir.makedirs_p()
         self.assertTrue(self.test_dir.isdir())
