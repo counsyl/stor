@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 
 import six
 
+from stor.dx import DXPath
 from stor.posix import PosixPath
 from stor.s3 import S3Path
 from stor.swift import SwiftPath
@@ -130,6 +131,10 @@ class TestCliBasics(BaseCliTest):
                 'segment_threads': 10,
                 'skip_identical': False,
                 'use_slo': True
+            },
+            'dx': {
+                'auth_token': 'fake_token',
+                'wait_on_close': 0
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')
@@ -305,6 +310,20 @@ class TestList(BaseCliTest):
                           'swift://t/c/dir/file2\n'
                           'swift://t/c/file3\n')
         mock_list.assert_called_once_with(SwiftPath('swift://t/c/'))
+
+    @mock.patch.object(DXPath, 'walkfiles', autospec=True)
+    def test_list_dx(self, mock_list):
+        mock_list.return_value = [
+            DXPath('dx://t:/c/file1'),
+            DXPath('dx://t:/c/dir/file2'),
+            DXPath('dx://t:/c/file3')
+        ]
+        self.parse_args('stor list dx://t:/c/')
+        self.assertEquals(sys.stdout.getvalue(),
+                          'dx://t:/c/file1\n'
+                          'dx://t:/c/dir/file2\n'
+                          'dx://t:/c/file3\n')
+        mock_list.assert_called_once_with(DXPath('dx://t:/c/'))
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_list_options(self, mock_list):

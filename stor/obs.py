@@ -2,6 +2,7 @@ import locale
 import posixpath
 import sys
 
+import dxpy
 import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
@@ -9,6 +10,7 @@ from swiftclient.service import SwiftUploadObject
 from stor.base import Path
 from stor.posix import PosixPath
 from stor import utils
+import stor
 
 
 def _delegate_to_buffer(attr_name, valid_modes=None):
@@ -146,8 +148,29 @@ class OBSPath(Path):
         """
         Opens a OBSFile that can be read or written to and is uploaded to
         the remote service.
+
+        For examples of reading and writing opened objects, view
+        OBSFile.
+
+        Args:
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
+            encoding (str): text encoding to use. Defaults to
+                ``locale.getpreferredencoding(False)`` (Python 3 only)
+
+        Returns:
+            OBSFile: The file object for Swift/S3/DX.
+
+        Raises:
+            SwiftError: A swift client error occurred.
+            DNAnexusError: A dxpy client error occured.
+            RemoteError: A s3 client error occurred.
         """
-        raise NotImplementedError
+        if six.PY3 and encoding and encoding not in ('utf-8', 'utf8') and \
+                isinstance(self, stor.dx.DXPath):  # pragma: no cover
+            raise ValueError('For DNAnexus paths in Python 3, encoding is always assumed to be '
+                             'utf-8. Please switch your encoding or Python version')
+        return OBSFile(self, mode=mode, encoding=encoding)
 
     def list(self):
         """List contents using the resource of the path as a prefix."""
@@ -228,6 +251,56 @@ class OBSPath(Path):
         """Download a single path or object to file."""
         raise NotImplementedError
 
+    def download_objects(self, dest, objects):
+        """Downloads a list of objects to a destination folder.
+
+        Note that this method takes a list of complete relative or absolute
+        OBSPaths to objects (in contrast to taking a prefix). If any object
+        does not exist, the call will fail with partially downloaded objects
+        residing in the destination path.
+
+        Args:
+            dest (str): The destination folder to download to. The directory
+                will be created if it doesnt exist.
+            objects (List[str|PosixPath|SwiftPath]): The list of objects to
+                download. The objects can be paths relative to the download path
+                or absolute obs paths. Any absolute obs path must be
+                children of the download path
+
+        Returns:
+            dict: A mapping of all requested ``objs`` to their location on
+                disk
+
+        Examples:
+
+            To download a objects to a ``dest/folder`` destination::
+
+                from stor import Path
+                p = Path('dx://project:/dir/')
+                results = p.download_objects('dest/folder', ['subdir/f1.txt',
+                                                             'subdir/f2.txt'])
+                print results
+                {
+                    'subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
+
+            To download full obs paths relative to a download path::
+
+                from stor import Path
+                p = Path('dx://project:/dir/')
+                results = p.download_objects('dest/folder', [
+                    'dx://project:/dir/subdir/f1.txt',
+                    'dx://project:/dir/subdir/f2.txt'
+                ])
+                print results
+                {
+                    'dx://project:/dir/subdir/f1.txt': 'dest/folder/subdir/f1.txt',
+                    'dx://project:/dir/subdir/f2.txt': 'dest/folder/subdir/f2.txt'
+                }
+        """
+        raise NotImplementedError
+
     def download(self, dest, condition=None, use_manifest=False, **kwargs):
         """Download a directory."""
         raise NotImplementedError
@@ -265,8 +338,16 @@ class OBSFile(object):
 
     Just like with Python file objects, it's good practice to use it in a contextmanager::
 
-        with Path('swift://tenant/container/object').open(mode='r') as obj:
+        with Path('swift://tenant/container/object').open(mode='w') as obj:
             obj.write('Hello world!')
+
+    Specifically for DNAnexus resources, although ``dxpy`` also has an open functionality on their
+    DXFile, this is not carried over to stor. One of the main reasons to do this is to wrap
+    the scope of dxfile.open to what is expected of stor. While using ``dxpy``'s open, the user
+    would have to know the different internal states of a file on the DNAnexus platform,
+    what they mean, when they happen, what operations are allowed on them, etc.
+    By instantiating ``stor.obs.OBSFile`` for ``open``, this is no longer needed, while maintaining
+    the support that is standard by stor without any real decrease in functionality.
 
     .. note::
         Unlike python file objects, OBSFile does not create an empty sentinel file if you
@@ -280,7 +361,7 @@ class OBSFile(object):
     # to know whether we need to close the underlying buffer
     _buffer = None
 
-    def __init__(self, pth, mode='r', encoding=None, **kwargs):
+    def __init__(self, pth, mode='r', encoding=None):
         """Initializes a file object
 
         Args:
@@ -301,7 +382,6 @@ class OBSFile(object):
             raise TypeError('encoding not supported in Python 2')
         self._path = pth
         self.mode = mode
-        self._kwargs = kwargs
         self.encoding = encoding or locale.getpreferredencoding(False)
 
     def __enter__(self):
@@ -372,6 +452,23 @@ class OBSFile(object):
                 self.flush()
             self._buffer.close()
         self.closed = True
+        # we want to wait_on_close on DXPath only if no error was thrown while writing the file
+        if not any(sys.exc_info()):  # pragma: no cover
+            self._wait_on_close()
+
+    def _wait_on_close(self):
+        if isinstance(self._path, stor.dx.DXPath):
+            wait_on_close = stor.settings.get()['dx']['wait_on_close']
+            if wait_on_close:
+                with stor.dx._wrap_dx_calls():
+                    f = dxpy.DXFile(dxid=self._path.canonical_resource,
+                                    project=self._path.canonical_project)
+                    try:
+                        f.wait_on_close(wait_on_close)
+                    # ignore timeout because we want client code to deal with it
+                    except dxpy.DXError as e:  # pragma: no cover
+                        if 'timeout' not in str(e):
+                            raise
 
     def flush(self):
         """Flushes the write buffer to the OBS path (if it exists)"""
@@ -390,4 +487,4 @@ class OBSFile(object):
         if self.mode == 'w':
             self._path.write_object(self._buffer.getvalue().encode(self.encoding))
         else:
-            self._path.write_object(self._buffer.getvalue(), **self._kwargs)
+            self._path.write_object(self._buffer.getvalue())

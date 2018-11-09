@@ -75,6 +75,10 @@ class TestSettings(unittest.TestCase):
                 'segment_threads': 10,
                 'skip_identical': False,
                 'use_slo': True
+            },
+            'dx': {
+                'auth_token': '',
+                'wait_on_close': 0
             }
         }
         settings._initialize()
@@ -126,6 +130,10 @@ class TestSettings(unittest.TestCase):
                 'segment_threads': 10,
                 'skip_identical': False,
                 'use_slo': True
+            },
+            'dx': {
+                'auth_token': 'fake_token',
+                'wait_on_close': 0
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')

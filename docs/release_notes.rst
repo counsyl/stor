@@ -1,6 +1,24 @@
 Release Notes
 =============
 
+v3.0.0
+------
+
+API Additions
+^^^^^^^^^^^^^
+
+* Add API and CLI support for manipulating resources on DNAnexus platform via the ``DXPath``
+  (i.e., the ``DXVirtualPath`` and ``DXCanonicalPath``) classes.
+
+API Breaks
+^^^^^^^^^^
+
+* ``stor.open`` api changed to only accept ``mode`` and ``encoding`` parameters. Other arguments
+  (including ``swift_upload_options``  / ``swift_upload_kwargs`` / ``swift_download_kwargs``) removed.
+* ``write_object()`` *only* allows ``bytes`` data in Python 3 (it will raise a
+  ``TypeError`` otherwise). Behavior in Python 2 is unchanged.
+* The alias ``stor.swift.SwiftFile`` (which pointed to ``stor.obs.OBSFile``) is no longer available.
+
 v2.1.3
 ------
 

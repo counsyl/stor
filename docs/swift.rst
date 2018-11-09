@@ -22,7 +22,7 @@ SwiftPath
 .. autoclass:: SwiftPath
   :members:
 
-  .. automethod:: open(mode='r', swift_upload_options=None)
+  .. automethod:: open(mode='r')
 
   .. automethod:: glob(pattern, num_objs_cond=None, \**retry_args)
 
@@ -34,7 +34,7 @@ SwiftPath
 
   .. automethod:: copy(dest, swift_retry_args=None)
 
-  .. automethod:: copytree(dest, copy_cmd='cp -r', swift_upload_options=None, swift_download_options=None)
+  .. automethod:: copytree(dest, copy_cmd='cp -r')
 
   .. automethod:: upload(to_upload, segment_size=DEFAULT_SEGMENT_SIZE, use_slo=True, segment_container=None, leave_segments=False, changed=False, object_name=None, object_threads=10, segment_threads=10, condition=None, use_manifest=False, \**retry_args)
 
@@ -75,13 +75,6 @@ until finally throwing a `ConditionNotMetError` if the condition is not met. If 
 Note that if you want to combine multiple conditions, you can do this easily as::
 
   condition = lambda results: all(f(results) for f in my_list_of_conditions)
-
-
-SwiftFile
----------
-
-.. autoclass:: SwiftFile
-  :members:
 
 
 SwiftUploadObject
