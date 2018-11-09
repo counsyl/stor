@@ -18,6 +18,9 @@ import stor.tests.test_integration as test_integration
 
 
 class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
+    # we need to give enough time for file to enter `closed` state so we can read it
+    DX_WAIT_SETTINGS = {'dx': {'wait_on_close': 30}}
+
     def setUp(self):
         self.vcr_enabled = False  # don't want vcr playback for integration tests
         super(DXIntegrationTest, self).setUp()
@@ -78,25 +81,19 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
         self.assertTrue(non_with_file.isfile())
         self.assertFalse(non_with_file.isdir())
 
-        with test_file.open(mode='wb') as obj:
-            obj.write('this is a test\n'.encode())
-            obj.write('this is another line.\n'.encode())
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            with test_file.open(mode='wb') as obj:
+                obj.write('this is a test\n'.encode())
+                obj.write('this is another line.\n'.encode())
 
         self.assertTrue(test_file.exists())
         self.assertTrue(test_file.isfile())
         self.assertFalse(test_file.isdir())
 
-        file_h = dxpy.DXFile(dxid=test_file.canonical_resource,
-                             project=test_file.canonical_project)
-        file_h.wait_on_close(20)  # wait for file to go to closed state
-
-        with test_file.open(mode='rb') as obj:
-            with copy_file.open(mode='wb') as copy_obj:
-                copy_obj.write(obj.read())
-
-        file_h = dxpy.DXFile(dxid=copy_file.canonical_resource,
-                             project=copy_file.canonical_project)
-        file_h.wait_on_close(20)  # wait for file to go to closed state
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            with test_file.open(mode='rb') as obj:
+                with copy_file.open(mode='wb') as copy_obj:
+                    copy_obj.write(obj.read())
 
         self.assertTrue(copy_file.exists())
         self.assertTrue(copy_file.isfile())
@@ -127,15 +124,22 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
             self.assertTrue(Path('test/.hidden_dir/nested/file1').isfile())
             self.assertTrue(Path('test/.hidden_dir/nested/file2').isfile())
 
+    def test_read_bytes_from_binary(self):
+        test_file = self.test_dir / 'test_file.txt'
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            with stor.open(test_file, mode='wb') as fp:
+                fp.write(test_integration.BYTE_STRING)
+
+        with stor.open(test_file, mode='rb') as fp:
+            result = fp.read()
+        assert result == test_integration.BYTE_STRING
+
     @skipIf(six.PY2, "Only tested on py3")
     def test_read_string_from_text(self):
         test_file = self.test_dir / 'test_file.txt'
-        with stor.open(test_file, mode='w') as fp:
-            fp.write(test_integration.STRING_STRING)
-
-        file_h = dxpy.DXFile(dxid=test_file.canonical_resource,
-                             project=test_file.canonical_project)
-        file_h.wait_on_close(20)  # wait for file to go to closed state
+        with stor.settings.use(self.DX_WAIT_SETTINGS):
+            with stor.open(test_file, mode='w') as fp:
+                fp.write(test_integration.STRING_STRING)
 
         with stor.open(test_file, mode='r') as fp:
             result = fp.read()
