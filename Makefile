@@ -20,38 +20,43 @@ VENV_ACTIVATE=$(VENV_DIR)/bin/activate
 WITH_VENV=. $(VENV_ACTIVATE);
 WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 
+INSTALL_PKGS='pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL};
+ pip install -e . --index-url=${PIP_INDEX_URL};
+ pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL};
+ pip install -r requirements-docs.txt --index-url=${PIP_INDEX_URL}'
+
 .PHONY: venv
 venv: $(VENV_ACTIVATE)
 
-$(VENV_ACTIVATE): requirements*.txt
+$(VENV_ACTIVATE): *requirements*.txt
 	test -f $@ || virtualenv --python=$(PYTHON) $(VENV_DIR)
 	$(WITH_VENV) echo "Within venv, running $$(python --version)"
-	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r requirements-docs.txt --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) ./run_all.sh $(INSTALL_PKGS)
 	touch $@
 
+DEVELOP_CMD='python setup.py develop'
+
 develop: venv
-	$(WITH_VENV) python setup.py develop
+	$(WITH_VENV) ./run_all.sh $(DEVELOP_CMD)
 
 .PHONY: docs
 docs: venv clean-docs
 	$(WITH_VENV) cd docs && make html
 
+SETUP_CMD = 'python setup.py ${ARGS}'
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
 ifdef ARGS
-	$(WITH_PBR) python setup.py ${ARGS}
+	$(WITH_PBR) ./run_all.sh $(SETUP_CMD)
 else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
 
 .PHONY: clean
 clean:
-	$(PYTHON) setup.py clean
+	./run_all.sh '$(PYTHON) setup.py clean'
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg*/
