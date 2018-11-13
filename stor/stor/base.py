@@ -6,9 +6,7 @@ import ntpath
 import os
 import pkg_resources
 import posixpath
-import shlex
 import shutil
-from subprocess import check_call
 import sys
 import warnings
 
@@ -108,152 +106,8 @@ class Path(text_type):
         compatible path module for path operations"""
         return isinstance(other, Path) and other.path_module != self.path_module
 
-    def copy(source, dest, **swift_retry_options):
-        """Copies a source file to a destination file.
-
-        Note that this utility can be called from either OBS, posix, or
-        windows paths created with ``stor.Path``.
-
-        Args:
-            source (path|str): The source directory to copy from
-            dest (path|str): The destination file or directory.
-            swift_retry_options (dict): Optional retry arguments to use for swift
-                upload or download. View the
-                `swift module-level documentation <swiftretry>` for more
-                information on retry arguments
-
-        Examples:
-            Copying a swift file to a local path behaves as follows::
-
-                >>> import stor
-                >>> swift_p = 'swift://tenant/container/dir/file.txt'
-                >>> # file.txt will be copied to other_dir/other_file.txt
-                >>> stor.copy(swift_p, 'other_dir/other_file.txt')
-
-            Copying from a local path to swift behaves as follows::
-
-                >>> from stor import Path
-                >>> local_p = Path('my/local/file.txt')
-                >>> # File will be uploaded to swift://tenant/container/dir/my_file.txt
-                >>> local_p.copy('swift://tenant/container/dir/')
-
-            Because of the ambiguity in whether a remote target is a file or directory, copy()
-            will error on ambiguous paths.
-
-                >>> local_p.copy('swift://tenant/container/dir')
-                Traceback (most recent call last):
-                ...
-                ValueError: OBS destination must be file with extension or directory with slash
-        """
-        from stor.obs import OBSUploadObject
-
-        dest = Path(dest)
-        if utils.is_obs_path(source) and utils.is_obs_path(dest):
-            raise ValueError('cannot copy one OBS path to another OBS path')
-
-        if utils.is_filesystem_path(dest):
-            dest.parent.makedirs_p()
-            if utils.is_obs_path(source):
-                dest_file = dest if not dest.isdir() else dest / source.name
-                source.download_object(dest_file, **swift_retry_options)
-            else:
-                shutil.copy(source, dest)
-        else:
-            dest_file = dest if not dest.endswith('/') else dest / source.name
-            dest_obj_name = Path(dest_file.parent.resource or '') / dest_file.name
-            upload_obj = OBSUploadObject(source, dest_obj_name)
-            dest_file._copy_upload([upload_obj],
-                                   **swift_retry_options)
-
-    def copytree(source, dest, copy_cmd=None, use_manifest=False, headers=None,
-                 condition=None, **kwargs):
-        """Copies a source directory to a destination directory. Assumes that
-        paths are capable of being copied to/from.
-
-        Note that this function uses shutil.copytree by default, meaning
-        that a posix or windows destination must not exist beforehand.
-
-        For example, assume the following file hierarchy::
-
-            a/
-            - b/
-            - - 1.txt
-
-        Doing a copytree from ``a`` to a new posix destination of ``c`` is
-        performed with::
-
-            Path('a').copytree('c')
-
-        The end result for c looks like::
-
-            c/
-            - b/
-            - - 1.txt
-
-        Note that the user can override which copy command is used for posix
-        copies, and it is up to them to ensure that their code abides by the
-        semantics of the provided copy command. This function has been tested
-        in production using the default command of ``cp -r`` and using ``mcp -r``.
-
-        Using OBS source and destinations work in a similar manner. Assume
-        the destination is a swift path and we upload the same ``a`` folder::
-
-            Path('a').copytree('swift://tenant/container/folder')
-
-        The end swift result will have one object::
-
-            Path('swift://tenant/container/folder/b/1.txt')
-
-        Similarly one can do::
-
-            Path('swift://tenant/container/folder/').copytree('c')
-
-        The end result for c looks the same as the above posix example::
-
-            c/
-            - b/
-            - - 1.txt
-
-        Args:
-            source (path|str): The source directory to copy from
-            dest (path|str): The directory to copy to. Must not exist if
-                its a posix directory
-            copy_cmd (str): If copying to / from posix or windows, this command is
-                used instead of shutil.copytree
-            use_manifest (bool, default False): See `SwiftPath.upload` and
-                `SwiftPath.download`.
-            condition (function(results) -> bool): See `SwiftPath.upload` and
-                `SwiftPath.download`.
-            headers (List[str]): See `SwiftPath.upload`.
-
-        Raises:
-            ValueError: if two OBS paths are specified
-            OSError: if destination is a posix path and it already exists
-        """
-        dest = Path(dest)
-        if utils.is_obs_path(source) and utils.is_obs_path(dest):
-            raise ValueError('cannot copy one OBS path to another OBS path')
-        from stor.windows import WindowsPath
-        if utils.is_obs_path(source) and isinstance(dest, WindowsPath):
-            raise ValueError('OBS copytree to windows is not supported')
-
-        if utils.is_filesystem_path(dest):
-            dest.expand().abspath().parent.makedirs_p()
-            if utils.is_obs_path(source):
-                source.download(dest, use_manifest=use_manifest,
-                                condition=condition, **kwargs)
-            else:
-                if copy_cmd:
-                    copy_cmd = shlex.split(copy_cmd)
-                    copy_cmd.extend([str(source.abspath().expand()),
-                                     str(dest.abspath().expand())])
-                    logger.info('performing copy with command - %s', copy_cmd)
-                    check_call(copy_cmd)
-                else:
-                    shutil.copytree(source, dest)
-        else:
-            dest._copytree_upload(source, use_manifest=use_manifest, headers=headers,
-                                  condition=condition, **kwargs)
+    copy = utils.copy
+    copytree = utils.copytree
 
     def __repr__(self):
         return '%s(%s)' % (type(self).__name__, super(Path,

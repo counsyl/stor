@@ -8,7 +8,6 @@ from swiftclient.service import SwiftUploadObject
 
 from stor.base import Path
 from stor.posix import PosixPath
-from stor import utils
 
 
 def _delegate_to_buffer(attr_name, valid_modes=None):

@@ -22,6 +22,8 @@ See `stor_swift.swift` for more information on Swift-specific functionality.
 """
 import pkg_resources
 
+from stor.utils import copy
+from stor.utils import copytree
 from stor.utils import is_filesystem_path
 from stor.utils import is_obs_path
 from stor.utils import NamedTemporaryDirectory
@@ -76,8 +78,6 @@ getsize = _delegate_to_path('getsize')
 makedirs_p = _delegate_to_path('makedirs_p')
 remove = _delegate_to_path('remove')
 rmtree = _delegate_to_path('rmtree')
-copy = _delegate_to_path('copy')
-copytree = _delegate_to_path('copytree')
 walkfiles = _delegate_to_path('walkfiles')
 
 

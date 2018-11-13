@@ -1,3 +1,4 @@
+import os
 import mock
 import tempfile
 import unittest
@@ -34,6 +35,37 @@ class TestCopy(unittest.TestCase):
             self.assertEquals(upload_args[0], dest.parent)
             self.assertEquals(upload_args[1][0].source, tmp_f.name)
             self.assertEquals(upload_args[1][0].object_name, 'file.txt')
+
+    def test_ambigious_swift_resource_destination(self):
+        with stor.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / '1'
+            with open(source, 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = 'swift://tenant/container/ambiguous-resource'
+            with self.assertRaisesRegexp(ValueError, 'Swift destination'):
+                stor.copy(source, dest)
+
+    def test_ambigious_swift_container_destination(self):
+        with stor.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / '1'
+            with open(source, 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = 'swift://tenant/ambiguous-container'
+            with self.assertRaisesRegexp(ValueError, 'Swift destination'):
+                stor.copy(source, dest)
+
+    def test_tenant_swift_destination(self):
+        with stor.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / 'source'
+            os.mkdir(source)
+            with open(source / '1.txt', 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = 'swift://tenant/'
+            with self.assertRaisesRegexp(ValueError, 'copy to tenant'):
+                stor.copy(source / '1.txt', dest)
 
 
 class TestCopytree(unittest.TestCase):

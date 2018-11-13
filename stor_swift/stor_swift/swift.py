@@ -57,7 +57,7 @@ from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
 from stor.third_party.backoff import with_backoff
-from utils import is_swift_path
+from stor_swift.utils import is_swift_path
 
 
 logger = logging.getLogger(__name__)
@@ -1016,6 +1016,16 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, results)
         return results
 
+    def _obs_copy(self, dest, **kwargs):
+        """Wrapper function for copy to OBSPaths"""
+        if utils.is_obs_path(dest):
+            raise ValueError('cannot copy one OBS path to another OBS path')
+
+    def _obs_copytree(self, dest, **kwargs):
+        """Wrapper function for copytree to OBSPaths"""
+        if utils.is_obs_path(dest):
+            raise ValueError('cannot copy one OBS path to another OBS path')
+
     def _copy_upload(self, source, **kwargs):
         """Wrapper function on upload for transformations when copying.
 
@@ -1025,6 +1035,11 @@ class SwiftPath(OBSPath):
         if self.is_ambiguous():
             raise ValueError('Swift destination must be file with extension or directory '
                              'with slash')
+        if not self.parent.container:
+            raise ValueError((
+                    'cannot copy to tenant "%s" and file '
+                    '"%s"' % (self.parent, self.name)
+            ))
         dest = self.parent
         dest.upload(source, **kwargs)
 

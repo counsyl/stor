@@ -6,7 +6,6 @@ import stor
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor import posix
-from stor import utils
 from stor import windows
 
 
@@ -65,37 +64,6 @@ class TestCopy(unittest.TestCase):
             stor.copy(source / '1', dest)
             self.assertTrue(dest.exists())
             self.assertEquals(dest.open().read(), '1')
-
-    def test_ambigious_swift_resource_destination(self):
-        with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / '1'
-            with open(source, 'w') as tmp_file:
-                tmp_file.write('1')
-
-            dest = 'swift://tenant/container/ambiguous-resource'
-            with self.assertRaisesRegexp(ValueError, 'OBS destination'):
-                stor.copy(source, dest)
-
-    def test_ambigious_swift_container_destination(self):
-        with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / '1'
-            with open(source, 'w') as tmp_file:
-                tmp_file.write('1')
-
-            dest = 'swift://tenant/ambiguous-container'
-            with self.assertRaisesRegexp(ValueError, 'OBS destination'):
-                stor.copy(source, dest)
-
-    def test_tenant_swift_destination(self):
-        with stor.NamedTemporaryDirectory() as tmp_d:
-            source = tmp_d / 'source'
-            os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
-                tmp_file.write('1')
-
-            dest = 'swift://tenant/'
-            with self.assertRaisesRegexp(ValueError, 'copy to tenant'):
-                stor.copy(source / '1', dest)
 
 
 class TestCopytree(unittest.TestCase):

@@ -16,7 +16,6 @@ from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exceptions
 import six
 
-import stor
 from stor import exceptions
 from stor import settings
 from stor import utils
@@ -646,6 +645,16 @@ class S3Path(OBSPath):
             result['error'] = e
 
         return result
+
+    def _obs_copy(self, dest, **kwargs):
+        """Wrapper function for copy to OBSPaths"""
+        if utils.is_obs_path(dest):
+            raise ValueError('cannot copy one OBS path to another OBS path')
+
+    def _obs_copytree(self, dest, **kwargs):
+        """Wrapper function for copytree to OBSPaths"""
+        if utils.is_obs_path(dest):
+            raise ValueError('cannot copy one OBS path to another OBS path')
 
     def _copy_upload(self, source, **kwargs):
         """Wrapper function on upload for transformations when copying.

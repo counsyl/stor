@@ -739,6 +739,18 @@ class DXPath(OBSPath):
             folder='/' + (self.resource or '')
         )
 
+    def _obs_copy(self, dest, **kwargs):
+        """Wrapper function for copy to OBSPaths"""
+        if stor_utils.is_obs_path(dest) and not utils.is_dx_path(dest):
+            raise ValueError('cannot copy one OBS path to another OBS path')
+        self.copy(dest, **kwargs)
+
+    def _obs_copytree(self, dest, **kwargs):
+        """Wrapper function for copytree to OBSPaths"""
+        if stor_utils.is_obs_path(dest) and not utils.is_dx_path(dest):
+            raise ValueError('cannot copy one OBS path to another OBS path')
+        self.copytree(dest, **kwargs)
+
     def _copy_upload(self, src, **kwargs):
         """Wrapper function on upload for transformations when copying.
 
@@ -757,8 +769,9 @@ class DXPath(OBSPath):
         Due to the legacy nature of upload being used in write_object/copy/copytree,
         we cannot call upload directly from stor.copytree, we need to perform checks here.
         """
+        dest = self
         if self.isdir() or self.endswith('/'):
-            dest = self / utils.remove_trailing_slash(source).name
+            dest = self / stor_utils.remove_trailing_slash(source).name
             if dest.isdir():
                 raise stor_exceptions.TargetExistsError(
                     'Destination path ({}) already exists, will not cause '
@@ -766,7 +779,7 @@ class DXPath(OBSPath):
                     .format(dest)
                 )
         with source:
-            self.upload(['.'], **kwargs)
+            dest.upload(['.'], **kwargs)
 
     def upload(self, to_upload, **kwargs):
         """Upload a list of files and directories to a directory.
