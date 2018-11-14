@@ -431,7 +431,6 @@ class FileSystemPath(Path):
 
         The elements of the list are Path objects.
         """
-        print(self,type(self))
         return [self / child
                 for child in map(self._always_unicode, os.listdir(self))]
 
