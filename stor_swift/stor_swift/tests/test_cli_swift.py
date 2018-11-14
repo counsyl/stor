@@ -20,7 +20,7 @@ class BaseCliTest(test.SwiftTestCase):
         patcher.start()
 
     @contextlib.contextmanager
-    def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):
+    def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):  # pragma: no cover
         patch = mock.patch('sys.stderr', new=six.StringIO())
         self.addCleanup(patch.stop)
         patch.start()

@@ -30,7 +30,7 @@ class BaseCliTest(test.S3TestCase):
             except SystemExit as e:
                 self.assertEquals(e.code, int(exit_status))
             else:
-                assert False, 'SystemExit not raised'
+                assert False, 'SystemExit not raised'  # pragma: no cover
         else:
             yield
         if not stdout:

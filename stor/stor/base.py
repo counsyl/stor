@@ -80,7 +80,7 @@ class Path(text_type):
                 else:  # pragma: no cover
                     assert False, 'path is not compatible with stor'
             else:
-                if path != new_p:
+                if path != new_p:  # pragma: no cover
                     path = new_p
                     cls.path_converted = True
                     cls.new_path = new_p

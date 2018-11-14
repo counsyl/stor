@@ -76,7 +76,7 @@ def is_writeable(path, swift_retry_options=None):
 
     # Remove the Swift container if it didn't exist when calling this function, but exists
     # now. This way this function remains a no-op with regards to container structure.
-    if container_existed is False and container_path.exists():
+    if container_existed is False and container_path.exists():  # pragma: no cover
         try:
             container_path.remove_container()
         except ConflictError:

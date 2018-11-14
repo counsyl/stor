@@ -13,7 +13,7 @@ endif
 
 .PHONY: default
 default:
-	python setup.py check build
+	cd stor; python setup.py check build; cd ..
 
 VENV_DIR?=.venv
 VENV_ACTIVATE=$(VENV_DIR)/bin/activate
@@ -101,13 +101,13 @@ endif
 travis-test: venv
 	$(WITH_VENV) \
 	coverage erase; \
-	coverage run setup.py test; \
+	./run_all.sh 'coverage run setup.py test' $(PACKAGE_NAMES); \
 	status=$$?; \
 	coverage report && exit $$status;
 
 # Distribution
 
-VERSION=$(shell $(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/')
+VERSION=$(cd stor; shell $(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'; cd ..)
 
 .PHONY: tag
 tag: ##[distribution] Tag the release.

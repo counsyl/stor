@@ -33,3 +33,27 @@ class TestCopy(unittest.TestCase):
             self.assertEquals(upload_args[0], dest.parent)
             self.assertEquals(upload_args[1][0].source, tmp_f.name)
             self.assertEquals(upload_args[1][0].object_name, 'key/file.txt')
+
+    def test_ambigious_s3_destination(self):
+        with stor.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / '1'
+            with open(source, 'w') as tmp_file:
+                tmp_file.write('1')
+
+            dest = 's3://tenant/ambiguous-container'
+            with self.assertRaisesRegexp(ValueError, 'S3 destination'):
+                stor.copy(source, dest)
+
+
+class TestCopytree(unittest.TestCase):
+    @mock.patch.object(s3.S3Path, 'upload', autospec=True)
+    def test_s3_destination(self, mock_upload):
+        source = '.'
+        dest = Path('s3://tenant/container')
+        stor.copytree(source, dest)
+        mock_upload.assert_called_once_with(
+            dest,
+            ['.'],
+            condition=None,
+            use_manifest=False,
+            headers=None)
