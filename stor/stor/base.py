@@ -22,11 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 def get_modules():
-    return {
-        entry_point.name: entry_point.load()
-        for entry_point
-        in pkg_resources.iter_entry_points('stor.providers')
-    }
+    modules = {}
+    for entry_point in pkg_resources.iter_entry_points('stor.providers'):
+        try:
+            modules.update({entry_point.name: entry_point.load()})
+        except pkg_resources.DistributionNotFound as e:  # pragma: no cover
+            from stor import exceptions
+            print('Ignoring {entry_point} module as the requirement(s) '
+                          'for the module are not installed'.format(entry_point=entry_point.name))
+            pass
+    return modules
 
 
 def find_cls_for_path(path):

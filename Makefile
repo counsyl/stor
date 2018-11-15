@@ -51,10 +51,11 @@ endif
 .PHONY: clean
 clean:
 	./run_all.sh '$(PYTHON) setup.py clean' $(PACKAGE_NAMES)
-	rm -rf build/
+	rm -rf __pycache__/
+	rm -rf .*cache/
+	rm -rf *.egg*/
 	./run_all.sh 'rm -rf dist/' $(PACKAGE_NAMES)
-	./run_all.sh 'rm -rf *.egg*/' $(PACKAGE_NAMES)
-	./run_all.sh 'rm -rf .*egg*/' $(PACKAGE_NAMES)
+	./run_all.sh 'rm -rf build/' $(PACKAGE_NAMES)
 	./run_all.sh 'rm -rf __pycache__/' $(PACKAGE_NAMES)
 	./run_all.sh 'rm -rf .*cache/' $(PACKAGE_NAMES)
 	rm -f MANIFEST
