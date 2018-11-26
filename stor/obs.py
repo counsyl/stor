@@ -458,7 +458,8 @@ class OBSFile(object):
             self._wait_on_close()
 
     def _wait_on_close(self):
-        if isinstance(self._path, stor_dx.dx.DXPath):
+        from stor_dx.dx import DXPath
+        if isinstance(self._path, DXPath):
             wait_on_close = stor.settings.get()['dx']['wait_on_close']
             if wait_on_close:
                 from stor_dx import dx
