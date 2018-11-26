@@ -458,12 +458,11 @@ class OBSFile(object):
             self._wait_on_close()
 
     def _wait_on_close(self):
-        # don't want to import stor_dx here because it is only installed as extra
-        # if isinstance(self._path, stor_dx.dx.DXPath):
+        if isinstance(self._path, stor_dx.dx.DXPath):
             wait_on_close = stor.settings.get()['dx']['wait_on_close']
             if wait_on_close:
                 from stor_dx import dx
-                with dx._wrap_dx_calls():  # this will raise an error too
+                with dx._wrap_dx_calls():
                     f = dxpy.DXFile(dxid=self._path.canonical_resource,
                                     project=self._path.canonical_project)
                     try:
