@@ -11,16 +11,16 @@ from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from testfixtures import LogCapture
 
-import stor
 from stor import exceptions
 from stor import NamedTemporaryDirectory
 from stor import Path
 from stor import settings
-from stor import swift
 from stor import utils
-from stor.swift import SwiftPath
-from stor.test import SwiftTestCase
 from stor.tests.shared_obs import SharedOBSFileCases
+from stor_swift import swift
+from stor_swift.swift import SwiftPath
+from stor_swift.test import SwiftTestCase
+import stor
 
 
 def _service_404_exception():
@@ -46,7 +46,7 @@ def _make_stat_response(stat_response=None):
 
 
 class TestPatchedGetAuthKeystone(unittest.TestCase):
-    @mock.patch('stor.swift.real_get_auth_keystone', autospec=True)
+    @mock.patch('stor_swift.swift.real_get_auth_keystone', autospec=True)
     def test_patched_get_auth_keystone(self, mock_get_real_auth_keystone):
         mock_get_real_auth_keystone.side_effect = Exception
         os_options = {'auth_token': 'token'}
@@ -83,7 +83,7 @@ class TestBasicPathMethods(unittest.TestCase):
         self.assertEquals(p.basename(), 'resource')
 
     def test_to_url(self):
-        with mock.patch('stor.swift._get_or_create_auth_credentials',
+        with mock.patch('stor_swift.swift._get_or_create_auth_credentials',
                         # storage url may be an opaque value... ensure we roll with that
                         return_value={'os_storage_url': 'https://example.com/v1.0/othertenant',
                                       'os_auth_token': 'sometoken'}):
@@ -1213,7 +1213,7 @@ class TestDownloadObjects(SwiftTestCase):
 class TestGetProgressLogger(unittest.TestCase):
     def test_success(self):
         l = swift.get_progress_logger()
-        expected = logging.getLogger('stor.swift.progress')
+        expected = logging.getLogger('stor_swift.swift.progress')
         self.assertEquals(l, expected)
 
 
@@ -1261,13 +1261,13 @@ class TestDownload(SwiftTestCase):
         self.mock_swift.download.return_value.append({'action': 'random_action'})
 
         swift_p = SwiftPath('swift://tenant/container')
-        with LogCapture('stor.swift.progress') as progress_log:
+        with LogCapture('stor_swift.swift.progress') as progress_log:
             swift_p.download('output_dir')
             progress_log.check(
-                ('stor.swift.progress', 'INFO', 'starting download'),
-                ('stor.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor_swift.swift.progress', 'INFO', 'starting download'),
+                ('stor_swift.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor_swift.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor_swift.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
     def test_download_resource(self):
@@ -1740,14 +1740,14 @@ class TestUpload(SwiftTestCase):
         }
 
         swift_p = SwiftPath('swift://tenant/container')
-        with LogCapture('stor.swift.progress') as progress_log:
+        with LogCapture('stor_swift.swift.progress') as progress_log:
             with settings.use(upload_settings):
                 swift_p.upload(['upload'])
             progress_log.check(
-                ('stor.swift.progress', 'INFO', 'starting upload of 20 objects'),
-                ('stor.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor_swift.swift.progress', 'INFO', 'starting upload of 20 objects'),
+                ('stor_swift.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor_swift.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor_swift.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
             )
 
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):
@@ -2491,7 +2491,7 @@ class TestCompatHelpers(SwiftTestCase):
 
 
 class TestAuthCacheRetrying(SwiftTestCase):
-    @mock.patch('stor.swift._clear_cached_auth_credentials', spec_set=True)
+    @mock.patch('stor_swift.swift._clear_cached_auth_credentials', spec_set=True)
     def test_refresh_cache_once_on_auth_err(self, mock_clear_cached_auth_credentials):
         self.mock_swift.download.side_effect = swift.AuthenticationError('auth err')
 

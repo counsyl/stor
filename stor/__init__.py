@@ -18,7 +18,7 @@ stor is heavily inspired by / based on the path.py library, but
 modified to avoid the need to know whether you have a Path or a string for most
 functions.
 
-See `stor.swift` for more information on Swift-specific functionality.
+See `stor_swift.swift` for more information on Swift-specific functionality.
 """
 import pkg_resources
 

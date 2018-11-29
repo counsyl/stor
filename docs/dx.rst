@@ -164,7 +164,7 @@ a folder or a file (i.e., `DXPath.listdir` will assume folder, `DXPath.stat` wil
 DXPath
 -------
 
-.. automodule:: stor.dx
+.. automodule:: stor_dx.dx
     :members:
 
 Copy and copytree by example

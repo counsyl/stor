@@ -1,7 +1,7 @@
 import pytest
 import unittest
 
-from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
+from stor_dx.dx import DXPath, DXCanonicalPath, DXVirtualPath
 
 
 class TestBasics(unittest.TestCase):

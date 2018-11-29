@@ -465,13 +465,13 @@ def print_results(results):
 def main():
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    s3_logger = logging.getLogger('stor.s3.progress')
+    s3_logger = logging.getLogger('stor_s3.s3.progress')
     s3_logger.setLevel(logging.INFO)
     s3_logger.addHandler(handler)
-    swift_logger = logging.getLogger('stor.swift.progress')
+    swift_logger = logging.getLogger('stor_swift.swift.progress')
     swift_logger.setLevel(logging.INFO)
     swift_logger.addHandler(handler)
-    dx_logger = logging.getLogger('stor.dx.progress')
+    dx_logger = logging.getLogger('stor_dx.dx.progress')
     dx_logger.setLevel(logging.INFO)
     dx_logger.addHandler(handler)
 

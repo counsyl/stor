@@ -1,6 +1,6 @@
 from stor import posix
-from stor import s3
-from stor import swift
+from stor_s3 import s3
+from stor_swift import swift
 from stor import windows
 import unittest
 

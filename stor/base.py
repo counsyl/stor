@@ -14,7 +14,6 @@ from six import string_types
 from six import PY3
 
 from stor import utils
-import six
 
 
 class TreeWalkWarning(Warning):
@@ -48,11 +47,11 @@ class Path(text_type):
             if utils.is_dx_path(path):
                 cls = utils.find_dx_class(path)
             elif utils.is_swift_path(path):
-                from stor.swift import SwiftPath
+                from stor_swift.swift import SwiftPath
 
                 cls = SwiftPath
             elif utils.is_s3_path(path):
-                from stor.s3 import S3Path
+                from stor_s3.s3 import S3Path
 
                 cls = S3Path
             elif os.path == ntpath:

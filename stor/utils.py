@@ -190,7 +190,7 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from stor.swift import SwiftPath
+    from stor_swift.swift import SwiftPath
     return p.startswith(SwiftPath.drive)
 
 
@@ -217,7 +217,7 @@ def is_s3_path(p):
     Returns
         bool: True if p is a S3 path, False otherwise.
     """
-    from stor.s3 import S3Path
+    from stor_s3.s3 import S3Path
     return p.startswith(S3Path.drive)
 
 
@@ -244,7 +244,7 @@ def is_dx_path(p):
     Returns
         bool: True if p is a DX path, False otherwise.
     """
-    from stor.dx import DXPath
+    from stor_dx.dx import DXPath
     return p.startswith(DXPath.drive)
 
 
@@ -272,7 +272,7 @@ def find_dx_class(p):
     Returns
         cls: DXVirtualPath or DXCanonicalPath
     """
-    from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
+    from stor_dx.dx import DXPath, DXCanonicalPath, DXVirtualPath
     colon_pieces = p[len(DXPath.drive):].split(':', 1)
     if not colon_pieces or not colon_pieces[0] or '/' in colon_pieces[0]:
         raise ValueError('Project is required to construct a DXPath')
@@ -326,10 +326,10 @@ def is_writeable(path, swift_retry_options=None):
     from stor import join
     from stor import Path
     from stor import remove
-    from stor.swift import ConflictError
-    from stor.swift import SwiftPath
-    from stor.swift import UnauthorizedError
-    from stor.swift import UnavailableError
+    from stor_swift.swift import ConflictError
+    from stor_swift.swift import SwiftPath
+    from stor_swift.swift import UnauthorizedError
+    from stor_swift.swift import UnavailableError
 
     path = with_trailing_slash(Path(path))
 
