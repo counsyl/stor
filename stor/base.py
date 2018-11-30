@@ -94,7 +94,7 @@ class Path(text_type):
         windows paths created with ``stor.Path``.
 
         Args:
-            self (path|str): The source directory to copy from
+            self (Path|str): The source directory to copy from
             dest (path|str): The destination file or directory.
             swift_retry_options (dict): Optional retry arguments to use for swift
                 upload or download. View the
