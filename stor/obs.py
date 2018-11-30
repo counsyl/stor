@@ -2,7 +2,6 @@ import locale
 import posixpath
 import sys
 
-import dxpy
 import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
@@ -10,7 +9,6 @@ from swiftclient.service import SwiftUploadObject
 from stor.base import Path
 from stor.posix import PosixPath
 from stor import utils
-import stor
 
 
 def _delegate_to_buffer(attr_name, valid_modes=None):

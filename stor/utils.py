@@ -6,7 +6,6 @@ import os
 import tempfile
 
 from stor import exceptions
-import stor
 
 logger = logging.getLogger(__name__)
 
