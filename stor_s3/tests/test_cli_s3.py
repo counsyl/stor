@@ -245,6 +245,9 @@ class TestToUri(BaseCliTest):
     def test_to_url(self):
         with self.assertOutputMatches(stdout='^https://test.s3.amazonaws.com/file\n$'):
             self.parse_args('stor url s3://test/file')
+        with self.assertRaisesRegexp(AssertionError, 'stdout'):
+            with self.assertOutputMatches(stdout='mystdout'):
+                self.parse_args('stor url s3://test/file')
 
 
 class TestCat(BaseCliTest):
