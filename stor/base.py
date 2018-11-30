@@ -385,8 +385,8 @@ class FileSystemPath(Path):
         windows paths created with ``stor.Path``.
 
         Args:
-            self (path|str): The source directory to copy from
-            dest (path|str): The destination file or directory.
+            self (Path|str): The source directory to copy from
+            dest (Path|str): The destination file or directory.
             swift_retry_options (dict): Optional retry arguments to use for swift
                 upload or download. View the
                 `swift module-level documentation <swiftretry>` for more
@@ -478,8 +478,8 @@ class FileSystemPath(Path):
             - - 1.txt
 
         Args:
-            self (path|str): The source directory to copy from
-            dest (path|str): The directory to copy to. Must not exist if
+            self (Path|str): The source directory to copy from
+            dest (Path|str): The directory to copy to. Must not exist if
                 its a posix directory
             use_manifest (bool, default False): See `SwiftPath.upload` and
                 `SwiftPath.download`.
