@@ -28,7 +28,7 @@ class BaseCliTest(test.SwiftTestCase):
             try:
                 yield
             except SystemExit as e:
-                self.assertEquals(e.code, int(exit_status))
+                self.assertEqual(e.code, int(exit_status))
             else:
                 assert False, 'SystemExit not raised'
         else:
@@ -36,11 +36,11 @@ class BaseCliTest(test.SwiftTestCase):
         actual_stdout = sys.stdout.getvalue()
         actual_stderr = sys.stderr.getvalue()
         if not stdout:
-            self.assertEquals(actual_stdout, '', 'stdout')
+            self.assertEqual(actual_stdout, '', 'stdout')
         else:
             self.assertRegexpMatches(actual_stdout, stdout, 'stdout')
         if not stderr:
-            self.assertEquals(actual_stderr, '', 'stderr')
+            self.assertEqual(actual_stderr, '', 'stderr')
         else:
             self.assertRegexpMatches(actual_stderr, stderr, 'stderr')
 
@@ -56,7 +56,7 @@ class TestAssertOutputMatches(BaseCliTest):
 
     @mock.patch.object(SwiftPath, 'listdir', autospec=True)
     def test_assertOutputMatches(self, mock_ls):
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegexp(AssertionError, 'stdout'):
             with self.assertOutputMatches(stdout='mystdout'):
                 self.parse_args('stor ls swift://AUTH_rnd')
 
