@@ -10,8 +10,6 @@ import six
 
 from stor import cli
 from stor import exceptions
-from stor import settings
-from stor.posix import PosixPath
 from stor_s3 import test
 from stor_s3.s3 import S3Path
 
@@ -48,6 +46,13 @@ class BaseCliTest(test.S3TestCase):
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
+
+
+class TestCliTestUtils(BaseCliTest):
+    def test_no_exit_status(self):
+        with six.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+            with self.assertOutputMatches(exit_status='1'):
+                pass
 
 
 class TestCliBasics(BaseCliTest):
@@ -194,14 +199,14 @@ class TestLs(BaseCliTest):
 class TestCopy(BaseCliTest):
     def test_copy(self, mock_copy):
         self.parse_args('stor cp s3://bucket/file.txt ./file1')
-        mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
+        mock_copy.assert_called_once_with(path='s3://bucket/file.txt', dest='./file1')
 
 
 @mock.patch('stor.copytree', autospec=True)
 class TestCopytree(BaseCliTest):
     def test_copytree(self, mock_copytree):
         self.parse_args('stor cp -r s3://bucket .')
-        mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
+        mock_copytree.assert_called_once_with(path='s3://bucket', dest='.')
 
     def test_copytree_stdin_error(self, mock_copytree):
         with self.assertOutputMatches(exit_status='2', stderr='- cannot be used with -r'):
@@ -240,6 +245,9 @@ class TestToUri(BaseCliTest):
     def test_to_url(self):
         with self.assertOutputMatches(stdout='^https://test.s3.amazonaws.com/file\n$'):
             self.parse_args('stor url s3://test/file')
+        with self.assertRaisesRegexp(AssertionError, 'stdout'):
+            with self.assertOutputMatches(stdout='mystdout'):
+                self.parse_args('stor url s3://test/file')
 
 
 class TestCat(BaseCliTest):

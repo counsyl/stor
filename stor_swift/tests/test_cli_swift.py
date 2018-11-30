@@ -9,8 +9,6 @@ from tempfile import NamedTemporaryFile
 import six
 
 from stor import cli
-from stor import settings
-from stor.posix import PosixPath
 from stor_swift.swift import SwiftPath
 from stor_swift import test
 
@@ -30,23 +28,44 @@ class BaseCliTest(test.SwiftTestCase):
             try:
                 yield
             except SystemExit as e:
-                self.assertEquals(e.code, int(exit_status))
+                self.assertEqual(e.code, int(exit_status))
             else:
                 assert False, 'SystemExit not raised'
         else:
             yield
+        actual_stdout = sys.stdout.getvalue()
+        actual_stderr = sys.stderr.getvalue()
         if not stdout:
-            self.assertEquals(sys.stdout.getvalue(), '', 'stdout')
+            self.assertEqual(actual_stdout, '', 'stdout')
         else:
-            self.assertRegexpMatches(sys.stdout.getvalue(), stdout, 'stdout')
+            self.assertRegexpMatches(actual_stdout, stdout, 'stdout')
         if not stderr:
-            self.assertEquals(sys.stderr.getvalue(), '', 'stderr')
+            self.assertEqual(actual_stderr, '', 'stderr')
         else:
-            self.assertRegexpMatches(sys.stderr.getvalue(), stderr, 'stderr')
+            self.assertRegexpMatches(actual_stderr, stderr, 'stderr')
 
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
+
+
+class TestAssertOutputMatches(BaseCliTest):
+    def test_help(self):
+        with self.assertOutputMatches(exit_status=0, stdout='list,ls,cp,rm,walkfiles'):
+            self.parse_args('stor --help')
+
+    @mock.patch.object(SwiftPath, 'listdir', autospec=True)
+    def test_assertOutputMatches(self, mock_ls):
+        with self.assertRaisesRegexp(AssertionError, 'stdout'):
+            with self.assertOutputMatches(stdout='mystdout'):
+                self.parse_args('stor ls swift://AUTH_rnd')
+
+
+class TestCliTestUtils(BaseCliTest):
+    def test_no_exit_status(self):
+        with six.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+            with self.assertOutputMatches(exit_status='1'):
+                pass
 
 
 @mock.patch('stor.cli._get_pwd', autospec=True)

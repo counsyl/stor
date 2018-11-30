@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import contextlib
 import mock
 import sys
 
@@ -16,29 +15,6 @@ class BaseCliTest(test.DXTestCase):
         patcher = mock.patch.object(sys, 'stdout', six.StringIO())
         self.addCleanup(patcher.stop)
         patcher.start()
-
-    @contextlib.contextmanager
-    def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):
-        patch = mock.patch('sys.stderr', new=six.StringIO())
-        self.addCleanup(patch.stop)
-        patch.start()
-        if exit_status is not None:
-            try:
-                yield
-            except SystemExit as e:
-                self.assertEquals(e.code, int(exit_status))
-            else:
-                assert False, 'SystemExit not raised'
-        else:
-            yield
-        if not stdout:
-            self.assertEquals(sys.stdout.getvalue(), '', 'stdout')
-        else:
-            self.assertRegexpMatches(sys.stdout.getvalue(), stdout, 'stdout')
-        if not stderr:
-            self.assertEquals(sys.stderr.getvalue(), '', 'stderr')
-        else:
-            self.assertRegexpMatches(sys.stderr.getvalue(), stderr, 'stderr')
 
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
