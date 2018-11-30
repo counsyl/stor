@@ -48,15 +48,9 @@ class BaseCliTest(test.SwiftTestCase):
 
 
 class TestAssertOutputMatches(BaseCliTest):
-    def test_help(self):
-        with self.assertOutputMatches(exit_status=0, stdout='list,ls,cp,rm,walkfiles'):
-            self.parse_args('stor --help')
-
-    @mock.patch.object(SwiftPath, 'listdir', autospec=True)
-    def test_assertOutputMatches(self, mock_ls):
-        with self.assertRaises(AssertionError):
-            with self.assertOutputMatches(stdout='mystdout'):
-                self.parse_args('stor ls swift://AUTH_rnd')
+    def test_assertOutputMatches(self):
+        with self.assertOutputMatches(stdout='^https://test.s3.amazonaws.com/file\n$'):
+            self.parse_args('stor url s3://test/file')
 
 
 class TestCliTestUtils(BaseCliTest):
