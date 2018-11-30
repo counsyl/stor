@@ -33,7 +33,7 @@ class BaseCliTest(test.S3TestCase):
             except SystemExit as e:
                 self.assertEquals(e.code, int(exit_status))
             else:
-                assert False, 'SystemExit not raised'
+                assert False, 'SystemExit not raised'  # pragma: no cover
         else:
             yield
         if not stdout:
@@ -194,14 +194,14 @@ class TestLs(BaseCliTest):
 class TestCopy(BaseCliTest):
     def test_copy(self, mock_copy):
         self.parse_args('stor cp s3://bucket/file.txt ./file1')
-        mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
+        mock_copy.assert_called_once_with(path='s3://bucket/file.txt', dest='./file1')
 
 
 @mock.patch('stor.copytree', autospec=True)
 class TestCopytree(BaseCliTest):
     def test_copytree(self, mock_copytree):
         self.parse_args('stor cp -r s3://bucket .')
-        mock_copytree.assert_called_once_with(source='s3://bucket', dest='.')
+        mock_copytree.assert_called_once_with(path='s3://bucket', dest='.')
 
     def test_copytree_stdin_error(self, mock_copytree):
         with self.assertOutputMatches(exit_status='2', stderr='- cannot be used with -r'):

@@ -10,7 +10,6 @@ from stor import posix
 from stor_s3 import s3
 from stor import settings
 from stor_swift import swift
-from stor import utils
 from stor import windows
 
 
@@ -75,7 +74,7 @@ class TestCopy(unittest.TestCase):
 
             dest = tmp_d / 'my' / 'dest'
             dest.makedirs_p()
-            utils.copy(source / '1', dest)
+            stor.copy(source / '1', dest)
             self.assertTrue((dest / '1').exists())
             self.assertEquals((dest / '1').open().read(), '1')
 
@@ -88,7 +87,7 @@ class TestCopy(unittest.TestCase):
 
             dest = tmp_d / 'my' / 'dest' / '1'
             dest.parent.makedirs_p()
-            utils.copy(source / '1', dest)
+            stor.copy(source / '1', dest)
             self.assertTrue(dest.exists())
             self.assertEquals(dest.open().read(), '1')
 
@@ -99,8 +98,8 @@ class TestCopy(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = 'swift://tenant/container/ambiguous-resource'
-            with self.assertRaisesRegexp(ValueError, 'OBS destination'):
-                utils.copy(source, dest)
+            with self.assertRaisesRegexp(ValueError, 'Swift destination'):
+                stor.copy(source, dest)
 
     def test_ambigious_swift_container_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
@@ -109,19 +108,18 @@ class TestCopy(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = 'swift://tenant/ambiguous-container'
-            with self.assertRaisesRegexp(ValueError, 'OBS destination'):
-                utils.copy(source, dest)
+            with self.assertRaisesRegexp(ValueError, 'Swift destination'):
+                stor.copy(source, dest)
 
     def test_tenant_swift_destination(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
             source = tmp_d / 'source'
             os.mkdir(source)
-            with open(source / '1', 'w') as tmp_file:
+            with open(source / '1.txt', 'w') as tmp_file:
                 tmp_file.write('1')
-
             dest = 'swift://tenant/'
             with self.assertRaisesRegexp(ValueError, 'copy to tenant'):
-                utils.copy(source / '1', dest)
+                stor.copy(source / '1.txt', dest)
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
     def test_swift_destination(self, mock_upload):
@@ -143,6 +141,15 @@ class TestCopy(unittest.TestCase):
             self.assertEquals(upload_args[1][0].source, tmp_f.name)
             self.assertEquals(upload_args[1][0].object_name, 'key/file.txt')
 
+    def test_ambigious_s3_destination(self):
+        with stor.NamedTemporaryDirectory() as tmp_d:
+            source = tmp_d / '1'
+            with open(source, 'w') as tmp_file:
+                tmp_file.write('1')
+            dest = 's3://tenant/ambiguous-container'
+            with self.assertRaisesRegexp(ValueError, 'S3 destination'):
+                stor.copy(source, dest)
+
 
 class TestCopytree(unittest.TestCase):
     def test_posix_destination(self):
@@ -153,7 +160,7 @@ class TestCopytree(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
-            utils.copytree(source, dest)
+            stor.copytree(source, dest)
             self.assertTrue((dest / '1').exists())
 
     def test_posix_destination_w_cmd(self):
@@ -164,7 +171,7 @@ class TestCopytree(unittest.TestCase):
                 tmp_file.write('1')
 
             dest = tmp_d / 'my' / 'dest'
-            utils.copytree(source, dest, copy_cmd='cp -r')
+            stor.copytree(source, dest, copy_cmd='cp -r')
             self.assertTrue((dest / '1').exists())
 
     def test_posix_destination_already_exists(self):
@@ -173,7 +180,7 @@ class TestCopytree(unittest.TestCase):
             source.makedirs_p()
 
             with self.assertRaisesRegexp(OSError, 'exists'):
-                utils.copytree(source, tmp_d)
+                stor.copytree(source, tmp_d)
 
     def test_posix_destination_w_error(self):
         with stor.NamedTemporaryDirectory() as tmp_d:
@@ -181,7 +188,7 @@ class TestCopytree(unittest.TestCase):
             dest = tmp_d / 'my' / 'dest'
 
             with self.assertRaises(OSError):
-                utils.copytree(invalid_source, dest)
+                stor.copytree(invalid_source, dest)
 
     @mock.patch.object(swift.SwiftPath, 'upload', autospec=True)
     def test_swift_destination(self, mock_upload):
@@ -195,7 +202,19 @@ class TestCopytree(unittest.TestCase):
         }
 
         with settings.use(options):
-            utils.copytree(source, dest)
+            stor.copytree(source, dest)
+        mock_upload.assert_called_once_with(
+            dest,
+            ['.'],
+            condition=None,
+            use_manifest=False,
+            headers=None)
+
+    @mock.patch.object(s3.S3Path, 'upload', autospec=True)
+    def test_s3_destination(self, mock_upload):
+        source = '.'
+        dest = Path('s3://tenant/container')
+        stor.copytree(source, dest)
         mock_upload.assert_called_once_with(
             dest,
             ['.'],

@@ -362,7 +362,7 @@ class TestIsWriteableSwift(unittest.TestCase):
         self.mock_exists = mock_exists_patcher.start()
         self.addCleanup(mock_exists_patcher.stop)
 
-        mock_copy_patcher = mock.patch('stor.utils.copy', autospec=True)
+        mock_copy_patcher = mock.patch('stor.copy', autospec=True)
         self.mock_copy = mock_copy_patcher.start()
         self.addCleanup(mock_copy_patcher.stop)
 
@@ -436,7 +436,7 @@ class TestIsWriteableS3(unittest.TestCase):
     def setUp(self):
         super(TestIsWriteableS3, self).setUp()
 
-        mock_copy_patcher = mock.patch('stor.utils.copy')
+        mock_copy_patcher = mock.patch('stor.copy')
         self.mock_copy = mock_copy_patcher.start()
         self.addCleanup(mock_copy_patcher.stop)
 

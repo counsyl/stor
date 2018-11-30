@@ -353,9 +353,9 @@ def create_parser():
                            dest='func',
                            const=stor.copytree,
                            default=stor.copy)
-    parser_cp.add_argument('source',
+    parser_cp.add_argument('path',
                            type=get_path,
-                           metavar='SOURCE',
+                           metavar='PATH',
                            action=_make_stdin_action(stor.copytree,
                                                      '- cannot be used with -r'))
     parser_cp.add_argument('dest', type=get_path, metavar='DEST')
@@ -438,7 +438,7 @@ def process_args(args):
     except NotImplementedError:
         if pth:
             value = pth
-        elif len(func_kwargs) > 0:
+        elif len(func_kwargs) > 0:  # pragma: no cover
             value = list(func_kwargs.values())[0]
         else:
             perror('%s is not a valid command for the given input\n' % cmd)

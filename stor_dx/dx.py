@@ -734,6 +734,34 @@ class DXPath(OBSPath):
             folder='/' + (self.resource or '')
         )
 
+    def _copy_upload(self, src, **kwargs):
+        """Wrapper function on upload for transformations when copying.
+         Due to the legacy nature of upload being used in write_object/copy/copytree,
+        we cannot call upload directly from stor.copy, we need to perform checks here.
+        This is only called for copy from posix/windows to dx paths
+        """
+        src_name = src[0].source.name
+        if self.isdir():
+            src[0].object_name = src[0].object_name / src_name
+        self.upload(src, **kwargs)
+
+    def _copytree_upload(self, source, **kwargs):
+        """Wrapper function on upload for transformations when copying.
+         Due to the legacy nature of upload being used in write_object/copy/copytree,
+        we cannot call upload directly from stor.copytree, we need to perform checks here.
+        """
+        dest = self
+        if self.isdir() or self.endswith('/'):
+            dest = self / utils.remove_trailing_slash(source).name
+            if dest.isdir():
+                raise stor_exceptions.TargetExistsError(
+                    'Destination path ({}) already exists, will not cause '
+                    'duplicate folders to exist. Remove the original first'
+                    .format(dest)
+                )
+        with source:
+            dest.upload(['.'], **kwargs)
+
     def upload(self, to_upload, **kwargs):
         """Upload a list of files and directories to a directory.
 

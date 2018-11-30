@@ -157,7 +157,8 @@ class TestCliBasics(BaseCliTest):
 
 @mock.patch('stor.copy', autospec=True)
 class TestCopy(BaseCliTest):
-    def mock_copy_source(self, source, dest, *args, **kwargs):
+    def mock_copy_source(self, source, *args, **kwargs):
+        dest = kwargs.pop('dest')
         with open(dest, 'w') as outfile, open(source) as infile:
             outfile.write(infile.read())
 
@@ -168,8 +169,6 @@ class TestCopy(BaseCliTest):
             test_file = ntf.name
             self.parse_args('stor cp - %s' % test_file)
         self.assertEquals(open(test_file).read(), 'some stdin input\n')
-        temp_file = mock_copy.call_args_list[0][1]['source']
-        self.assertFalse(os.path.exists(temp_file))
         os.remove(test_file)
         self.assertFalse(os.path.exists(test_file))
 
