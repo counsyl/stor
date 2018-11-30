@@ -736,7 +736,8 @@ class DXPath(OBSPath):
 
     def _copy_upload(self, src, **kwargs):
         """Wrapper function on upload for transformations when copying.
-         Due to the legacy nature of upload being used in write_object/copy/copytree,
+
+        Due to the legacy nature of upload being used in write_object/copy/copytree,
         we cannot call upload directly from stor.copy, we need to perform checks here.
         This is only called for copy from posix/windows to dx paths
         """
@@ -747,7 +748,8 @@ class DXPath(OBSPath):
 
     def _copytree_upload(self, source, **kwargs):
         """Wrapper function on upload for transformations when copying.
-         Due to the legacy nature of upload being used in write_object/copy/copytree,
+
+        Due to the legacy nature of upload being used in write_object/copy/copytree,
         we cannot call upload directly from stor.copytree, we need to perform checks here.
         """
         dest = self

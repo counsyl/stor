@@ -33,7 +33,7 @@ class BaseCliTest(test.S3TestCase):
             except SystemExit as e:
                 self.assertEquals(e.code, int(exit_status))
             else:
-                assert False, 'SystemExit not raised'  # pragma: no cover
+                assert False, 'SystemExit not raised'
         else:
             yield
         if not stdout:
@@ -48,6 +48,13 @@ class BaseCliTest(test.S3TestCase):
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
+
+
+class TestCliTestUtils(BaseCliTest):
+    def test_no_exit_status(self):
+        with six.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+            with self.assertOutputMatches(exit_status='1'):
+                pass
 
 
 class TestCliBasics(BaseCliTest):

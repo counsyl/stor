@@ -9,8 +9,6 @@ from tempfile import NamedTemporaryFile
 import six
 
 from stor import cli
-from stor import settings
-from stor.posix import PosixPath
 from stor_swift.swift import SwiftPath
 from stor_swift import test
 
@@ -22,7 +20,7 @@ class BaseCliTest(test.SwiftTestCase):
         patcher.start()
 
     @contextlib.contextmanager
-    def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):  # pragma: no cover
+    def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):
         patch = mock.patch('sys.stderr', new=six.StringIO())
         self.addCleanup(patch.stop)
         patch.start()
@@ -47,6 +45,25 @@ class BaseCliTest(test.SwiftTestCase):
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
             cli.main()
+
+
+class TestAssertOutputMatches(BaseCliTest):
+    def test_help(self):
+        with self.assertOutputMatches(exit_status=0, stdout='list,ls,cp,rm,walkfiles'):
+            self.parse_args('stor --help')
+
+    @mock.patch.object(SwiftPath, 'listdir', autospec=True)
+    def test_assertOutputMatches(self, mock_ls):
+        with self.assertRaises(AssertionError):
+            with self.assertOutputMatches(stdout='mystdout'):
+                self.parse_args('stor ls swift://AUTH_rnd')
+
+
+class TestCliTestUtils(BaseCliTest):
+    def test_no_exit_status(self):
+        with six.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+            with self.assertOutputMatches(exit_status='1'):
+                pass
 
 
 @mock.patch('stor.cli._get_pwd', autospec=True)
