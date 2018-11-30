@@ -33,14 +33,16 @@ class BaseCliTest(test.SwiftTestCase):
                 assert False, 'SystemExit not raised'
         else:
             yield
+        actual_stdout = sys.stdout.getvalue()
+        actual_stderr = sys.stderr.getvalue()
         if not stdout:
-            self.assertEquals(sys.stdout.getvalue(), '', 'stdout')
+            self.assertEquals(actual_stdout, '', 'stdout')
         else:
-            self.assertRegexpMatches(sys.stdout.getvalue(), stdout, 'stdout')
+            self.assertRegexpMatches(actual_stdout, stdout, 'stdout')
         if not stderr:
-            self.assertEquals(sys.stderr.getvalue(), '', 'stderr')
+            self.assertEquals(actual_stderr, '', 'stderr')
         else:
-            self.assertRegexpMatches(sys.stderr.getvalue(), stderr, 'stderr')
+            self.assertRegexpMatches(actual_stderr, stderr, 'stderr')
 
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):
@@ -48,9 +50,15 @@ class BaseCliTest(test.SwiftTestCase):
 
 
 class TestAssertOutputMatches(BaseCliTest):
-    def test_assertOutputMatches(self):
-        with self.assertOutputMatches(stdout='^https://test.s3.amazonaws.com/file\n$'):
-            self.parse_args('stor url s3://test/file')
+    def test_help(self):
+        with self.assertOutputMatches(exit_status=0, stdout='list,ls,cp,rm,walkfiles'):
+            self.parse_args('stor --help')
+
+    @mock.patch.object(SwiftPath, 'listdir', autospec=True)
+    def test_assertOutputMatches(self, mock_ls):
+        with self.assertRaises(AssertionError):
+            with self.assertOutputMatches(stdout='mystdout'):
+                self.parse_args('stor ls swift://AUTH_rnd')
 
 
 class TestCliTestUtils(BaseCliTest):

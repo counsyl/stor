@@ -10,8 +10,6 @@ import six
 
 from stor import cli
 from stor import exceptions
-from stor import settings
-from stor.posix import PosixPath
 from stor_s3 import test
 from stor_s3.s3 import S3Path
 
