@@ -81,7 +81,7 @@ class OBSPath(Path):
 
         Args:
             self (Path|str): The source directory to copy from
-            dest (path|str): The destination file or directory.
+            dest (Path|str): The destination file or directory.
             swift_retry_options (dict): Optional retry arguments to use for swift
                 upload or download. View the
                 `swift module-level documentation <swiftretry>` for more
