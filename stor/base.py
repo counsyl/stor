@@ -4,7 +4,6 @@ import glob
 import os
 import ntpath
 import posixpath
-import shlex
 import shutil
 import sys
 import warnings
@@ -42,17 +41,19 @@ class Path(text_type):
     """
 
     def __new__(cls, path):
+        from stor_swift import utils as swift_utils
+        from stor_s3 import utils as s3_utils
+        from stor_dx import utils as dx_utils
         if cls is Path:
             if not hasattr(path, 'startswith'):
                 raise TypeError('must be a string like')
-            if utils.is_dx_path(path):
-                from stor_dx import utils as dx_utils
+            if dx_utils.is_dx_path(path):
                 cls = dx_utils.find_dx_class(path)
-            elif utils.is_swift_path(path):
+            elif swift_utils.is_swift_path(path):
                 from stor_swift.swift import SwiftPath
 
                 cls = SwiftPath
-            elif utils.is_s3_path(path):
+            elif s3_utils.is_s3_path(path):
                 from stor_s3.s3 import S3Path
 
                 cls = S3Path

@@ -173,21 +173,6 @@ def validate_manifest_list(expected_objs, list_results):
     return set(expected_objs).issubset(listed_objs)
 
 
-def is_swift_path(p):
-    """Determines if the path is a Swift path.
-
-    All Swift paths start with swift://
-
-    Args:
-        p (str): The path string
-
-    Returns:
-        bool: True if p is a Swift path, False otherwise.
-    """
-    from stor_swift.swift import SwiftPath
-    return p.startswith(SwiftPath.drive)
-
-
 def is_filesystem_path(p):
     """Determines if the path is posix or windows filesystem.
 
@@ -197,22 +182,10 @@ def is_filesystem_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
+    from stor_swift.utils import is_swift_path
+    from stor_s3.utils import is_s3_path
+    from stor_dx.utils import is_dx_path
     return not (is_swift_path(p) or is_s3_path(p) or is_dx_path(p))
-
-
-def is_s3_path(p):
-    """Determines if the path is a S3 path.
-
-    All S3 paths start with ``s3://``
-
-    Args:
-        p (str): The path string
-
-    Returns
-        bool: True if p is a S3 path, False otherwise.
-    """
-    from stor_s3.s3 import S3Path
-    return p.startswith(S3Path.drive)
 
 
 def is_obs_path(p):
@@ -224,22 +197,7 @@ def is_obs_path(p):
     Returns
         bool: True if p is an OBS path, False otherwise.
     """
-    return is_s3_path(p) or is_swift_path(p) or is_dx_path(p)
-
-
-def is_dx_path(p):
-    """Determines if the path is a DX path.
-
-    All DX paths start with ``dx://``
-
-    Args:
-        p (str): The path string
-
-    Returns
-        bool: True if p is a DX path, False otherwise.
-    """
-    from stor_dx.dx import DXPath
-    return p.startswith(DXPath.drive)
+    return not is_filesystem_path(p)
 
 
 def is_writeable(path, swift_retry_options=None):
