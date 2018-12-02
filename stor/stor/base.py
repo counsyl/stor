@@ -1,8 +1,10 @@
 import errno
 import fnmatch
 import glob
-import os
+import logging
 import ntpath
+import os
+import pkg_resources
 import posixpath
 import shutil
 import sys
@@ -14,6 +16,32 @@ from six import string_types
 from six import PY3
 
 from stor import utils
+
+
+logger = logging.getLogger(__name__)
+
+
+def get_modules():
+    modules = {}
+    for entry_point in pkg_resources.iter_entry_points('stor.providers'):
+        try:
+            modules.update({entry_point.name: entry_point.load()})
+        except pkg_resources.DistributionNotFound as e:  # pragma: no cover
+            from stor import exceptions
+            print('Ignoring {entry_point} module as the requirement(s) '
+                          'for the module are not installed'.format(entry_point=entry_point.name))
+            pass
+    return modules
+
+
+def find_cls_for_path(path):
+    module_map = get_modules()
+    for k, v in module_map.items():
+        if path.startswith(k + '://'):
+            cls, pth = v(k, path)
+            if cls:
+                return cls, pth
+    return None, None
 
 
 class TreeWalkWarning(Warning):
@@ -41,32 +69,26 @@ class Path(text_type):
     """
 
     def __new__(cls, path):
-        from stor_swift import utils as swift_utils
-        from stor_s3 import utils as s3_utils
-        from stor_dx import utils as dx_utils
         if cls is Path:
             if not hasattr(path, 'startswith'):
                 raise TypeError('must be a string like')
-            if dx_utils.is_dx_path(path):
-                cls = dx_utils.find_dx_class(path)
-            elif swift_utils.is_swift_path(path):
-                from stor_swift.swift import SwiftPath
+            cls, new_p = find_cls_for_path(path)
+            if cls is None:
+                if os.path == ntpath:
+                    from stor.windows import WindowsPath
 
-                cls = SwiftPath
-            elif s3_utils.is_s3_path(path):
-                from stor_s3.s3 import S3Path
+                    cls = WindowsPath
+                elif os.path == posixpath:
+                    from stor.posix import PosixPath
 
-                cls = S3Path
-            elif os.path == ntpath:
-                from stor.windows import WindowsPath
-
-                cls = WindowsPath
-            elif os.path == posixpath:
-                from stor.posix import PosixPath
-
-                cls = PosixPath
-            else:  # pragma: no cover
-                assert False, 'path is not compatible with stor'
+                    cls = PosixPath
+                else:  # pragma: no cover
+                    assert False, 'path is not compatible with stor'
+            else:
+                if path != new_p:  # pragma: no cover
+                    path = new_p
+                    cls.path_converted = True
+                    cls.new_path = new_p
         return text_type.__new__(cls, path)
 
     def __init__(self, path):

@@ -648,7 +648,8 @@ class S3Path(OBSPath):
 
     def _copy_upload(self, source, **kwargs):
         """Wrapper function on upload for transformations when copying.
-         Due to the legacy nature of upload being used in write_object/copy/copytree,
+
+        Due to the legacy nature of upload being used in write_object/copy/copytree,
         we cannot call upload directly from stor.copy, we need to perform checks here.
         """
         if self.is_ambiguous():
@@ -658,7 +659,8 @@ class S3Path(OBSPath):
 
     def _copytree_upload(self, source, **kwargs):
         """Wrapper function on upload for transformations when copying.
-         Due to the legacy nature of upload being used in write_object/copy/copytree,
+
+        Due to the legacy nature of upload being used in write_object/copy/copytree,
         we cannot call upload directly from stor.copytree, we need to perform checks here.
         """
         with source:

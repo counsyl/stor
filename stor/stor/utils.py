@@ -6,6 +6,7 @@ import os
 import tempfile
 
 from stor import exceptions
+import stor
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +145,6 @@ def generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
         data_manifest_contents (List[str]): The list of all objects that will
             be part of the manifest.
     """
-    import stor
     from stor import Path
 
     manifest_file_name = Path(manifest_dir) / DATA_MANIFEST_FILE_NAME
@@ -155,7 +155,6 @@ def generate_and_save_data_manifest(manifest_dir, data_manifest_contents):
 
 def get_data_manifest_contents(manifest_dir):
     """Reads the manifest file and returns a set of expected files"""
-    import stor
 
     manifest = manifest_dir / DATA_MANIFEST_FILE_NAME
     with stor.open(manifest, 'r') as manifest_file:
@@ -182,10 +181,11 @@ def is_filesystem_path(p):
     Returns:
         bool: True if p is a Windows path, False otherwise.
     """
-    from stor_swift.utils import is_swift_path
-    from stor_s3.utils import is_s3_path
-    from stor_dx.utils import is_dx_path
-    return not (is_swift_path(p) or is_s3_path(p) or is_dx_path(p))
+    module_map = stor.base.get_modules()
+    for k, v in module_map.items():
+        if p.startswith(k + '://'):
+            return False
+    return True
 
 
 def is_obs_path(p):

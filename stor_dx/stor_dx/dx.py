@@ -493,7 +493,7 @@ class DXPath(OBSPath):
                 raise stor_exceptions.NotFoundError(
                     'No data object was found for the given path on DNAnexus')
         else:
-            # for other filesystems, delegate to stor.obs.OBSPath.copy
+            # for other filesystems, delegate to stor.base.Path.copy
             super(DXPath, self).copy(dest, **kwargs)
 
     def copytree(self, dest, raise_if_same_project=False, **kwargs):
@@ -564,7 +564,7 @@ class DXPath(OBSPath):
                 raise stor_exceptions.NotFoundError(
                     'No project or directory was found at path ({})'.format(self))
         else:
-            # for other filesystems, delegate to stor.obs.OBSPath.copytree
+            # for other filesystems, delegate to stor.base.Path.copytree
             super(DXPath, self).copytree(dest, **kwargs)
 
     def _prep_for_copytree(self, dest):
