@@ -15,5 +15,5 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from stor_swift.swift import SwiftPath
+    from stor_swift import SwiftPath
     return p.startswith(SwiftPath.drive)

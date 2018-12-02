@@ -10,8 +10,8 @@ import six
 
 from stor import cli
 from stor import exceptions
+from stor_s3 import S3Path
 from stor_s3 import test
-from stor_s3.s3 import S3Path
 
 
 class BaseCliTest(test.S3TestCase):

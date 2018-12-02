@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 import six
 
 from stor import cli
-from stor_swift.swift import SwiftPath
+from stor_swift import SwiftPath
 from stor_swift import test
 
 

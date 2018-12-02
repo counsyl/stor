@@ -248,7 +248,7 @@ def is_writeable(path, swift_retry_options=None):
     container_path = None
     container_existed = None
     try:
-        from stor_swift.swift import SwiftPath
+        from stor_swift import SwiftPath
         from stor_swift.utils import is_swift_path
 
         if is_swift_path(path):

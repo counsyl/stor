@@ -11,7 +11,7 @@ from stor import NamedTemporaryDirectory
 from stor import Path
 from stor.tests.shared import assert_same_data
 from stor.tests.test_integration import BaseIntegrationTest
-from stor_dx.dx import DXPath
+from stor_dx import DXPath
 from stor_dx.test import DXTestCase
 import stor
 import stor.tests.test_integration as test_integration

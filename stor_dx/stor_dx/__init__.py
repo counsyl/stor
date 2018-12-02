@@ -1,8 +1,8 @@
-from stor_dx import dx
+from stor_dx.dx import DXPath
 from stor_dx import utils
 
 
-drive = dx.DXPath.drive
+drive = DXPath.drive
 
 
 def find_cls_for_path(prefix, path):

@@ -18,7 +18,7 @@ from stor import utils
 from stor.obs import OBSUploadObject
 from stor.tests.shared_obs import SharedOBSFileCases
 from stor_s3 import s3
-from stor_s3.s3 import S3Path
+from stor_s3 import S3Path
 from stor_s3.test import S3TestCase
 import stor
 import stor_s3

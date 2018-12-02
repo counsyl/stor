@@ -13,7 +13,7 @@ def is_dx_path(p):
     Returns
         bool: True if p is a DX path, False otherwise.
     """
-    from stor_dx.dx import DXPath
+    from stor_dx import DXPath
     return p.startswith(DXPath.drive)
 
 

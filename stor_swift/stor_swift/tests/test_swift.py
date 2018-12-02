@@ -18,7 +18,7 @@ from stor import settings
 from stor import utils
 from stor.tests.shared_obs import SharedOBSFileCases
 from stor_swift import swift
-from stor_swift.swift import SwiftPath
+from stor_swift import SwiftPath
 from stor_swift.test import SwiftTestCase
 import stor
 import stor_swift

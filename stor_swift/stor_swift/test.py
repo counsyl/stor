@@ -2,7 +2,7 @@ import mock
 import unittest
 
 from stor import settings
-from stor_swift.swift import SwiftPath
+from stor_swift import SwiftPath
 
 
 class SwiftTestMixin(object):

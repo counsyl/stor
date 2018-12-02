@@ -14,5 +14,5 @@ def is_s3_path(p):
     Returns
         bool: True if p is a S3 path, False otherwise.
     """
-    from stor_s3.s3 import S3Path
+    from stor_s3 import S3Path
     return p.startswith(S3Path.drive)

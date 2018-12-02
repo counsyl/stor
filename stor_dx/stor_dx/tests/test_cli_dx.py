@@ -5,8 +5,8 @@ import sys
 
 import six
 
-from stor_dx.dx import DXPath
 from stor import cli
+from stor_dx import DXPath
 from stor_dx import test
 
 

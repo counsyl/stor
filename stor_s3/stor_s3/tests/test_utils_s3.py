@@ -2,8 +2,8 @@ import mock
 import unittest
 
 from stor import Path
+from stor_s3 import S3Path
 from stor_s3 import utils
-from stor_s3.s3 import S3Path
 import stor
 
 

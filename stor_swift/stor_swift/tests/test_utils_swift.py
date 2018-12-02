@@ -3,8 +3,8 @@ import unittest
 
 from stor import Path
 from stor import utils as stor_utils
+from stor_swift import SwiftPath
 from stor_swift import utils
-from stor_swift.swift import SwiftPath
 import stor_swift
 
 
