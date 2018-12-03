@@ -99,7 +99,13 @@ endif
 
 # setting this up so that we can use virtualenv, coverage, etc
 .PHONY: travis-test
-travis-test: venv test
+travis-test: venv
+	$(WITH_VENV) \
+	./run_all.sh 'coverage erase' $(PACKAGE_NAMES) .; \
+	./run_all.sh 'coverage run setup.py test' $(PACKAGE_NAMES); \
+	coverage combine stor*/.coverage; \
+	status=$$?; \
+	coverage report && exit $$status;
 
 # Distribution
 

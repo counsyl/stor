@@ -27,9 +27,9 @@ def get_modules():
         try:
             modules.update({entry_point.name: entry_point.load()})
         except pkg_resources.DistributionNotFound as e:  # pragma: no cover
-            from stor import exceptions
-            print('Ignoring {entry_point} module as the requirement(s) '
-                          'for the module are not installed'.format(entry_point=entry_point.name))
+            warnings.warn('Ignoring {entry_point} module as the requirement(s) '
+                          'for the module are not installed. Exception : {exception}'
+                          .format(entry_point=entry_point.name, exception=e))
             pass
     return modules
 
@@ -38,9 +38,7 @@ def find_cls_for_path(path):
     module_map = get_modules()
     for k, v in module_map.items():
         if path.startswith(k + '://'):
-            cls, pth = v(k, path)
-            if cls:
-                return cls, pth
+            return v(k, path)
     return None, None
 
 

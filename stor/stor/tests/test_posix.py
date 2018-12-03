@@ -7,6 +7,14 @@ from stor import NamedTemporaryDirectory
 from stor import Path
 from stor import posix
 from stor import windows
+from stor.base import find_cls_for_path
+
+
+class TestInit(unittest.TestCase):
+    def test_swift_init(self):
+        cls, path = find_cls_for_path('some/posix/path')
+        self.assertEqual(cls, None)
+        self.assertEqual(path, None)
 
 
 class TestDiv(unittest.TestCase):
