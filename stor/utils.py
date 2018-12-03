@@ -235,10 +235,9 @@ def is_writeable(path, swift_retry_options=None):
     from stor import join
     from stor import Path
     from stor import remove
-    from stor_swift.swift import ConflictError
-    from stor_swift.swift import SwiftPath
-    from stor_swift.swift import UnauthorizedError
-    from stor_swift.swift import UnavailableError
+    from stor.exceptions import ConflictError
+    from stor.exceptions import UnauthorizedError
+    from stor.exceptions import UnavailableError
     import stor
 
     path = with_trailing_slash(Path(path))
@@ -248,18 +247,24 @@ def is_writeable(path, swift_retry_options=None):
 
     container_path = None
     container_existed = None
-    if is_swift_path(path):
-        # We want this function to behave as a no-op with regards to the underlying
-        # container structure. Therefore we need to remove any containers created by this
-        # function that were not present when it was called. The `container_existed`
-        # defined below will store whether the container that we're checking existed when
-        # calling this function, so that we know if it should be removed at the end.
-        container_path = Path('{}{}/{}/'.format(
-            SwiftPath.drive,
-            path.tenant,
-            path.container
-        ))
-        container_existed = container_path.exists()
+    try:
+        from stor_swift.swift import SwiftPath
+        from stor_swift.utils import is_swift_path
+    except ImportError as e:  # pragma: no cover
+        logger.warn('Cannot import Swift module: {}'.format(e))
+    else:
+        if is_swift_path(path):
+            # We want this function to behave as a no-op with regards to the underlying
+            # container structure. Therefore we need to remove any containers created by this
+            # function that were not present when it was called. The `container_existed`
+            # defined below will store whether the container that we're checking existed when
+            # calling this function, so that we know if it should be removed at the end.
+            container_path = Path('{}{}/{}/'.format(
+                SwiftPath.drive,
+                path.tenant,
+                path.container
+            ))
+            container_existed = container_path.exists()
 
     with tempfile.NamedTemporaryFile() as tmpfile:
         try:
