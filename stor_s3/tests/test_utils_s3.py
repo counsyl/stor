@@ -42,11 +42,11 @@ class TestIsWriteableS3(unittest.TestCase):
 
     def test_success(self):
         path = 's3://stor-test/foo/bar'
-        self.assertTrue(utils.is_writeable(path))
+        self.assertTrue(stor.utils.is_writeable(path))
         self.mock_remove.assert_called_with(
             S3Path('{}/{}'.format(path, self.filename)))
 
     def test_path_no_perms(self):
         self.mock_copy.side_effect = stor.exceptions.FailedUploadError('foo')
-        self.assertFalse(utils.is_writeable('s3://stor-test/foo/bar'))
+        self.assertFalse(stor.utils.is_writeable('s3://stor-test/foo/bar'))
         self.assertFalse(self.mock_remove.called)
