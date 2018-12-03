@@ -281,6 +281,7 @@ def is_writeable(path, swift_retry_options=None):
     from stor_swift.swift import SwiftPath
     from stor_swift.swift import UnauthorizedError
     from stor_swift.swift import UnavailableError
+    import stor
 
     path = with_trailing_slash(Path(path))
 
