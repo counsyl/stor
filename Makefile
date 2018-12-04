@@ -51,16 +51,14 @@ endif
 .PHONY: clean
 clean:
 	./run_all.sh '$(PYTHON) setup.py clean' $(PACKAGE_NAMES)
-	rm -rf __pycache__/
-	rm -rf .*cache/
-	rm -rf *.egg*/
+	./run_all.sh 'rm -rf *.egg*/' $(PACKAGE_NAMES) .
 	./run_all.sh 'rm -rf dist/' $(PACKAGE_NAMES)
 	./run_all.sh 'rm -rf build/' $(PACKAGE_NAMES)
-	./run_all.sh 'rm -rf __pycache__/' $(PACKAGE_NAMES)
-	./run_all.sh 'rm -rf .*cache/' $(PACKAGE_NAMES)
+	./run_all.sh 'rm -rf __pycache__/' $(PACKAGE_NAMES) .
+	./run_all.sh 'rm -rf .*cache/' $(PACKAGE_NAMES) .
 	rm -f MANIFEST
 	rm -f $(TEST_OUTPUT)
-	./run_all.sh 'find . -type f -name '*.pyc' -delete' $(PACKAGE_NAMES)
+	./run_all.sh 'find . -type f -name '*.pyc' -delete' $(PACKAGE_NAMES) .
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
 
 
@@ -109,7 +107,7 @@ travis-test: venv
 
 # Distribution
 
-VERSION=$(cd stor; shell $(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'; cd ..)
+VERSION=$(shell $(WITH_PBR) cd stor; python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'; cd ..)
 
 .PHONY: tag
 tag: ##[distribution] Tag the release.
@@ -120,7 +118,7 @@ tag: venv
 
 .PHONY: dist
 dist: venv fullname
-	$(WITH_VENV) python setup.py sdist
+	$(WITH_VENV) ./run_all.sh 'python setup.py sdist' $(PACKAGE_NAMES)
 
 .PHONY: publish-docs
 publish-docs:
@@ -136,4 +134,4 @@ version:
 
 .PHONY: fullname
 fullname:
-	$(PYTHON) setup.py --fullname
+	./run_all.sh ''$(PYTHON) setup.py --fullname' $(PACKAGE_NAMES)
