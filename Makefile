@@ -134,4 +134,4 @@ version:
 
 .PHONY: fullname
 fullname:
-	./run_all.sh ''$(PYTHON) setup.py --fullname' $(PACKAGE_NAMES)
+	./run_all.sh '$(PYTHON) setup.py --fullname' $(PACKAGE_NAMES)
