@@ -263,7 +263,7 @@ def is_writeable(path, swift_retry_options=None):
                 path.container
             ))
             container_existed = container_path.exists()
-    except ImportError as e:  # pragma: no cover
+    except ImportError:  # pragma: no cover
         pass
 
     with tempfile.NamedTemporaryFile() as tmpfile:
