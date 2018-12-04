@@ -1,9 +1,3 @@
-import tempfile
-
-from stor import exceptions
-import stor.utils as stor_utils
-
-
 def is_swift_path(p):
     """Determines if the path is a Swift path.
 

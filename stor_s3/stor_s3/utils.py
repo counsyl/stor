@@ -1,8 +1,3 @@
-import tempfile
-
-import stor.utils as stor_utils
-
-
 def is_s3_path(p):
     """Determines if the path is a S3 path.
 
