@@ -73,7 +73,7 @@ teardown:
 
 .PHONY: lint
 lint: venv
-	$(WITH_VENV) flake8 $(PACKAGE_NAMES)
+	$(WITH_VENV) ./run_all.sh 'flake8 .' $(PACKAGE_NAMES)
 
 .PHONY: unit-test
 unit-test: venv
