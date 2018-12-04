@@ -57,7 +57,7 @@ from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
 from stor.third_party.backoff import with_backoff
-from stor_swift.utils import is_swift_path
+from stor_swift import is_swift_path
 
 
 logger = logging.getLogger(__name__)

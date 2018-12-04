@@ -3,8 +3,8 @@ import unittest
 
 from stor import Path
 from stor_s3 import S3Path
-from stor_s3 import utils
 import stor
+import stor_s3
 
 
 class TestPath(unittest.TestCase):
@@ -15,10 +15,10 @@ class TestPath(unittest.TestCase):
 
 class TestIsS3Path(unittest.TestCase):
     def test_true(self):
-        self.assertTrue(utils.is_s3_path('s3://my/s3/path'))
+        self.assertTrue(stor_s3.is_s3_path('s3://my/s3/path'))
 
     def test_false(self):
-        self.assertFalse(utils.is_s3_path('my/posix/path'))
+        self.assertFalse(stor_s3.is_s3_path('my/posix/path'))
 
 
 class TestIsWriteableS3(unittest.TestCase):

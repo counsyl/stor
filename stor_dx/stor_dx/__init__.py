@@ -1,3 +1,4 @@
+from stor_dx.utils import is_dx_path
 from stor_dx.dx import DXPath
 from stor_dx import utils
 

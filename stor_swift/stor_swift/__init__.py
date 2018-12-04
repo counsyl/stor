@@ -1,4 +1,6 @@
+from stor_swift.utils import is_swift_path
 from stor_swift.swift import SwiftPath
+
 
 
 drive = SwiftPath.drive

@@ -279,8 +279,8 @@ def _wrapped_list(path, **kwargs):
     """Use iterative walkfiles for DX paths, rather than trying to generate full list first"""
     func = stor.list
     try:
-        from stor_dx import utils as dx_utils
-        if dx_utils.is_dx_path(path):
+        import stor_dx
+        if stor_dx.is_dx_path(path):
             func = stor.walkfiles
     except ImportError:  # pragma: no cover
         pass
@@ -295,18 +295,18 @@ def _to_url(path):
 
 def _convert_swiftstack(path, bucket=None):
     try:
-        from stor_swift import utils as swift_utils
-        from stor_s3 import utils as s3_utils
+        import stor_swift
+        import stor_s3
     except ImportError:  # pragma: no cover
         raise ImportError(
             'stor-swift and stor-s3 must be installed to use convert-swiftstack command')
     path = stor.Path(path)
-    if swift_utils.is_swift_path(path):
+    if stor_swift.is_swift_path(path):
         if not bucket:
             # TODO (jtratner): print help here
             raise ValueError('--bucket is required for swift paths')
         return swiftstack.swift_to_s3(path, bucket=bucket)
-    elif s3_utils.is_s3_path(path):
+    elif stor_s3.is_s3_path(path):
         return swiftstack.s3_to_swift(path)
     raise ValueError("invalid path for conversion: '%s'" % path)
 

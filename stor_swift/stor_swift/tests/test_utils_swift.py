@@ -4,7 +4,6 @@ import unittest
 from stor import Path
 from stor import utils as stor_utils
 from stor_swift import SwiftPath
-from stor_swift import utils
 import stor_swift
 
 
@@ -16,10 +15,10 @@ class TestPath(unittest.TestCase):
 
 class TestIsSwiftPath(unittest.TestCase):
     def test_true(self):
-        self.assertTrue(utils.is_swift_path('swift://my/swift/path'))
+        self.assertTrue(stor_swift.is_swift_path('swift://my/swift/path'))
 
     def test_false(self):
-        self.assertFalse(utils.is_swift_path('my/posix/path'))
+        self.assertFalse(stor_swift.is_swift_path('my/posix/path'))
 
 
 class TestIsWriteableSwift(unittest.TestCase):
