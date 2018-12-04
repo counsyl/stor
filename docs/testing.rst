@@ -2,7 +2,7 @@
 
 Testing
 =======
-Stor provides a test case to use when testing against OBS storage. It also
+Stor provides test case classes to use when testing against OBS storage. It also
 provides a mixin class that can be used when creating other base test classes
 
 .. autoclass:: stor_swift.test.SwiftTestMixin
