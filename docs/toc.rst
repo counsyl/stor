@@ -18,5 +18,6 @@ Table of Contents
    settings
    extensions
    contributing
+   package_split
    roadmap
    release_notes
