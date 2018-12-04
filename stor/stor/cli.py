@@ -118,7 +118,10 @@ signal.signal(signal.SIGINT, force_exit)
 
 class TempPath(Path):
     """Persist stdin to a temporary file for CLI operations with OBS."""
-    def __del__(self):
+
+    # manually checked that TempPath is deleted at the end. Different python versions
+    # delete it at different times in their stack though, so not easy to test
+    def __del__(self):   # pragma: no cover
         os.remove(str(self))
 
 
