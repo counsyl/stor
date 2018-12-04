@@ -33,16 +33,14 @@ class BaseCliTest(test.SwiftTestCase):
                 assert False, 'SystemExit not raised'
         else:
             yield
-        actual_stdout = sys.stdout.getvalue()
-        actual_stderr = sys.stderr.getvalue()
         if not stdout:
-            self.assertEqual(actual_stdout, '', 'stdout')
+            self.assertEqual(sys.stdout.getvalue(), '', 'stdout')
         else:
-            self.assertRegexpMatches(actual_stdout, stdout, 'stdout')
+            self.assertRegexpMatches(sys.stdout.getvalue(), stdout, 'stdout')
         if not stderr:
-            self.assertEqual(actual_stderr, '', 'stderr')
+            self.assertEqual(sys.stderr.getvalue(), '', 'stderr')
         else:
-            self.assertRegexpMatches(actual_stderr, stderr, 'stderr')
+            self.assertRegexpMatches(sys.stderr.getvalue(), stderr, 'stderr')
 
     def parse_args(self, args):
         with mock.patch.object(sys, 'argv', args.split()):

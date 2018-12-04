@@ -50,7 +50,6 @@ from swiftclient import client as swift_client
 from swiftclient.utils import generate_temp_url
 
 from stor import exceptions as stor_exceptions
-from stor import is_swift_path
 from stor import settings
 from stor import utils
 from stor.base import Path
@@ -58,6 +57,7 @@ from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
 from stor.third_party.backoff import with_backoff
+from stor_swift.utils import is_swift_path
 
 
 logger = logging.getLogger(__name__)
@@ -1052,7 +1052,8 @@ class SwiftPath(OBSPath):
                to_upload,
                condition=None,
                use_manifest=False,
-               headers=None):
+               headers=None,
+               **kwargs):
         """Uploads a list of files and directories to swift.
 
         This method retries ``num_retries`` times if swift is unavailable or if

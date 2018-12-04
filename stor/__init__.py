@@ -23,7 +23,6 @@ See `stor_swift.swift` for more information on Swift-specific functionality.
 import pkg_resources
 
 from stor.utils import is_filesystem_path
-from stor.utils import is_swift_path
 from stor.utils import is_obs_path
 from stor.utils import NamedTemporaryDirectory
 from stor.base import Path
@@ -118,7 +117,6 @@ __all__ = [
     'rmtree',
     'walkfiles',
     'is_filesystem_path',
-    'is_swift_path',
     'is_obs_path',
     'NamedTemporaryDirectory',
 ]
