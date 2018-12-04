@@ -1,9 +1,9 @@
 include AUTHORS
 include LICENSE
 include README.md
-include requirements*.txt
-include stor/default.cfg
-include stor/default.env
-include stor/stor-completion.bash
-prune stor/tests
+include stor*/requirements*.txt
+include stor/stor/default.cfg
+include stor/stor/default.env
+include stor/stor/stor-completion.bash
+prune stor*/stor*/tests
 exclude Makefile
