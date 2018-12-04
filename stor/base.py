@@ -46,7 +46,8 @@ class Path(text_type):
             if not hasattr(path, 'startswith'):
                 raise TypeError('must be a string like')
             if utils.is_dx_path(path):
-                cls = utils.find_dx_class(path)
+                from stor_dx import utils as dx_utils
+                cls = dx_utils.find_dx_class(path)
             elif utils.is_swift_path(path):
                 from stor_swift.swift import SwiftPath
 
