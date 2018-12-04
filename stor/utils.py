@@ -250,9 +250,7 @@ def is_writeable(path, swift_retry_options=None):
     try:
         from stor_swift.swift import SwiftPath
         from stor_swift.utils import is_swift_path
-    except ImportError as e:  # pragma: no cover
-        logger.warn('Cannot import Swift module: {}'.format(e))
-    else:
+
         if is_swift_path(path):
             # We want this function to behave as a no-op with regards to the underlying
             # container structure. Therefore we need to remove any containers created by this
@@ -265,6 +263,8 @@ def is_writeable(path, swift_retry_options=None):
                 path.container
             ))
             container_existed = container_path.exists()
+    except ImportError as e:  # pragma: no cover
+        pass
 
     with tempfile.NamedTemporaryFile() as tmpfile:
         try:
