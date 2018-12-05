@@ -67,12 +67,9 @@ class OBSPath(Path):
                 can be any of s3 or swift.
                 The ``(drive)://`` prefix is required in the path.
         """
-        if hasattr(self, 'path_converted') and self.path_converted \
-                and hasattr(self, 'new_path'):  # pragma: no cover
-            pth = self.new_path
-        if not hasattr(pth, 'startswith') or not pth.startswith(self.drive):
-            raise ValueError('path must have %s (got %r)' % (self.drive, pth))
-        return super(OBSPath, self).__init__(pth)
+        if not hasattr(self, 'startswith') or not self.startswith(self.drive):
+            raise ValueError('path must have %s (got %r)' % (self.drive, self))
+        return super(OBSPath, self).__init__(self)
 
     def copy(self, dest, **swift_retry_options):
         """Copies a source file to a destination file.
