@@ -1,6 +1,27 @@
 Release Notes
 =============
 
+v4.0.0
+------
+
+Package Split
+^^^^^^^^^^^^^
+
+* To ease the installation of dependencies, stor is broken down into 4 packages: ``stor``, ``stor_dx``,
+  ``stor_swift``, and ``stor_s3``.
+* ``stor_dx``, ``stor_s3``, and ``stor_swift`` are meant to be plugins to stor. The core stor package,
+  responsible for posix and windows paths, is still required to be able to use stor.
+* ``stor_dx``, ``stor_s3``, and ``stor_swift`` are responsible for manipulating resources on the DNAnexus,
+  Amazon S3 and Swift cloud platforms respectively.
+
+API Breaks
+^^^^^^^^^^
+* The function signature of ``stor.copy`` has changed slightly, from ``stor.copy(source='some/source',
+  dest='some/dest')`` to ``stor.copy('some/source', dest='some/dest')``. ``stor.copy`` needs a ``Path|str``
+  as its first argument (which is taken to be the source). The source kwarg is no longer supported.
+* ``is_swift_path`` has been removed from the core ``stor`` package. Hence, ``stor.is_swift_path`` is no
+  longer supported. Can use `stor.is_obs_path` in such cases after consideration.
+
 v3.0.0
 ------
 

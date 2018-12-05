@@ -1,6 +1,6 @@
 # Makefile utilities for running tests and publishing the package
 
-PACKAGE_NAME=stor
+PACKAGE_NAMES:=stor/ stor_dx/ stor_swift/ stor_s3/
 TEST_OUTPUT?=nosetests.xml
 PIP_INDEX_URL=https://pypi.python.org/simple/
 PYTHON?=$(shell which python)
@@ -13,7 +13,7 @@ endif
 
 .PHONY: default
 default:
-	python setup.py check build
+	cd stor; python setup.py check build; cd ..
 
 VENV_DIR?=.venv
 VENV_ACTIVATE=$(VENV_DIR)/bin/activate
@@ -23,42 +23,42 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 .PHONY: venv
 venv: $(VENV_ACTIVATE)
 
-$(VENV_ACTIVATE): requirements*.txt
+$(VENV_ACTIVATE): stor*/requirements*.txt
 	test -f $@ || virtualenv --python=$(PYTHON) $(VENV_DIR)
 	$(WITH_VENV) echo "Within venv, running $$(python --version)"
-	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r requirements-docs.txt --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) pip install -r stor/requirements-setup.txt --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) ./run_all.sh 'pip install -e . --index-url=${PIP_INDEX_URL}' $(PACKAGE_NAMES)
+	$(WITH_VENV) pip install -r stor/requirements-dev.txt  --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) pip install -r stor/requirements-docs.txt --index-url=${PIP_INDEX_URL}
 	touch $@
 
 develop: venv
-	$(WITH_VENV) python setup.py develop
+	$(WITH_VENV) ./run_all.sh 'python setup.py develop' $(PACKAGE_NAMES)
 
 .PHONY: docs
 docs: venv clean-docs
 	$(WITH_VENV) cd docs && make html
 
-
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
 ifdef ARGS
-	$(WITH_PBR) python setup.py ${ARGS}
+	$(WITH_PBR) ./run_all.sh 'python setup.py ${ARGS}' $(PACKAGE_NAMES)
 else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
 
 .PHONY: clean
 clean:
-	$(PYTHON) setup.py clean
-	rm -rf build/
-	rm -rf dist/
-	rm -rf *.egg*/
-	rm -rf __pycache__/
+	./run_all.sh '$(PYTHON) setup.py clean' $(PACKAGE_NAMES)
+	./run_all.sh 'rm -rf *.egg*/' $(PACKAGE_NAMES) .
+	./run_all.sh 'rm -rf dist/' $(PACKAGE_NAMES)
+	./run_all.sh 'rm -rf build/' $(PACKAGE_NAMES)
+	./run_all.sh 'rm -rf __pycache__/' $(PACKAGE_NAMES) .
+	./run_all.sh 'rm -rf .*cache/' $(PACKAGE_NAMES) .
 	rm -f MANIFEST
 	rm -f $(TEST_OUTPUT)
-	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
+	./run_all.sh 'find . -type f -name '*.pyc' -delete' $(PACKAGE_NAMES) .
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
 
 
@@ -73,7 +73,7 @@ teardown:
 
 .PHONY: lint
 lint: venv
-	$(WITH_VENV) flake8 $(PACKAGE_NAME)/
+	$(WITH_VENV) ./run_all.sh 'flake8 .' $(PACKAGE_NAMES)
 
 .PHONY: unit-test
 unit-test: venv
@@ -99,14 +99,15 @@ endif
 .PHONY: travis-test
 travis-test: venv
 	$(WITH_VENV) \
-	coverage erase; \
-	coverage run setup.py test; \
+	./run_all.sh 'coverage erase' $(PACKAGE_NAMES) .; \
+	./run_all.sh 'coverage run setup.py test' $(PACKAGE_NAMES); \
+	coverage combine stor*/.coverage; \
 	status=$$?; \
 	coverage report && exit $$status;
 
 # Distribution
 
-VERSION=$(shell $(WITH_PBR) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/')
+VERSION=$(shell $(WITH_PBR) cd stor; python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'; cd ..)
 
 .PHONY: tag
 tag: ##[distribution] Tag the release.
@@ -117,7 +118,7 @@ tag: venv
 
 .PHONY: dist
 dist: venv fullname
-	$(WITH_VENV) python setup.py sdist
+	$(WITH_VENV) ./run_all.sh 'python setup.py sdist' $(PACKAGE_NAMES)
 
 .PHONY: publish-docs
 publish-docs:
@@ -133,4 +134,4 @@ version:
 
 .PHONY: fullname
 fullname:
-	$(PYTHON) setup.py --fullname
+	./run_all.sh '$(PYTHON) setup.py --fullname' $(PACKAGE_NAMES)

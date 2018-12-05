@@ -47,7 +47,7 @@ Settings can be configured in the following ways in order of precedence:
 Default Settings
 ----------------
 
-.. literalinclude:: ../stor/default.cfg
+.. literalinclude:: ../stor/stor/default.cfg
 
 Settings API
 ------------
