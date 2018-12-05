@@ -1,34 +1,49 @@
 Stor Modularization
 ===================
 
-The legacy version of stor has been split into 4 packages: ``stor``, ``stor_dx``, ``stor_swift``, and
-``stor_s3``. ``stor_swift``, ``stor_dx``, ``stor_s3`` are modular packages implemented to be used with
-the core package ``stor`` directly. The core package ``stor`` now only supports Posix and Windows
-filesystems, apart from supporting extra plugins.
+Stor is implemented as modular packages: the core ``stor`` package which is required to use stor, and
+which handles posix and windows (local) paths, and the plugins ``stor_dx``, ``stor_swift``, and
+``stor_s3``. The plugins are meant to be used with the core package ``stor``, and are not meant to
+function as stand-alone packages. This may be changed in the future.
+
+The legacy version of stor was implemented as one monolith which supported dx, swift, s3, etc, but
+was changed due to extraneous dependencies and modular requirements. This page describes these changes.
 
 
 Implementation
 --------------
 
-Each of the modular packages work by registering themselves onto pkg_resources with an entry_point
-``stor.providers``. This entry point should be a function which takes in a prefix and a path, and
-returns the cls that the path should be instantiated to, as well as the path that should be initialized.
+Each of the modular packages work by registering themselves onto ``pkg_resources`` with an entry_point
+``stor.providers`` using setuptools. This configuration is placed in ``setup.cfg`` of each package.
+This entry point is a function which takes in a prefix and a path, and returns the class that the path
+should be instantiated to, as well as the path (with any possible changes) that should be initialized.
 Typically, this function is called ``class_for_path`` in ``stor_dx``, ``stor_s3``, and ``stor_swift``.
-Each plugin module currently raise an error if the prefix passed is not the prefix it supports. For
-example, ``stor_dx.class_for_path`` errors if the prefix is not ``dx``. ``get_class_for_path`` in each
-plugin module may assume that the prefix is the true prefix to the path argument as this is guaranteed
-by the core ``stor`` package.
+
+.. code:: python
+
+    [entry_points]
+    stor.providers =
+        dx = stor_dx:class_for_path
+
+
+Each plugin currently raises an error if the prefix provided is not the prefix it supports. For
+example, ``stor_dx.class_for_path`` errors if the prefix is not ``dx``. In addition, ``class_for_path``
+in each plugin module can assume that the prefix argument is truly the prefix to the path argument as
+this is guaranteed by the core ``stor`` package. Future plugins will be implemented in this fashion.
 
 
 Code Changes
 ------------
 
+The following code blocks and functions were affected when shifting legacy stor to a modular version.
+
 `stor.copy`, `stor.copytree` and ``stor.open`` which were earlier present in the core ``stor.utils`` and
-``stor.obs`` have been split according to their individual functionalities into the three packages.
+``stor.obs`` are now split according to their individual functions into the three plugin packages.
 These functions in the core package now only deal with posix/windows paths while the three plugins
-implement the finer aspects of the logic individual to each platform. The only external effect of
-these changes is that `stor.copy` and `stor.copytree` now don't support a ``source`` kwarg, instead
-expect the first argument to be a ``Path | str``, which is then taken to be the source to be copied from.
+implement the finer aspects of the logic individual to each platform. The external effect of
+these changes is that `stor.copy` and `stor.copytree` which used to support ``source`` kwarg argument in
+legacy stor, instead now expect an initial argument to be a ``Path | str``, which is then taken to be the
+source to be copied from. The destination is decided by the ``dest`` kwarg as in legacy stor.
 
 ``is_swift_path`` has been removed from the core `stor` package. Thus, using ``stor.is_swift_path`` will
 fail. This is because the plugins determine the prefix they support and the core package cannot know in
