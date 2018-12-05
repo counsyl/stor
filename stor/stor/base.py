@@ -34,7 +34,7 @@ def get_modules():
     return modules
 
 
-def find_cls_for_path(path):
+def get_class_for_path(path):
     module_map = get_modules()
     for k, v in module_map.items():
         if path.startswith(k + '://'):
@@ -70,7 +70,7 @@ class Path(text_type):
         if cls is Path:
             if not hasattr(path, 'startswith'):
                 raise TypeError('must be a string like')
-            cls, new_p = find_cls_for_path(path)
+            cls, obs_p = get_class_for_path(path)
             if cls is None:
                 if os.path == ntpath:
                     from stor.windows import WindowsPath
@@ -83,10 +83,7 @@ class Path(text_type):
                 else:  # pragma: no cover
                     assert False, 'path is not compatible with stor'
             else:
-                if path != new_p:  # pragma: no cover
-                    path = new_p
-                    cls.path_converted = True
-                    cls.new_path = new_p
+                path = obs_p
         return text_type.__new__(cls, path)
 
     def __init__(self, path):

@@ -21,13 +21,13 @@ import stor_dx
 
 class TestInit(unittest.TestCase):
     def test_dx_init(self):
-        cls, path = stor_dx.find_cls_for_path('dx', 'dx://temp:')
+        cls, path = stor_dx.class_for_path('dx', 'dx://temp:')
         self.assertEqual(cls, dx.DXVirtualPath)
         self.assertEqual(path, 'dx://temp:')
 
     def test_other_obs_init(self):
         with pytest.raises(ValueError, match='Invalid prefix'):
-            stor_dx.find_cls_for_path('swift', 'swift://tenant/container')
+            stor_dx.class_for_path('swift', 'swift://tenant/container')
 
 
 class TestBasicPathMethods(unittest.TestCase):

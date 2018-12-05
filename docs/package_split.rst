@@ -13,9 +13,9 @@ Implementation
 Each of the modular packages work by registering themselves onto pkg_resources with an entry_point
 ``stor.providers``. This entry point should be a function which takes in a prefix and a path, and
 returns the cls that the path should be instantiated to, as well as the path that should be initialized.
-Typically, this function is called ``find_cls_for_path`` in ``stor_dx``, ``stor_s3``, and ``stor_swift``.
+Typically, this function is called ``class_for_path`` in ``stor_dx``, ``stor_s3``, and ``stor_swift``.
 Each plugin module currently raise an error if the prefix passed is not the prefix it supports. For
-example, ``stor_dx.find_cls_for_path`` errors if the prefix is not ``dx``. ``find_cls_for_path`` in each
+example, ``stor_dx.class_for_path`` errors if the prefix is not ``dx``. ``get_class_for_path`` in each
 plugin module may assume that the prefix is the true prefix to the path argument as this is guaranteed
 by the core ``stor`` package.
 

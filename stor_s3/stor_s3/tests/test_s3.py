@@ -26,13 +26,13 @@ import stor_s3
 
 class TestInit(unittest.TestCase):
     def test_s3_init(self):
-        cls, path = stor_s3.find_cls_for_path('s3', 's3://random/path')
+        cls, path = stor_s3.class_for_path('s3', 's3://random/path')
         self.assertEqual(cls, S3Path)
         self.assertEqual(path, 's3://random/path')
 
     def test_other_obs_init(self):
         with self.assertRaisesRegexp(ValueError, 'Invalid prefix'):
-            stor_s3.find_cls_for_path('dx', 'dx://tenant:/container')
+            stor_s3.class_for_path('dx', 'dx://tenant:/container')
 
 
 class TestBasicPathMethods(unittest.TestCase):

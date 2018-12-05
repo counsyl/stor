@@ -48,13 +48,13 @@ def _make_stat_response(stat_response=None):
 
 class TestInit(unittest.TestCase):
     def test_swift_init(self):
-        cls, path = stor_swift.find_cls_for_path('swift', 'swift://tenant/')
+        cls, path = stor_swift.class_for_path('swift', 'swift://tenant/')
         self.assertEqual(cls, SwiftPath)
         self.assertEqual(path, 'swift://tenant/')
 
     def test_other_obs_init(self):
         with self.assertRaisesRegexp(ValueError, 'Invalid prefix'):
-            stor_swift.find_cls_for_path('dx', 'swift://tenant/container')
+            stor_swift.class_for_path('dx', 'swift://tenant/container')
 
 
 class TestPatchedGetAuthKeystone(unittest.TestCase):
