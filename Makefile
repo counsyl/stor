@@ -1,6 +1,7 @@
 # Makefile utilities for running tests and publishing the package
 
-PACKAGE_NAMES:=stor/ stor_dx/ stor_swift/ stor_s3/
+PLUGIN_PACKAGES:=stor_dx/ stor_swift/ stor_s3/
+PACKAGE_NAMES:=$(PLUGIN_PACKAGES) stor/
 TEST_OUTPUT?=nosetests.xml
 PIP_INDEX_URL=https://pypi.python.org/simple/
 PYTHON?=$(shell which python)
@@ -26,10 +27,11 @@ venv: $(VENV_ACTIVATE)
 $(VENV_ACTIVATE): stor*/requirements*.txt
 	test -f $@ || virtualenv --python=$(PYTHON) $(VENV_DIR)
 	$(WITH_VENV) echo "Within venv, running $$(python --version)"
-	$(WITH_VENV) pip install -r stor/requirements-setup.txt --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) ./run_all.sh 'pip install -e . --index-url=${PIP_INDEX_URL}' $(PACKAGE_NAMES)
-	$(WITH_VENV) pip install -r stor/requirements-dev.txt  --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r stor/requirements-docs.txt --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) ./run_all.sh 'pip install -r requirements-test.txt --index-url=${PIP_INDEX_URL}' $(PACKAGE_NAMES)
+	$(WITH_VENV) ./run_all.sh 'pip install --no-deps -e . --index-url=${PIP_INDEX_URL}' $(PACKAGE_NAMES)
+	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
+	$(WITH_VENV) pip install -r requirements-docs.txt --index-url=${PIP_INDEX_URL}
 	touch $@
 
 develop: venv
@@ -52,6 +54,7 @@ endif
 clean:
 	./run_all.sh '$(PYTHON) setup.py clean' $(PACKAGE_NAMES)
 	./run_all.sh 'rm -rf *.egg*/' $(PACKAGE_NAMES) .
+	./run_all.sh 'rm -rf .*egg*/' $(PACKAGE_NAMES) .
 	./run_all.sh 'rm -rf dist/' $(PACKAGE_NAMES)
 	./run_all.sh 'rm -rf build/' $(PACKAGE_NAMES)
 	./run_all.sh 'rm -rf __pycache__/' $(PACKAGE_NAMES) .
@@ -118,7 +121,22 @@ tag: venv
 
 .PHONY: dist
 dist: venv fullname
-	$(WITH_VENV) ./run_all.sh 'python setup.py sdist' $(PACKAGE_NAMES)
+	# dynamically set the version in each requirements file to be the version of the package being installed
+	$(WITH_VENV) \
+	./run_all.sh 'cp requirements.txt requirements.txt.old' $(PLUGIN_PACKAGES); \
+	for plugin in $(PLUGIN_PACKAGES); do \
+		awk -v p=stor -v v=$(VERSION) '$$0 ~ p {gsub("$$","=="v,$$0)}1' < $$plugin/requirements.txt > $$plugin/requirements.txt.tmp ; \
+		mv $$plugin/requirements.txt.tmp $$plugin/requirements.txt; \
+	done; \
+	./run_all.sh 'python setup.py sdist' $(PLUGIN_PACKAGES); \
+	./run_all.sh 'mv requirements.txt.old requirements.txt' $(PLUGIN_PACKAGES); \
+	cp stor/requirements.txt stor/requirements.txt.old; \
+	for plugin in $(subst /,,$(PLUGIN_PACKAGES)); do \
+		awk -v p=$$plugin -v v=$(VERSION) '$$0 ~ p {gsub("$$","=="v,$$0)}1' < stor/requirements.txt > stor/requirements.txt.tmp ; \
+		mv stor/requirements.txt.tmp stor/requirements.txt; \
+	done; \
+	./run_all.sh 'python setup.py sdist' stor/ ; \
+	mv stor/requirements.txt.old stor/requirements.txt; \
 
 .PHONY: publish-docs
 publish-docs:
@@ -129,7 +147,7 @@ sdist: dist
 	@echo "runs dist"
 
 .PHONY: version
-version:
+version: venv
 	@echo ${VERSION}
 
 .PHONY: fullname
