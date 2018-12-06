@@ -22,6 +22,22 @@ API Breaks
 * ``is_swift_path`` has been removed from the core ``stor`` package. Hence, ``stor.is_swift_path`` is no
   longer supported. Can use `stor.is_obs_path` in such cases after consideration.
 
+Code Changes
+------------
+
+The following code blocks and functions were affected when shifting legacy stor to a modular version.
+
+* `stor.copy`, `stor.copytree` and ``stor.open`` which were earlier present in the core ``stor.utils`` and
+  ``stor.obs`` are now split according to their individual functions into the three plugin packages.
+  These functions in the core package now only deal with posix/windows paths while the three plugins
+  implement the finer aspects of the logic individual to each platform.
+* ``is_swift_path`` has been removed because the plugins determine the prefix they support and the core
+  package cannot know in advance if ``swift://`` is a supported path. In cases where ``stor.is_swift_path``
+  was being used, ``stor.is_obs_path`` is a possible substitution, given the initial intent was to check
+  against cloud paths. Thus, each individual plugin ``stor_dx``, ``stor_s3`` and ``stor_swift`` is now
+  responsible for supporting ``is_dx_path``, ``is_s3_path`` and ``is_swift_path`` resp.
+
+
 v3.0.0
 ------
 

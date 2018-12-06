@@ -3,11 +3,8 @@ from stor_dx.dx import DXPath
 from stor_dx import utils
 
 
-drive = DXPath.drive
-
-
 def class_for_path(prefix, path):
-    if prefix+'://' != drive:
+    if prefix+'://' != DXPath.drive:
         raise ValueError('Invalid prefix to initialize DXPaths: {}'.format(prefix))
     cls = utils.find_dx_class(path)
     return cls, path
