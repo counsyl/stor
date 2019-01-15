@@ -142,8 +142,14 @@ class TestCompatHelpers(unittest.TestCase):
                          DXPath('dx://project:/'))
         self.assertEqual(DXPath('dx://project:///..//..///..').normpath(),
                          DXPath('dx://project:/'))
+        self.assertEqual(DXPath('dx://project:/a/b').normpath(),
+                         DXPath('dx://project:/a/b'))
         self.assertEqual(DXPath('dx://project:a/b').normpath(),
                          DXPath('dx://project:/a/b'))
+        self.assertEqual(DXPath('dx://project:/').normpath(),
+                         DXPath('dx://project:/'))
+        self.assertEqual(DXPath('dx://project:').normpath(),
+                         DXPath('dx://project:/'))
         # ../ on root should not change project
         self.assertEqual(DXPath(
             'dx://project-123456789012345678901234:../file-123456789012345678901234'
@@ -156,6 +162,8 @@ class TestCompatHelpers(unittest.TestCase):
         ).normpath(),
              DXPath(
                  'dx://project-123456789012345678901234:file-123456789012345678901234'))
+        self.assertEqual(DXPath('dx://project-123456789012345678901234:/').normpath(),
+                         DXPath('dx://project-123456789012345678901234:'))
 
 
 class TestRename(DXTestCase):
