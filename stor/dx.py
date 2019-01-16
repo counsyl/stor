@@ -165,6 +165,12 @@ class DXPath(OBSPath):
         parts = self._get_parts()
         return parts[0] if len(parts) > 0 and parts[0] else None
 
+    def joinpath(self, *others):
+        """Wrapper around base joinpath function which converts the first part to normpath
+        before joining with others.
+        """
+        return self.path_class(self.path_module.join(self.normpath(), *others))
+
     def temp_url(self, lifetime=300, filename=None):
         """Obtains a temporary URL to a DNAnexus data-object.
 
@@ -1222,3 +1228,13 @@ class DXCanonicalPath(DXPath):
 
     def normpath(self):
         return self.path_class(self.drive + self.project + ':' + (self.resource or ''))
+
+    def splitpath(self):
+        """Wrapper around base splitpath function which calls splitpath on the normpath of self
+        """
+        path_w_slash = self
+        if self.resource:
+            path_w_slash = self.path_class(self.drive + self.project + ':/' + self.resource)
+
+        parent, child = self.path_module.split(path_w_slash)
+        return self.path_class(parent), child
