@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v3.0.1
+------
+
+* Fixed `DXPath.normpath` functionality  (i.e., for ``DXVirtualPath`` and ``DXCanonicalPath``)
+  when no resource present in provided path.
+
 v3.0.0
 ------
 

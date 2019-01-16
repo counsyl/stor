@@ -1170,7 +1170,7 @@ class DXVirtualPath(DXPath):
             resource=(self.canonical_resource or '')))
 
     def normpath(self):
-        normed_resource = self.path_module.normpath('/' + self.resource)[1:]
+        normed_resource = self.path_module.normpath('/' + (self.resource or ''))[1:]
         norm_pth = self.path_class(self.drive + self.project + ':/' + normed_resource)
         if isinstance(norm_pth, DXCanonicalPath):
             return norm_pth.normpath()
@@ -1221,4 +1221,4 @@ class DXCanonicalPath(DXPath):
         return self
 
     def normpath(self):
-        return self.path_class(self.drive + self.project + ':' + self.resource)
+        return self.path_class(self.drive + self.project + ':' + (self.resource or ''))
