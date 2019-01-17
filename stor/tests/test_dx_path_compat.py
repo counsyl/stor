@@ -216,6 +216,6 @@ class TestBasics(unittest.TestCase):
         f = DXPath('dx://project-123456789012345678901234:/')
         assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')
         f = DXPath('dx://project-123456789012345678901234:')
-        assert f.splitpath() == (stor.Path('dx:'), 'project-123456789012345678901234:')
+        assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')
         f = DXPath('dx://project-123456789012345678901234')
-        assert f.splitpath() == (stor.Path('dx:'), 'project-123456789012345678901234')
+        assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')

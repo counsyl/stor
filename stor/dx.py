@@ -1239,9 +1239,10 @@ class DXCanonicalPath(DXPath):
     def splitpath(self):
         """Wrapper around base splitpath function which calls splitpath on the normpath of self
         """
-        path_to_split = self
         if self.resource:
             path_to_split = self.path_class(self.drive + self.project + ':/' + self.resource)
+        else:
+            path_to_split = self.path_class(self.drive + self.project + ':/')
 
         parent, child = self.path_module.split(path_to_split)
         return self.path_class(parent), child
