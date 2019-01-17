@@ -1182,6 +1182,13 @@ class DXVirtualPath(DXPath):
             return norm_pth.normpath()
         return norm_pth
 
+    def splitpath(self):
+        """Wrapper around base splitpath function which calls splitpath on the normpath of self
+        """
+        path_to_split = self.normpath()
+        parent, child = self.path_module.split(path_to_split)
+        return self.path_class(parent), child
+
 
 class DXCanonicalPath(DXPath):
     """Represents fully canonicalized DNAnexus paths:
@@ -1232,9 +1239,9 @@ class DXCanonicalPath(DXPath):
     def splitpath(self):
         """Wrapper around base splitpath function which calls splitpath on the normpath of self
         """
-        path_w_slash = self
+        path_to_split = self
         if self.resource:
-            path_w_slash = self.path_class(self.drive + self.project + ':/' + self.resource)
+            path_to_split = self.path_class(self.drive + self.project + ':/' + self.resource)
 
-        parent, child = self.path_module.split(path_w_slash)
+        parent, child = self.path_module.split(path_to_split)
         return self.path_class(parent), child

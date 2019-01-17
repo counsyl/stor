@@ -187,6 +187,8 @@ class TestBasics(unittest.TestCase):
             'dx://project-123456789012345678901234:file-123456789012345678901234')
 
     def test_splitpath(self):
+        f = DXPath('dx://project:prefix/dir/file')
+        assert f.splitpath() == (DXPath("dx://project:/prefix/dir"), 'file')
         f = DXPath('dx://project:/prefix/file')
         assert f.splitpath() == (DXPath("dx://project:/prefix"), 'file')
         f = DXPath('dx://project:/prefix')
@@ -194,9 +196,9 @@ class TestBasics(unittest.TestCase):
         f = DXPath('dx://project:/')
         assert f.splitpath() == (DXPath("dx://project:"), '')
         f = DXPath('dx://project:')
-        assert f.splitpath() == (stor.Path("dx:"), 'project:')
+        assert f.splitpath() == (DXPath("dx://project:"), '')
         f = DXPath('dx://project')
-        assert f.splitpath() == (stor.Path("dx:"), 'project')
+        assert f.splitpath() == (DXPath("dx://project:"), '')
 
         f = DXPath('dx://project-123456789012345678901234:/file-123456789012345678901234')
         assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"),
@@ -210,8 +212,7 @@ class TestBasics(unittest.TestCase):
         assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"), 'prefix')
         # This won't resolve to a canonical project:
         f = DXPath('dx://project-123456789012345678901234:prefix')
-        assert f.splitpath() == (stor.Path('dx:'),
-                                 'project-123456789012345678901234:prefix')
+        assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"), 'prefix')
         f = DXPath('dx://project-123456789012345678901234:/')
         assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')
         f = DXPath('dx://project-123456789012345678901234:')
