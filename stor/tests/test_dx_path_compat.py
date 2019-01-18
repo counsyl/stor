@@ -2,6 +2,7 @@ import pytest
 import unittest
 
 from stor.dx import DXPath, DXCanonicalPath, DXVirtualPath
+import stor
 
 
 class TestBasics(unittest.TestCase):
@@ -143,3 +144,78 @@ class TestBasics(unittest.TestCase):
         # .ext
         self.assertEqual(f.ext, '.csv')
         self.assertEqual(f.parent.ext, '')
+
+    def test_joinpath_no_resource(self):
+        f = DXPath('dx://project')
+        assert f.joinpath("dir/dir2", "file") == DXPath('dx://project:/dir/dir2/file')
+        assert f.joinpath("dir/file") == DXPath('dx://project:/dir/file')
+        assert f.joinpath("dir") == DXPath('dx://project:/dir')
+        assert f.joinpath("/dir") == stor.Path('/dir')
+
+        f = DXPath('dx://project-123456789012345678901234')
+        assert f.joinpath("dir", "file") == DXPath(
+            'dx://project-123456789012345678901234:/dir/file')
+        assert f.joinpath("dir/file") == DXPath('dx://project-123456789012345678901234:/dir/file')
+        assert f.joinpath("file-123456789012345678901234") == DXPath(
+            'dx://project-123456789012345678901234:/file-123456789012345678901234')
+        with pytest.raises(ValueError, match='ambiguous'):
+            f.joinpath('file-123456789012345678901234', 'asd')
+
+    def test_joinpath_w_resource(self):
+        f = DXPath('dx://project:/dir')
+        assert f.joinpath("file") == DXPath('dx://project:/dir/file')
+        assert f.joinpath("/dir") == stor.Path('/dir')
+
+        f = DXPath('dx://project-123456789012345678901234:dir/dir2')
+        assert f.joinpath("file") == DXPath('dx://project-123456789012345678901234:/dir/dir2/file')
+
+        f = DXPath('dx://project-123456789012345678901234:/file-123456789012345678901234')
+        with pytest.raises(ValueError, match='ambiguous'):
+            f.joinpath('asd')
+
+    def test_joinpath_to_nothing(self):
+        f = DXPath('dx://project:/prefix')
+        assert f.joinpath() == f
+        f = DXPath('dx://project:')
+        assert f.joinpath() == DXPath('dx://project:/')
+        f = DXPath('dx://project')
+        assert f.joinpath() == DXPath('dx://project:/')
+        f = DXPath('dx://project-123456789012345678901234')
+        assert f.joinpath() == DXPath('dx://project-123456789012345678901234:')
+        f = DXPath('dx://project-123456789012345678901234:/file-123456789012345678901234')
+        assert f.joinpath() == DXPath(
+            'dx://project-123456789012345678901234:file-123456789012345678901234')
+
+    def test_splitpath(self):
+        f = DXPath('dx://project:prefix/dir/file')
+        assert f.splitpath() == (DXPath("dx://project:/prefix/dir"), 'file')
+        f = DXPath('dx://project:/prefix/file')
+        assert f.splitpath() == (DXPath("dx://project:/prefix"), 'file')
+        f = DXPath('dx://project:/prefix')
+        assert f.splitpath() == (DXPath("dx://project:"), 'prefix')
+        f = DXPath('dx://project:/')
+        assert f.splitpath() == (DXPath("dx://project:"), '')
+        f = DXPath('dx://project:')
+        assert f.splitpath() == (DXPath("dx://project:"), '')
+        f = DXPath('dx://project')
+        assert f.splitpath() == (DXPath("dx://project:"), '')
+
+        f = DXPath('dx://project-123456789012345678901234:/file-123456789012345678901234')
+        assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"),
+                                 'file-123456789012345678901234')
+        f = DXPath('dx://project-123456789012345678901234:file-123456789012345678901234')
+        assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"),
+                                 'file-123456789012345678901234')
+        f = DXPath('dx://project-123456789012345678901234:/prefix/file')
+        assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:/prefix"), 'file')
+        f = DXPath('dx://project-123456789012345678901234:/prefix')
+        assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"), 'prefix')
+        # This won't resolve to a canonical project:
+        f = DXPath('dx://project-123456789012345678901234:prefix')
+        assert f.splitpath() == (DXPath("dx://project-123456789012345678901234:"), 'prefix')
+        f = DXPath('dx://project-123456789012345678901234:/')
+        assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')
+        f = DXPath('dx://project-123456789012345678901234:')
+        assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')
+        f = DXPath('dx://project-123456789012345678901234')
+        assert f.splitpath() == (DXCanonicalPath("dx://project-123456789012345678901234:"), '')

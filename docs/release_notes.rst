@@ -1,10 +1,16 @@
 Release Notes
 =============
 
+v3.0.2
+------
+
+* Fixed ``DXPath.joinpath`` and ``DXPath.splitpath`` to be custom implementations to handle paths
+  with no resources, instead of defaulting to base behavior.
+
 v3.0.1
 ------
 
-* Fixed `DXPath.normpath` functionality  (i.e., for ``DXVirtualPath`` and ``DXCanonicalPath``)
+* Fixed ``DXPath.normpath`` functionality  (i.e., for ``DXVirtualPath`` and ``DXCanonicalPath``)
   when no resource present in provided path.
 
 v3.0.0
