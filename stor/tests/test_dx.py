@@ -1803,3 +1803,13 @@ class TestLoginAuth(DXTestCase):
                 self.assertEqual(mock_auth.call_count, 1)
         self.test_dir.makedirs_p()
         self.assertTrue(self.test_dir.isdir())
+
+
+class TestFindUserProjects(unittest.TestCase):
+    def test_find_projects(self):
+        with mock.patch('dxpy.bindings.search.find_projects') as mock_auth:
+            expected_value = [{'id': 'project-123456789012345678901234', 'level': 'VIEW',
+                               'permissionSources': ['user_org'], 'public': False}]
+            mock_auth.return_value=expected_value
+            user_projects = DXPath.find_projects()
+            self.assertEqual(user_projects, expected_value)

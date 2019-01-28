@@ -128,6 +128,24 @@ class DXPath(OBSPath):
     realpath = _noop('realpath')
     expanduser = _noop('expanduser')
 
+    @classmethod
+    def find_projects(cls, name=None, level=None):
+        """
+        Class level function to find out projects the user has access to
+
+        Args:
+            name (string): String on which to glob project names
+            level (string): The time (in seconds) the temporary
+                URL will be valid
+        """
+        kwargs = {'describe': {'fields': {'name': True}}}
+        if name:
+            kwargs.update(name='*'+name+'*',
+                          name_mode='glob')
+        if level:
+            kwargs.update(level=level)
+        return list(dxpy.bindings.search.find_projects(**kwargs))
+
     def clear_cached_properties(self):
         """Clears all cached properties in DXPath objects.
 

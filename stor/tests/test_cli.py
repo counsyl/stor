@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import contextlib
+import json
 import os
 import mock
 import sys
@@ -627,3 +628,39 @@ class TestCd(BaseCliTest):
     def test_pwd_error(self):
         with self.assertOutputMatches(exit_status=1, stderr='invalid service'):
             self.parse_args('stor pwd service')
+
+
+class TestFindUserProjects(BaseCliTest):
+    @mock.patch('dxpy.bindings.search.find_projects', autospec=True)
+    def test_find_projects(self, mock_call):
+        mock_call.return_value = [{'id': 'project-123456789012345678901234', 'level': 'VIEW',
+                                  'permissionSources': ['user_org'], 'public': False}]
+        self.parse_args('stor dx-find-projects')
+        self.assertIn("'id': 'project-123456789012345678901234'", sys.stdout.getvalue())
+        self.assertIn("'level': 'VIEW'", sys.stdout.getvalue())
+        self.assertIn("'permissionSources': ['user_org']", sys.stdout.getvalue())
+        self.assertIn("'public': False", sys.stdout.getvalue())
+        self.assertEqual(mock_call.call_count, 1)
+
+    @mock.patch('dxpy.bindings.search.find_projects', autospec=True)
+    def test_find_projects_with_level(self, mock_call):
+        mock_call.return_value = [{'id': 'project-123456789012345678901234', 'level': 'CONTRIBUTE',
+                                   'permissionSources': ['user_org'], 'public': False}]
+        self.parse_args('stor dx-find-projects --level CONTRIBUTE')
+        mock_call.assert_called_once_with(describe={'fields': {'name': True}}, level='CONTRIBUTE')
+        self.assertIn("'id': 'project-123456789012345678901234'", sys.stdout.getvalue())
+        self.assertIn("'level': 'CONTRIBUTE'", sys.stdout.getvalue())
+        self.assertIn("'permissionSources': ['user_org']", sys.stdout.getvalue())
+        self.assertIn("'public': False", sys.stdout.getvalue())
+
+    @mock.patch('dxpy.bindings.search.find_projects', autospec=True)
+    def test_find_projects_with_name(self, mock_call):
+        mock_call.return_value = [{'id': 'project-123456789012345678901234', 'level': 'CONTRIBUTE',
+                                   'permissionSources': ['user_org'], 'public': False}]
+        self.parse_args('stor dx-find-projects --name Test')
+        mock_call.assert_called_once_with(describe={'fields': {'name': True}}, name='*Test*',
+                                          name_mode='glob')
+        self.assertIn("'id': 'project-123456789012345678901234'", sys.stdout.getvalue())
+        self.assertIn("'level': 'CONTRIBUTE'", sys.stdout.getvalue())
+        self.assertIn("'permissionSources': ['user_org']", sys.stdout.getvalue())
+        self.assertIn("'public': False", sys.stdout.getvalue())
