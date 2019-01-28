@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import contextlib
-import json
 import os
 import mock
 import sys
