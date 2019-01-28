@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v3.0.3
+------
+
+* ``stor dx-find-projects`` and ``DXPath.find_projects`` are added to query the list of DNAnexus
+  projects available to the stor user.
+
 v3.0.2
 ------
 
