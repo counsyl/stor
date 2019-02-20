@@ -432,9 +432,13 @@ def copy(source, dest, **kwargs):
         else:
             shutil.copy(source, dest)
     else:
-        dest_file = dest if not dest.endswith('/') and not (
-                is_dx_path(dest) and dest.isdir()
-        ) else dest / source.name
+        dest_file = dest
+        if is_dx_path(dest) and dest.isdir():
+            dest_file = dest / source.name
+            if dest_file.isfile():
+                dest_file.remove()
+        elif dest.endswith('/'):
+            dest_file = dest / source.name
         if is_swift_path(dest) and not dest_file.parent.container:
             raise ValueError((
                 'cannot copy to tenant "%s" and file '
