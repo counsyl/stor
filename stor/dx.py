@@ -779,7 +779,6 @@ class DXPath(OBSPath):
 
             if upload_obj.source.isfile():
                 dest_is_file = dest_file.isfile()
-                print(dest_file, " dest_is_file: ", dest_is_file)
                 if dest_is_file:  # only occurs if upload is called directly with existing objects
                     print(stor_exceptions.TargetExistsError(
                         'Destination path ({}) already exists, will not cause '
