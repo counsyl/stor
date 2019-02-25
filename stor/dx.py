@@ -779,12 +779,11 @@ class DXPath(OBSPath):
 
             if upload_obj.source.isfile():
                 dest_is_file = dest_file.isfile()
-                if dest_is_file:
-                    raise stor_exceptions.TargetExistsError(
+                if dest_is_file:  # only occurs if upload is called directly with existing objects
+                    logger.warning(
                         'Destination path ({}) already exists, will not cause '
-                        'duplicate file objects to exist. Remove the original first'
-                        .format(dest_file)
-                    )
+                        'duplicate file objects on the platform. Skipping...'
+                        .format(dest_file))
                 else:
                     with _wrap_dx_calls():
                         dxpy.upload_local_file(

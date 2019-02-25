@@ -7,6 +7,7 @@ import unittest
 import dxpy
 import dxpy.bindings as dxb
 import mock
+from testfixtures import LogCapture
 
 import stor
 from stor import exceptions
@@ -1177,15 +1178,19 @@ class TestCopy(DXTestCase):
         with pytest.raises(exceptions.NotFoundError, match='provide a valid source'):
             posix_p.copy(dx_p)
 
-    def test_posix_to_existing_dx_fail(self):
+    def test_posix_to_existing_dx(self):
         self.setup_temporary_project()
-        self.setup_files(['/temp_folder/file.txt'])
+        self.setup_file('/temp_folder/file.txt')
         self.setup_posix_files(['/rand/file.txt'])
-        dx_p = DXPath('dx://' + self.project + ':/temp_folder')
+        dx_folder_p = DXPath('dx://' + self.project + ':/temp_folder')
         posix_p = Path('./{test_folder}/{path}'.format(
             test_folder=self.project, path='rand/file.txt'))
-        with pytest.raises(exceptions.TargetExistsError, match='will not cause duplicate file'):
-            posix_p.copy(dx_p)
+        posix_p.copy(dx_folder_p)
+        dx_p = DXPath('dx://' + self.project + ':/temp_folder/file.txt')
+        self.assertTrue(dx_p.exists())
+        time.sleep(10)  # to give the newly uploaded file time to go to closed state
+        with stor.open(dx_p, 'r') as uploaded_file:
+            self.assertEqual(uploaded_file.read(), 'data0')
 
     def test_posix_to_dx_folder(self):
         self.setup_temporary_project()
@@ -1701,6 +1706,28 @@ class TestCopyTree(DXTestCase):
         dx_p = DXPath('dx://' + self.project)
         with pytest.raises(dx.DNAnexusError, match='Cannot move root folder'):
             dx_p.copytree(to_dx_p)
+
+
+class TestUpload(DXTestCase):
+    def test_upload_files_existing(self):
+        self.setup_temporary_project()
+        self.setup_file('/folder/file2.txt')
+        self.setup_posix_files(['/folder/file.txt',
+                                '/folder/file2.txt'])
+        posix_p = Path('./{test_folder}/{path}'.format(
+            test_folder=self.project, path='folder'))
+        dx_folder_p = DXPath('dx://' + self.project + ':/')
+        files_to_upload = []
+        files_to_upload.append(stor.obs.OBSUploadObject(posix_p / 'file.txt', '/folder/file.txt'))
+        files_to_upload.append(stor.obs.OBSUploadObject(posix_p / 'file.txt', '/folder/file2.txt'))
+        with LogCapture('stor.dx') as log:
+            dx_folder_p.upload(files_to_upload)
+            assert 'will not cause duplicate file objects' in log.records[-1].getMessage()
+
+        dx_p = DXPath('dx://' + self.project + ':/folder/file2.txt')
+        self.assertTrue(dx_p.exists())
+        with stor.open(dx_p, 'r') as uploaded_file:
+            self.assertEqual(uploaded_file.read(), 'data')
 
 
 class TestGetSize(DXTestCase):
