@@ -1,0 +1,138 @@
+interactions:
+- request:
+    body: !!python/unicode '{"name": "TestExists.test_true_canonical_project.6d0756ee"}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project/new
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvp000V3kf6K624b0zfY0"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '41'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:42:00 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276520759-71607
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvp000V3kf6K624b0zfY0/describe
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvp000V3kf6K624b0zfY0","name":"TestExists.test_true_canonical_project.6d0756ee","class":"project","created":1553276520000,"modified":1553276520000,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '660'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:42:00 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276520867-419552
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvp000V3kf6K624b0zfY0/describe
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvp000V3kf6K624b0zfY0","name":"TestExists.test_true_canonical_project.6d0756ee","class":"project","created":1553276520000,"modified":1553276520000,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '660'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:42:00 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276520971-582198
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvp000V3kf6K624b0zfY0/destroy
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvp000V3kf6K624b0zfY0"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '41'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:42:05 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276521075-89787
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,0 +1,49 @@
+interactions:
+- request:
+    body: '{}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          YmVhcmVyIFNPVXE2end1b05MdGRCOUdEVTZYWE0wZzMzTEVhRlhw
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI3OC4wIChEYXJ3aW4tMTguMi4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/project-123456789012345678901234/describe
+  response:
+    body:
+      string: '{"error":{"type":"ResourceNotFound","message":"The entity project-123456789012345678901234
+        could not be found"}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Mar 2019 17:42:56 GMT
+      Server:
+      - nginx
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1553276576247-391836
+    status:
+      code: 404
+      message: Not Found
+version: 1
