@@ -57,12 +57,15 @@ def _dx_error_to_descriptive_exception(client_exception):
     http_status = getattr(client_exception, 'code', None)
     if isinstance(client_exception, dxpy.DXAPIError):
         exc_str = '{} - {}'.format(client_exception.name or '',
-                                   client_exception.msg or client_exception.message or '')
+                                   client_exception.msg or client_exception.error_message())
     else:
         exc_str = str(client_exception)
+    if http_status in [401, 403]:
+        return stor_exceptions.UnauthorizedError(
+            'Either use `dx login --token {{your_dx_token}} --save` or set DX_AUTH_TOKEN '
+            'environment variable. {}'.format(exc_str), client_exception
+        )
     status_to_exception = {
-        401: stor_exceptions.UnauthorizedError,
-        403: stor_exceptions.UnauthorizedError,
         404: stor_exceptions.NotFoundError,
         409: stor_exceptions.ConflictError
     }

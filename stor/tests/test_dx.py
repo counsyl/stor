@@ -1763,7 +1763,9 @@ class TestRaiseError(unittest.TestCase):
         dx_error = dxpy.DXAPIError(content, 403)
         result = dx._dx_error_to_descriptive_exception(dx_error)
         self.assertEqual(type(result), exceptions.UnauthorizedError)
-        self.assertEqual(str(result), 'Unauthorized - Permission denied')
+        self.assertEqual(str(result),
+                         'Either use `dx login --token {your_dx_token} --save` or set '
+                         'DX_AUTH_TOKEN environment variable. Unauthorized - Permission denied')
         self.assertEqual(result.caught_exception, dx_error)
 
     def test_error_404(self):
