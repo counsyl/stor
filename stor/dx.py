@@ -159,6 +159,9 @@ class DXPath(OBSPath):
     def normpath(self):
         raise NotImplementedError
 
+    def exists(self):
+        raise NotImplementedError
+
     @property
     def project(self):
         """The project name from the path or None"""
