@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v3.0.3
+------
+* Allow empty DXPath initialization. ``dx://`` is now a valid DXPath. ``stor ls dx://`` lists the
+  accessible DNAnexus projects for the user.
+* Fix ``OBSPath.splitdrive()`` for swift, s3 and dx paths
+* Add ``--canonicalize`` flag to ``stor list``, ``stor ls`` and ``stor walkfiles`` cli commands
+* Fix stor.exists for DXCanonicalPaths.
+* Changed dxpy3 requirement to dxpy to reflect latest changes from dxpy
+
 v3.0.2
 ------
 
