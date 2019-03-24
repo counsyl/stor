@@ -987,8 +987,10 @@ class DXPath(OBSPath):
         for key, values in obj_dict.items():
             for entry in values:
                 if canonicalize:
-                    ans_list.append(DXCanonicalPath('{}{}:/{}'.format(self.drive,
-                        proj_id, (entry.lstrip('/') if key == 'folders' else entry['id']))))
+                    ans_list.append(DXCanonicalPath('{}{}:/{}'.format(
+                        self.drive,
+                        proj_id,
+                        (entry.lstrip('/') if key == 'folders' else entry['id']))))
                 else:
                     if key == 'folders':
                         ans_list.append(DXVirtualPath('{drive}{proj_name}:{folder}'.format(
