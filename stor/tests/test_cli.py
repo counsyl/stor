@@ -336,23 +336,14 @@ class TestList(BaseCliTest):
             S3Path('s3://some-bucket/b')
         ]]
 
-        self.parse_args('stor list s3://some-bucket -s dir --canonicalize')
+        self.parse_args('stor list s3://some-bucket -s dir -l2 --canonicalize')
         self.assertEquals(sys.stdout.getvalue(),
                           's3://some-bucket/dir/a\n'
                           's3://some-bucket/dir/b\n'
                           's3://some-bucket/dir/c/d\n')
 
-        # clear stdout
-        sys.stdout = six.StringIO()
-
-        self.parse_args('stor list s3://some-bucket -l2 --no-canonicalize')
-        self.assertEquals(sys.stdout.getvalue(),
-                          's3://some-bucket/a\n'
-                          's3://some-bucket/b\n')
-
         mock_list.assert_has_calls([
-            mock.call(S3Path('s3://some-bucket'), starts_with='dir', canonicalize=True),
-            mock.call(S3Path('s3://some-bucket'), limit=2)
+            mock.call(S3Path('s3://some-bucket'), starts_with='dir', limit=2, canonicalize=True)
         ])
 
     @mock.patch.object(S3Path, 'list', autospec=True)

@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v3.0.3
+------
+* Add ``--canonicalize`` flag to ``stor list``, ``stor ls`` and ``stor walkfiles`` cli commands
+
 v3.0.2
 ------
 
