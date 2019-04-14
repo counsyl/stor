@@ -22,6 +22,8 @@ class TestBasics(unittest.TestCase):
 
     def test_construction_no_project_fail(self):
         with self.assertRaises(ValueError):
+            DXPath('dx://myproject/myfolder')
+        with self.assertRaises(ValueError):
             DXPath('dx:///folder')
 
     def test_canonical_construct_fail(self):

@@ -134,17 +134,32 @@ deletes the metadata and leaves the file untouched in other projects.
 
 DXPath on stor
 --------------
-Project is always required for DNAnexus instances::
+It's possible to initialize DXPath to an empty path::
+
+    >>> Path('dx://')
+
+This path is useful to list the projects a user has access to. This is done through
+``stor ls dx://``. Most other functions are not implemented for the empty path. In
+particular, list, walkfiles and glob are also not implemented for the empty path. This
+is because a user typically has access to a very large number of files, and these
+functions will take forever to iterate through. Please use
+``stor ls dx:// | xargs -L1 stor walkfiles`` (or list or ls) to
+simulate the required behavior.
+
+For most DNAnexus usecases, a project is required to manipulate resources, but projects
+are initialized with a ":" to adhere with DNAnexus standards::
 
     >>> Path('dx://path/to/file')
     Traceback (most recent call last):
     ...
     <exception>
 
-but projects are normalized::
+    >>> Path('dx://project:/path/file')
+    DXVirtualPath('dx://project:/path/file')
 
     >>> Path('dx://myproject')
     DXVirtualPath('dx://myproject:')
+
 
 Duplicate names on DNAnexus
 ---------------------------
@@ -182,7 +197,7 @@ copy and copytree behave differently when the target output path exists and is a
       - dx://project2:/call/myfile.vcf
     * - stor cp -r ./trip-photos dx://newproject:/all
       - dx://newproject:/all
-      - dx://newproject/all/trip-photos
+      - dx://newproject:/all/trip-photos
 
 Note that if the output path exists and is a file, the file will be *overwritten*
 

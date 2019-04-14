@@ -194,7 +194,8 @@ class DXPath(OBSPath):
             NotFoundError: The path could not be resolved to a file
         """
         if not self.resource:
-            raise ValueError('DX Paths need path resource to have a temporary download url')
+            raise ValueError('Can only generate download URLs for file paths, not projects. '
+                             'Please provide a valid file path.')
         with _wrap_dx_calls():
             file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                        project=self.canonical_project)
@@ -299,6 +300,8 @@ class DXPath(OBSPath):
             mode: unused, present for compatibility
                 (access permissions are managed at project level)
         """
+        if not self.project:
+            raise ValueError('Cannot call makedirs_p on root ({})'.format(self))
         if not self.resource:
             if not self.exists():
                 raise ValueError('Cannot create a project via makedirs_p()')
@@ -350,7 +353,8 @@ class DXPath(OBSPath):
             NotFoundError: When path cannot be resolved to a file.
         """
         if not self.resource:
-            raise ValueError('Paths without resource cannot be renamed')
+            raise ValueError('Projects cannot be renamed' if self.project else
+                             'Cannot rename dx root')
         if new_name == self.name:
             return
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
@@ -492,21 +496,24 @@ class DXPath(OBSPath):
             NotFoundError: When the source file path doesn't exist
         """
         dest = Path(dest)
-        if utils.is_dx_path(dest):
-            if self.isfile():
-                if dest.canonical_project == self.canonical_project:
-                    if not raise_if_same_project:
-                        self._move(dest)
-                    else:
-                        raise DNAnexusError('Source and destination are in same project. '
-                                            'Set raise_if_same_project=False to allow this.')
-                else:
-                    self._clone(dest)
+        if not utils.is_dx_path(dest):
+            # delegate to utils.copy for other filesystems
+            return super(DXPath, self).copy(dest)
+        if not self.project or not dest.project:
+            raise ValueError('Cannot copy to or from root (dx://). '
+                             'Must specify project and file.')
+        if not self.isfile():
+            raise stor_exceptions.NotFoundError(
+                'No data object was found for the given path on DNAnexus')
+
+        if dest.canonical_project == self.canonical_project:
+            if not raise_if_same_project:
+                self._move(dest)
             else:
-                raise stor_exceptions.NotFoundError(
-                    'No data object was found for the given path on DNAnexus')
+                raise DNAnexusError('Source and destination are in same project. '
+                                    'Set raise_if_same_project=False to allow this.')
         else:
-            super(DXPath, self).copy(dest)  # for other filesystems, delegate to utils.copy
+            self._clone(dest)
 
     def copytree(self, dest, raise_if_same_project=False, **kwargs):
         """Copies a source directory to a destination directory.
@@ -562,21 +569,24 @@ class DXPath(OBSPath):
             NotFoundError: source directory path doesn't exist
         """
         dest = Path(dest)
-        if utils.is_dx_path(dest):
-            if self.isdir():
-                if dest.canonical_project == self.canonical_project:
-                    if not raise_if_same_project:
-                        self._movetree(dest)
-                    else:
-                        raise DNAnexusError('Source and destination are in same project. '
-                                            'Set raise_if_same_project=False to allow this.')
-                else:
-                    self._clonetree(dest)
+        if not utils.is_dx_path(dest):
+            # delegate to utils.copytree for other filesystems
+            return super(DXPath, self).copytree(dest)
+        if not self.project or not dest.project:
+            raise ValueError('Cannot copytree to or from root (dx://). '
+                             'Must specify project and/or directory')
+        if not self.isdir():
+            raise stor_exceptions.NotFoundError(
+                'No project or directory was found at path ({})'.format(self))
+
+        if dest.canonical_project == self.canonical_project:
+            if not raise_if_same_project:
+                self._movetree(dest)
             else:
-                raise stor_exceptions.NotFoundError(
-                    'No project or directory was found at path ({})'.format(self))
+                raise DNAnexusError('Source and destination are in same project. '
+                                    'Set raise_if_same_project=False to allow this.')
         else:
-            super(DXPath, self).copytree(dest)  # for other filesystems, delegate to utils.copytree
+            self._clonetree(dest)
 
     def _prep_for_copytree(self, dest):
         """Handles logic, for finalizing target destination, making parent folders
@@ -822,7 +832,8 @@ class DXPath(OBSPath):
             bytes: the raw bytes from the object on DX.
         """
         if not self.resource:
-            raise ValueError('Can only call read_object() on a file path')
+            raise ValueError('Can only call read_object() on a file path' +
+                             (', not a project' if self.project else ''))
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                    project=self.canonical_project)
         with _wrap_dx_calls():
@@ -845,7 +856,8 @@ class DXPath(OBSPath):
                 `DXPath.upload`
         """
         if not self.resource:
-            raise ValueError('Cannot write to provided path. Please provide a valid file path')
+            raise ValueError('Must include a valid project and path for writing. '
+                             'Please provide a file path')
         if not isinstance(content, bytes):  # pragma: no cover
                 # bytes/unicode a little confused so allow it
                 warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
@@ -937,7 +949,6 @@ class DXPath(OBSPath):
         )
 
     def _listdir_empty_path(self, canonicalize=False):
-        ans_list = []
         kwargs = {
             'describe': {'fields': {'name': True}},
             # `dx select` uses CONTRIBUTE default, but we want to show all view level projects
@@ -946,20 +957,19 @@ class DXPath(OBSPath):
             'explicit_perms': True
         }
         projects = list(dxpy.find_projects(**kwargs))
-        for project in projects:
-            if canonicalize:
-                ans_list.append(DXCanonicalPath('{drive}{project}:'.format(
-                    drive=self.drive, project=project['id'])))
-            else:
-                ans_list.append(DXVirtualPath('{drive}{proj_name}:'.format(
+        if canonicalize:
+            return [DXCanonicalPath('{drive}{project}:'.format(
+                    drive=self.drive, project=project['id'])) for project in projects]
+        else:
+            return [DXVirtualPath('{drive}{proj_name}:'.format(
                     drive=self.drive,
-                    proj_name=project['describe']['name']))
-                )
-        return ans_list
+                    proj_name=project['describe']['name'])) for project in projects]
 
     def listdir(self, only='all', canonicalize=False):
         """List the path as a dir, returning top-level directories and files.
-        If listing an empty path, lists the projects a user has access to.
+        If listing an empty path, lists the projects a user has access to. This will only list
+        all projects a particular user was given access to (with level VIEW or higher) through
+        an org or directly. It doesn't list any public projects the user wasn't invited to.
 
         Args:
             canonicalize (bool, default False): if True, return canonical paths
@@ -1006,7 +1016,9 @@ class DXPath(OBSPath):
 
     def listdir_iter(self, canonicalize=False):
         """Iterate the path as a dir, returning top-level directories and files.
-        If listing an empty path, lists the projects a user has access to.
+        If listing an empty path, lists the projects a user has access to. This will only list
+        all projects a particular user was given access to (with level VIEW or higher) through
+        an org or directly. It doesn't list any public projects the user wasn't invited to.
 
         Args:
             canonicalize (bool, default False): if True, return canonical paths
@@ -1113,6 +1125,8 @@ class DXPath(OBSPath):
         Returns:
             bool: True if the path exists, False otherwise.
         """
+        if not self.project:
+            return True
         try:
             # first see if there is a specific corresponding object
             self.stat()

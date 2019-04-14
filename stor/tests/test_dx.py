@@ -175,10 +175,20 @@ class TestCompatHelpers(unittest.TestCase):
                          DXPath('dx://project-123456789012345678901234:'))
 
 
+class TestDirFileEmptyPath(unittest.TestCase):
+    def test_isdir_empty_path(self):
+        dx_p = DXPath('dx://')
+        self.assertFalse(dx_p.isdir())
+
+    def test_isfile_empty_path(self):
+        dx_p = DXPath('dx://')
+        self.assertFalse(dx_p.isfile())
+
+
 class TestRename(DXTestCase):
     def test_rename_empty_fail(self):
         dx_p = DXPath('dx://')
-        with pytest.raises(ValueError, match='cannot be renamed'):
+        with pytest.raises(ValueError, match='Cannot rename dx root'):
             dx_p._rename('RandomProject2:')
 
     def test_rename_project_fail(self):
@@ -218,7 +228,7 @@ class TestOpen(DXTestCase):
         with pytest.raises(ValueError, match='on a file path'):
             with dx_p.open() as f:
                 f.read()
-        with pytest.raises(ValueError, match='Cannot write to provided path'):
+        with pytest.raises(ValueError, match='Must include a valid project'):
             with dx_p.open(mode='w') as f:
                 f.write('random text')
 
@@ -316,7 +326,7 @@ line4
     def test_write_to_project_fail(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='Cannot write to provided path'):
+        with pytest.raises(ValueError, match='Please provide a file path'):
             with dx_p.open(mode='wb') as f:
                 f.write(b'data')
 
@@ -846,8 +856,7 @@ class TestStat(DXTestCase):
 class TestExists(DXTestCase):
     def test_empty_path(self):
         dx_p = DXPath('dx://')
-        with pytest.raises(NotImplementedError):
-            dx_p.exists()
+        self.assertTrue(dx_p.exists())
 
     def test_false_file(self):
         self.setup_temporary_project()
@@ -966,13 +975,13 @@ class TestGlob(DXTestCase):
 class TestTempUrl(DXTestCase):
     def test_empty_path(self):
         dx_p = DXPath('dx://')
-        with pytest.raises(ValueError, match='need path resource'):
+        with pytest.raises(ValueError, match='Please provide a valid file path'):
             dx_p.temp_url()
 
     def test_fail_on_project(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='need path resource'):
+        with pytest.raises(ValueError, match='Please provide a valid file path'):
             dx_p.temp_url()
 
     def test_fail_on_folder(self):
@@ -1086,7 +1095,7 @@ class TestRemove(DXTestCase):
 class TestMakedirsP(DXTestCase):
     def test_empty_path(self):
         dx_p = DXPath('dx://')
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(ValueError, match='Cannot call makedirs_p on root'):
             dx_p.makedirs_p()
 
     def test_makedirs_p_project(self):
@@ -1193,12 +1202,14 @@ class TestCopy(DXTestCase):
         self.setup_temporary_project()
         dx_p = DXPath('dx://')
         dest = DXPath('dx://' + self.project)
-        with pytest.raises(exceptions.NotFoundError, match='No data object was found'):
+        with pytest.raises(ValueError, match='Cannot copy to or from root '):
             dx_p.copy(dest)
         with pytest.raises(ValueError):
             dx_p._clone(dest)
         with pytest.raises(ValueError):
             dx_p._move(dest)
+        with pytest.raises(ValueError, match='Cannot copy to or from root '):
+            dest.copy(dx_p)
 
     def test_clone_move_project_fail(self):
         self.setup_temporary_project()
@@ -1506,12 +1517,14 @@ class TestCopyTree(DXTestCase):
         self.setup_temporary_project()
         dx_p = DXPath('dx://')
         dest = DXPath('dx://' + self.project)
-        with pytest.raises(exceptions.NotFoundError, match='No project or directory was found'):
+        with pytest.raises(ValueError, match='Cannot copytree to or from root '):
             dx_p.copytree(dest)
         with pytest.raises(NotImplementedError):
             dx_p._clonetree(dest)
         with pytest.raises(NotImplementedError):
             dx_p._movetree(dest)
+        with pytest.raises(ValueError, match='Cannot copytree to or from root '):
+            dest.copytree(dx_p)
 
     def test_clonetree_within_project_fail(self):
         self.setup_temporary_project()
