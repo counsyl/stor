@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v3.0.4
+------
+* Fix required version of ``six`` package. We need at least 1.9.0, because we're using ``six.raise_from``.
+
 v3.0.3
 ------
 * Add ``--canonicalize`` flag to ``stor list``, ``stor ls`` and ``stor walkfiles`` cli commands
