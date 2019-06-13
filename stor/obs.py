@@ -231,7 +231,7 @@ class OBSPath(Path):
     def stat(self):
         raise NotImplementedError
 
-    def walkfiles(self, pattern=None):
+    def walkfiles(self, pattern=None, **kwargs):
         """Iterate over files recursively.
 
         Args:

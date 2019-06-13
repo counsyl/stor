@@ -336,23 +336,14 @@ class TestList(BaseCliTest):
             S3Path('s3://some-bucket/b')
         ]]
 
-        self.parse_args('stor list s3://some-bucket -s dir')
+        self.parse_args('stor list s3://some-bucket -s dir -l2 --canonicalize')
         self.assertEquals(sys.stdout.getvalue(),
                           's3://some-bucket/dir/a\n'
                           's3://some-bucket/dir/b\n'
                           's3://some-bucket/dir/c/d\n')
 
-        # clear stdout
-        sys.stdout = six.StringIO()
-
-        self.parse_args('stor list s3://some-bucket -l2')
-        self.assertEquals(sys.stdout.getvalue(),
-                          's3://some-bucket/a\n'
-                          's3://some-bucket/b\n')
-
         mock_list.assert_has_calls([
-            mock.call(S3Path('s3://some-bucket'), starts_with='dir'),
-            mock.call(S3Path('s3://some-bucket'), limit=2)
+            mock.call(S3Path('s3://some-bucket'), starts_with='dir', limit=2, canonicalize=True)
         ])
 
     @mock.patch.object(S3Path, 'list', autospec=True)
@@ -390,6 +381,20 @@ class TestLs(BaseCliTest):
                           'swift://t/c/dir/\n'
                           'swift://t/c/file3\n')
         mock_listdir.assert_called_once_with(SwiftPath('swift://t/c'))
+
+    @mock.patch.object(SwiftPath, 'listdir', autospec=True)
+    def test_listdir_swift_options(self, mock_listdir):
+        mock_listdir.return_value = [
+            SwiftPath('swift://t/c/file1'),
+            SwiftPath('swift://t/c/dir/'),
+            SwiftPath('swift://t/c/file3')
+        ]
+        self.parse_args('stor ls swift://t/c --canonicalize')
+        self.assertEquals(sys.stdout.getvalue(),
+                          'swift://t/c/file1\n'
+                          'swift://t/c/dir/\n'
+                          'swift://t/c/file3\n')
+        mock_listdir.assert_called_once_with(SwiftPath('swift://t/c'), canonicalize=True)
 
 
 @mock.patch('stor.copy', autospec=True)
@@ -490,6 +495,20 @@ class TestWalkfiles(BaseCliTest):
                           './c.txt\n'
                           './d.txt\n')
         mock_walkfiles.assert_called_once_with(PosixPath('.'), pattern='*.txt')
+
+    @mock.patch.object(PosixPath, 'walkfiles', autospec=True)
+    def test_walkfiles_posix_options(self, mock_walkfiles):
+        mock_walkfiles.return_value = [
+            './a/b.txt',
+            './c.txt',
+            './d.txt'
+        ]
+        self.parse_args('stor walkfiles -p=*.txt . --canonicalize')
+        self.assertEquals(sys.stdout.getvalue(),
+                          './a/b.txt\n'
+                          './c.txt\n'
+                          './d.txt\n')
+        mock_walkfiles.assert_called_once_with(PosixPath('.'), pattern='*.txt', canonicalize=True)
 
     @mock.patch.object(PosixPath, 'walkfiles', autospec=True)
     def test_walkfiles_no_pattern(self, mock_walkfiles):

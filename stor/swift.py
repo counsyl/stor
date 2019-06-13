@@ -682,7 +682,8 @@ class SwiftPath(OBSPath):
              # intentionally not documented
              list_as_dir=False,
              ignore_segment_containers=True,
-             ignore_dir_markers=False):
+             ignore_dir_markers=False,
+             **kwargs):
         """List contents using the resource of the path as a prefix.
 
         This method retries ``num_retries`` times if swift is unavailable
@@ -766,13 +767,17 @@ class SwiftPath(OBSPath):
         utils.check_condition(condition, paths)
         return paths
 
-    def listdir(self, ignore_segment_containers=True):
+    def listdir(self, ignore_segment_containers=True, **kwargs):
         """Lists the path as a dir, returning top-level directories and files
 
         For information about retry logic on this method, see
         `SwiftPath.list`
         """
-        return self.list(list_as_dir=True, ignore_segment_containers=ignore_segment_containers)
+        return self.list(
+            list_as_dir=True,
+            ignore_segment_containers=ignore_segment_containers,
+            **kwargs
+        )
 
     @_swift_retry(exceptions=(ConditionNotMetError, UnavailableError))
     def glob(self, pattern, condition=None):
@@ -1487,7 +1492,7 @@ class SwiftPath(OBSPath):
             return False
 
     @_swift_retry(exceptions=UnavailableError)
-    def walkfiles(self, pattern=None):
+    def walkfiles(self, pattern=None, **kwargs):
         """Iterates over listed files that match an optional pattern.
 
         Args:
