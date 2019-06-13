@@ -147,7 +147,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
 
     def test_custom_encoding_text(self):
         # explicit encoding is only supported for py3 in general
-        # dxpy3 assumes the encoding is utf-8. can't support other encoding for dx
+        # dxpy py3 assumes the encoding is utf-8. can't support other encoding for dx
         pass
 
     def test_over_100_files(self):
@@ -273,7 +273,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
                     time.sleep(.5)
                 self.assertFalse((self.test_dir / which_obj).exists())
 
-    @skipIf(six.PY3, 'dxpy3 assumes utf-8 encoding, not suitable for gzip')
+    @skipIf(six.PY3, 'dxpy py3 assumes utf-8 encoding, not suitable for gzip')
     def test_gzip_on_remote(self):
         self._skip_if_filesystem_python3(self.test_dir)
         local_gzip = os.path.join(os.path.dirname(__file__),

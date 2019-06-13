@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+v3.0.5
+------
+* Changed dxpy3 requirement to dxpy to reflect Python3 updates to dxpy
+
 v3.0.4
 ------
 * Fix release notes.
