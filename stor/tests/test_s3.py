@@ -1605,3 +1605,23 @@ class TestS3ErrorParsing(unittest.TestCase):
         obj = s3._parse_s3_error(ClientError(error_response, u'RestoreObject'),
                                  Bucket='BUCKETNAME', Key='KEYNAME')
         self.assertIsInstance(obj, exceptions.AlreadyRestoredError)
+
+
+class TestContentType(S3TestCase):
+    @mock.patch.object(S3Path, 'stat')
+    def test_content_type(self, mock_stat):
+        mock_stat.return_value = {
+            'AcceptRanges': 'bytes',
+            'ContentEncoding': '',
+            'ContentLength': 2331425,
+            'ContentType': 'text/csv',
+            'ETag': '"smthing"',
+            'LastModified': datetime.datetime(2018, 4, 10, 7, 5, 18),
+            'Metadata': {'mtime': '1234'},
+            'ServerSideEncryption': 'AES256',
+            'StorageClass': 'GLACIER',
+            'VersionId': 'someid'
+        }
+        self.assertEqual(S3Path('s3://A/C/T').content_type, 'text/csv')
+        mock_stat.return_value = {}
+        self.assertEqual(S3Path('s3://A/C/T').content_type, '')
