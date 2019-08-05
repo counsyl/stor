@@ -488,3 +488,12 @@ class OBSFile(object):
             self._path.write_object(self._buffer.getvalue().encode(self.encoding))
         else:
             self._path.write_object(self._buffer.getvalue())
+
+    def readable(self):
+        return self.mode in self._READ_MODES
+
+    def writable(self):
+        return self.mode in self._WRITE_MODES
+
+    def seekable(self):
+        return True

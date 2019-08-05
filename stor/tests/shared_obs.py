@@ -207,3 +207,16 @@ class SharedOBSFileCases(object):
             obj.seek(0)
         mock_write_object.assert_called_with(self.normal_path, b'happy-go_lucky')
         self.assertEquals(len(mock_write_object.call_args_list), 1)
+
+    def test_readable_writable_seekable(self):
+        pth = self.normal_path
+        read_obj = pth.open(mode='r')
+        self.assertTrue(read_obj.readable())
+        self.assertFalse(read_obj.writable())
+        self.assertTrue(read_obj.seekable())
+
+        write_obj = stor.open(stor.join(self.drive, 'B/C/obj'), 'w')
+        self.assertFalse(write_obj.readable())
+        self.assertTrue(write_obj.writable())
+        self.assertTrue(write_obj.seekable())
+       
