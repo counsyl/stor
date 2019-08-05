@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+v3.1.0
+------
+
+* Implement ``readable()``, ``writable()``, and ``seekable()`` methods on
+  ``OBSFile`` so it better implements ``io.IOBase`` specification.
+
 v3.0.5
 ------
 * Changed dxpy3 requirement to dxpy to reflect Python3 updates to dxpy
