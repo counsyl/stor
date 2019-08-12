@@ -219,4 +219,3 @@ class SharedOBSFileCases(object):
         self.assertFalse(write_obj.readable())
         self.assertTrue(write_obj.writable())
         self.assertTrue(write_obj.seekable())
-       
