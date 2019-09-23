@@ -17,8 +17,14 @@ class TestBasics(unittest.TestCase):
             DXPath(None)
 
     def test_construction_from_no_project(self):
-        with pytest.raises(ValueError, match='Project is required to construct a DXPath'):
-            DXPath('dx://')
+        dx_p = DXPath('dx://')
+        self.assertEqual(dx_p, 'dx://')
+
+    def test_construction_no_project_fail(self):
+        with self.assertRaises(ValueError):
+            DXPath('dx://myproject/myfolder')
+        with self.assertRaises(ValueError):
+            DXPath('dx:///folder')
 
     def test_canonical_construct_fail(self):
         with pytest.raises(ValueError, match='ambiguous'):

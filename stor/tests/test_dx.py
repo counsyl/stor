@@ -39,6 +39,9 @@ class TestBasicPathMethods(unittest.TestCase):
         p2 = Path('dx://project:/')
         self.assertEqual(p2.dirname(), 'dx://project:/')
 
+        p3 = Path('dx://')
+        self.assertEqual(p3.dirname(), 'dx://')
+
     def test_basename(self):
         p = Path('dx://project:/path/to/resource')
         self.assertEqual(p.basename(), 'resource')
@@ -66,9 +69,9 @@ class TestPathManipulations(unittest.TestCase):
 
 
 class TestProject(unittest.TestCase):
-    def test_project_none(self):
-        with pytest.raises(ValueError, match='Project is required'):
-            DXPath('dx://')
+    def test_no_project(self):
+        dx_p = DXPath('dx://')
+        self.assertIsNone(dx_p.project)
 
     def test_project_exists(self):
         dx_p = DXPath('dx://project')
@@ -79,9 +82,14 @@ class TestProject(unittest.TestCase):
         self.assertEqual(dx_p.project, 'project')
         dx_p = DXPath('dx://project:/')
         self.assertEqual(dx_p.project, 'project')
+        dx_p = DXPath('dx://project-123456789012345678901234:/file')
+        self.assertEqual(dx_p.project, 'project-123456789012345678901234')
 
 
 class TestResource(unittest.TestCase):
+    def test_no_resource_empty(self):
+        dx_p = DXPath('dx://')
+        self.assertIsNone(dx_p.resource)
 
     def test_resource_none_w_project(self):
         dx_p = DXPath('dx://project:/')
@@ -167,7 +175,22 @@ class TestCompatHelpers(unittest.TestCase):
                          DXPath('dx://project-123456789012345678901234:'))
 
 
+class TestDirFileEmptyPath(unittest.TestCase):
+    def test_isdir_empty_path(self):
+        dx_p = DXPath('dx://')
+        self.assertFalse(dx_p.isdir())
+
+    def test_isfile_empty_path(self):
+        dx_p = DXPath('dx://')
+        self.assertFalse(dx_p.isfile())
+
+
 class TestRename(DXTestCase):
+    def test_rename_empty_fail(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='Cannot rename dx root'):
+            dx_p._rename('RandomProject2:')
+
     def test_rename_project_fail(self):
         dx_p = DXPath('dx://Random_Project:/')
         with pytest.raises(ValueError, match='cannot be renamed'):
@@ -199,6 +222,15 @@ class TestRename(DXTestCase):
 class TestOpen(DXTestCase):
     # we need to give enough time for file to enter `closed` state so we can read it
     DX_WAIT_SETTINGS = {'dx': {'wait_on_close': 20}}
+
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='on a file path'):
+            with dx_p.open() as f:
+                f.read()
+        with pytest.raises(ValueError, match='Must include a valid project'):
+            with dx_p.open(mode='w') as f:
+                f.write('random text')
 
     def test_append_mode_fail(self):
         self.setup_temporary_project()
@@ -288,13 +320,13 @@ line4
         with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.open().read()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='not a project'):
+        with pytest.raises(ValueError, match='on a file path'):
             dx_p.open().read()
 
     def test_write_to_project_fail(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='Cannot write to project'):
+        with pytest.raises(ValueError, match='Please provide a file path'):
             with dx_p.open(mode='wb') as f:
                 f.write(b'data')
 
@@ -337,6 +369,11 @@ class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
 
 
 class TestCanonicalProject(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(NotImplementedError):
+            dx_p.canonical_project
+
     def test_no_project(self):
         dx_p = DXPath('dx://Random_Project:/')
         with pytest.raises(dx.ProjectNotFoundError, match='no projects'):
@@ -378,6 +415,11 @@ class TestCanonicalProject(DXTestCase):
 
 
 class TestCanonicalResource(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(NotImplementedError):
+            dx_p.canonical_resource
+
     def test_no_resource(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project + ':/random.txt')
@@ -413,6 +455,32 @@ class TestCanonicalResource(DXTestCase):
 
 
 class TestListDir(DXTestCase):
+    @mock.patch('dxpy.find_projects')
+    def test_empty_path(self, mock_find_projects):
+        mock_find_projects.return_value = [
+            {'id': 'project-123', 'describe': {'name': 'Project1'}},
+            {'id': 'project-456', 'describe': {'name': 'Project2'}}
+        ]
+        dx_p = DXPath('dx://')
+        results = dx_p.listdir()
+        self.assert_dx_lists_equal(results, ['dx://Project1:', 'dx://Project2:'])
+
+        results = list(dx_p.listdir_iter())
+        self.assert_dx_lists_equal(results, ['dx://Project1:', 'dx://Project2:'])
+
+    @mock.patch('dxpy.find_projects')
+    def test_empty_path_canonicalize(self, mock_find_projects):
+        mock_find_projects.return_value = [
+            {'id': 'project-123', 'describe': {'name': 'Project1'}},
+            {'id': 'project-456', 'describe': {'name': 'Project2'}}
+        ]
+        dx_p = DXPath('dx://')
+        results = dx_p.listdir(canonicalize=True)
+        self.assert_dx_lists_equal(results, ['dx://project-123:', 'dx://project-456:'])
+
+        results = list(dx_p.listdir_iter(canonicalize=True))
+        self.assert_dx_lists_equal(results, ['dx://project-123:', 'dx://project-456:'])
+
     def test_listdir_project(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt',
@@ -514,6 +582,13 @@ class TestListDir(DXTestCase):
 
 
 class TestList(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='not supported'):
+            dx_p.list()
+        with pytest.raises(ValueError, match='not supported'):
+            list(dx_p.list_iter())
+
     def test_list_project(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt',
@@ -664,6 +739,11 @@ class TestList(DXTestCase):
 
 
 class TestWalkFiles(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='not supported'):
+            list(dx_p.walkfiles())
+
     def test_pattern_w_prefix(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt',
@@ -714,6 +794,11 @@ class TestWalkFiles(DXTestCase):
 
 
 class TestStat(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(NotImplementedError):
+            dx_p.stat()
+
     def test_stat_folder(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.csv'])
@@ -769,6 +854,10 @@ class TestStat(DXTestCase):
 
 
 class TestExists(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        self.assertTrue(dx_p.exists())
+
     def test_false_file(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://'+self.project+':/random.txt')
@@ -813,6 +902,11 @@ class TestExists(DXTestCase):
 
 
 class TestGlob(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='not supported'):
+            dx_p.glob('*')
+
     def test_suffix_pattern(self):
         self.setup_temporary_project()
         self.setup_files(['/temp_folder/folder_file.txt',
@@ -879,10 +973,15 @@ class TestGlob(DXTestCase):
 
 
 class TestTempUrl(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='Please provide a valid file path'):
+            dx_p.temp_url()
+
     def test_fail_on_project(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='DX Projects'):
+        with pytest.raises(ValueError, match='Please provide a valid file path'):
             dx_p.temp_url()
 
     def test_fail_on_folder(self):
@@ -926,6 +1025,11 @@ class TestTempUrl(DXTestCase):
 
 
 class TestRemove(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='can only be called on single object'):
+            dx_p.remove()
+
     def test_remove_file(self):
         self.setup_temporary_project()
         f = self.setup_file('/temp_file.txt')
@@ -989,6 +1093,11 @@ class TestRemove(DXTestCase):
 
 
 class TestMakedirsP(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='Cannot call makedirs_p on root'):
+            dx_p.makedirs_p()
+
     def test_makedirs_p_project(self):
         with pytest.raises(ValueError, match='Cannot create a project'):
             DXPath('dx://project:').makedirs_p()
@@ -1033,6 +1142,11 @@ class TestMakedirsP(DXTestCase):
 
 
 class TestDownloadObjects(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(ValueError, match='Cannot call download_objects on empty path'):
+            dx_p.download_objects(DXPath('dx://some-proj:'), ['file1.txt'])
+
     def test_local_paths(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/file1.txt')
@@ -1084,6 +1198,19 @@ class TestDownloadObjects(DXTestCase):
 
 
 class TestCopy(DXTestCase):
+    def test_empty_path(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://')
+        dest = DXPath('dx://' + self.project)
+        with pytest.raises(ValueError, match='Cannot copy to or from root '):
+            dx_p.copy(dest)
+        with pytest.raises(ValueError):
+            dx_p._clone(dest)
+        with pytest.raises(ValueError):
+            dx_p._move(dest)
+        with pytest.raises(ValueError, match='Cannot copy to or from root '):
+            dest.copy(dx_p)
+
     def test_clone_move_project_fail(self):
         self.setup_temporary_project()
         self.setup_file('/folder_file.txt')
@@ -1386,6 +1513,19 @@ class TestCopy(DXTestCase):
 
 
 class TestCopyTree(DXTestCase):
+    def test_empty_path(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://')
+        dest = DXPath('dx://' + self.project)
+        with pytest.raises(ValueError, match='Cannot copytree to or from root '):
+            dx_p.copytree(dest)
+        with pytest.raises(NotImplementedError):
+            dx_p._clonetree(dest)
+        with pytest.raises(NotImplementedError):
+            dx_p._movetree(dest)
+        with pytest.raises(ValueError, match='Cannot copytree to or from root '):
+            dest.copytree(dx_p)
+
     def test_clonetree_within_project_fail(self):
         self.setup_temporary_project()
         self.setup_file('/temp_folder/folder_file.txt')
@@ -1709,6 +1849,11 @@ class TestCopyTree(DXTestCase):
 
 
 class TestUpload(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(NotImplementedError):
+            dx_p.upload(['.'])
+
     def test_upload_files_existing(self):
         self.setup_temporary_project()
         self.setup_file('/folder/file2.txt')
@@ -1731,6 +1876,11 @@ class TestUpload(DXTestCase):
 
 
 class TestGetSize(DXTestCase):
+    def test_empty_path(self):
+        dx_p = DXPath('dx://')
+        with pytest.raises(NotImplementedError):
+            dx_p.getsize()
+
     def test_project(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
