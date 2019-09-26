@@ -18,6 +18,8 @@ Bug Fixes
 * Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
   were in write mode. Also fixes issues where malformed ``OBSFile`` objects
   would throw an exception in ``__del__`` method.
+* Do not ever ``wait_on_close`` when write happened in ``__del__`` method (so
+  no accidental blocking of main thread).
 
 v3.0.5
 ------
