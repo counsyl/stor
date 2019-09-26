@@ -12,6 +12,13 @@ API Additions
 * Added ``content_type`` property for OBS paths representing consistent
   Content-Type header that would be set on download.
 
+Bug Fixes
+^^^^^^^^^
+
+* Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
+  were in write mode. Also fixes issues where malformed ``OBSFile`` objects
+  would throw an exception in ``__del__`` method.
+
 v3.0.5
 ------
 * Changed ``dxpy3`` requirement to ``dxpy`` to reflect new Python3 compatible ``dxpy`` module.

@@ -457,11 +457,12 @@ class OBSFile(object):
         if self._buffer:
             if self.mode in self._WRITE_MODES:
                 self.flush()
+                # we want to wait_on_close on DXPath only if no error was thrown while writing the
+                # file
+                if not any(sys.exc_info()):  # pragma: no cover
+                    self._wait_on_close()
             self._buffer.close()
         self.closed = True
-        # we want to wait_on_close on DXPath only if no error was thrown while writing the file
-        if not any(sys.exc_info()):  # pragma: no cover
-            self._wait_on_close()
 
     def _wait_on_close(self):
         if isinstance(self._path, stor.dx.DXPath):
