@@ -1087,6 +1087,11 @@ class DXPath(OBSPath):
         return dxpy.DXFile(dxid=self.canonical_resource,
                            project=self.canonical_project).describe()
 
+    @property
+    def content_type(self):
+        """Get content type for DXObject. Returns empty string if not present or is project/"""
+        return self.stat().get('media') or ''
+
 
 class DXVirtualPath(DXPath):
     """Class Handler for DXPath of form 'dx://MyProject:/a/b/c' or 'dx://project-{uuid}:/b/c'"""

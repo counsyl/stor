@@ -468,6 +468,11 @@ class S3Path(OBSPath):
         }
         return response
 
+    @property
+    def content_type(self):
+        """Get content type for path (using ContentType field from Boto) or empty string."""
+        return self.stat().get('ContentType', '')
+
     def read_object(self):
         """Read an individual object from OBS.
 

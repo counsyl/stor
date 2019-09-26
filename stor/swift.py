@@ -1423,6 +1423,11 @@ class SwiftPath(OBSPath):
         contract)"""
         return int(self.stat().get('Content-Length', 0))
 
+    @property
+    def content_type(self):
+        """Returns content-type. Empty string if not set or if an account or container"""
+        return self.stat().get('Content-Type') or ''
+
     @_swift_retry(exceptions=(UnavailableError, UnauthorizedError))
     def post(self, options=None):
         """Post operations on the path.

@@ -4,12 +4,17 @@ Release Notes
 v3.1.0
 ------
 
+API Additions
+^^^^^^^^^^^^^
+
 * Implement ``readable()``, ``writable()``, and ``seekable()`` methods on
   ``OBSFile`` so it better implements ``io.IOBase`` specification.
+* Added ``content_type`` property for OBS paths representing consistent
+  Content-Type header that would be set on download.
 
 v3.0.5
 ------
-* Changed dxpy3 requirement to dxpy to reflect Python3 updates to dxpy
+* Changed ``dxpy3`` requirement to ``dxpy`` to reflect new Python3 compatible ``dxpy`` module.
 
 v3.0.4
 ------

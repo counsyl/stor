@@ -231,6 +231,13 @@ class OBSPath(Path):
     def stat(self):
         raise NotImplementedError
 
+    @property
+    def content_type(self):
+        """Returns content type, as a string, if present and makes sense for object type.
+
+        Returns Empty string otherwise"""
+        raise NotImplementedError
+
     def walkfiles(self, pattern=None, **kwargs):
         """Iterate over files recursively.
 

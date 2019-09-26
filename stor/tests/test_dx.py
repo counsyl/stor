@@ -1830,3 +1830,30 @@ class TestLoginAuth(DXTestCase):
                 self.assertEqual(mock_auth.call_count, 1)
         self.test_dir.makedirs_p()
         self.assertTrue(self.test_dir.isdir())
+
+
+class TestContentType(DXTestCase):
+    @mock.patch.object(DXPath, 'stat')
+    def test_content_type(self, mock_stat):
+        mock_stat.return_value = {
+            u'archivalState': u'live',
+            u'class': u'file',
+            u'created': 1563329954000,
+            u'createdBy': {u'user': u'user-someuser'},
+            u'folder': u'/',
+            u'hidden': False,
+            u'id': u'file-234092349023490290239398',
+            u'links': [],
+            u'media': u'text/plain',
+            u'modified': 1563329955907,
+            u'name': u'somefile.txt',
+            u'project': u'project-123456823409234902309423',
+            u'size': 6,
+            u'sponsored': False,
+            u'state': u'closed',
+            u'tags': [],
+            u'types': []
+        }
+        self.assertEqual(DXPath('dx://P:/C/T').content_type, 'text/plain')
+        mock_stat.return_value = {}
+        self.assertEqual(DXPath('dx://P:/C/T').content_type, '')
