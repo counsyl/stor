@@ -4,6 +4,8 @@ Release Notes
 v3.1.0
 ------
 
+* Added python 3.7 to test suite, removed EOL python 3.4
+
 API Additions
 ^^^^^^^^^^^^^
 
