@@ -802,8 +802,7 @@ class DXPath(OBSPath):
 
     def read_object(self):
         """Reads an individual object from DX.
-
-        Note dxpy3 automatically decodes the DXFile.read using
+        Note dxpy for Py3 automatically decodes the DXFile.read using utf-8.
 
         Returns:
             bytes: the raw bytes from the object on DX.
@@ -815,8 +814,8 @@ class DXPath(OBSPath):
         with _wrap_dx_calls():
             result = file_handler.read()
         if six.PY3:  # pragma: no cover
-            # TODO (akumar): allow other encoding after update of dxpy3
-            result = result.encode('utf-8')  # dxpy3 already decodes the data with 'utf-8'
+            # TODO (akumar): allow other encoding after update of encoding in dxpy for Py3
+            result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
         return result
 
     def write_object(self, content, **kwargs):
@@ -1087,6 +1086,11 @@ class DXPath(OBSPath):
             return dxpy.DXProject(dxid=self.canonical_project).describe()
         return dxpy.DXFile(dxid=self.canonical_resource,
                            project=self.canonical_project).describe()
+
+    @property
+    def content_type(self):
+        """Get content type for DXObject. Returns empty string if not present or is project/"""
+        return self.stat().get('media') or ''
 
 
 class DXVirtualPath(DXPath):

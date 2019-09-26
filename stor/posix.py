@@ -20,7 +20,7 @@ class PosixPath(base.FileSystemPath):
     """
     path_module = posixpath
 
-    def list(self):
+    def list(self, **kwargs):
         """
         List all files and directories under a path.
 
@@ -29,7 +29,7 @@ class PosixPath(base.FileSystemPath):
         """
         return list(utils.walk_files_and_dirs([self]).keys())
 
-    def walkfiles(self, pattern=None):
+    def walkfiles(self, pattern=None, **kwargs):
         """Iterate over files recursively.
 
         Args:

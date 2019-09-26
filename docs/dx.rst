@@ -98,6 +98,10 @@ individual details are explained further below.
      - Returns [filepath]
      - Returns [filepath]
      - Returns []
+   * - listdir on non-existent folder
+     - Returns []
+     - Returns []
+     - Raises NotFoundError
    * - copy, target exists and is file
      - Overwrites the file
      - Overwrites the file
@@ -185,6 +189,14 @@ copy and copytree behave differently when the target output path exists and is a
       - dx://newproject/all/trip-photos
 
 Note that if the output path exists and is a file, the file will be *overwritten*
+
+
+List, Listdir and walkfiles
+---------------------------
+``stor ls``, ``stor list`` and ``stor walkfiles`` for DXPaths take in a ``--canonicalize``
+flag which returns the results with canonical dxIDs instead of human readable virtual
+paths. This is especially useful for manipulating paths directly using dx-toolkit
+through piping. This flag is ignored when passed for other paths (swift/s3/posix).
 
 Open on stor
 ------------

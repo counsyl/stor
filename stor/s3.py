@@ -232,7 +232,8 @@ class S3Path(OBSPath):
              use_manifest=False,
              # hidden args
              list_as_dir=False,
-             ignore_dir_markers=False):
+             ignore_dir_markers=False,
+             **kwargs):
         """
         List contents using the resource of the path as a prefix.
 
@@ -306,9 +307,9 @@ class S3Path(OBSPath):
         utils.check_condition(condition, list_results)
         return list_results
 
-    def listdir(self):
+    def listdir(self, **kwargs):
         """List the path as a dir, returning top-level directories and files."""
-        return self.list(list_as_dir=True)
+        return self.list(list_as_dir=True, **kwargs)
 
     def exists(self):
         """
@@ -466,6 +467,11 @@ class S3Path(OBSPath):
             if key is not 'ResponseMetadata'
         }
         return response
+
+    @property
+    def content_type(self):
+        """Get content type for path (using ContentType field from Boto) or empty string."""
+        return self.stat().get('ContentType', '')
 
     def read_object(self):
         """Read an individual object from OBS.

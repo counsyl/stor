@@ -2653,3 +2653,27 @@ class TestExceptionParsing(unittest.TestCase):
             http_host='swift.counsyl.com', http_status=403, msg='Object GET failed')
         with self.assertRaises(exceptions.ObjectInColdStorageError):
             swift._swiftclient_error_to_descriptive_exception(exc)
+
+
+class TestContentType(SwiftTestCase):
+    @mock.patch.object(SwiftPath, 'stat')
+    def test_content_type(self, mock_stat):
+        mock_stat.return_value = {
+            'Account': u'AUTH_whatever',
+            'Container': u'some-container',
+            'Content-Length': u'1234',
+            'Content-Type': u'text/csv',
+            'ETag': u'etag',
+            'Last-Modified': u'Tue, 10 Apr 2018 07:05:18 GMT',
+            'Manifest': None,
+            'Object': stor.Path('mypath'),
+            'headers': {
+                'accept-ranges': 'bytes',
+                'content-encoding': '',
+                'content-length': '1234',
+                'content-type': 'text/csv'
+            }
+        }
+        self.assertEqual(SwiftPath('swift://A/C/T').content_type, 'text/csv')
+        mock_stat.return_value = {}
+        self.assertEqual(SwiftPath('swift://A/C/T').content_type, '')

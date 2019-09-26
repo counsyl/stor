@@ -407,7 +407,7 @@ class FileSystemPath(Path):
             return path
         return path.decode(sys.getfilesystemencoding(), 'surrogateescape')
 
-    def listdir(self):
+    def listdir(self, **kwargs):
         """D.listdir() -> List of items in this directory.
 
         The elements of the list are Path objects.
@@ -572,7 +572,7 @@ class FileSystemPath(Path):
                 raise
         return self
 
-    def walkfiles(self, pattern=None, errors='strict'):  # flake8: noqa pragma: no cover 
+    def walkfiles(self, pattern=None, errors='strict', **kwargs):  # flake8: noqa pragma: no cover
         """ D.walkfiles() -> iterator over files in D, recursively.
         The optional argument `pattern` limits the results to files
         with names that match the pattern.  For example,

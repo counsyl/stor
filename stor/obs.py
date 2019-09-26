@@ -231,7 +231,14 @@ class OBSPath(Path):
     def stat(self):
         raise NotImplementedError
 
-    def walkfiles(self, pattern=None):
+    @property
+    def content_type(self):
+        """Returns content type, as a string, if present and makes sense for object type.
+
+        Returns Empty string otherwise"""
+        raise NotImplementedError
+
+    def walkfiles(self, pattern=None, **kwargs):
         """Iterate over files recursively.
 
         Args:
@@ -488,3 +495,12 @@ class OBSFile(object):
             self._path.write_object(self._buffer.getvalue().encode(self.encoding))
         else:
             self._path.write_object(self._buffer.getvalue())
+
+    def readable(self):
+        return self.mode in self._READ_MODES
+
+    def writable(self):
+        return self.mode in self._WRITE_MODES
+
+    def seekable(self):
+        return True

@@ -332,6 +332,10 @@ def create_parser():
                              help='Limit the amount of results returned.',
                              type=int,
                              metavar='INT')
+    parser_list.add_argument('--canonicalize',
+                             help='Canonicalize any DXPaths that are returned',
+                             dest='canonicalize',
+                             action='store_true')
     parser_list.set_defaults(func=_wrapped_list)
 
     ls_msg = 'List path as a directory.'
@@ -339,6 +343,10 @@ def create_parser():
                                       help=ls_msg,
                                       description=ls_msg)
     parser_ls.add_argument('path', type=get_path, metavar='PATH')
+    parser_ls.add_argument('--canonicalize',
+                           help='Canonicalize any DXPaths that are returned',
+                           dest='canonicalize',
+                           action='store_true')
     parser_ls.set_defaults(func=stor.listdir)
 
     cp_msg = 'Copy a source to a destination path.'
@@ -381,6 +389,10 @@ def create_parser():
                                   type=str,
                                   metavar='REGEX')
     parser_walkfiles.add_argument('path', type=get_path, metavar='PATH')
+    parser_walkfiles.add_argument('--canonicalize',
+                                  help='Canonicalize any DXPaths that are returned',
+                                  dest='canonicalize',
+                                  action='store_true')
     parser_walkfiles.set_defaults(func=stor.walkfiles)
 
     cat_msg = 'Output file contents to stdout.'
