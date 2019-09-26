@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+v3.2.0
+------
+
+API Additions
+^^^^^^^^^^^^^
+
+* Added ``content_type`` property for OBS paths representing consistent
+  Content-Type header that would be set on download.
+
 v3.1.0
 ------
 
@@ -9,8 +18,6 @@ API Additions
 
 * Implement ``readable()``, ``writable()``, and ``seekable()`` methods on
   ``OBSFile`` so it better implements ``io.IOBase`` specification.
-* Added ``content_type`` property for OBS paths representing consistent
-  Content-Type header that would be set on download.
 
 v3.0.5
 ------
