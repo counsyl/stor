@@ -1262,7 +1262,7 @@ class DXCanonicalPath(DXPath):
             bool: True if the path exists, False otherwise.
         """
         if self.resource:
-            # dxpy's list_projects() returns {} when file id doesn't exist
+            # check that file exists AND is in the specified project (list_projects() returns {} when file id doesn't exist)
             return self.canonical_project in dxpy.DXFile(self.canonical_resource).list_projects()
         else:
             try:
