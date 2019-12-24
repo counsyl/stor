@@ -1,0 +1,534 @@
+interactions:
+- request:
+    body: !!python/unicode '{"name": "TestExists.test_false_mixed_path.608803ba"}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project/new
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvf00bzZKvzyK8b7yVvzb"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '41'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:44 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276504751-860225
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvf00bzZKvzyK8b7yVvzb/describe
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvf00bzZKvzyK8b7yVvzb","name":"TestExists.test_false_mixed_path.608803ba","class":"project","created":1553276504000,"modified":1553276504000,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '654'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:45 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276505000-444363
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"folder": "/", "parents": true}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvf00bzZKvzyK8b7yVvzb/newFolder
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvf00bzZKvzyK8b7yVvzb"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '41'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:45 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276505118-192323
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"folder": "/", "nonce": "1c8badb14aae10f238284cb53b5f3dabb5f21990c5027196ef1ed3ace0990fc01553276505.175806",
+      "project": "project-FXBVvf00bzZKvzyK8b7yVvzb", "name": "folder_file.txt"}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/file/new
+  response:
+    body:
+      string: !!python/unicode '{"id":"file-FXBVvf80bzZGPvpx3Gx3BQ3q"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '38'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:45 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276505212-344606
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"fields": {"fileUploadParameters": true}}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvf00bzZKvzyK8b7yVvzb/describe
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvf00bzZKvzyK8b7yVvzb","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '205'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:45 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276505365-202587
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"size": 5, "md5": "73dfff57fe24e807bd4fb1bc4e07cd73",
+      "index": 1}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/file-FXBVvf80bzZGPvpx3Gx3BQ3q/upload
+  response:
+    body:
+      string: !!python/unicode '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/9078/file/open/file-FXBVvf80bzZGPvpx3Gx3BQ3q/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20190322%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190322T174145Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=2e3d16c42e14cd9a5c2c3135212297f65c36f97d9e997e94f7e33213e361481f","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"c9//V/4k6Ae9T7G8TgfNcw==","content-length":"5"},"expires":1553276625501}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '692'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:45 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276505478-706312
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode data0
+    headers:
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+      content-length:
+      - '5'
+      content-md5:
+      - c9//V/4k6Ae9T7G8TgfNcw==
+      content-type:
+      - binary/octet-stream
+      host:
+      - dnanexus-platform-upload-prod.s3.amazonaws.com
+      x-amz-server-side-encryption:
+      - AES256
+    method: PUT
+    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/9078/file/open/file-FXBVvf80bzZGPvpx3Gx3BQ3q/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20190322%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190322T174145Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=2e3d16c42e14cd9a5c2c3135212297f65c36f97d9e997e94f7e33213e361481f
+  response:
+    body:
+      string: !!python/unicode 
+    headers:
+      content-length:
+      - '0'
+      date:
+      - Fri, 22 Mar 2019 17:41:46 GMT
+      etag:
+      - '"73dfff57fe24e807bd4fb1bc4e07cd73"'
+      server:
+      - AmazonS3
+      x-amz-expiration:
+      - expiry-date="Sat, 13 Apr 2019 00:00:00 GMT", rule-id="3weekpurge"
+      x-amz-id-2:
+      - lKp3PUNVxnmY6KJSrX8IKGPEykJDfGyfnUt8PSXlEbjkUlvSKYQPo74XnioHCUaLei0FIj2+obU=
+      x-amz-request-id:
+      - 70476FC31519A842
+      x-amz-server-side-encryption:
+      - AES256
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"fields": {"state": true}, "project": "project-FXBVvf00bzZKvzyK8b7yVvzb"}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/file-FXBVvf80bzZGPvpx3Gx3BQ3q/describe
+  response:
+    body:
+      string: !!python/unicode '{"id":"file-FXBVvf80bzZGPvpx3Gx3BQ3q","state":"open"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '53'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:45 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276505977-417065
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/file-FXBVvf80bzZGPvpx3Gx3BQ3q/close
+  response:
+    body:
+      string: !!python/unicode '{"id":"file-FXBVvf80bzZGPvpx3Gx3BQ3q"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '38'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:46 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276506095-507220
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"objects": [{"folder": "/", "project": "project-FXBVvf00bzZKvzyK8b7yVvzb",
+      "batchsize": 2, "name": "random_file"}]}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/system/resolveDataObjects
+  response:
+    body:
+      string: !!python/unicode '{"results":[[]]}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '16'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:46 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276506307-265991
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvf00bzZKvzyK8b7yVvzb/describe
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvf00bzZKvzyK8b7yVvzb","name":"TestExists.test_false_mixed_path.608803ba","class":"project","created":1553276504000,"modified":1553276506157,"billTo":"org-counsyl","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-akumar_counsyl"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","archivalState":"live","archivalProgress":null,"totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '654'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:46 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276506434-557070
+    status:
+      code: 200
+      message: OK
+- request:
+    body: !!python/unicode '{"folder": "/random_file", "describe": {"fields": {"folder":
+      true, "name": true}}, "only": "folders", "includeHidden": false}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvf00bzZKvzyK8b7yVvzb/listFolder
+  response:
+    body:
+      string: !!python/unicode '{"error":{"type":"ResourceNotFound","message":"The
+        specified folder could not be found in project-FXBVvf00bzZKvzyK8b7yVvzb"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Fri, 22 Mar 2019 17:41:46 GMT
+      server:
+      - nginx
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276506543-952514
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: !!python/unicode '{"objects": [{"folder": "/", "project": "project-123456789012345678901234",
+      "batchsize": 2, "name": "folder_file.txt"}]}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/system/resolveDataObjects
+  response:
+    body:
+      string: !!python/unicode '{"error":{"type":"ResourceNotFound","message":"The
+        entity project-123456789012345678901234 could not be found"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Fri, 22 Mar 2019 17:41:46 GMT
+      server:
+      - nginx
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276506875-73455
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-123456789012345678901234/describe
+  response:
+    body:
+      string: !!python/unicode '{"error":{"type":"ResourceNotFound","message":"The
+        entity project-123456789012345678901234 could not be found"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Fri, 22 Mar 2019 17:41:47 GMT
+      server:
+      - nginx
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276507206-190474
+    status:
+      code: 404
+      message: Not Found
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-FXBVvf00bzZKvzyK8b7yVvzb/destroy
+  response:
+    body:
+      string: !!python/unicode '{"id":"project-FXBVvf00bzZKvzyK8b7yVvzb"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '41'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Fri, 22 Mar 2019 17:41:50 GMT
+      server:
+      - nginx
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276507536-33705
+    status:
+      code: 200
+      message: OK
+version: 1

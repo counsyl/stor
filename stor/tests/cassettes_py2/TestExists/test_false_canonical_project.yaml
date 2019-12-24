@@ -1,0 +1,39 @@
+interactions:
+- request:
+    body: !!python/unicode '{}'
+    headers:
+      Content-Type:
+      - application/json
+      DNAnexus-API:
+      - 1.0.0
+      User-Agent:
+      - dxpy/0.278.0 (Darwin-18.2.0-x86_64-i386-64bit)
+    method: POST
+    uri: https://api.dnanexus.com/project-123456789012345678901234/describe
+  response:
+    body:
+      string: !!python/unicode '{"error":{"type":"ResourceNotFound","message":"The
+        entity project-123456789012345678901234 could not be found"}}'
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/json
+      date:
+      - Fri, 22 Mar 2019 17:41:44 GMT
+      server:
+      - nginx
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-powered-by:
+      - Express
+      x-request-id:
+      - 1553276504356-86267
+    status:
+      code: 404
+      message: Not Found
+version: 1
