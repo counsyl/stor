@@ -961,6 +961,7 @@ class TestTempUrl(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt')
         actual_url = dx_p.temp_url()
         self.assertIn('dl.dnanex.us', actual_url)
+        self.assertIn('temp_file.txt', actual_url)
 
     def test_on_file_canonical(self):
         self.setup_temporary_project()
@@ -968,6 +969,10 @@ class TestTempUrl(DXTestCase):
         dx_p = DXPath('dx://' + self.project + ':/temp_file.txt').canonical_path
         actual_url = dx_p.temp_url()
         self.assertIn('dl.dnanex.us', actual_url)
+        self.assertIn('temp_file.txt', actual_url)
+        actual_url = dx_p.temp_url(filename='')
+        self.assertIn('dl.dnanex.us', actual_url)
+        self.assertNotIn('temp_file.txt', actual_url)
 
     def test_on_file_named_timed(self):
         self.setup_temporary_project()
@@ -983,6 +988,40 @@ class TestTempUrl(DXTestCase):
         time.sleep(2)
         r = requests.get(actual_url)
         assert not r.ok
+
+    def _test_proxy_url(self, proxy_path):
+        with stor.settings.use({"dx": {"file_proxy_url": proxy_path}}):
+            dx_p = DXPath(f'dx://{self.project}:/temp_file.txt')
+            actual_url = dx_p.temp_url()
+            assert actual_url == dx_p.to_url()
+            dx_p_canonical = DXPath(f'dx://{self.project}:/temp_file.txt').canonical_path
+            actual_url2 = dx_p_canonical.temp_url()
+            assert actual_url == actual_url2
+            dx_p_mixed = DXPath(f'dx://{dx_p_canonical.canonical_project}:/temp_file.txt')
+            # use filename version
+            actual_url_mixed = dx_p_mixed.temp_url(filename='temp_file.txt')
+            assert actual_url_mixed == actual_url
+            for pth in [dx_p, dx_p_canonical, dx_p_mixed]:
+                with pytest.raises(ValueError, match='filename MUST match object name'):
+                    dx_p.temp_url(filename='another_name.txt')
+
+    def test_on_file_with_proxy_url(self):
+        self.setup_temporary_project()
+        self.setup_file('/temp_file.txt')
+        self._test_proxy_url("https://myproxy.example.com/dnax-gateway")
+        # trailing slash
+        self._test_proxy_url("https://myproxy.example.com/dnax-gateway/")
+        # no path - no slash
+        self._test_proxy_url("https://myproxy.example.com")
+        # no component - slash
+        self._test_proxy_url("https://myproxy.example.com/")
+        # non-https
+        self._test_proxy_url("http://myproxy.example.com/")
+
+    def test_invalid_file_proxy_url_errors(self):
+        with stor.settings.use({"dx": {"file_proxy_url": 'htp://some-invalid-path'}}):
+            with pytest.raises(ValueError, match='``file_proxy_url`` must be an http.s. path'):
+                stor.Path('dx://proj:/path').temp_url()
 
 
 class TestRemove(DXTestCase):

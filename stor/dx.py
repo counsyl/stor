@@ -1,6 +1,7 @@
 import logging
 import sys
 import tempfile
+import urllib.parse
 import warnings
 
 from cached_property import cached_property
@@ -16,6 +17,7 @@ from stor import utils
 from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
+import stor.settings
 
 
 logger = logging.getLogger(__name__)
@@ -176,22 +178,59 @@ class DXPath(OBSPath):
         """
         return self.path_class(self.path_module.join(self.normpath(), *others))
 
+    def to_url(self):
+        """For compatibility with OBS - returns ``temp_url()``"""
+        return self.temp_url()
+
     def temp_url(self, lifetime=300, filename=None):
         """Obtains a temporary URL to a DNAnexus data-object.
 
+        If ``DX_FILE_PROXY_URL`` or ``[dx] file_proxy_url=`` is set, will use that to construct a
+        path instead, e.g.::
+
+            >>> stor.Path('dx://proj:/folder/mypath.csv').temp_url()
+            'https://dl.dnanex.us/F/D/awe1323/mypath.csv'
+            >>> with stor.settings.use({'dx': {'file_proxy_url':
+            ...     'https://myproxy.example.com/gateway'}):
+            ... stor.Path('dx://proj:/folder/mypath.csv').temp_url()
+            'https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv'
+
+        The file proxy is assumed to be a service that, when given DX path and project, will proxy
+        through to DNAnexus to render content.
+
         Args:
             lifetime (int): The time (in seconds) the temporary
-                URL will be valid
+                URL will be valid (only for temp URL generation)
             filename (str, optional): A urlencoded filename to use for
                 attachment, otherwise defaults to object name
+                (to bypass, set to empty string).
 
         Raises:
             ValueError: The path points to a project
-            NotFoundError: The path could not be resolved to a file
+            ValueError: ``file_proxy_url`` is set and ``filename`` does not match object name
+            ValueError: ``file_proxy_url`` does not look a valid http path
+            NotFoundError: The path could not be resolved to a file (when ``file_proxy_url`` unset)
         """
         if not self.resource:
             raise ValueError('DX Projects cannot have a temporary download url')
+        file_proxy_url = stor.settings.get()['dx']['file_proxy_url']
+        if file_proxy_url:
+            if not file_proxy_url.startswith('http'):
+                raise ValueError("if set, ``file_proxy_url`` must be an http(s) path")
+            if filename and filename != self.name:
+                raise ValueError(
+                    'filename MUST match object name when file_proxy_url is set'
+                )
+            return urllib.parse.urljoin(
+                file_proxy_url,
+                f'{self.virtual_project}/{self.virtual_resource}'
+            )
         with _wrap_dx_calls():
+            if filename is None:
+                filename = self.virtual_path.name
+            elif not filename:
+                # e.g., set to empty string
+                filename = None
             file_handler = dxpy.DXFile(dxid=self.canonical_resource,
                                        project=self.canonical_project)
             return file_handler.get_download_url(

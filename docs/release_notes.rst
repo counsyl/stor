@@ -19,6 +19,21 @@ API Additions
   for more detail).
 * Added ``content_type`` property for OBS paths representing consistent
   Content-Type header that would be set on download.
+* Added ``DX_FILE_PROXY_URL`` and ``[dx] -> file_proxy_url`` setting to allow for constructing
+  DNAnexus paths with a custom gateway.  You might want this to be able to construct valid bam
+  paths for samtools or IGV!
+
+  Generally, usage will look like::
+
+    $ stor url dx://proj:/folder/mypath.csv
+    https://dl.dnanex.us/F/D/awe1323/mypath.csv
+    $ export DX_FILE_PROXY_URL=https://my-dnax-proxy.example.com/gateway
+    $ stor url dx://proj:/folder/mypath.csv
+    https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv
+
+  Interested in your own file proxy gateway? Email support@dnanexus.com to request it! :)
+  Also, you can contact the Bioinformatics Software Engineering team at Myriad Genetics
+  to ask to share code.
 
 API Breaks
 ^^^^^^^^^^
@@ -37,6 +52,8 @@ Bug Fixes
   were in write mode.
 * Eliminate exception in ``__del__`` method when calling ``stor.open`` on a DNAnexus project path.
 * ``stor.open()`` now throws an error earlier when incorrectly calling ``open()`` on a DNAnexus project path.
+* Now ``temp_url()`` always sets filename to virtual object name when creating temp urls, matching the docstring.
+  To get the old (buggy!) behavior, pass ``filename=''`` to ``temp_url()``
 
 Developer Changes
 ^^^^^^^^^^^^^^^^^
