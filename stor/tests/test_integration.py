@@ -3,8 +3,6 @@ import gzip
 import os
 import unittest
 import six
-from nose.tools import raises
-from unittest import skipIf
 
 import pytest
 
@@ -204,41 +202,20 @@ class BaseIntegrationTest(object):
             with stor.open(test_file, mode='wb') as fp:
                 fp.write(BYTE_STRING)
 
-        # python 2 is quite lenient about string types on I/O
+        # Python 3 is quite strict on string handling
 
-        @skipIf(not six.PY2, "Only tested on py2")
-        def test_write_string_to_binary_py2(self):  # pragma: no cover
-            test_file = self.test_dir / 'test_file.txt'
-            with stor.open(test_file, mode='wb') as fp:
-                fp.write(u'myasciistring')
-            with stor.open(test_file, mode='wb') as fp:
-                fp.write(b'myasciistring')
+        def test_write_string_to_binary(self):
+            with pytest.raises(TypeError):
+                test_file = self.test_dir / 'test_file.txt'
+                with stor.open(test_file, mode='wb') as fp:
+                    fp.write(STRING_STRING)
 
-        @skipIf(not six.PY2, "Only tested on py2")
-        def test_write_bytes_to_text_py2(self):  # pragma: no cover
-            test_file = self.test_dir / 'test_file.txt'
-            with stor.open(test_file, mode='w') as fp:
-                fp.write(b'myasciistring')
-            with stor.open(test_file, mode='w') as fp:
-                fp.write(u'myasciistring')
-
-        # whereas Python 3 is quite strict
-
-        @skipIf(six.PY2, "Only tested on py3")
-        @raises(TypeError)
-        def test_write_string_to_binary(self):   # pragma: no cover
-            test_file = self.test_dir / 'test_file.txt'
-            with stor.open(test_file, mode='wb') as fp:
-                fp.write(STRING_STRING)
-
-        @skipIf(six.PY2, "Only tested on py3")
-        @raises(TypeError)
         def test_write_bytes_to_text(self):   # pragma: no cover
-            test_file = self.test_dir / 'test_file.txt'
-            with stor.open(test_file, mode='w') as fp:
-                fp.write(BYTE_STRING)
+            with pytest.raises(TypeError):
+                test_file = self.test_dir / 'test_file.txt'
+                with stor.open(test_file, mode='w') as fp:
+                    fp.write(BYTE_STRING)
 
-        @skipIf(six.PY2, "Only tested on py3")
         def test_write_string_to_text(self):
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='w') as fp:
@@ -253,7 +230,6 @@ class BaseIntegrationTest(object):
                 result = fp.read()
             assert result == BYTE_STRING
 
-        @skipIf(six.PY2, "Only tested on py3")
         def test_read_string_from_text(self):
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='w') as fp:
@@ -263,7 +239,6 @@ class BaseIntegrationTest(object):
                 result = fp.read()
             assert result == STRING_STRING
 
-        @skipIf(six.PY2, 'explicit encoding currently only supported on Python 3')
         def test_custom_encoding_text(self):
             test_file = self.test_dir / 'test_file.txt'
             with stor.open(test_file, mode='w', encoding='utf-16') as fp:
@@ -276,11 +251,3 @@ class BaseIntegrationTest(object):
             with pytest.raises(UnicodeDecodeError):
                 with stor.open(test_file, mode='r', encoding='utf-8') as fp:
                     result = fp.read()
-
-        @skipIf(not six.PY2, 'only check for encoding typeerrors on python 2')
-        def test_encoding_typeerror_py2(self):
-            test_file = self.test_dir / 'test_file.txt'
-            with pytest.raises(TypeError, regex='encoding'):
-                stor.open(test_file, mode='r', encoding='utf-8')
-            with pytest.raises(TypeError, regex='encoding'):
-                stor.Path(test_file).open(mode='r', encoding='utf-8')

@@ -4,7 +4,7 @@ import tempfile
 import warnings
 
 from cached_property import cached_property
-from contextlib2 import contextmanager
+from contextlib import contextmanager
 import dxpy
 from dxpy.exceptions import DXError
 from dxpy.exceptions import DXSearchError
