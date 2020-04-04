@@ -646,7 +646,7 @@ class SwiftPath(OBSPath):
                                  '&'.join(query),
                                  auth_url_parts.fragment))
 
-    def write_object(self, content):
+    def write_object(self, content: bytes):
         """Writes an individual object.
 
         Note that this method writes the provided content to a temporary
@@ -659,13 +659,8 @@ class SwiftPath(OBSPath):
         Args:
             content (bytes): raw bytes to write to OBS
         """
-        if not isinstance(content, bytes):  # pragma: no cover
-            if six.PY2:
-                # bytes/unicode a little confused so allow it
-                warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
-                              ' TypeError if content is not bytes')
-            else:
-                raise TypeError('write_object() expects bytes, not text data')
+        if not isinstance(content, bytes):
+            raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if type(content) == bytes else 'wt'
         with tempfile.NamedTemporaryFile(mode=mode) as fp:
             fp.write(content)
