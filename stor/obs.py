@@ -405,7 +405,7 @@ class OBSFile(object):
         return self
 
     def __del__(self):
-        self.close()
+        self.close(_block=False)
 
     @property
     def stream_cls(self):
@@ -451,7 +451,11 @@ class OBSFile(object):
     def name(self):
         return self._path
 
-    def close(self):
+    def close(self, _block=True):
+        """Close file object.
+
+        ``_block`` keyword argument is for internal use only. End-users should set dx:wait_on_close
+        to False to prevent blocking."""
         if self.closed:
             return
         if self._buffer:
@@ -459,7 +463,7 @@ class OBSFile(object):
                 self.flush()
                 # we want to wait_on_close on DXPath only if no error was thrown while writing the
                 # file
-                if not any(sys.exc_info()):  # pragma: no cover
+                if _block and not any(sys.exc_info()):  # pragma: no cover
                     self._wait_on_close()
             self._buffer.close()
         self.closed = True
