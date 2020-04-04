@@ -819,9 +819,8 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         with _wrap_dx_calls():
             result = file_handler.read()
-        if six.PY3:  # pragma: no cover
-            # TODO (akumar): allow other encoding after update of encoding in dxpy for Py3
-            result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
+        # TODO (akumar): allow other encoding after update of encoding in dxpy for Py3
+        result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
         return result
 
     def write_object(self, content, **kwargs):
