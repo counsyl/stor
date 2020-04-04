@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+v4.0
+----
+
+API Breaks
+^^^^^^^^^^
+
+* ``stor-completions.bash`` is no longer on the path (see :ref:`installation instructions <cli_tab_completion_installation>`
+  for more detail).
+
+API Additons
+^^^^^^^^^^^^
+
+* Tab completions are now available via the ``stor completions`` command.
+  Use it to dump completions to appropriate location (see :ref:`installation instructions <cli_tab_completion_installation>`
+  for more detail).
+
 v3.2.0
 ------
 

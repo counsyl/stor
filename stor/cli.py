@@ -96,7 +96,8 @@ from stor import Path
 from stor import utils
 from stor.extensions import swiftstack
 
-PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'url', 'convert-swiftstack')
+PRINT_CMDS = ('list', 'listdir', 'ls', 'cat', 'pwd', 'walkfiles', 'url', 'convert-swiftstack',
+              'completions')
 SERVICES = ('s3', 'swift', 'dx')
 
 ENV_FILE = os.path.expanduser('~/.stor-cli.env')
@@ -298,6 +299,11 @@ def _convert_swiftstack(path, bucket=None):
         raise ValueError("invalid path for conversion: '%s'" % path)
 
 
+def _completions(**kwargs):
+    with (stor.Path(__file__).parent / 'stor-completion.bash').open('r') as fp:
+        return fp.read()
+
+
 def create_parser():
     parser = argparse.ArgumentParser(description='A command line interface for stor.')
 
@@ -421,6 +427,12 @@ def create_parser():
     parser_swiftstack.add_argument('path')
     parser_swiftstack.add_argument('--bucket', default=None)
     parser_swiftstack.set_defaults(func=_convert_swiftstack)
+
+    parser_completions = subparsers.add_parser(
+        'completions',
+        help='emit bash completions script to stdout'
+    )
+    parser_completions.set_defaults(func=_completions)
 
     return parser
 

@@ -34,10 +34,10 @@ After this, you will need to edit your ~/.bashrc or ~/.bash_profile to include t
         . $(brew --prefix)/etc/bash_completion
     fi
 
-The final step is to then copy stor's tab completion script in the proper location::
+The final step is to then dump stor's tab completion script in the proper location::
 
     mkdir `brew --prefix`/etc/bash_completion.d
-    cp `which stor-completion.bash` `brew --prefix`/etc/bash_completion.d/stor
+    stor completions >  `brew --prefix`/etc/bash_completion.d/stor
 
 Linux
 ~~~~~
@@ -50,8 +50,8 @@ It can be installed using apt-get or yum::
 
 The bash completion script for stor can then be installed with::
 
-    cp `which stor-completion.bash` /etc/bash_completion.d/stor
+    stor completions > /etc/bash_completion.d/stor
 
 If you don't have permissions to install the script to /etc, it can also be saved in your home directory as follows::
 
-    cat `which stor-completion.bash` >> ~/.bash_completion
+    stor completions >> ~/.bash_completion
