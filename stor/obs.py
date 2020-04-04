@@ -166,10 +166,9 @@ class OBSPath(Path):
             DNAnexusError: A dxpy client error occured.
             RemoteError: A s3 client error occurred.
         """
-        if six.PY3 and encoding and encoding not in ('utf-8', 'utf8') and \
-                isinstance(self, stor.dx.DXPath):  # pragma: no cover
+        if encoding and encoding not in ('utf-8', 'utf8') and isinstance(self, stor.dx.DXPath):
             raise ValueError('For DNAnexus paths in Python 3, encoding is always assumed to be '
-                             'utf-8. Please switch your encoding or Python version')
+                             'utf-8. Please switch your encoding')
         return OBSFile(self, mode=mode, encoding=encoding)
 
     def list(self):
