@@ -2,10 +2,8 @@ import gzip
 import os
 import time
 import unittest
-from unittest import skipIf
 
 import dxpy
-import six
 
 from stor import NamedTemporaryDirectory
 from stor import Path

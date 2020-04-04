@@ -1,7 +1,6 @@
 import logging
 import ntpath
 import os
-import six
 from tempfile import NamedTemporaryFile
 import unittest
 
@@ -258,8 +257,7 @@ class TestOpen(SwiftTestCase):
         self.assertEquals(swift_p.read_object(), b'data')
         self.assertEquals(swift_p.open().read(), 'data')
 
-    @unittest.skipIf(six.PY2, 'encoding only tested for Python3')
-    def test_read_success_utf16(self):  # pragma: no cover
+    def test_read_success_utf16(self):
         self.mock_swift_conn.get_object.return_value = ('header', 'data'.encode('utf-16'))
         swift_p = SwiftPath('swift://tenant/container/obj')
         self.assertEquals(swift_p.read_object(), 'data'.encode('utf-16'))
