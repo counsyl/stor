@@ -646,3 +646,9 @@ class TestCd(BaseCliTest):
     def test_pwd_error(self):
         with self.assertOutputMatches(exit_status=1, stderr='invalid service'):
             self.parse_args('stor pwd service')
+
+class TestCompletions(BaseCliTest):
+    def test_completion(self):
+        self.parse_args('stor completions')
+        assert '_stor_complete' in sys.stdout.getvalue()
+        assert '_get_comp_words_by_ref' in sys.stdout.getvalue()
