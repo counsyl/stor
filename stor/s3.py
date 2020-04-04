@@ -482,22 +482,17 @@ class S3Path(OBSPath):
         body = self._s3_client_call('get_object', Bucket=self.bucket, Key=self.resource)['Body']
         return body.read()
 
-    def write_object(self, content):
+    def write_object(self, content: bytes) -> None:
         """Writes an individual object.
 
         Note that this method writes the provided content to a temporary
         file before uploading.
 
         Args:
-            content (bytes): raw bytes to write to OBS
+            content: raw bytes to write to OBS
         """
-        if not isinstance(content, bytes):  # pragma: no cover
-            if six.PY2:
-                # bytes/unicode a little confused so allow it
-                warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
-                              ' TypeError if content is not bytes')
-            else:
-                raise TypeError('write_object() expects bytes, not text data')
+        if not isinstance(content, bytes):
+            raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if isinstance(content, bytes) else 'w'
         with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)

@@ -381,12 +381,9 @@ class OBSFile(object):
                 ``locale.getpreferredencoding(False)`` if not set. We *strongly* encourage you to
                 use binary mode OR explicitly set an encoding when reading/writing text (because
                 writers from different computers may store data on OBS in different ways).
-                Python 3 only.
         """
         if mode not in self._VALID_MODES:
             raise ValueError('invalid mode for file: %r' % mode)
-        if six.PY2 and encoding:  # pragma: no cover
-            raise TypeError('encoding not supported in Python 2')
         self._path = pth
         self.mode = mode
         self.encoding = encoding or locale.getpreferredencoding(False)
