@@ -21,6 +21,13 @@ API Additions
 * Implement ``readable()``, ``writable()``, and ``seekable()`` methods on
   ``OBSFile`` so it better implements ``io.IOBase`` specification.
 
+Bug Fixes
+^^^^^^^^^
+
+* Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
+  were in write mode. Also fixes issues where malformed ``OBSFile`` objects
+  would throw an exception in ``__del__`` method.
+
 v3.0.5
 ------
 * Changed ``dxpy3`` requirement to ``dxpy`` to reflect new Python3 compatible ``dxpy`` module.
