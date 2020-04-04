@@ -10,6 +10,15 @@ API Additions
 * Added ``content_type`` property for OBS paths representing consistent
   Content-Type header that would be set on download.
 
+Bug Fixes
+^^^^^^^^^
+
+* Do not ever ``wait_on_close`` when write happened in ``__del__`` method (so
+  no accidental blocking of main thread). Fixes issues where malformed
+  ``OBSFile`` objects would throw an exception in ``__del__`` method.
+* Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
+  were in write mode.
+
 v3.1.0
 ------
 
@@ -20,13 +29,6 @@ API Additions
 
 * Implement ``readable()``, ``writable()``, and ``seekable()`` methods on
   ``OBSFile`` so it better implements ``io.IOBase`` specification.
-
-Bug Fixes
-^^^^^^^^^
-
-* Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
-  were in write mode. Also fixes issues where malformed ``OBSFile`` objects
-  would throw an exception in ``__del__`` method.
 
 v3.0.5
 ------
