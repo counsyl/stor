@@ -471,7 +471,7 @@ def process_args(args):
 
 
 def print_results(results):
-    assert not isinstance(results, six.binary_type), 'did not coerce to text'
+    assert not isinstance(results, bytes), 'did not coerce to text'
     if isinstance(results, six.text_type):
         sys.stdout.write(results)
         if not results.endswith('\n'):

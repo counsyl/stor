@@ -8,20 +8,16 @@ import shutil
 import sys
 import warnings
 
-from six.moves import builtins
-from six import text_type
-from six import string_types
-from six import PY3
+import builtins
 
 from stor import utils
-import six
 
 
 class TreeWalkWarning(Warning):
     pass
 
 
-class Path(text_type):
+class Path(str):
     """
     Wraps path operations with an object-oriented API that makes it easier to
     combine and also to work with OBS and local paths via a single API. Methods
@@ -65,7 +61,7 @@ class Path(text_type):
                 cls = PosixPath
             else:  # pragma: no cover
                 assert False, 'path is not compatible with stor'
-        return text_type.__new__(cls, path)
+        return str.__new__(cls, path)
 
     def __init__(self, path):
         super(Path, self).__init__()
@@ -118,7 +114,7 @@ class Path(text_type):
     def __radd__(self, other):
         if self._has_incompatible_path_module(other):
             return NotImplemented
-        if not isinstance(other, string_types):
+        if not isinstance(other, str):
             return NotImplemented
         return self.path_class(other.__add__(self))
 
@@ -398,14 +394,12 @@ class FileSystemPath(Path):
     # no stat() because we want to provide a cross-compatible API at some point
 
     @staticmethod
-    def _always_unicode(path):  # pragma: no cover (OS-dependent)
+    def _always_unicode(path: str):  # pragma: no cover (OS-dependent)
         """
         Ensure the path as retrieved from a Python API, such as
         :func:`os.listdir`, is a proper Unicode string.
         """
-        if PY3 or isinstance(path, text_type):
-            return path
-        return path.decode(sys.getfilesystemencoding(), 'surrogateescape')
+        return path
 
     def listdir(self, **kwargs):
         """D.listdir() -> List of items in this directory.

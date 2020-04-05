@@ -42,8 +42,7 @@ import tempfile
 import threading
 import warnings
 
-import six
-from six.moves.urllib import parse
+from urllib import parse
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -262,14 +261,14 @@ def _swiftclient_error_to_descriptive_exception(exc):
         # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
         # Treat this as a FailedUploadError
         logger.error('upload error in swift put_object operation - %s', exc_str)
-        six.raise_from(FailedUploadError(exc_str, exc), exc)
+        FailedUploadError(exc_str, exc) from exc
     elif 'Unauthorized.' in exc_str:
         # Swiftclient catches keystone auth errors at
         # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
         # Parse the message since they don't bubble the exception or
         # provide more information
         logger.warning('auth error in swift operation - %s', exc_str)
-        six.raise_from(AuthenticationError(exc_str, exc), exc)
+        AuthenticationError(exc_str, exc) from exc
     elif 'md5sum != etag' in exc_str or 'read_length != content_length' in exc_str:
         # We encounter this error when cluster is under heavy
         # replication load (at least that's the theory). So retry and
@@ -291,7 +290,7 @@ def _propagate_swift_exceptions(func):
             return func(*args, **kwargs)
         except (swift_service.SwiftError,
                 swift_exceptions.ClientException) as e:
-            six.raise_from(_swiftclient_error_to_descriptive_exception(e), e)
+            _swiftclient_error_to_descriptive_exception(e) from e
     return wrapper
 
 
@@ -1515,5 +1514,4 @@ class SwiftPath(OBSPath):
         Raises:
             UnauthorizedError: if we cannot authenticate to get a storage URL"""
         storage_url = _get_or_create_auth_credentials(self.tenant)['os_storage_url']
-        return six.text_type(os.path.join(*filter(None,
-                                                  [storage_url, self.container, self.resource])))
+        return str(os.path.join(*filter(None, [storage_url, self.container, self.resource])))
