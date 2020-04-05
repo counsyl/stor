@@ -54,22 +54,22 @@ class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
 
 class TestCliTestUtils(BaseCliTest):
     def test_no_exit_status(self):
-        with six.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+        with self.assertRaisesRegex(self, AssertionError, 'SystemExit'):
             with self.assertOutputMatches(exit_status='1'):
                 pass
 
     def test_stdout_matching(self):
-        with six.assertRaisesRegex(self, AssertionError, 'stdout'):
+        with self.assertRaisesRegex(self, AssertionError, 'stdout'):
             with self.assertOutputMatches(stdout=None):
                 print('blah')
 
     def test_stderr_matching(self):
-        with six.assertRaisesRegex(self, AssertionError, 'stderr'):
+        with self.assertRaisesRegex(self, AssertionError, 'stderr'):
             with self.assertOutputMatches(stderr=None):
                 print('blah', file=sys.stderr)
 
     def test_stderr_and_stdout_matching(self):
-        with six.assertRaisesRegex(self, AssertionError, 'stderr'):
+        with self.assertRaisesRegex(self, AssertionError, 'stderr'):
             with self.assertOutputMatches(stdout='apple', stderr=None):
                 print('apple')
                 print('blah', file=sys.stderr)
