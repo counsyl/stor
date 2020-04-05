@@ -8,6 +8,7 @@ Only Python 3.5+ is supported - Python 2.7 support is dropped!
 
 Now stor installs via ``poetry`` (this should be transparent to users).
 
+NOTE: Python 3.5 support is deprecated and will be dropped in a future release.
 
 API Additions
 ^^^^^^^^^^^^^
