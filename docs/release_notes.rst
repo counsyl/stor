@@ -4,7 +4,7 @@ Release Notes
 v4.0 - Python 3 + Poetry!
 -------------------------
 
-Python 3.5+ is required - Python 2.7 support is dropped!
+Python 3.6+ is required - Python 2.7 support is dropped!
 
 Now stor installs via ``poetry`` (this should be transparent to users).
 
@@ -22,7 +22,7 @@ API Breaks
 
 * ``stor-completions.bash`` is no longer on the path (see :ref:`installation instructions <cli_tab_completion_installation>`
   for more detail).
-* Only python3.5+ is supported. Python 2 is no longer supported.
+* Only python3.6+ is supported. Python 2 is no longer supported.
 
 Developer Changes
 ^^^^^^^^^^^^^^^^^
