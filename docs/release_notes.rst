@@ -1,21 +1,34 @@
 Release Notes
 =============
 
-v4.0
-----
+v4.0 - Python 3 + Poetry!
+-------------------------
+
+Python 3.5+ is required - Python 2.7 support is dropped!
+
+Now stor installs via ``poetry`` (this should be transparent to users).
+
+
+API Additions
+^^^^^^^^^^^^
+
+* Tab completions are now available via the ``stor completions`` command.
+  Use it to dump completions to appropriate location (see :ref:`installation instructions <cli_tab_completion_installation>`
+  for more detail).
+
 
 API Breaks
 ^^^^^^^^^^
 
 * ``stor-completions.bash`` is no longer on the path (see :ref:`installation instructions <cli_tab_completion_installation>`
   for more detail).
+* Only python3.5+ is supported. Python 2 is no longer supported.
 
-API Additons
-^^^^^^^^^^^^
+Developer Changes
+^^^^^^^^^^^^^^^^^
 
-* Tab completions are now available via the ``stor completions`` command.
-  Use it to dump completions to appropriate location (see :ref:`installation instructions <cli_tab_completion_installation>`
-  for more detail).
+* ``stor`` now installs via ``poetry``. You'll need it installed to work with the library.
+* Tests for ``stor`` now run on Github Actions on Python 3.5+ and we've removed tox for local testing.
 
 v3.2.0
 ------
