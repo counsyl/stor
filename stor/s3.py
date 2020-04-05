@@ -200,7 +200,7 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except botocore_exceptions.ClientError as e:
-            six.raise_from(_parse_s3_error(e, **kwargs), e)
+            raise _parse_s3_error(e, **kwargs) from e
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
         """
@@ -221,9 +221,9 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except boto3_exceptions.S3UploadFailedError as e:
-            six.raise_from(exceptions.FailedUploadError(str(e), e), e)
+            raise exceptions.FailedUploadError(str(e), e) from e
         except boto3_exceptions.RetriesExceededError as e:
-            six.raise_from(exceptions.FailedDownloadError(str(e), e), e)
+            raise exceptions.FailedDownloadError(str(e), e) from e
 
     def list(self,
              starts_with=None,
@@ -302,7 +302,7 @@ class S3Path(OBSPath):
                         for result in page['CommonPrefixes']
                     ])
         except botocore_exceptions.ClientError as e:
-            six.raise_from(_parse_s3_error(e), e)
+            raise _parse_s3_error(e) from e
 
         utils.check_condition(condition, list_results)
         return list_results

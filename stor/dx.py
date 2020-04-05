@@ -91,7 +91,7 @@ def _wrap_dx_calls():
     try:
         yield
     except DXError as e:
-        six.raise_from(_dx_error_to_descriptive_exception(e), e)
+        raise _dx_error_to_descriptive_exception(e) from e
 
 
 class DXPath(OBSPath):
