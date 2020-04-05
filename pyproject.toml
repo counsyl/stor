@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "stor"
+version = "3.2.0"
+description = "Cross-compatible API for accessing Posix and OBS storage systems"
+authors = ["Counsyl Inc. <opensource@counsyl.com>"]
+license = "MIT"
+home-page = "https://counsyl.github.io/stor"
+readme = "README.rst"
+repository = "https://github.com/counsyl/stor"
+classifiers = [
+    "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.dependencies]
+python = "^3.5"
+requests = ">=2.20.0"
+boto3 = ">=1.4.0"
+cached-property = ">=1.5.1"
+dxpy = ">=0.278.0"
+python-keystoneclient = ">=1.8.1"
+python-swiftclient = ">=3.6.0"
+six = ">=1.9.0"
+
+[tool.poetry.dev-dependencies]
+
+
+[tool.poetry.scripts]
+stor = "stor.cli:main"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
+[tool.coverage.run]
+branch = true
+source = ["stor"]
+omit = [
+    "stor/tests/test_posix_path_compat.py",
+    "stor/tests/test_integration_swift.py",
+    "stor/tests/test_integration_s3.py",
+    "stor/tests/test_integration.py",
+    "stor/third_party/backoff.py",
+    "stor/tests/test_integration_dx.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+    "raise NotImplementedError",
+]
+fail_under = 100
+show_missing = true
+
