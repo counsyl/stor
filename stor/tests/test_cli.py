@@ -7,6 +7,8 @@ from unittest import mock
 import sys
 from tempfile import NamedTemporaryFile
 
+import pytest
+
 from stor.dx import DXPath
 from stor.posix import PosixPath
 from stor.s3 import S3Path
@@ -53,22 +55,22 @@ class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
 
 class TestCliTestUtils(BaseCliTest):
     def test_no_exit_status(self):
-        with self.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+        with pytest.raises(AssertionError, match='SystemExit'):
             with self.assertOutputMatches(exit_status='1'):
                 pass
 
     def test_stdout_matching(self):
-        with self.assertRaisesRegex(self, AssertionError, 'stdout'):
+        with pytest.raises(AssertionError, match='stdout'):
             with self.assertOutputMatches(stdout=None):
                 print('blah')
 
     def test_stderr_matching(self):
-        with self.assertRaisesRegex(self, AssertionError, 'stderr'):
+        with pytest.raises(AssertionError, match='stderr'):
             with self.assertOutputMatches(stderr=None):
                 print('blah', file=sys.stderr)
 
     def test_stderr_and_stdout_matching(self):
-        with self.assertRaisesRegex(self, AssertionError, 'stderr'):
+        with pytest.raises(AssertionError, match='stderr'):
             with self.assertOutputMatches(stdout='apple', stderr=None):
                 print('apple')
                 print('blah', file=sys.stderr)

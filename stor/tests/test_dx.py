@@ -46,6 +46,11 @@ class TestBasicPathMethods(unittest.TestCase):
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
+        # import so we can eval it
+        from stor.dx import DXVirtualPath
+
+        DXVirtualPath  # get around unused warning
+
         dx_p = DXPath('dx://t:/c/p')
         self.assertEqual(eval(repr(dx_p)), dx_p)
 
