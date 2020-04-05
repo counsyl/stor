@@ -6,7 +6,7 @@ import unittest
 
 import dxpy
 import dxpy.bindings as dxb
-import mock
+from unittest import mock
 from testfixtures import LogCapture
 
 import stor

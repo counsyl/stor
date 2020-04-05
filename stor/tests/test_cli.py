@@ -3,7 +3,7 @@ from __future__ import print_function
 import contextlib
 import io
 import os
-import mock
+from unittest import mock
 import sys
 from tempfile import NamedTemporaryFile
 

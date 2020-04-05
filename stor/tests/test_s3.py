@@ -7,7 +7,7 @@ from boto3.exceptions import RetriesExceededError
 from boto3.exceptions import S3UploadFailedError
 from botocore.exceptions import ClientError
 import freezegun
-import mock
+from unittest import mock
 from testfixtures import LogCapture
 
 import stor

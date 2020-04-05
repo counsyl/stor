@@ -4,7 +4,7 @@ import time
 import unittest
 import uuid
 
-import mock
+from unittest import mock
 import requests
 
 import stor

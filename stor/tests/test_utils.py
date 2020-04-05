@@ -1,6 +1,6 @@
 import errno
 import logging
-import mock
+from unittest import mock
 import ntpath
 import os
 import stat

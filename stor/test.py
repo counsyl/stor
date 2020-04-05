@@ -1,5 +1,4 @@
 import inspect
-import mock
 import unittest
 import os
 import sys
@@ -7,6 +6,8 @@ import uuid
 
 import dxpy
 import vcr
+
+from unittest import mock
 
 from stor import Path
 from stor import s3

@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 import unittest
 
 import freezegun
-import mock
+from unittest import mock
 from swiftclient.exceptions import ClientException
 from swiftclient.service import SwiftError
 from testfixtures import LogCapture

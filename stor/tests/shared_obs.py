@@ -11,7 +11,7 @@ import gc
 import gzip
 import io
 
-import mock
+from unittest import mock
 
 from stor import obs
 from stor.tests.shared import assert_same_data
