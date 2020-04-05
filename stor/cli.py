@@ -472,7 +472,7 @@ def process_args(args):
 
 def print_results(results):
     assert not isinstance(results, bytes), 'did not coerce to text'
-    if isinstance(results, six.text_type):
+    if isinstance(results, str):
         sys.stdout.write(results)
         if not results.endswith('\n'):
             sys.stdout.write('\n')
