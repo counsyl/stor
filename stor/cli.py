@@ -78,7 +78,6 @@ and within one OBS service (server-side copy) is only supported for DX.
 import argparse
 import copy
 from functools import partial
-import locale
 import logging
 import os
 import shutil
@@ -112,6 +111,7 @@ def perror(msg):
 def force_exit(signum, frame):  # pragma: no cover
     sys.stderr.write(' Aborted\n')
     os._exit(1)
+
 
 signal.signal(signal.SIGINT, force_exit)
 

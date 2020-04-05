@@ -161,7 +161,7 @@ class TestCliBasics(BaseCliTest):
     def test_no_cmd_provided(self):
         with self.assertOutputMatches(exit_status='2', stderr='stor: error:.*arguments'):
             with mock.patch.object(sys, 'argv', ['stor']):
-                    cli.main()
+                cli.main()
 
 
 @mock.patch('stor.cli._get_pwd', autospec=True)
@@ -645,6 +645,7 @@ class TestCd(BaseCliTest):
     def test_pwd_error(self):
         with self.assertOutputMatches(exit_status=1, stderr='invalid service'):
             self.parse_args('stor pwd service')
+
 
 class TestCompletions(BaseCliTest):
     def test_completion(self):

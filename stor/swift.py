@@ -40,7 +40,6 @@ import logging
 import os
 import tempfile
 import threading
-import warnings
 
 from urllib import parse
 from swiftclient import exceptions as swift_exceptions
@@ -76,9 +75,11 @@ real_get_auth_keystone = swift_client.get_auth_keystone
 def patched_get_auth_keystone(auth_url, user, key, os_options, **kwargs):
     try:
         return real_get_auth_keystone(auth_url, user, key, os_options, **kwargs)
-    except:
+    except BaseException:
         os_options.pop('auth_token', None)
         raise
+
+
 swift_client.get_auth_keystone = patched_get_auth_keystone
 
 # singleton that collects together auth tokens for storage URLs
@@ -105,6 +106,7 @@ SwiftUploadObject = OBSUploadObject
 
 def _default_retry_sleep_function(t, attempt):
     return t * 2
+
 
 retry_sleep_function = _default_retry_sleep_function
 """The function that increases sleep time when retrying.
@@ -261,14 +263,14 @@ def _swiftclient_error_to_descriptive_exception(exc):
         # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # noqa
         # Treat this as a FailedUploadError
         logger.error('upload error in swift put_object operation - %s', exc_str)
-        FailedUploadError(exc_str, exc) from exc
+        raise FailedUploadError(exc_str, exc) from exc
     elif 'Unauthorized.' in exc_str:
         # Swiftclient catches keystone auth errors at
         # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # noqa
         # Parse the message since they don't bubble the exception or
         # provide more information
         logger.warning('auth error in swift operation - %s', exc_str)
-        AuthenticationError(exc_str, exc) from exc
+        raise AuthenticationError(exc_str, exc) from exc
     elif 'md5sum != etag' in exc_str or 'read_length != content_length' in exc_str:
         # We encounter this error when cluster is under heavy
         # replication load (at least that's the theory). So retry and
@@ -290,7 +292,7 @@ def _propagate_swift_exceptions(func):
             return func(*args, **kwargs)
         except (swift_service.SwiftError,
                 swift_exceptions.ClientException) as e:
-            _swiftclient_error_to_descriptive_exception(e) from e
+            raise _swiftclient_error_to_descriptive_exception(e) from e
     return wrapper
 
 

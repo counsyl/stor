@@ -51,6 +51,7 @@ def _delegate_to_path(name):
     wrapper.__name__ = name
     return wrapper
 
+
 # extra compat!
 open = _delegate_to_path('open')
 abspath = _delegate_to_path('abspath')

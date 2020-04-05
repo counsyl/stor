@@ -1210,9 +1210,9 @@ class TestDownloadObjects(SwiftTestCase):
 
 class TestGetProgressLogger(unittest.TestCase):
     def test_success(self):
-        l = swift.get_progress_logger()
+        el = swift.get_progress_logger()
         expected = logging.getLogger('stor.swift.progress')
-        self.assertEquals(l, expected)
+        self.assertEquals(el, expected)
 
 
 class TestDownload(SwiftTestCase):

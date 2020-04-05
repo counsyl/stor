@@ -701,12 +701,11 @@ class DXPath(OBSPath):
     def download_objects(self,
                          dest,
                          objects):
-        def is_parent_dir(possible_parent, possible_child):
-            """Checks if possible_child is a sub-path of possible_parent"""
-            if not possible_parent.resource:
-                return possible_child.resource and \
-                       possible_child.project == possible_parent.project
-            return possible_child.startswith(utils.with_trailing_slash(possible_parent))
+        def is_parent_dir(poss_parent, poss_child):
+            """Checks if poss_child is a sub-path of poss_parent"""
+            if not poss_parent.resource:
+                return poss_child.resource and poss_child.project == poss_parent.project
+            return poss_child.startswith(utils.with_trailing_slash(poss_parent))
 
         source = self
         if source == (self.drive + self.project):  # need to convert dx://proj to dx://proj:
@@ -714,8 +713,8 @@ class DXPath(OBSPath):
 
         for obj in objects:
             if utils.is_dx_path(obj) and not is_parent_dir(source, DXPath(obj)):
-                    raise ValueError(
-                        '"%s" must be child of download path "%s"' % (obj, self))
+                raise ValueError(
+                    '"%s" must be child of download path "%s"' % (obj, self))
         # Convert requested download objects to full object paths
         objs_to_download = {
             obj: DXPath(obj) if utils.is_dx_path(obj) else source / obj
@@ -980,10 +979,7 @@ class DXPath(OBSPath):
         folders = self.listdir(only='folders', canonicalize=canonicalize)
         for folder in folders:
             yield folder
-        for data in self.walkfiles(
-                        canonicalize=canonicalize,
-                        recurse=False
-                    ):
+        for data in self.walkfiles(canonicalize=canonicalize, recurse=False):
             yield data
 
     def walkfiles(self,

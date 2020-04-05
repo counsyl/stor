@@ -45,7 +45,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
 
         try:
             self.test_container.post()
-        except:
+        except BaseException:
             self.test_container.rmtree()
             raise
 

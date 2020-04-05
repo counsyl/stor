@@ -1,5 +1,3 @@
-import io
-
 from stor.tests.test_integration import BaseIntegrationTest
 import stor
 
@@ -22,6 +20,6 @@ class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):
         with self.assertRaisesRegexp(FileExistsError, '.*File exists'):
             try:
                 stor.copytree(other_dir, example_dir)
-            except exc_type as e:
+            except FileExistsError as e:
                 assert e.errno == 17
                 raise

@@ -184,6 +184,7 @@ class _Use(object):
         else:
             del thread_local.settings
 
+
 #: Context manager for temporarily modifying settings.
 #:
 #: Arguments:
