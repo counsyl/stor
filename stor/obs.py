@@ -1,3 +1,4 @@
+import io
 import locale
 import posixpath
 import sys

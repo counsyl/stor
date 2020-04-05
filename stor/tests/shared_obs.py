@@ -9,6 +9,7 @@ This file contains a number of shared tests that vary only based upon which conc
 import functools
 import gc
 import gzip
+import io
 
 import mock
 
@@ -132,7 +133,7 @@ class SharedOBSFileCases(object):
         pth = stor.join(self.drive, 'B/C/D')
         with self.assertRaisesRegexp(ValueError, 'mode'):
             # keep reference here
-            f = stor.open(pth, 'invalid')  # nopep8
+            f = stor.open(pth, 'invalid')  # noqa
             assert False, 'should error before this'  # pragma: no cover
 
         with self.assertRaisesRegexp(ValueError, 'mode'):

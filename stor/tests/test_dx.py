@@ -155,14 +155,14 @@ class TestCompatHelpers(unittest.TestCase):
         self.assertEqual(DXPath(
             'dx://project-123456789012345678901234:../file-123456789012345678901234'
         ).normpath(),
-             DXPath(
-                 'dx://project-123456789012345678901234:file-123456789012345678901234'))
+            DXPath(
+            'dx://project-123456789012345678901234:file-123456789012345678901234'))
         # leading slash removed from canonical paths
         self.assertEqual(DXPath(
             'dx://project-123456789012345678901234:/file-123456789012345678901234'
         ).normpath(),
-             DXPath(
-                 'dx://project-123456789012345678901234:file-123456789012345678901234'))
+            DXPath(
+            'dx://project-123456789012345678901234:file-123456789012345678901234'))
         self.assertEqual(DXPath('dx://project-123456789012345678901234:/').normpath(),
                          DXPath('dx://project-123456789012345678901234:'))
 
@@ -1170,7 +1170,7 @@ class TestCopy(DXTestCase):
             test_folder=self.project))
         self.addCleanup(posix_folder_p.rmtree)
         posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.project, path='random.txt'))
+            test_folder=self.project, path='random.txt'))
         dx_p.copy(posix_p)
         self.assertTrue(posix_p.exists())
 
@@ -1179,11 +1179,11 @@ class TestCopy(DXTestCase):
         self.setup_file('/temp_folder/folder_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
         posix_folder_p = Path('./{test_folder}/'.format(
-                test_folder=self.project))  # with trailing slash
+            test_folder=self.project))  # with trailing slash
         self.addCleanup(posix_folder_p.rmtree)
         dx_p.copy(posix_folder_p)
         posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.project, path='folder_file.txt'))
+            test_folder=self.project, path='folder_file.txt'))
         self.assertTrue(posix_p.exists())
 
     def test_dx_to_posix_file_folder_no_ext(self):
@@ -1191,19 +1191,19 @@ class TestCopy(DXTestCase):
         self.setup_file('/temp_folder/folder_file.txt')
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/folder_file.txt')
         posix_folder_p = Path('./{test_folder}'.format(
-                test_folder=self.project))
+            test_folder=self.project))
         self.addCleanup(posix_folder_p.rmtree)
         posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.project, path='random'))
+            test_folder=self.project, path='random'))
         dx_p.copy(posix_p)  # when folder without ext doesn't exist
         self.assertTrue(posix_p.exists())
         self.assertFalse(posix_p.isdir())
         false_posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.project, path='random/folder_file.txt'))
+            test_folder=self.project, path='random/folder_file.txt'))
         self.assertFalse(false_posix_p.exists())
         dx_p.copy(posix_folder_p)  # when folder without ext already exists
         true_posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.project, path='folder_file.txt'))
+            test_folder=self.project, path='folder_file.txt'))
         self.assertTrue(true_posix_p.exists())
 
     def test_posix_to_dx_file(self):
@@ -1242,7 +1242,7 @@ class TestCopy(DXTestCase):
         self.setup_posix_files(['/rand/random.txt'])
         dx_folder_p = DXPath('dx://' + self.project + ':/temp_folder/')  # with trailing slash
         posix_p = Path('./{test_folder}/{path}'.format(
-                test_folder=self.project, path='rand/random.txt'))
+            test_folder=self.project, path='rand/random.txt'))
         dx_p = DXPath('dx://' + self.project + ':/temp_folder/random.txt')
         posix_p.copy(dx_folder_p)
         self.assertTrue(dx_p.exists())
@@ -1858,7 +1858,7 @@ class TestLoginAuth(DXTestCase):
     def test_login_auth(self):
         def mock_header(r, security_context):
             auth_header = security_context["auth_token_type"] + " " + \
-                          security_context["auth_token"]
+                security_context["auth_token"]
             r.headers[b'Authorization'] = auth_header.encode()
             return r
 

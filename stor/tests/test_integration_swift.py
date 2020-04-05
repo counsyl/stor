@@ -112,7 +112,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
                 obj_path.copy(self.test_container / 'large_object.txt')
 
             # Verify there is a segment container and that it can be ignored when listing a dir
-            segment_container = Path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # nopep8
+            segment_container = Path(self.test_container.parent) / ('.segments_%s' % self.test_container.name)  # noqa
             containers = Path(self.test_container.parent).listdir(ignore_segment_containers=False)
             self.assertTrue(segment_container in containers)
             self.assertTrue(self.test_container in containers)
@@ -161,7 +161,7 @@ class SwiftIntegrationTest(BaseIntegrationTest.BaseTestCases):
             r = requests.get(complex_temp_url)
             self.assertEquals(r.content, 'complex test')
             self.assertEquals(r.headers['Content-Disposition'],
-                              'attachment; filename="my test%3Ffile%3Dspecial_chars.txt"; filename*=UTF-8\'\'my%20test%3Ffile%3Dspecial_chars.txt')  # nopep8
+                              'attachment; filename="my test%3Ffile%3Dspecial_chars.txt"; filename*=UTF-8\'\'my%20test%3Ffile%3Dspecial_chars.txt')  # noqa
 
     def test_condition_failures(self):
         num_test_objs = 20

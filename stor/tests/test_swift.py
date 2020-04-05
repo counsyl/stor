@@ -368,7 +368,7 @@ class TestTempURL(SwiftTestCase):
         }
         with settings.use(temp_settings):
             temp_url = SwiftPath('swift://tenant/container/obj').temp_url()
-        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
+        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # noqa
         self.assertEquals(temp_url, expected)
 
     @freezegun.freeze_time('2016-02-23 12:00:00')
@@ -381,10 +381,10 @@ class TestTempURL(SwiftTestCase):
         }
         with settings.use(temp_settings):
             temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=False)
-            expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100'  # nopep8
+            expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100'  # noqa
             self.assertEquals(temp_url, expected)
             temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True)
-            expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # nopep8
+            expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline'  # noqa
             self.assertEquals(temp_url, expected)
 
     @freezegun.freeze_time('2016-02-23 12:00:00')
@@ -396,8 +396,8 @@ class TestTempURL(SwiftTestCase):
             }
         }
         with settings.use(temp_settings):
-            temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True, filename='file')  # nopep8
-        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline&filename=file'  # nopep8
+            temp_url = SwiftPath('swift://tenant/container/obj').temp_url(inline=True, filename='file')  # noqa
+        expected = 'https://swift.com/v1/tenant/container/obj?temp_url_sig=3b1adff9452165103716d308da692e6ec9c2d55f&temp_url_expires=1456229100&inline&filename=file'  # noqa
         self.assertEquals(temp_url, expected)
 
     def test_no_obj(self):
@@ -1263,9 +1263,9 @@ class TestDownload(SwiftTestCase):
             swift_p.download('output_dir')
             progress_log.check(
                 ('stor.swift.progress', 'INFO', 'starting download'),
-                ('stor.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', '10\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.swift.progress', 'INFO', '20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.swift.progress', 'INFO', 'download complete - 20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
             )
 
     def test_download_resource(self):
@@ -1743,9 +1743,9 @@ class TestUpload(SwiftTestCase):
                 swift_p.upload(['upload'])
             progress_log.check(
                 ('stor.swift.progress', 'INFO', 'starting upload of 20 objects'),
-                ('stor.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.swift.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.swift.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.swift.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
             )
 
     def test_upload_to_tenant(self, mock_walk_files_and_dirs):
@@ -1998,8 +1998,8 @@ class TestStat(SwiftTestCase):
                 'x-account-object-count': '20081986',
                 'connection': 'close',
                 'x-timestamp': '1445629170.46005',
-                'x-account-access-control': '{"read-only":["seq_upload_rnd","swft_labprod"],"read-write":["svc_svc_seq"]}',  # nopep8
-                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-account-access-control': '{"read-only":["seq_upload_rnd","swft_labprod"],"read-write":["svc_svc_seq"]}',  # noqa
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # noqa
                 'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
                 'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
                 'x-account-bytes-used': '24993077101523',
@@ -2042,8 +2042,8 @@ class TestStat(SwiftTestCase):
                 'x-account-object-count': '20081986',
                 'connection': 'close',
                 'x-timestamp': '1445629170.46005',
-                'x-account-access-control': '{"read-only":["seq_upload_rnd","swft_labprod"],"read-write":["svc_svc_seq"]}',  # nopep8
-                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-account-access-control': '{"read-only":["seq_upload_rnd","swft_labprod"],"read-write":["svc_svc_seq"]}',  # noqa
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # noqa
                 'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
                 'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
                 'x-account-bytes-used': '24993077101523',
@@ -2062,7 +2062,7 @@ class TestStat(SwiftTestCase):
                 'x-account-object-count': '20081986',
                 'connection': 'close',
                 'x-timestamp': '1445629170.46005',
-                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # noqa
                 'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
                 'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
                 'x-account-bytes-used': '24993077101523',
@@ -2102,7 +2102,7 @@ class TestStat(SwiftTestCase):
                 'x-account-object-count': '20081986',
                 'connection': 'close',
                 'x-timestamp': '1445629170.46005',
-                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # nopep8
+                'x-account-storage-policy-3xreplica-bytes-used': '24993077101523',  # noqa
                 'x-trans-id': 'tx2acc1bc870884a0487dd0-0056a6a993',
                 'date': 'Mon, 25 Jan 2016 23:02:43 GMT',
                 'x-account-bytes-used': '24993077101523',

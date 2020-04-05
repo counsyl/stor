@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import contextlib
+import io
 import os
 import mock
 import sys

@@ -258,13 +258,13 @@ def _swiftclient_error_to_descriptive_exception(exc):
         # When experiencing HA issues, we sometimes encounter a
         # ClientException from swiftclient during upload. The exception
         # is thrown here -
-        # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
+        # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # noqa
         # Treat this as a FailedUploadError
         logger.error('upload error in swift put_object operation - %s', exc_str)
         FailedUploadError(exc_str, exc) from exc
     elif 'Unauthorized.' in exc_str:
         # Swiftclient catches keystone auth errors at
-        # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
+        # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # noqa
         # Parse the message since they don't bubble the exception or
         # provide more information
         logger.warning('auth error in swift operation - %s', exc_str)

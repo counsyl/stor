@@ -1146,10 +1146,10 @@ class TestUpload(S3TestCase):
         with LogCapture('stor.s3.progress') as progress_log:
             s3_p.upload(['upload'])
             progress_log.check(
-                ('stor.s3.progress', 'INFO', 'starting upload of 20 objects'),  # nopep8
-                ('stor.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.s3.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', 'starting upload of 20 objects'),  # noqa
+                ('stor.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.s3.progress', 'INFO', 'upload complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
             )
 
 
@@ -1340,10 +1340,10 @@ class TestDownload(S3TestCase):
         with LogCapture('stor.s3.progress') as progress_log:
             s3_p.download('output_dir')
             progress_log.check(
-                ('stor.s3.progress', 'INFO', 'starting download of 20 objects'),  # nopep8
-                ('stor.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
-                ('stor.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # nopep8
+                ('stor.s3.progress', 'INFO', 'starting download of 20 objects'),  # noqa
+                ('stor.s3.progress', 'INFO', '10/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.s3.progress', 'INFO', '20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
+                ('stor.s3.progress', 'INFO', 'download complete - 20/20\t0:00:00\t0.00 MB\t0.00 MB/s'),  # noqa
             )
 
 

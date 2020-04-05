@@ -1,3 +1,5 @@
+import io
+
 from stor.tests.test_integration import BaseIntegrationTest
 import stor
 

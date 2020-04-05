@@ -7,7 +7,6 @@ from multiprocessing.pool import ThreadPool
 import os
 import tempfile
 import threading
-import warnings
 
 import boto3
 from boto3 import exceptions as boto3_exceptions
@@ -463,7 +462,7 @@ class S3Path(OBSPath):
         response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
         response = {
             key: val for key, val in response.items()
-            if key is not 'ResponseMetadata'
+            if key != 'ResponseMetadata'
         }
         return response
 
@@ -595,7 +594,7 @@ class S3Path(OBSPath):
                     except StopIteration:
                         break
                 pool.close()
-            except:
+            except BaseException:
                 pool.terminate()
                 raise
             finally:
@@ -738,7 +737,7 @@ class S3Path(OBSPath):
                     except StopIteration:
                         break
                 pool.close()
-            except:
+            except BaseException:
                 pool.terminate()
                 raise
             finally:

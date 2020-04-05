@@ -358,7 +358,7 @@ def is_writeable(path, swift_retry_options=None):
             # Remove the file that was created.
             remove(join(path, basename(tmpfile.name)))
             answer = True
-        except (UnauthorizedError, UnavailableError, IOError, OSError, exceptions.FailedUploadError):  # nopep8
+        except (UnauthorizedError, UnavailableError, IOError, OSError, exceptions.FailedUploadError):  # noqa
             answer = False
 
     # Remove the Swift container if it didn't exist when calling this function, but exists

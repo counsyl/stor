@@ -260,7 +260,7 @@ class Path(str):
         """
         return self.path_class(self.path_module.join(self, *others))
 
-    def open(self, mode: Optional[str]=None, encoding: Optional[str]=None):
+    def open(self, mode: Optional[str] = None, encoding: Optional[str] = None):
         """Open a file-like object.
 
         The only cross-compatible arguments for this function are listed below.
@@ -568,6 +568,17 @@ class FileSystemPath(Path):
                 raise
         return self
 
+    def __maybe_warn_for_walkfiles(self, warn_msg, errors):
+        """Split out warning handling to reduce complexity of walkfiles"""
+        if errors == 'ignore':
+            return True
+        elif errors == 'warn':
+            warnings.warn(
+                "%s '%s': %s"
+                % (warn_msg, self, sys.exc_info()[1]),
+                TreeWalkWarning)
+            return True
+
     def walkfiles(self, pattern=None, errors='strict', **kwargs):  # flake8: noqa pragma: no cover
         """ D.walkfiles() -> iterator over files in D, recursively.
         The optional argument `pattern` limits the results to files
@@ -581,31 +592,15 @@ class FileSystemPath(Path):
         try:
             childList = self.listdir()
         except Exception:
-            if errors == 'ignore':
-                return
-            elif errors == 'warn':
-                warnings.warn(
-                    "Unable to list directory '%s': %s"
-                    % (self, sys.exc_info()[1]),
-                    TreeWalkWarning)
-                return
-            else:
+            if not self.__maybe_warn_for_walkfiles("Unable to list directory", errors=errors):
                 raise
 
         for child in childList:
             try:
                 isfile = child.isfile()
                 isdir = not isfile and child.isdir()
-            except:
-                if errors == 'ignore':
-                    continue
-                elif errors == 'warn':
-                    warnings.warn(
-                        "Unable to access '%s': %s"
-                        % (self, sys.exc_info()[1]),
-                        TreeWalkWarning)
-                    continue
-                else:
+            except Exception:
+                if not child.__maybe_warn_for_walkfiles("Unable to access", errors=errors):
                     raise
 
             if isfile:

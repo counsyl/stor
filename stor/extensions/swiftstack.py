@@ -20,7 +20,7 @@ def swift_to_s3(swift_path, bucket):
         S3Path: the converted path
 
     See https://www.swiftstack.com/docs/admin/cluster_management/cloud_sync.html#swift-object-representation-in-s3 for details
-    """  # nopep8
+    """  # noqa
     if not bucket:
         raise TypeError('bucket is required')
     swift_path = stor.Path(swift_path)
