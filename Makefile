@@ -23,17 +23,12 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 .PHONY: venv
 venv: $(VENV_ACTIVATE)
 
-$(VENV_ACTIVATE): requirements*.txt
-	test -f $@ || virtualenv --python=$(PYTHON) $(VENV_DIR)
-	$(WITH_VENV) echo "Within venv, running $$(python --version)"
-	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -e . --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PIP_INDEX_URL}
-	$(WITH_VENV) pip install -r requirements-docs.txt --index-url=${PIP_INDEX_URL}
+$(VENV_ACTIVATE): poetry.lock
+	@ poetry config --local virtualenvs.in-project true
+	poetry install
 	touch $@
 
 develop: venv
-	$(WITH_VENV) python setup.py develop
 
 .PHONY: docs
 docs: venv clean-docs
@@ -44,14 +39,11 @@ docs: venv clean-docs
 setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
 ifdef ARGS
-	$(WITH_PBR) python setup.py ${ARGS}
-else
-	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
+	@echo "Args no longer supported b/c of poetry" && exit 1
 endif
 
 .PHONY: clean
 clean:
-	$(PYTHON) setup.py clean
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg*/
