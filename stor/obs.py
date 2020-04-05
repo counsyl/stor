@@ -431,7 +431,7 @@ class OBSFile(object):
     readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
     readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
 
-    next = _delegate_to_buffer('next', valid_modes=_READ_MODES)  # pragma: no cover
+    __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)
 
     write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
     writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)
