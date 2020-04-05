@@ -4,7 +4,7 @@ Release Notes
 v4.0 - Python 3 + Poetry!
 -------------------------
 
-Python 3.6+ is required - Python 2.7 support is dropped!
+Only Python 3.6+ is supported - Python 2.7 support is dropped! (Python 3.5 may still work)
 
 Now stor installs via ``poetry`` (this should be transparent to users).
 
