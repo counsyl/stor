@@ -10,7 +10,7 @@ Now stor installs via ``poetry`` (this should be transparent to users).
 
 
 API Additions
-^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 * Tab completions are now available via the ``stor completions`` command.
   Use it to dump completions to appropriate location (see :ref:`installation instructions <cli_tab_completion_installation>`
