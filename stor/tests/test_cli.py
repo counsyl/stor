@@ -20,13 +20,13 @@ from stor import test
 
 class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
     def setUp(self):
-        patcher = mock.patch.object(sys, 'stdout', six.StringIO())
+        patcher = mock.patch.object(sys, 'stdout', io.StringIO())
         self.addCleanup(patcher.stop)
         patcher.start()
 
     @contextlib.contextmanager
     def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):
-        patch = mock.patch('sys.stderr', new=six.StringIO())
+        patch = mock.patch('sys.stderr', new=io.StringIO())
         self.addCleanup(patch.stop)
         patch.start()
         if exit_status is not None:
@@ -407,7 +407,7 @@ class TestCopy(BaseCliTest):
         self.parse_args('stor cp s3://bucket/file.txt ./file1')
         mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
 
-    @mock.patch('sys.stdin', new=six.StringIO('some stdin input\n'))
+    @mock.patch('sys.stdin', new=io.StringIO('some stdin input\n'))
     def test_copy_stdin(self, mock_copy):
         mock_copy.side_effect = self.mock_copy_source
         with NamedTemporaryFile(delete=False) as ntf:

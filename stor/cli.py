@@ -86,8 +86,7 @@ import signal
 import sys
 import tempfile
 
-import six
-from six.moves import configparser
+import configparser
 
 import stor
 from stor import exceptions

@@ -3,7 +3,7 @@ import copy
 import os
 import threading
 
-from six.moves.configparser import SafeConfigParser
+from configparser import SafeConfigParser
 
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'

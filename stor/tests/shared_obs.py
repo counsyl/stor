@@ -173,7 +173,7 @@ class SharedOBSFileCases(object):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = six.BytesIO()
+                _buffer = io.BytesIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     def test_read_invalid_mode(self):

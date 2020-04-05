@@ -24,7 +24,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         func = getattr(self._get_or_create_buffer(), attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(six.BytesIO(), attr_name).__doc__
+    wrapper.__doc__ = getattr(io.BytesIO(), attr_name).__doc__
     return wrapper
 
 
@@ -406,7 +406,7 @@ class OBSFile(object):
     @property
     def stream_cls(self):
         """The class used for the IO stream"""
-        return six.BytesIO if self.mode in ('rb', 'wb') else six.StringIO
+        return io.BytesIO if self.mode in ('rb', 'wb') else io.StringIO
 
     def _get_or_create_buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"

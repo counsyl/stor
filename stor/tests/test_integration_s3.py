@@ -277,7 +277,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                     num_retries=0)
 
     def test_multipart_transfer(self):
-        logger = six.StringIO()
+        logger = io.StringIO()
         handler = logging.StreamHandler(logger)
         logging.getLogger('botocore').setLevel(logging.DEBUG)
         logging.getLogger('botocore').addHandler(handler)
