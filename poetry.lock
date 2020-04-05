@@ -16,7 +16,7 @@ version = "1.11.1"
 
 [package.dependencies]
 [package.dependencies.importlib-metadata]
-python = ">=3.5,<3.6"
+python = ">=3.6,<3.7"
 version = ">=0.23,<2"
 
 [package.extras]
@@ -169,19 +169,6 @@ category = "main"
 description = "A collection of Python deprecation patterns and strategies that help you collect your technical debt in a non-destructive manner."
 name = "debtcollector"
 optional = false
-python-versions = "*"
-version = "1.22.0"
-
-[package.dependencies]
-pbr = ">=2.0.0,<2.1.0 || >2.1.0"
-six = ">=1.10.0"
-wrapt = ">=1.7.0"
-
-[[package]]
-category = "main"
-description = "A collection of Python deprecation patterns and strategies that help you collect your technical debt in a non-destructive manner."
-name = "debtcollector"
-optional = false
 python-versions = ">=3.6"
 version = "2.0.0"
 
@@ -271,7 +258,7 @@ version = "1.2.0"
 [[package]]
 category = "main"
 description = "Read metadata from Python packages"
-marker = "python_version == \"3.6\" or python_version == \"3.7\" or python_version == \"3.5\""
+marker = "python_version == \"3.6\" or python_version == \"3.7\""
 name = "importlib-metadata"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
@@ -364,7 +351,7 @@ version = "1.0.0"
 [[package]]
 category = "dev"
 description = "multidict implementation"
-marker = "python_version == \"3.5\" and python_version == \"3.5\" or python_version >= \"3.6\""
+marker = "python_version >= \"3.6\""
 name = "multidict"
 optional = false
 python-versions = ">=3.5"
@@ -402,24 +389,6 @@ category = "main"
 description = "Oslo Configuration API"
 name = "oslo.config"
 optional = false
-python-versions = "*"
-version = "7.0.0"
-
-[package.dependencies]
-PyYAML = ">=3.12"
-debtcollector = ">=1.2.0"
-netaddr = ">=0.7.18"
-"oslo.i18n" = ">=3.15.3"
-requests = ">=2.18.0"
-rfc3986 = ">=1.2.0"
-six = ">=1.10.0"
-stevedore = ">=1.20.0"
-
-[[package]]
-category = "main"
-description = "Oslo Configuration API"
-name = "oslo.config"
-optional = false
 python-versions = ">=3.6"
 version = "8.0.1"
 
@@ -432,19 +401,6 @@ requests = ">=2.18.0"
 rfc3986 = ">=1.2.0"
 six = ">=1.10.0"
 stevedore = ">=1.20.0"
-
-[[package]]
-category = "main"
-description = "Oslo i18n library"
-name = "oslo.i18n"
-optional = false
-python-versions = "*"
-version = "3.25.1"
-
-[package.dependencies]
-Babel = ">=2.3.4,<2.4.0 || >2.4.0"
-pbr = ">=2.0.0,<2.1.0 || >2.1.0"
-six = ">=1.10.0"
 
 [[package]]
 category = "main"
@@ -464,22 +420,6 @@ category = "main"
 description = "Oslo Serialization library"
 name = "oslo.serialization"
 optional = false
-python-versions = "*"
-version = "2.29.2"
-
-[package.dependencies]
-PyYAML = ">=3.12"
-msgpack = ">=0.5.2"
-"oslo.utils" = ">=3.33.0"
-pbr = ">=2.0.0,<2.1.0 || >2.1.0"
-pytz = ">=2013.6"
-six = ">=1.10.0"
-
-[[package]]
-category = "main"
-description = "Oslo Serialization library"
-name = "oslo.serialization"
-optional = false
 python-versions = ">=3.6"
 version = "3.1.0"
 
@@ -489,25 +429,6 @@ debtcollector = ">=1.2.0"
 msgpack = ">=0.5.2"
 "oslo.utils" = ">=3.33.0"
 pbr = ">=2.0.0,<2.1.0 || >2.1.0"
-pytz = ">=2013.6"
-six = ">=1.10.0"
-
-[[package]]
-category = "main"
-description = "Oslo Utility library"
-name = "oslo.utils"
-optional = false
-python-versions = "*"
-version = "3.42.1"
-
-[package.dependencies]
-debtcollector = ">=1.2.0"
-iso8601 = ">=0.1.11"
-netaddr = ">=0.7.18"
-netifaces = ">=0.10.4"
-"oslo.i18n" = ">=3.15.3"
-pbr = ">=2.0.0,<2.1.0 || >2.1.0"
-pyparsing = ">=2.1.0"
 pytz = ">=2013.6"
 six = ">=1.10.0"
 
@@ -926,11 +847,7 @@ PyYAML = "*"
 six = ">=1.5"
 wrapt = "*"
 
-[[package.dependencies.yarl]]
-python = ">=3.5,<3.6"
-version = "<1.4"
-
-[[package.dependencies.yarl]]
+[package.dependencies.yarl]
 python = ">=3.6"
 version = "*"
 
@@ -968,19 +885,6 @@ cffi = ">=1.0.0"
 [[package]]
 category = "dev"
 description = "Yet another URL library"
-marker = "python_version == \"3.5\""
-name = "yarl"
-optional = false
-python-versions = "*"
-version = "1.2.0"
-
-[package.dependencies]
-idna = ">=2.0"
-multidict = ">=4.0"
-
-[[package]]
-category = "dev"
-description = "Yet another URL library"
 marker = "python_version >= \"3.6\""
 name = "yarl"
 optional = false
@@ -990,19 +894,6 @@ version = "1.4.2"
 [package.dependencies]
 idna = ">=2.0"
 multidict = ">=4.0"
-
-[[package]]
-category = "main"
-description = "Backport of pathlib-compatible object wrapper for zip files"
-marker = "python_version == \"3.5\""
-name = "zipp"
-optional = false
-python-versions = ">=2.7"
-version = "1.2.0"
-
-[package.extras]
-docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
-testing = ["pathlib2", "unittest2", "jaraco.itertools", "func-timeout"]
 
 [[package]]
 category = "main"
@@ -1018,8 +909,8 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "82eb3c09d8c3c58b0685fadd9fd4ebd4e3fabd9ca18eeb31213624045a376e87"
-python-versions = "^3.5"
+content-hash = "54a653477f85d03deeca0f414b2a6f66be38ca7b5c29e87c1246b3d003e6bda6"
+python-versions = "^3.6"
 
 [metadata.files]
 alabaster = [
@@ -1168,8 +1059,6 @@ cryptography = [
     {file = "cryptography-2.2.2.tar.gz", hash = "sha256:9fc295bf69130a342e7a19a39d7bbeb15c0bcaabc7382ec33ef3b2b7d18d2f63"},
 ]
 debtcollector = [
-    {file = "debtcollector-1.22.0-py2.py3-none-any.whl", hash = "sha256:f0bccd85595fbca1e5c4f05789f6ce50f29e5b1a004462978bdd4330921e802a"},
-    {file = "debtcollector-1.22.0.tar.gz", hash = "sha256:d1756440d25a50e3eca2fc399c9e5f1ca2f9e6b837570a80b9450999f4290525"},
     {file = "debtcollector-2.0.0-py3-none-any.whl", hash = "sha256:bdef71fc362fadfde363d78c08820dfac38757bc99ebf2bf3cae72f6d93d1f60"},
     {file = "debtcollector-2.0.0.tar.gz", hash = "sha256:7a2e4fe10f938a15e888de3f8a00ba80c02b494d37c5e724dabb8a5a530880a5"},
 ]
@@ -1328,26 +1217,18 @@ os-service-types = [
     {file = "os_service_types-1.7.0-py2.py3-none-any.whl", hash = "sha256:0505c72205690910077fb72b88f2a1f07533c8d39f2fe75b29583481764965d6"},
 ]
 "oslo.config" = [
-    {file = "oslo.config-7.0.0-py2.py3-none-any.whl", hash = "sha256:85881b305971bab0d4f00d70aa8ccf6dbbd33f3a8e0058f9b83da6f675adfa01"},
-    {file = "oslo.config-7.0.0.tar.gz", hash = "sha256:77a3104b1aa70d97adcc93513fcc61df5067a00152d429b9f5f7dcca214f11b4"},
     {file = "oslo.config-8.0.1-py3-none-any.whl", hash = "sha256:32d21b3a70a1d356b03459667c3082c8cd4c0483ef98eb9e8f937b49ccb6df0f"},
     {file = "oslo.config-8.0.1.tar.gz", hash = "sha256:b605addc284f7090167e5325de371a2437ba3e78d72c3ceb18091aa6e1744fc5"},
 ]
 "oslo.i18n" = [
-    {file = "oslo.i18n-3.25.1-py2.py3-none-any.whl", hash = "sha256:04aebc4134e1144dce7947caf25f276e3af5a34caae3a3365a728f05d90ff316"},
-    {file = "oslo.i18n-3.25.1.tar.gz", hash = "sha256:8479724031bee200cb72577cf9670c48c93089e32627a74fb3dc80dec2812fc9"},
     {file = "oslo.i18n-4.0.0-py3-none-any.whl", hash = "sha256:b511fb702f25e48ff50eb5af3e600b5481b35ba405e16a098ee9d972949f59d8"},
     {file = "oslo.i18n-4.0.0.tar.gz", hash = "sha256:2c6db1d4930ff49aaa7732d6d165fcf1454dc064fdab0a31144cb6d7d738bd61"},
 ]
 "oslo.serialization" = [
-    {file = "oslo.serialization-2.29.2-py2.py3-none-any.whl", hash = "sha256:0b9bde3d03feab5477464ae7118b723f921c95abc36a5c335a54e33e0fe9c177"},
-    {file = "oslo.serialization-2.29.2.tar.gz", hash = "sha256:f1571f477be946fbb5ee80a939db51a9fb8f1da7902a7dfe0c8b3b2657e8469e"},
     {file = "oslo.serialization-3.1.0-py3-none-any.whl", hash = "sha256:06612670c754aa77be1d42fa9301f5c8a633a1ae28c2f998788ba48fbb3284e5"},
     {file = "oslo.serialization-3.1.0.tar.gz", hash = "sha256:c8d2de8788c4dd8900a5abacc1c29c1d36f3ead5eab392bc1e39a5dc193f78cf"},
 ]
 "oslo.utils" = [
-    {file = "oslo.utils-3.42.1-py2.py3-none-any.whl", hash = "sha256:4cb60d091585715c46e9b74804858bcccc25ea92cb83d0ca0b69269af35556e9"},
-    {file = "oslo.utils-3.42.1.tar.gz", hash = "sha256:c9f35cc64a28a043dd8dd60e35586e840e188b6f165d08f5da55ef234c034ef2"},
     {file = "oslo.utils-4.1.0-py3-none-any.whl", hash = "sha256:eb1f9627ffc9981ba0a4b93225669ef70d1a3114534af734748682bd5ed3ebcf"},
     {file = "oslo.utils-4.1.0.tar.gz", hash = "sha256:ebbbe0a3bdea22a2e5e0144e6b38d1afdebd2072850e478ff24bb75bd1a14784"},
 ]
@@ -1521,19 +1402,6 @@ xattr = [
     {file = "xattr-0.9.6.tar.gz", hash = "sha256:7cb1b28eeab4fe99cc4350e831434142fce658f7d03f173ff7722144e6a47458"},
 ]
 yarl = [
-    {file = "yarl-1.2.0-cp34-cp34m-manylinux1_i686.whl", hash = "sha256:ee506bc321b455b4a410724ec9c0ad4940932553523c6e7b69f0155269793734"},
-    {file = "yarl-1.2.0-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:4c2d780cb0b669bf027da57a0834d4968ed55c89f1593cfd11be8108bff699e2"},
-    {file = "yarl-1.2.0-cp34-cp34m-win32.whl", hash = "sha256:8765ebd034d0dc812a311b31251dffb434c753fc7124487912a5bca7baeb5c9b"},
-    {file = "yarl-1.2.0-cp34-cp34m-win_amd64.whl", hash = "sha256:ceae77215870ecaba555b2e74dd308de9abe6d44b0eecafae6ecef4a14e289f8"},
-    {file = "yarl-1.2.0-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:843c90c7a2756c033e9bb4464f789e21bc33f561c1e6c0ef7569f452b33a761a"},
-    {file = "yarl-1.2.0-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:3278209d78d534d59ee44f595e54ee4d3a164fa77319ffbd418b1978edf71748"},
-    {file = "yarl-1.2.0-cp35-cp35m-win32.whl", hash = "sha256:32a52453fc20153e34d2cf99f1a2f4c3d144e320896f1f89b5ee89bb41e877be"},
-    {file = "yarl-1.2.0-cp35-cp35m-win_amd64.whl", hash = "sha256:48f3807855b69414a41e70908e502d6dbf563e3eca22f73d1344aad9270a4ff9"},
-    {file = "yarl-1.2.0-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:a2dda88459cfe50f4f6a225d2f51e3fffb0c3c18f4c3a3ac38d9dc054f8c37b0"},
-    {file = "yarl-1.2.0-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:ac574aa2c45185e038489ff8f3bebd9269dd8327e86c72d9a7f83a1d3ad9eec4"},
-    {file = "yarl-1.2.0-cp36-cp36m-win32.whl", hash = "sha256:ce5963f2451661a435721d8907a824daea52aad6e3bee9b4104e75d19269cdae"},
-    {file = "yarl-1.2.0-cp36-cp36m-win_amd64.whl", hash = "sha256:cec06d4272c2ced65308daf63360daeea5061c030fe28f75e499afd735cee860"},
-    {file = "yarl-1.2.0.tar.gz", hash = "sha256:fbbb10276d53629c0300cfd4a2092e3bbfa9a5aa95cd49808e01c59492052077"},
     {file = "yarl-1.4.2-cp35-cp35m-macosx_10_13_x86_64.whl", hash = "sha256:3ce3d4f7c6b69c4e4f0704b32eca8123b9c58ae91af740481aa57d7857b5e41b"},
     {file = "yarl-1.4.2-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:a4844ebb2be14768f7994f2017f70aca39d658a96c786211be5ddbe1c68794c1"},
     {file = "yarl-1.4.2-cp35-cp35m-win32.whl", hash = "sha256:d8cdee92bc930d8b09d8bd2043cedd544d9c8bd7436a77678dd602467a993080"},
@@ -1553,8 +1421,6 @@ yarl = [
     {file = "yarl-1.4.2.tar.gz", hash = "sha256:58cd9c469eced558cd81aa3f484b2924e8897049e06889e8ff2510435b7ef74b"},
 ]
 zipp = [
-    {file = "zipp-1.2.0-py2.py3-none-any.whl", hash = "sha256:e0d9e63797e483a30d27e09fffd308c59a700d365ec34e93cc100844168bf921"},
-    {file = "zipp-1.2.0.tar.gz", hash = "sha256:c70410551488251b0fee67b460fb9a536af8d6f9f008ad10ac51f615b6a521b1"},
     {file = "zipp-3.1.0-py3-none-any.whl", hash = "sha256:aa36550ff0c0b7ef7fa639055d797116ee891440eac1a56f378e2d3179e0320b"},
     {file = "zipp-3.1.0.tar.gz", hash = "sha256:c599e4d75c98f6798c509911d08a22e6c021d074469042177c8c86fb92eefd96"},
 ]
