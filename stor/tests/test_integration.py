@@ -2,7 +2,6 @@
 import gzip
 import os
 import unittest
-import six
 
 import pytest
 

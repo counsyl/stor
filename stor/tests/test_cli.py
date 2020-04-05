@@ -6,8 +6,6 @@ import mock
 import sys
 from tempfile import NamedTemporaryFile
 
-import six
-
 from stor.dx import DXPath
 from stor.posix import PosixPath
 from stor.s3 import S3Path

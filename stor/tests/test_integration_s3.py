@@ -4,8 +4,6 @@ import time
 import unittest
 import uuid
 
-import six
-
 import stor
 from stor import exceptions
 from stor import NamedTemporaryDirectory

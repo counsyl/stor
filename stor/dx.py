@@ -8,7 +8,6 @@ from contextlib import contextmanager
 import dxpy
 from dxpy.exceptions import DXError
 from dxpy.exceptions import DXSearchError
-import six
 
 from stor import exceptions as stor_exceptions
 from stor import Path

@@ -1,6 +1,5 @@
 from stor.tests.test_integration import BaseIntegrationTest
 import stor
-import six
 
 
 class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):

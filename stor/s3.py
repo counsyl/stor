@@ -14,7 +14,6 @@ from boto3 import exceptions as boto3_exceptions
 from boto3.s3.transfer import S3Transfer
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exceptions
-import six
 
 from stor import exceptions
 from stor import settings

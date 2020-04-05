@@ -3,7 +3,6 @@ import posixpath
 import sys
 
 import dxpy
-import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 
