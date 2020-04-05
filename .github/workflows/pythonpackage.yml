@@ -21,9 +21,9 @@ jobs:
     - uses: actions/cache@v1
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
+        key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
         restore-keys: |
-          ${{ runner.os }}-poetry-
+          ${{ runner.os }}-poetry-${{ matrix.python-version }}
     - name: Install poetry
       run: |
         python -m pip install --upgrade pip
