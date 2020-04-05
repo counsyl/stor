@@ -837,9 +837,9 @@ class DXPath(OBSPath):
         if not self.resource:
             raise ValueError('Cannot write to project. Please provide a file path')
         if not isinstance(content, bytes):  # pragma: no cover
-                # bytes/unicode a little confused so allow it
-                warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
-                              ' TypeError if content is not bytes')
+            # bytes/unicode a little confused so allow it
+            warnings.warn('A future version of stor will raise a'
+                          ' TypeError if content is not bytes')
         mode = 'wb' if type(content) == bytes else 'wt'
         if self.isfile():
             self.remove()
