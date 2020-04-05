@@ -10,6 +10,8 @@ import warnings
 
 import builtins
 
+from typing import Optional
+
 from stor import utils
 
 
@@ -258,14 +260,14 @@ class Path(str):
         """
         return self.path_class(self.path_module.join(self, *others))
 
-    def open(self, mode=None, encoding=None):
+    def open(self, mode: Optional[str]=None, encoding: Optional[str]=None):
         """Open a file-like object.
 
         The only cross-compatible arguments for this function are listed below.
 
         Args:
-            mode (str): first positional arg, mode of file descriptor
-            encoding (str): text encoding to use (Python 3 only)
+            mode: first positional arg, mode of file descriptor
+            encoding: text encoding to use
         """
 
         raise NotImplementedError

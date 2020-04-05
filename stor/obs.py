@@ -155,7 +155,7 @@ class OBSPath(Path):
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
             encoding (str): text encoding to use. Defaults to
-                ``locale.getpreferredencoding(False)`` (Python 3 only)
+                ``locale.getpreferredencoding(False)``
 
         Returns:
             OBSFile: The file object for Swift/S3/DX.
@@ -166,7 +166,7 @@ class OBSPath(Path):
             RemoteError: A s3 client error occurred.
         """
         if encoding and encoding not in ('utf-8', 'utf8') and isinstance(self, stor.dx.DXPath):
-            raise ValueError('For DNAnexus paths in Python 3, encoding is always assumed to be '
+            raise ValueError('For DNAnexus paths, encoding is always assumed to be '
                              'utf-8. Please switch your encoding')
         return OBSFile(self, mode=mode, encoding=encoding)
 

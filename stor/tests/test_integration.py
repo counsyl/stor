@@ -55,7 +55,7 @@ class BaseIntegrationTest(object):
 
         def _skip_if_filesystem(self, dirname, explanation='needs bytes/str fix'):
             if stor.is_filesystem_path(dirname):
-                raise unittest.SkipTest('Skipping filesystem test on Python 3: %s' % explanation)
+                raise unittest.SkipTest('Skipping filesystem test: %s' % explanation)
 
         def test_copy_to_from_dir(self):
             num_test_objs = 5
