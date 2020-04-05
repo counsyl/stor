@@ -23,10 +23,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry==${{env.POETRY_VERSION}}
         poetry config --local virtualenvs.in-project true
-    - name: Install library
-      run: make
+    - name: Install venv
+      run: make venv
     - name: Test with coverage
-      run: make travis-test
+      run: make unit-test
     - name: Lint
       run: make lint
     - name: Doc build

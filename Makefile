@@ -69,11 +69,7 @@ lint: venv
 
 .PHONY: unit-test
 unit-test: venv
-	$(WITH_VENV) \
-	coverage erase; \
-	tox -v $(TOX_ENV_FLAG); \
-	status=$$?; \
-	exit $$status;
+	poetry run pytest -vvv -srx --cov=stor --cov-branch stor
 
 .PHONY: test
 test: venv docs unit-test
@@ -86,15 +82,6 @@ endif
 ifndef DX_AUTH_TOKEN
 	echo "Please set DX_AUTH_TOKEN to run DX integration tests" 1>&2
 endif
-
-# setting this up so that we can use virtualenv, coverage, etc
-.PHONY: travis-test
-travis-test: venv
-	$(WITH_VENV) \
-	coverage erase; \
-	coverage run setup.py test; \
-	status=$$?; \
-	coverage report && exit $$status;
 
 # Distribution
 
