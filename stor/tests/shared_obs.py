@@ -9,9 +9,9 @@ This file contains a number of shared tests that vary only based upon which conc
 import functools
 import gc
 import gzip
+import io
 
-import mock
-import six
+from unittest import mock
 
 from stor import obs
 from stor.tests.shared import assert_same_data
@@ -133,7 +133,7 @@ class SharedOBSFileCases(object):
         pth = stor.join(self.drive, 'B/C/D')
         with self.assertRaisesRegexp(ValueError, 'mode'):
             # keep reference here
-            f = stor.open(pth, 'invalid')  # nopep8
+            f = stor.open(pth, 'invalid')  # noqa
             assert False, 'should error before this'  # pragma: no cover
 
         with self.assertRaisesRegexp(ValueError, 'mode'):
@@ -173,7 +173,7 @@ class SharedOBSFileCases(object):
         with self.assertRaisesRegexp(AttributeError, 'no attribute'):
             class MyFile(object):
                 closed = False
-                _buffer = six.BytesIO()
+                _buffer = io.BytesIO()
                 invalid = obs._delegate_to_buffer('invalid')
 
     def test_read_invalid_mode(self):

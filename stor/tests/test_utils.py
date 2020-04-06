@@ -1,6 +1,6 @@
 import errno
 import logging
-import mock
+from unittest import mock
 import ntpath
 import os
 import stat
@@ -24,8 +24,8 @@ class TestBaseProgressLogger(unittest.TestCase):
                 return ''
 
         with LogCapture('') as progress_log:
-            with EmptyLogger(logging.getLogger('')) as l:
-                l.add_result({})
+            with EmptyLogger(logging.getLogger('')) as el:
+                el.add_result({})
             progress_log.check()
 
 

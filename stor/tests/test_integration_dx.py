@@ -2,10 +2,8 @@ import gzip
 import os
 import time
 import unittest
-from unittest import skipIf
 
 import dxpy
-import six
 
 from stor import NamedTemporaryDirectory
 from stor import Path
@@ -67,7 +65,7 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
                 self.assertCorrectObjectContents(obj_path, which_obj, test_obj_size)
 
     def test_file_read_write(self):
-        self._skip_if_filesystem_python3(self.test_dir)
+        self._skip_if_filesystem(self.test_dir)
         non_with_file = self.test_dir / 'nonwithfile.txt'
         test_file = self.test_dir / 'test_file.txt'
         copy_file = self.test_dir / 'copy_file.txt'
@@ -134,7 +132,6 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
             result = fp.read()
         assert result == test_integration.BYTE_STRING
 
-    @skipIf(six.PY2, "Only tested on py3")
     def test_read_string_from_text(self):
         test_file = self.test_dir / 'test_file.txt'
         with stor.settings.use(self.DX_WAIT_SETTINGS):
@@ -273,9 +270,8 @@ class DXIntegrationTest(BaseIntegrationTest.BaseTestCases, DXTestCase):
                     time.sleep(.5)
                 self.assertFalse((self.test_dir / which_obj).exists())
 
-    @skipIf(six.PY3, 'dxpy py3 assumes utf-8 encoding, not suitable for gzip')
     def test_gzip_on_remote(self):
-        self._skip_if_filesystem_python3(self.test_dir)
+        self._skip_if_filesystem(self.test_dir)
         local_gzip = os.path.join(os.path.dirname(__file__),
                                   'file_data/s_3_2126.bcl.gz')
         remote_gzip = stor.join(self.test_dir,

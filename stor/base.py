@@ -8,20 +8,18 @@ import shutil
 import sys
 import warnings
 
-from six.moves import builtins
-from six import text_type
-from six import string_types
-from six import PY3
+import builtins
+
+from typing import Optional
 
 from stor import utils
-import six
 
 
 class TreeWalkWarning(Warning):
     pass
 
 
-class Path(text_type):
+class Path(str):
     """
     Wraps path operations with an object-oriented API that makes it easier to
     combine and also to work with OBS and local paths via a single API. Methods
@@ -65,7 +63,7 @@ class Path(text_type):
                 cls = PosixPath
             else:  # pragma: no cover
                 assert False, 'path is not compatible with stor'
-        return text_type.__new__(cls, path)
+        return str.__new__(cls, path)
 
     def __init__(self, path):
         super(Path, self).__init__()
@@ -118,7 +116,7 @@ class Path(text_type):
     def __radd__(self, other):
         if self._has_incompatible_path_module(other):
             return NotImplemented
-        if not isinstance(other, string_types):
+        if not isinstance(other, str):
             return NotImplemented
         return self.path_class(other.__add__(self))
 
@@ -262,14 +260,14 @@ class Path(text_type):
         """
         return self.path_class(self.path_module.join(self, *others))
 
-    def open(self, mode=None, encoding=None):
+    def open(self, mode: Optional[str] = None, encoding: Optional[str] = None):
         """Open a file-like object.
 
         The only cross-compatible arguments for this function are listed below.
 
         Args:
-            mode (str): first positional arg, mode of file descriptor
-            encoding (str): text encoding to use (Python 3 only)
+            mode: first positional arg, mode of file descriptor
+            encoding: text encoding to use
         """
 
         raise NotImplementedError
@@ -398,14 +396,12 @@ class FileSystemPath(Path):
     # no stat() because we want to provide a cross-compatible API at some point
 
     @staticmethod
-    def _always_unicode(path):  # pragma: no cover (OS-dependent)
+    def _always_unicode(path: str):  # pragma: no cover (OS-dependent)
         """
         Ensure the path as retrieved from a Python API, such as
         :func:`os.listdir`, is a proper Unicode string.
         """
-        if PY3 or isinstance(path, text_type):
-            return path
-        return path.decode(sys.getfilesystemencoding(), 'surrogateescape')
+        return path
 
     def listdir(self, **kwargs):
         """D.listdir() -> List of items in this directory.
@@ -572,6 +568,17 @@ class FileSystemPath(Path):
                 raise
         return self
 
+    def __maybe_warn_for_walkfiles(self, warn_msg, errors):
+        """Split out warning handling to reduce complexity of walkfiles"""
+        if errors == 'ignore':
+            return True
+        elif errors == 'warn':
+            warnings.warn(
+                "%s '%s': %s"
+                % (warn_msg, self, sys.exc_info()[1]),
+                TreeWalkWarning)
+            return True
+
     def walkfiles(self, pattern=None, errors='strict', **kwargs):  # flake8: noqa pragma: no cover
         """ D.walkfiles() -> iterator over files in D, recursively.
         The optional argument `pattern` limits the results to files
@@ -585,31 +592,15 @@ class FileSystemPath(Path):
         try:
             childList = self.listdir()
         except Exception:
-            if errors == 'ignore':
-                return
-            elif errors == 'warn':
-                warnings.warn(
-                    "Unable to list directory '%s': %s"
-                    % (self, sys.exc_info()[1]),
-                    TreeWalkWarning)
-                return
-            else:
+            if not self.__maybe_warn_for_walkfiles("Unable to list directory", errors=errors):
                 raise
 
         for child in childList:
             try:
                 isfile = child.isfile()
                 isdir = not isfile and child.isdir()
-            except:
-                if errors == 'ignore':
-                    continue
-                elif errors == 'warn':
-                    warnings.warn(
-                        "Unable to access '%s': %s"
-                        % (self, sys.exc_info()[1]),
-                        TreeWalkWarning)
-                    continue
-                else:
+            except Exception:
+                if not child.__maybe_warn_for_walkfiles("Unable to access", errors=errors):
                     raise
 
             if isfile:

@@ -3,7 +3,7 @@ import copy
 import os
 import threading
 
-from six.moves.configparser import SafeConfigParser
+from configparser import SafeConfigParser
 
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'
@@ -183,6 +183,7 @@ class _Use(object):
             thread_local.settings = self.old_settings
         else:
             del thread_local.settings
+
 
 #: Context manager for temporarily modifying settings.
 #:

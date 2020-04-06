@@ -1,5 +1,4 @@
 import inspect
-import mock
 import unittest
 import os
 import sys
@@ -7,6 +6,8 @@ import uuid
 
 import dxpy
 import vcr
+
+from unittest import mock
 
 from stor import Path
 from stor import s3
@@ -338,8 +339,7 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
         self.addCleanup(self.teardown_posix_files)
 
     def teardown_posix_files(self):
-        posix_p = Path('./{test_folder}'.format(
-                test_folder=self.project))
+        posix_p = Path('./{test_folder}'.format(test_folder=self.project))
         posix_p.rmtree()
 
     def teardown_project(self):

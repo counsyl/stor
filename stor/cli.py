@@ -78,7 +78,6 @@ and within one OBS service (server-side copy) is only supported for DX.
 import argparse
 import copy
 from functools import partial
-import locale
 import logging
 import os
 import shutil
@@ -86,8 +85,7 @@ import signal
 import sys
 import tempfile
 
-import six
-from six.moves import configparser
+import configparser
 
 import stor
 from stor import exceptions
@@ -113,6 +111,7 @@ def perror(msg):
 def force_exit(signum, frame):  # pragma: no cover
     sys.stderr.write(' Aborted\n')
     os._exit(1)
+
 
 signal.signal(signal.SIGINT, force_exit)
 
@@ -172,18 +171,13 @@ def _get_pwd(service=None):
     Returns the present working directory for the given service,
     or all services if none specified.
     """
-    def to_text(data):
-        if six.PY2:  # pragma: no cover
-            data = data.decode(locale.getpreferredencoding(False))
-        return data
-
     parser = _get_env()
     if service:
         try:
-            return to_text(utils.with_trailing_slash(parser.get('env', service)))
+            return utils.with_trailing_slash(parser.get('env', service))
         except configparser.NoOptionError as e:
-            six.raise_from(ValueError('%s is an invalid service' % service), e)
-    return [to_text(utils.with_trailing_slash(value)) for name, value in parser.items('env')]
+            raise ValueError(f'{service} is an invalid service') from e
+    return [utils.with_trailing_slash(value) for name, value in parser.items('env')]
 
 
 def _env_chdir(pth):
@@ -476,8 +470,8 @@ def process_args(args):
 
 
 def print_results(results):
-    assert not isinstance(results, six.binary_type), 'did not coerce to text'
-    if isinstance(results, six.text_type):
+    assert not isinstance(results, bytes), 'did not coerce to text'
+    if isinstance(results, str):
         sys.stdout.write(results)
         if not results.endswith('\n'):
             sys.stdout.write('\n')

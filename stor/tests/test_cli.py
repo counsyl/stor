@@ -1,12 +1,13 @@
 from __future__ import print_function
 
 import contextlib
+import io
 import os
-import mock
+from unittest import mock
 import sys
 from tempfile import NamedTemporaryFile
 
-import six
+import pytest
 
 from stor.dx import DXPath
 from stor.posix import PosixPath
@@ -20,13 +21,13 @@ from stor import test
 
 class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
     def setUp(self):
-        patcher = mock.patch.object(sys, 'stdout', six.StringIO())
+        patcher = mock.patch.object(sys, 'stdout', io.StringIO())
         self.addCleanup(patcher.stop)
         patcher.start()
 
     @contextlib.contextmanager
     def assertOutputMatches(self, exit_status=None, stdout='', stderr=''):
-        patch = mock.patch('sys.stderr', new=six.StringIO())
+        patch = mock.patch('sys.stderr', new=io.StringIO())
         self.addCleanup(patch.stop)
         patch.start()
         if exit_status is not None:
@@ -54,22 +55,22 @@ class BaseCliTest(test.S3TestCase, test.SwiftTestCase):
 
 class TestCliTestUtils(BaseCliTest):
     def test_no_exit_status(self):
-        with six.assertRaisesRegex(self, AssertionError, 'SystemExit'):
+        with pytest.raises(AssertionError, match='SystemExit'):
             with self.assertOutputMatches(exit_status='1'):
                 pass
 
     def test_stdout_matching(self):
-        with six.assertRaisesRegex(self, AssertionError, 'stdout'):
+        with pytest.raises(AssertionError, match='stdout'):
             with self.assertOutputMatches(stdout=None):
                 print('blah')
 
     def test_stderr_matching(self):
-        with six.assertRaisesRegex(self, AssertionError, 'stderr'):
+        with pytest.raises(AssertionError, match='stderr'):
             with self.assertOutputMatches(stderr=None):
                 print('blah', file=sys.stderr)
 
     def test_stderr_and_stdout_matching(self):
-        with six.assertRaisesRegex(self, AssertionError, 'stderr'):
+        with pytest.raises(AssertionError, match='stderr'):
             with self.assertOutputMatches(stdout='apple', stderr=None):
                 print('apple')
                 print('blah', file=sys.stderr)
@@ -162,7 +163,7 @@ class TestCliBasics(BaseCliTest):
     def test_no_cmd_provided(self):
         with self.assertOutputMatches(exit_status='2', stderr='stor: error:.*arguments'):
             with mock.patch.object(sys, 'argv', ['stor']):
-                    cli.main()
+                cli.main()
 
 
 @mock.patch('stor.cli._get_pwd', autospec=True)
@@ -407,7 +408,7 @@ class TestCopy(BaseCliTest):
         self.parse_args('stor cp s3://bucket/file.txt ./file1')
         mock_copy.assert_called_once_with(source='s3://bucket/file.txt', dest='./file1')
 
-    @mock.patch('sys.stdin', new=six.StringIO('some stdin input\n'))
+    @mock.patch('sys.stdin', new=io.StringIO('some stdin input\n'))
     def test_copy_stdin(self, mock_copy):
         mock_copy.side_effect = self.mock_copy_source
         with NamedTemporaryFile(delete=False) as ntf:
@@ -646,6 +647,7 @@ class TestCd(BaseCliTest):
     def test_pwd_error(self):
         with self.assertOutputMatches(exit_status=1, stderr='invalid service'):
             self.parse_args('stor pwd service')
+
 
 class TestCompletions(BaseCliTest):
     def test_completion(self):

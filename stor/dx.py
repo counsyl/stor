@@ -4,11 +4,10 @@ import tempfile
 import warnings
 
 from cached_property import cached_property
-from contextlib2 import contextmanager
+from contextlib import contextmanager
 import dxpy
 from dxpy.exceptions import DXError
 from dxpy.exceptions import DXSearchError
-import six
 
 from stor import exceptions as stor_exceptions
 from stor import Path
@@ -91,7 +90,7 @@ def _wrap_dx_calls():
     try:
         yield
     except DXError as e:
-        six.raise_from(_dx_error_to_descriptive_exception(e), e)
+        raise _dx_error_to_descriptive_exception(e) from e
 
 
 class DXPath(OBSPath):
@@ -702,12 +701,11 @@ class DXPath(OBSPath):
     def download_objects(self,
                          dest,
                          objects):
-        def is_parent_dir(possible_parent, possible_child):
-            """Checks if possible_child is a sub-path of possible_parent"""
-            if not possible_parent.resource:
-                return possible_child.resource and \
-                       possible_child.project == possible_parent.project
-            return possible_child.startswith(utils.with_trailing_slash(possible_parent))
+        def is_parent_dir(poss_parent, poss_child):
+            """Checks if poss_child is a sub-path of poss_parent"""
+            if not poss_parent.resource:
+                return poss_child.resource and poss_child.project == poss_parent.project
+            return poss_child.startswith(utils.with_trailing_slash(poss_parent))
 
         source = self
         if source == (self.drive + self.project):  # need to convert dx://proj to dx://proj:
@@ -715,8 +713,8 @@ class DXPath(OBSPath):
 
         for obj in objects:
             if utils.is_dx_path(obj) and not is_parent_dir(source, DXPath(obj)):
-                    raise ValueError(
-                        '"%s" must be child of download path "%s"' % (obj, self))
+                raise ValueError(
+                    '"%s" must be child of download path "%s"' % (obj, self))
         # Convert requested download objects to full object paths
         objs_to_download = {
             obj: DXPath(obj) if utils.is_dx_path(obj) else source / obj
@@ -819,9 +817,8 @@ class DXPath(OBSPath):
                                    project=self.canonical_project)
         with _wrap_dx_calls():
             result = file_handler.read()
-        if six.PY3:  # pragma: no cover
-            # TODO (akumar): allow other encoding after update of encoding in dxpy for Py3
-            result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
+        # TODO (akumar): allow other encoding after update of encoding in dxpy for Py3
+        result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
         return result
 
     def write_object(self, content, **kwargs):
@@ -839,9 +836,9 @@ class DXPath(OBSPath):
         if not self.resource:
             raise ValueError('Cannot write to project. Please provide a file path')
         if not isinstance(content, bytes):  # pragma: no cover
-                # bytes/unicode a little confused so allow it
-                warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
-                              ' TypeError if content is not bytes')
+            # bytes/unicode a little confused so allow it
+            warnings.warn('A future version of stor will raise a'
+                          ' TypeError if content is not bytes')
         mode = 'wb' if type(content) == bytes else 'wt'
         if self.isfile():
             self.remove()
@@ -982,10 +979,7 @@ class DXPath(OBSPath):
         folders = self.listdir(only='folders', canonicalize=canonicalize)
         for folder in folders:
             yield folder
-        for data in self.walkfiles(
-                        canonicalize=canonicalize,
-                        recurse=False
-                    ):
+        for data in self.walkfiles(canonicalize=canonicalize, recurse=False):
             yield data
 
     def walkfiles(self,

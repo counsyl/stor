@@ -1,10 +1,9 @@
+import io
 import logging
 import os
 import time
 import unittest
 import uuid
-
-import six
 
 import stor
 from stor import exceptions
@@ -277,7 +276,7 @@ class S3IntegrationTest(BaseIntegrationTest.BaseTestCases):
                     num_retries=0)
 
     def test_multipart_transfer(self):
-        logger = six.StringIO()
+        logger = io.StringIO()
         handler = logging.StreamHandler(logger)
         logging.getLogger('botocore').setLevel(logging.DEBUG)
         logging.getLogger('botocore').addHandler(handler)

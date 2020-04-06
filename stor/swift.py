@@ -40,10 +40,8 @@ import logging
 import os
 import tempfile
 import threading
-import warnings
 
-import six
-from six.moves.urllib import parse
+from urllib import parse
 from swiftclient import exceptions as swift_exceptions
 from swiftclient import service as swift_service
 from swiftclient import client as swift_client
@@ -77,9 +75,11 @@ real_get_auth_keystone = swift_client.get_auth_keystone
 def patched_get_auth_keystone(auth_url, user, key, os_options, **kwargs):
     try:
         return real_get_auth_keystone(auth_url, user, key, os_options, **kwargs)
-    except:
+    except BaseException:
         os_options.pop('auth_token', None)
         raise
+
+
 swift_client.get_auth_keystone = patched_get_auth_keystone
 
 # singleton that collects together auth tokens for storage URLs
@@ -106,6 +106,7 @@ SwiftUploadObject = OBSUploadObject
 
 def _default_retry_sleep_function(t, attempt):
     return t * 2
+
 
 retry_sleep_function = _default_retry_sleep_function
 """The function that increases sleep time when retrying.
@@ -259,17 +260,17 @@ def _swiftclient_error_to_descriptive_exception(exc):
         # When experiencing HA issues, we sometimes encounter a
         # ClientException from swiftclient during upload. The exception
         # is thrown here -
-        # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # nopep8
+        # https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # noqa
         # Treat this as a FailedUploadError
         logger.error('upload error in swift put_object operation - %s', exc_str)
-        six.raise_from(FailedUploadError(exc_str, exc), exc)
+        raise FailedUploadError(exc_str, exc) from exc
     elif 'Unauthorized.' in exc_str:
         # Swiftclient catches keystone auth errors at
-        # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # nopep8
+        # https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # noqa
         # Parse the message since they don't bubble the exception or
         # provide more information
         logger.warning('auth error in swift operation - %s', exc_str)
-        six.raise_from(AuthenticationError(exc_str, exc), exc)
+        raise AuthenticationError(exc_str, exc) from exc
     elif 'md5sum != etag' in exc_str or 'read_length != content_length' in exc_str:
         # We encounter this error when cluster is under heavy
         # replication load (at least that's the theory). So retry and
@@ -291,7 +292,7 @@ def _propagate_swift_exceptions(func):
             return func(*args, **kwargs)
         except (swift_service.SwiftError,
                 swift_exceptions.ClientException) as e:
-            six.raise_from(_swiftclient_error_to_descriptive_exception(e), e)
+            raise _swiftclient_error_to_descriptive_exception(e) from e
     return wrapper
 
 
@@ -646,7 +647,7 @@ class SwiftPath(OBSPath):
                                  '&'.join(query),
                                  auth_url_parts.fragment))
 
-    def write_object(self, content):
+    def write_object(self, content: bytes):
         """Writes an individual object.
 
         Note that this method writes the provided content to a temporary
@@ -659,13 +660,8 @@ class SwiftPath(OBSPath):
         Args:
             content (bytes): raw bytes to write to OBS
         """
-        if not isinstance(content, bytes):  # pragma: no cover
-            if six.PY2:
-                # bytes/unicode a little confused so allow it
-                warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
-                              ' TypeError if content is not bytes')
-            else:
-                raise TypeError('write_object() expects bytes, not text data')
+        if not isinstance(content, bytes):
+            raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if type(content) == bytes else 'wt'
         with tempfile.NamedTemporaryFile(mode=mode) as fp:
             fp.write(content)
@@ -1520,5 +1516,4 @@ class SwiftPath(OBSPath):
         Raises:
             UnauthorizedError: if we cannot authenticate to get a storage URL"""
         storage_url = _get_or_create_auth_credentials(self.tenant)['os_storage_url']
-        return six.text_type(os.path.join(*filter(None,
-                                                  [storage_url, self.container, self.resource])))
+        return str(os.path.join(*filter(None, [storage_url, self.container, self.resource])))

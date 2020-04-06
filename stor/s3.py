@@ -7,14 +7,12 @@ from multiprocessing.pool import ThreadPool
 import os
 import tempfile
 import threading
-import warnings
 
 import boto3
 from boto3 import exceptions as boto3_exceptions
 from boto3.s3.transfer import S3Transfer
 from boto3.s3.transfer import TransferConfig
 from botocore import exceptions as botocore_exceptions
-import six
 
 from stor import exceptions
 from stor import settings
@@ -200,7 +198,7 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except botocore_exceptions.ClientError as e:
-            six.raise_from(_parse_s3_error(e, **kwargs), e)
+            raise _parse_s3_error(e, **kwargs) from e
 
     def _get_s3_iterator(self, method_name, *args, **kwargs):
         """
@@ -221,9 +219,9 @@ class S3Path(OBSPath):
         try:
             return method(*args, **kwargs)
         except boto3_exceptions.S3UploadFailedError as e:
-            six.raise_from(exceptions.FailedUploadError(str(e), e), e)
+            raise exceptions.FailedUploadError(str(e), e) from e
         except boto3_exceptions.RetriesExceededError as e:
-            six.raise_from(exceptions.FailedDownloadError(str(e), e), e)
+            raise exceptions.FailedDownloadError(str(e), e) from e
 
     def list(self,
              starts_with=None,
@@ -302,7 +300,7 @@ class S3Path(OBSPath):
                         for result in page['CommonPrefixes']
                     ])
         except botocore_exceptions.ClientError as e:
-            six.raise_from(_parse_s3_error(e), e)
+            raise _parse_s3_error(e) from e
 
         utils.check_condition(condition, list_results)
         return list_results
@@ -464,7 +462,7 @@ class S3Path(OBSPath):
         response = self._s3_client_call('head_object', Bucket=self.bucket, Key=self.resource)
         response = {
             key: val for key, val in response.items()
-            if key is not 'ResponseMetadata'
+            if key != 'ResponseMetadata'
         }
         return response
 
@@ -482,22 +480,17 @@ class S3Path(OBSPath):
         body = self._s3_client_call('get_object', Bucket=self.bucket, Key=self.resource)['Body']
         return body.read()
 
-    def write_object(self, content):
+    def write_object(self, content: bytes) -> None:
         """Writes an individual object.
 
         Note that this method writes the provided content to a temporary
         file before uploading.
 
         Args:
-            content (bytes): raw bytes to write to OBS
+            content: raw bytes to write to OBS
         """
-        if not isinstance(content, bytes):  # pragma: no cover
-            if six.PY2:
-                # bytes/unicode a little confused so allow it
-                warnings.warn('Python 3 stor and a future Python 2 version of stor will raise a'
-                              ' TypeError if content is not bytes')
-            else:
-                raise TypeError('write_object() expects bytes, not text data')
+        if not isinstance(content, bytes):
+            raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if isinstance(content, bytes) else 'w'
         with tempfile.NamedTemporaryFile(mode) as fp:
             fp.write(content)
@@ -601,7 +594,7 @@ class S3Path(OBSPath):
                     except StopIteration:
                         break
                 pool.close()
-            except:
+            except BaseException:
                 pool.terminate()
                 raise
             finally:
@@ -744,7 +737,7 @@ class S3Path(OBSPath):
                     except StopIteration:
                         break
                 pool.close()
-            except:
+            except BaseException:
                 pool.terminate()
                 raise
             finally:

@@ -179,7 +179,7 @@ class TestScratchDir(unittest.TestCase):
                 for f in files:
                     try:
                         f.remove()
-                    except:
+                    except Exception:
                         pass
 
     def test_listdir_other_encoding(self):

@@ -1,6 +1,5 @@
 from stor.tests.test_integration import BaseIntegrationTest
 import stor
-import six
 
 
 class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):
@@ -18,10 +17,9 @@ class FilesystemIntegrationTest(BaseIntegrationTest.BaseTestCases):
         self.create_dataset(other_dir, 1, 1)
         self.create_dataset(example_dir, 1, 1)
         example_dir.makedirs_p()
-        exc_type = OSError if six.PY2 else FileExistsError  # nopep8
-        with self.assertRaisesRegexp(exc_type, '.*File exists'):
+        with self.assertRaisesRegexp(FileExistsError, '.*File exists'):
             try:
                 stor.copytree(other_dir, example_dir)
-            except exc_type as e:
+            except FileExistsError as e:
                 assert e.errno == 17
                 raise

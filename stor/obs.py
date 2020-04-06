@@ -1,9 +1,9 @@
+import io
 import locale
 import posixpath
 import sys
 
 import dxpy
-import six
 from swiftclient.service import SwiftError
 from swiftclient.service import SwiftUploadObject
 
@@ -24,7 +24,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
         func = getattr(self._get_or_create_buffer(), attr_name)
         return func(*args, **kwargs)
     wrapper.__name__ = attr_name
-    wrapper.__doc__ = getattr(six.BytesIO(), attr_name).__doc__
+    wrapper.__doc__ = getattr(io.BytesIO(), attr_name).__doc__
     return wrapper
 
 
@@ -156,7 +156,7 @@ class OBSPath(Path):
             mode (str): The mode of object IO. Currently supports reading
                 ("r" or "rb") and writing ("w", "wb")
             encoding (str): text encoding to use. Defaults to
-                ``locale.getpreferredencoding(False)`` (Python 3 only)
+                ``locale.getpreferredencoding(False)``
 
         Returns:
             OBSFile: The file object for Swift/S3/DX.
@@ -166,10 +166,9 @@ class OBSPath(Path):
             DNAnexusError: A dxpy client error occured.
             RemoteError: A s3 client error occurred.
         """
-        if six.PY3 and encoding and encoding not in ('utf-8', 'utf8') and \
-                isinstance(self, stor.dx.DXPath):  # pragma: no cover
-            raise ValueError('For DNAnexus paths in Python 3, encoding is always assumed to be '
-                             'utf-8. Please switch your encoding or Python version')
+        if encoding and encoding not in ('utf-8', 'utf8') and isinstance(self, stor.dx.DXPath):
+            raise ValueError('For DNAnexus paths, encoding is always assumed to be '
+                             'utf-8. Please switch your encoding')
         return OBSFile(self, mode=mode, encoding=encoding)
 
     def list(self):
@@ -381,12 +380,9 @@ class OBSFile(object):
                 ``locale.getpreferredencoding(False)`` if not set. We *strongly* encourage you to
                 use binary mode OR explicitly set an encoding when reading/writing text (because
                 writers from different computers may store data on OBS in different ways).
-                Python 3 only.
         """
         if mode not in self._VALID_MODES:
             raise ValueError('invalid mode for file: %r' % mode)
-        if six.PY2 and encoding:  # pragma: no cover
-            raise TypeError('encoding not supported in Python 2')
         self._path = pth
         self.mode = mode
         self.encoding = encoding or locale.getpreferredencoding(False)
@@ -410,7 +406,7 @@ class OBSFile(object):
     @property
     def stream_cls(self):
         """The class used for the IO stream"""
-        return six.BytesIO if self.mode in ('rb', 'wb') else six.StringIO
+        return io.BytesIO if self.mode in ('rb', 'wb') else io.StringIO
 
     def _get_or_create_buffer(self):
         "Cached buffer of data read from or to be written to Object Storage"
@@ -435,13 +431,7 @@ class OBSFile(object):
     readlines = _delegate_to_buffer('readlines', valid_modes=_READ_MODES)
     readline = _delegate_to_buffer('readline', valid_modes=_READ_MODES)
 
-    # In Python 3 it's __next__, in Python 2 it's next()
-    #
-    # TODO: Only use in Python 2 context
-    if sys.version_info >= (3, 0):
-        __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)  # pragma: no cover
-    else:
-        next = _delegate_to_buffer('next', valid_modes=_READ_MODES)  # pragma: no cover
+    __next__ = _delegate_to_buffer('__next__', valid_modes=_READ_MODES)
 
     write = _delegate_to_buffer('write', valid_modes=_WRITE_MODES)
     writelines = _delegate_to_buffer('writelines', valid_modes=_WRITE_MODES)
