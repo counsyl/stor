@@ -6,6 +6,9 @@ v4.0 - Python 3 + Poetry!
 
 Only Python 3.6+ is supported - Python 2.7 and Python 3.5 support is dropped!
 
+Note: the major version bump is because we've dropped 2.7 support, aside from that 
+this would be a feature level change.
+
 Now stor installs via ``poetry`` (this should be transparent to users).
 
 API Additions
@@ -14,7 +17,8 @@ API Additions
 * Tab completions are now available via the ``stor completions`` command.
   Use it to dump completions to appropriate location (see :ref:`installation instructions <cli_tab_completion_installation>`
   for more detail).
-
+* Added ``content_type`` property for OBS paths representing consistent
+  Content-Type header that would be set on download.
 
 API Breaks
 ^^^^^^^^^^
@@ -22,21 +26,6 @@ API Breaks
 * ``stor-completions.bash`` is no longer on the path (see :ref:`installation instructions <cli_tab_completion_installation>`
   for more detail).
 * Only python3.6+ is supported. Python 2.7 and Python 3.5 are no longer supported.
-
-Developer Changes
-^^^^^^^^^^^^^^^^^
-
-* ``stor`` now installs via ``poetry``. You'll need it installed to work with the library.
-* Tests for ``stor`` now run on Github Actions on Python 3.5+ and we've removed tox for local testing.
-
-v3.2.0
-------
-
-API Additions
-^^^^^^^^^^^^^
-
-* Added ``content_type`` property for OBS paths representing consistent
-  Content-Type header that would be set on download.
 
 Bug Fixes
 ^^^^^^^^^
@@ -46,6 +35,12 @@ Bug Fixes
   ``OBSFile`` objects would throw an exception in ``__del__`` method.
 * Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
   were in write mode.
+
+Developer Changes
+^^^^^^^^^^^^^^^^^
+
+* ``stor`` now installs via ``poetry``. You'll need it installed to work with the library.
+* Tests for ``stor`` now run on Github Actions on Python 3.6+ and we've removed tox for local testing.
 
 v3.1.0
 ------
