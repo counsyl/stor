@@ -324,6 +324,14 @@ line4
                 obj.write(b'hello world')
         self.assertEqual(dx_p.open().read(), 'hello world')
 
+    def test_valid_and_invalid_encoding_for_dnanexus(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
+        with pytest.raises(ValueError, match='encoding is always assumed to be utf-8'):
+            dx_p.open(encoding="ascii")
+        with dx_p.open('w', encoding="utf-8") as fp:
+            fp.write('text')
+
 
 class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):
     drive = 'dx://project:'  # project is required for DX paths
