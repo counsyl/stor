@@ -39,7 +39,7 @@ jobs:
       run: |
         set -x
         python --version | tee htmlcov/python.txt
-        pytest --version | tee htmlcov/pytest.txt
+        poetry run pytest --version | tee htmlcov/pytest.txt
     - name: Test with coverage
       run: make unit-test
     - name: Lint
