@@ -31,15 +31,6 @@ jobs:
         poetry config --local virtualenvs.in-project true
     - name: Install venv
       run: make venv
-    - name: List versions - pip
-      run: |
-        mkdir htmlcov
-        poetry run pip list | tee htmlcov/pip-freeze.txt
-    - name: "List versions: pytest and python"
-      run: |
-        set -x
-        python --version | tee htmlcov/python.txt
-        pytest --version | tee htmlcov/pytest.txt
     - name: Test with coverage
       run: make unit-test
     - name: Lint
@@ -49,7 +40,6 @@ jobs:
     - name: Build coverage report
       if: always()
       run: |
-        cp .coverage htmlcov/.coverage
         poetry run python -m coverage html
     - name: Create coverage report artifact
       uses: actions/upload-artifact@v1.0.0
