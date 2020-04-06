@@ -35,7 +35,7 @@ jobs:
       run: |
         mkdir htmlcov
         poetry run pip list | tee htmlcov/pip-freeze.txt
-    - name: List versions: pytest and python
+    - name: "List versions: pytest and python"
       run: |
         set -x
         python --version | tee htmlcov/python.txt
