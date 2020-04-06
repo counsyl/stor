@@ -37,3 +37,16 @@ jobs:
       run: make lint
     - name: Doc build
       run: make docs
+    - name: Build coverage report
+      if: always()
+      run: |
+        poetry run python -m coverage html
+    - name: Create coverage report artifact
+      uses: actions/upload-artifact@v1.0.0
+      # TODO: make this only run if the build step at least ran
+      if: always()
+      with:
+        # Artifact name
+        name: html-coverage
+        # Directory containing files to upload
+        path: ./htmlcov
