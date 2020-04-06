@@ -301,8 +301,7 @@ line4
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
         with pytest.raises(ValueError, match='Can only.*file paths not project paths'):
-            with dx_p.open(mode='wb') as f:
-                f.write(b'data')
+            fp = dx_p.open(mode='wb')
         with pytest.raises(ValueError, match='Cannot write to project'):
             dx_p.write_object(b'data')
 
