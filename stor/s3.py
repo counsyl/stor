@@ -489,7 +489,7 @@ class S3Path(OBSPath):
         Args:
             content: raw bytes to write to OBS
         """
-        if not isinstance(content, bytes):
+        if not isinstance(content, bytes):  # pragma: no cover
             raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if isinstance(content, bytes) else 'w'
         with tempfile.NamedTemporaryFile(mode) as fp:

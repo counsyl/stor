@@ -660,7 +660,7 @@ class SwiftPath(OBSPath):
         Args:
             content (bytes): raw bytes to write to OBS
         """
-        if not isinstance(content, bytes):
+        if not isinstance(content, bytes):  # pragma: no cover
             raise TypeError('write_object() expects bytes, not text data')
         mode = 'wb' if type(content) == bytes else 'wt'
         with tempfile.NamedTemporaryFile(mode=mode) as fp:

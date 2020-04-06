@@ -568,7 +568,7 @@ class FileSystemPath(Path):
                 raise
         return self
 
-    def __maybe_warn_for_walkfiles(self, warn_msg, errors):
+    def __maybe_warn_for_walkfiles(self, warn_msg, errors):  # pragma: no cover
         """Split out warning handling to reduce complexity of walkfiles"""
         if errors == 'ignore':
             return True
@@ -579,7 +579,7 @@ class FileSystemPath(Path):
                 TreeWalkWarning)
             return True
 
-    def walkfiles(self, pattern=None, errors='strict', **kwargs):  # flake8: noqa pragma: no cover
+    def walkfiles(self, pattern=None, errors='strict', **kwargs):  # pragma: no cover
         """ D.walkfiles() -> iterator over files in D, recursively.
         The optional argument `pattern` limits the results to files
         with names that match the pattern.  For example,
@@ -591,7 +591,7 @@ class FileSystemPath(Path):
 
         try:
             childList = self.listdir()
-        except Exception:
+        except Exception:  # pragma: no cover
             if not self.__maybe_warn_for_walkfiles("Unable to list directory", errors=errors):
                 raise
 
@@ -599,7 +599,7 @@ class FileSystemPath(Path):
             try:
                 isfile = child.isfile()
                 isdir = not isfile and child.isdir()
-            except Exception:
+            except Exception:   # pragma: no cover
                 if not child.__maybe_warn_for_walkfiles("Unable to access", errors=errors):
                     raise
 

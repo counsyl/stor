@@ -27,7 +27,7 @@ class SwiftTestMixin(object):
         """
         try:
             self._get_swift_patcher.stop()
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             # If the user disables the mock, the mock will try
             # to be stopped on test cleanup. Disable errors from that
             pass
@@ -114,7 +114,7 @@ class S3TestMixin(object):
         """Disables the mock for getting the S3 client."""
         try:
             self._get_s3_client_patcher.stop()
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             # If the user disables the mock, the mock will try
             # to be stopped on test cleanup. Disable errors from that
             pass
@@ -123,7 +123,7 @@ class S3TestMixin(object):
         """Disables the mock for getting the S3 iterator."""
         try:
             self._get_s3_iterator_patcher.stop()
-        except RuntimeError:
+        except RuntimeError:  # pragma: no cover
             pass
 
     def setup_s3_mocks(self):
