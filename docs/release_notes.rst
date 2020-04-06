@@ -35,6 +35,8 @@ Bug Fixes
   ``OBSFile`` objects would throw an exception in ``__del__`` method.
 * Only call ``OBSFile._wait_on_close()`` when we actually wrote data AND we
   were in write mode.
+* Eliminate exception in ``__del__`` method when calling ``stor.open`` on a DNAnexus project path.
+* ``stor.open()`` now throws an error earlier when incorrectly calling ``open()`` on a DNAnexus project path.
 
 Developer Changes
 ^^^^^^^^^^^^^^^^^

@@ -292,15 +292,19 @@ line4
         with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.open().read()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='not a project'):
+        with pytest.raises(ValueError, match='Can only.*file paths not project paths'):
             dx_p.open().read()
+        with pytest.raises(ValueError, match='not a project'):
+            dx_p.read_object()
 
     def test_write_to_project_fail(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='Cannot write to project'):
+        with pytest.raises(ValueError, match='Can only.*file paths not project paths'):
             with dx_p.open(mode='wb') as f:
                 f.write(b'data')
+        with pytest.raises(ValueError, match='Cannot write to project'):
+            dx_p.write_object(b'data')
 
     def test_write_w_settings_no_timeout(self):
         self.setup_temporary_project()
