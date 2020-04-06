@@ -24,7 +24,6 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): poetry.lock
-	@ poetry config --local virtualenvs.in-project true
 	poetry install
 	touch $@
 
