@@ -292,15 +292,18 @@ line4
         with pytest.raises(exceptions.NotFoundError, match='No data object'):
             dx_p.open().read()
         dx_p = DXPath('dx://' + self.project)
-        with pytest.raises(ValueError, match='not a project'):
+        with pytest.raises(ValueError, match='Can only.*file paths not project paths'):
             dx_p.open().read()
+        with pytest.raises(ValueError, match='not a project'):
+            dx_p.read_object()
 
     def test_write_to_project_fail(self):
         self.setup_temporary_project()
         dx_p = DXPath('dx://' + self.project)
+        with pytest.raises(ValueError, match='Can only.*file paths not project paths'):
+            dx_p.open(mode='wb')
         with pytest.raises(ValueError, match='Cannot write to project'):
-            with dx_p.open(mode='wb') as f:
-                f.write(b'data')
+            dx_p.write_object(b'data')
 
     def test_write_w_settings_no_timeout(self):
         self.setup_temporary_project()
@@ -320,6 +323,14 @@ line4
             with dx_p.open(mode='wb') as obj:
                 obj.write(b'hello world')
         self.assertEqual(dx_p.open().read(), 'hello world')
+
+    def test_valid_and_invalid_encoding_for_dnanexus(self):
+        self.setup_temporary_project()
+        dx_p = DXPath('dx://' + self.project + ':/temp_file')
+        with pytest.raises(ValueError, match='encoding is always assumed to be utf-8'):
+            dx_p.open(encoding="ascii")
+        with dx_p.open('w', encoding="utf-8") as fp:
+            fp.write('text')
 
 
 class TestDXOBSFile(SharedOBSFileCases, unittest.TestCase):

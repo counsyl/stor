@@ -1,0 +1,494 @@
+interactions:
+- request:
+    body: '{"name": "TestOpen.test_valid_and_invalid_encoding_for_dnanexus.d1f314c4"}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/project/new
+  response:
+    body:
+      string: '{"id":"project-Fp5v0b00z533XQ5p7ggb6F12"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '41'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:44 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217044451-766918
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/project-Fp5v0b00z533XQ5p7ggb6F12/describe
+  response:
+    body:
+      string: '{"id":"project-Fp5v0b00z533XQ5p7ggb6F12","name":"TestOpen.test_valid_and_invalid_encoding_for_dnanexus.d1f314c4","class":"project","created":1586217044000,"modified":1586217044000,"billTo":"org-mwh_rnd","level":"ADMINISTER","dataUsage":0,"sponsoredDataUsage":0,"region":"aws:us-east-1","summary":"","description":"","protected":false,"restricted":false,"downloadRestricted":false,"containsPHI":false,"createdBy":{"user":"user-jeffrey.tratner_myriad.com"},"version":0,"storageCost":0,"pendingTransfer":null,"tags":[],"defaultInstanceType":"mem2_hdd2_x2","totalSponsoredEgressBytes":0,"consumedSponsoredEgressBytes":0,"atSpendingLimit":false}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '640'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:44 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217044564-734526
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"name": "TestOpen.test_valid_and_invalid_encoding_for_dnanexus.d1f314c4",
+      "level": "VIEW", "limit": 2}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/system/findProjects
+  response:
+    body:
+      string: '{"results":[{"id":"project-Fp5v0b00z533XQ5p7ggb6F12","level":"ADMINISTER","permissionSources":["user-jeffrey.tratner_myriad.com"],"public":false}],"next":null}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '159'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:44 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217044679-311187
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-Fp5v0b00z533XQ5p7ggb6F12",
+      "batchsize": 2}]}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/system/resolveDataObjects
+  response:
+    body:
+      string: '{"results":[[]]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '16'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:44 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217044830-947401
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"objects": [{"name": "temp_file", "folder": "/", "project": "project-Fp5v0b00z533XQ5p7ggb6F12",
+      "batchsize": 2}]}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/system/resolveDataObjects
+  response:
+    body:
+      string: '{"results":[[]]}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '16'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:44 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217044928-725840
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"project": "project-Fp5v0b00z533XQ5p7ggb6F12", "folder": "/", "parents":
+      true, "name": "temp_file", "nonce": "b''3702c11653b3c6abaf4277f1800e511c46b95e98c1ac0e6c20726bc95d0b7a42''1586217044.982960"}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/file/new
+  response:
+    body:
+      string: '{"id":"file-Fp5v0b80z539JzJ29Fg9yKgv"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '38'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:45 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217045030-430097
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"fields": {"fileUploadParameters": true}}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/project-Fp5v0b00z533XQ5p7ggb6F12/describe
+  response:
+    body:
+      string: '{"id":"project-Fp5v0b00z533XQ5p7ggb6F12","fileUploadParameters":{"maximumPartSize":5368709120,"minimumPartSize":5242880,"maximumFileSize":5497558138880,"maximumNumParts":10000,"emptyLastPartAllowed":true}}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '205'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:45 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217045172-526454
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"index": 1, "md5": "1cb251ec0d568de6a929b520c4aed8d1", "size": 4}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/file-Fp5v0b80z539JzJ29Fg9yKgv/upload
+  response:
+    body:
+      string: '{"url":"https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/171f/file/open/file-Fp5v0b80z539JzJ29Fg9yKgv/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20200406%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20200406T235045Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=0b4146e89fbae7d76b70067a73757ceb15319ecb9a1ed33a521a42305bee99eb","headers":{"host":"dnanexus-platform-upload-prod.s3.amazonaws.com","content-type":"binary/octet-stream","x-amz-server-side-encryption":"AES256","content-md5":"HLJR7A1WjeapKbUgxK7Y0Q==","content-length":"4"},"expires":1586217165324}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '692'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:45 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217045313-380374
+    status:
+      code: 200
+      message: OK
+- request:
+    body: text
+    headers:
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+      ? !!binary |
+        Y29udGVudC1tZDU=
+      : - !!binary |
+          SExKUjdBMVdqZWFwS2JVZ3hLN1kwUT09
+      ? !!binary |
+        Y29udGVudC10eXBl
+      : - !!binary |
+          YmluYXJ5L29jdGV0LXN0cmVhbQ==
+      ? !!binary |
+        eC1hbXotc2VydmVyLXNpZGUtZW5jcnlwdGlvbg==
+      : - !!binary |
+          QUVTMjU2
+    method: PUT
+    uri: https://dnanexus-platform-upload-prod.s3.amazonaws.com/filev2/171f/file/open/file-Fp5v0b80z539JzJ29Fg9yKgv/1?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAJDCC37XBLBSWJBVQ%2F20200406%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20200406T235045Z&X-Amz-Expires=120&X-Amz-SignedHeaders=content-length%3Bcontent-md5%3Bcontent-type%3Bhost%3Bx-amz-server-side-encryption&X-Amz-Signature=0b4146e89fbae7d76b70067a73757ceb15319ecb9a1ed33a521a42305bee99eb
+  response:
+    body:
+      string: ''
+    headers:
+      Content-Length:
+      - '0'
+      Date:
+      - Mon, 06 Apr 2020 23:50:46 GMT
+      ETag:
+      - '"1cb251ec0d568de6a929b520c4aed8d1"'
+      Server:
+      - AmazonS3
+      x-amz-expiration:
+      - expiry-date="Tue, 28 Apr 2020 00:00:00 GMT", rule-id="3weekpurge"
+      x-amz-id-2:
+      - Oas6hqS0RGA3WpZpBYdWAhfLquWTdFhHJHPHUBWtlZFH6Ptw5ZomNSXJ5Ai40ENspDjjUJ1aEFY=
+      x-amz-request-id:
+      - 3E35B58FEAEC25C9
+      x-amz-server-side-encryption:
+      - AES256
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/file-Fp5v0b80z539JzJ29Fg9yKgv/close
+  response:
+    body:
+      string: '{"id":"file-Fp5v0b80z539JzJ29Fg9yKgv"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '38'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:45 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217045910-538175
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{}'
+    headers:
+      ? !!binary |
+        QXV0aG9yaXphdGlvbg==
+      : - !!binary |
+          QmVhcmVyIGFoR3NUQk9pZ3FtZlV6dThqTUJLUFFQVFFrUmhTYVJ1
+      ? !!binary |
+        Q29udGVudC1UeXBl
+      : - !!binary |
+          YXBwbGljYXRpb24vanNvbg==
+      ? !!binary |
+        RE5BbmV4dXMtQVBJ
+      : - !!binary |
+          MS4wLjA=
+      ? !!binary |
+        VXNlci1BZ2VudA==
+      : - !!binary |
+          ZHhweS8wLjI5MS4xIChEYXJ3aW4tMTcuNy4wLXg4Nl82NC1pMzg2LTY0Yml0KQ==
+    method: POST
+    uri: https://api.dnanexus.com/project-Fp5v0b00z533XQ5p7ggb6F12/destroy
+  response:
+    body:
+      string: '{"id":"project-Fp5v0b00z533XQ5p7ggb6F12"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '41'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Mon, 06 Apr 2020 23:50:50 GMT
+      Server:
+      - nginx
+      X-Content-Type-Options:
+      - nosniff
+      X-Powered-By:
+      - Express
+      X-Request-ID:
+      - 1586217046027-969354
+    status:
+      code: 200
+      message: OK
+version: 1

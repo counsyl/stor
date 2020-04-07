@@ -848,6 +848,34 @@ class DXPath(OBSPath):
             suo = OBSUploadObject(fp.name, object_name='/' + self.resource)
             return self.upload([suo], **kwargs)
 
+    def open(self, mode='r', encoding=None):
+        """
+        Opens a OBSFile that can be read or written to and is uploaded to
+        the remote service.
+
+        For examples of reading and writing opened objects, view
+        OBSFile.
+
+        Args:
+            mode (str): The mode of object IO. Currently supports reading
+                ("r" or "rb") and writing ("w", "wb")
+            encoding (str): text encoding to use. Defaults to
+                ``locale.getpreferredencoding(False)``
+
+        Returns:
+            OBSFile: The file object for Swift/S3/DX.
+
+        Raises:
+            ValueError: if attempting to write to project
+            DNAnexusError: A dxpy client error occured.
+        """
+        if encoding and encoding not in ('utf-8', 'utf8'):
+            raise ValueError('For DNAnexus paths, encoding is always assumed to be '
+                             'utf-8. Please switch your encoding')
+        if not self.resource:
+            raise ValueError("Can only read or write on file paths not project paths")
+        return super().open(mode=mode, encoding=encoding)
+
     def list(self,
              canonicalize=False,
              starts_with=None,
