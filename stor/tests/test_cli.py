@@ -135,7 +135,8 @@ class TestCliBasics(BaseCliTest):
             },
             'dx': {
                 'auth_token': 'fake_token',
-                'wait_on_close': 0
+                'wait_on_close': 0,
+                'file_proxy_url': ''
             }
         }
         filename = os.path.join(os.path.dirname(__file__), 'file_data', 'test.cfg')

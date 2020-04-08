@@ -41,7 +41,7 @@ Settings can be configured in the following ways in order of precedence:
 
 2. Setting environment variables.
 
-3. User-specified configuration in a ``~/stor.cfg`` file.
+3. User-specified configuration in a ``~/.stor.cfg`` file.
 
 
 Default Settings
