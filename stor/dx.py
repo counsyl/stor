@@ -203,7 +203,7 @@ class DXPath(OBSPath):
                 URL will be valid (only for temp URL generation)
             filename (str, optional): A urlencoded filename to use for
                 attachment, otherwise defaults to object name
-                (to use no filename at all, use ``filename=''``).
+                (to use no filename at all, use ``filename=''``)
 
         Raises:
             ValueError: The path points to a project
