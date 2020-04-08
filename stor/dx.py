@@ -191,7 +191,7 @@ class DXPath(OBSPath):
             >>> stor.Path('dx://proj:/folder/mypath.csv').temp_url()
             'https://dl.dnanex.us/F/D/awe1323/mypath.csv'
             >>> with stor.settings.use({'dx': {'file_proxy_url':
-            ...     'https://myproxy.example.com/gateway'}):
+            ...     'https://my-dnax-proxy.example.com/gateway'}):
             ... stor.Path('dx://proj:/folder/mypath.csv').temp_url()
             'https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv'
 
@@ -208,7 +208,7 @@ class DXPath(OBSPath):
         Raises:
             ValueError: The path points to a project
             ValueError: ``file_proxy_url`` is set and ``filename`` does not match object name
-            ValueError: ``file_proxy_url`` does not look a valid http path
+            ValueError: ``file_proxy_url`` does not look like a valid http(s) path
             NotFoundError: The path could not be resolved to a file (when ``file_proxy_url`` unset)
         """
         if not self.resource:
