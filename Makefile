@@ -24,7 +24,7 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): poetry.lock
-	test -f $@ || python3.6 -m venv $(VENV_DIR)
+	test -f $@ || virtualenv --python=python3.6 .venv
 	$(WITH_VENV) pip install poetry==1.0.5
 	poetry install
 	touch $@
