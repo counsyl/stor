@@ -26,7 +26,7 @@ venv: $(VENV_ACTIVATE)
 $(VENV_ACTIVATE): poetry.lock
 	test -f $@ || virtualenv --python=python3.6 .venv
 	$(WITH_VENV) pip install poetry==1.0.5
-	poetry install
+	$(WITH_VENV) poetry install
 	touch $@
 
 develop: venv
