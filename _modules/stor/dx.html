@@ -1,0 +1,1548 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.dx &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.dx</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.dx</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">cached_property</span> <span class="kn">import</span> <span class="n">cached_property</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">import</span> <span class="nn">dxpy</span>
+<span class="kn">from</span> <span class="nn">dxpy.exceptions</span> <span class="kn">import</span> <span class="n">DXError</span>
+<span class="kn">from</span> <span class="nn">dxpy.exceptions</span> <span class="kn">import</span> <span class="n">DXSearchError</span>
+
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">stor_exceptions</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSPath</span>
+<span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSUploadObject</span>
+<span class="kn">from</span> <span class="nn">stor.posix</span> <span class="kn">import</span> <span class="n">PosixPath</span>
+<span class="kn">import</span> <span class="nn">stor.settings</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">progress_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.progress&#39;</span> <span class="o">%</span> <span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DNAnexusError"><a class="viewcode-back" href="../../dx.html#stor.dx.DNAnexusError">[docs]</a><span class="k">class</span> <span class="nc">DNAnexusError</span><span class="p">(</span><span class="n">stor_exceptions</span><span class="o">.</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all remote errors thrown by this DX module&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MultipleObjectsSameNameError"><a class="viewcode-back" href="../../dx.html#stor.dx.MultipleObjectsSameNameError">[docs]</a><span class="k">class</span> <span class="nc">MultipleObjectsSameNameError</span><span class="p">(</span><span class="n">DNAnexusError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when multiple objects exist with the same name</span>
+
+<span class="sd">    Currently, we throw this when trying to get the canonical project</span>
+<span class="sd">    from virtual path and two or more projects were found with same name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ProjectNotFoundError"><a class="viewcode-back" href="../../dx.html#stor.dx.ProjectNotFoundError">[docs]</a><span class="k">class</span> <span class="nc">ProjectNotFoundError</span><span class="p">(</span><span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when no project exists with the given name</span>
+
+<span class="sd">    Currently, we throw this when trying to get the canonical project</span>
+<span class="sd">    from virtual path and no project was found with same name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InconsistentUploadDownloadError"><a class="viewcode-back" href="../../dx.html#stor.dx.InconsistentUploadDownloadError">[docs]</a><span class="k">class</span> <span class="nc">InconsistentUploadDownloadError</span><span class="p">(</span><span class="n">DNAnexusError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown during checksum mismatch or part length mismatch..&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<span class="k">def</span> <span class="nf">_dx_error_to_descriptive_exception</span><span class="p">(</span><span class="n">client_exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts dxpy errors to more descriptive exceptions with</span>
+<span class="sd">    transaction ID&quot;&quot;&quot;</span>
+    <span class="n">http_status</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">client_exception</span><span class="p">,</span> <span class="s1">&#39;code&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">client_exception</span><span class="p">,</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXAPIError</span><span class="p">):</span>
+        <span class="n">exc_str</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> - </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_exception</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                                   <span class="n">client_exception</span><span class="o">.</span><span class="n">msg</span> <span class="ow">or</span> <span class="n">client_exception</span><span class="o">.</span><span class="n">error_message</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">exc_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">client_exception</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">http_status</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">401</span><span class="p">,</span> <span class="mi">403</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">UnauthorizedError</span><span class="p">(</span>
+            <span class="s1">&#39;Either use `dx login --token {{your_dx_token}} --save` or set DX_AUTH_TOKEN &#39;</span>
+            <span class="s1">&#39;environment variable. </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exc_str</span><span class="p">),</span> <span class="n">client_exception</span>
+        <span class="p">)</span>
+    <span class="n">status_to_exception</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">404</span><span class="p">:</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">,</span>
+        <span class="mi">409</span><span class="p">:</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">ConflictError</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">http_status</span> <span class="ow">in</span> <span class="n">status_to_exception</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">status_to_exception</span><span class="p">[</span><span class="n">http_status</span><span class="p">](</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">client_exception</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;DXChecksumMismatchError&#39;</span> <span class="ow">in</span> <span class="n">exc_str</span> <span class="ow">or</span> <span class="s1">&#39;DXPartLengthMismatchError&#39;</span> <span class="ow">in</span> <span class="n">exc_str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">InconsistentUploadDownloadError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">client_exception</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">client_exception</span><span class="p">)</span>
+
+
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">_wrap_dx_calls</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Updates the dx_auth_token from settings for dxpy</span>
+<span class="sd">    Bubbles all dxpy exceptions as `DNAnexusError` classes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">auth_token</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;dx&#39;</span><span class="p">][</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">auth_token</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="n">dxpy</span><span class="o">.</span><span class="n">set_security_context</span><span class="p">({</span>
+            <span class="s1">&#39;auth_token_type&#39;</span><span class="p">:</span> <span class="s1">&#39;Bearer&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;auth_token&#39;</span><span class="p">:</span> <span class="n">auth_token</span>
+        <span class="p">})</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">except</span> <span class="n">DXError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">_dx_error_to_descriptive_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+
+<div class="viewcode-block" id="DXPath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath">[docs]</a><span class="k">class</span> <span class="nc">DXPath</span><span class="p">(</span><span class="n">OBSPath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides the ability to manipulate and access resources on DNAnexus</span>
+<span class="sd">    servers with stor interfaces.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Custom __new__ method so that the validation checks happen during creation</span>
+
+<span class="sd">        This ensures invalid dx paths like DXPath(&#39;dx://&#39;) are never initialized</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DXPath</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+    <span class="n">drive</span> <span class="o">=</span> <span class="s1">&#39;dx://&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_get_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the path parts (excluding the drive) as a list of strings.</span>
+<span class="sd">        Project is always the first part returned here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">colon_pieces</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">project</span> <span class="o">=</span> <span class="n">colon_pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="p">(</span><span class="n">colon_pieces</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">colon_pieces</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">project</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parts</span>
+
+    <span class="k">def</span> <span class="nf">_noop</span><span class="p">(</span><span class="n">attr_name</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">attr_name</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s1">&#39;No-op for </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">attr_name</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="n">abspath</span> <span class="o">=</span> <span class="n">_noop</span><span class="p">(</span><span class="s1">&#39;abspath&#39;</span><span class="p">)</span>
+    <span class="n">realpath</span> <span class="o">=</span> <span class="n">_noop</span><span class="p">(</span><span class="s1">&#39;realpath&#39;</span><span class="p">)</span>
+    <span class="n">expanduser</span> <span class="o">=</span> <span class="n">_noop</span><span class="p">(</span><span class="s1">&#39;expanduser&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DXPath.clear_cached_properties"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.clear_cached_properties">[docs]</a>    <span class="k">def</span> <span class="nf">clear_cached_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clears all cached properties in DXPath objects.</span>
+
+<span class="sd">        The canonical and virtual forms of DXPath objects are cached to not hit</span>
+<span class="sd">        the server for every transformation call. However, after copy/remove/rename,</span>
+<span class="sd">        the cached information is outdated and needs to be cleared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;canonical_project&#39;</span><span class="p">,</span> <span class="s1">&#39;canonical_resource&#39;</span><span class="p">,</span> <span class="s1">&#39;virtual_path&#39;</span><span class="p">,</span> <span class="s1">&#39;virtual_project&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">virtual_project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">virtual_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">virtual_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">canonical_project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">canonical_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">canonical_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="DXPath.normpath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.normpath">[docs]</a>    <span class="k">def</span> <span class="nf">normpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="DXPath.exists"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The project name from the path or None&quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="DXPath.joinpath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.joinpath">[docs]</a>    <span class="k">def</span> <span class="nf">joinpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around base joinpath function which converts the first part to normpath</span>
+<span class="sd">        before joining with others.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normpath</span><span class="p">(),</span> <span class="o">*</span><span class="n">others</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DXPath.to_url"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.to_url">[docs]</a>    <span class="k">def</span> <span class="nf">to_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For compatibility with OBS - returns ``temp_url()``&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp_url</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DXPath.temp_url"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.temp_url">[docs]</a>    <span class="k">def</span> <span class="nf">temp_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains a temporary URL to a DNAnexus data-object.</span>
+
+<span class="sd">        If ``DX_FILE_PROXY_URL`` or ``[dx] file_proxy_url=`` is set, will use that to construct a</span>
+<span class="sd">        path instead, e.g.::</span>
+
+<span class="sd">            &gt;&gt;&gt; stor.Path(&#39;dx://proj:/folder/mypath.csv&#39;).temp_url()</span>
+<span class="sd">            &#39;https://dl.dnanex.us/F/D/awe1323/mypath.csv&#39;</span>
+<span class="sd">            &gt;&gt;&gt; with stor.settings.use({&#39;dx&#39;: {&#39;file_proxy_url&#39;:</span>
+<span class="sd">            ...     &#39;https://my-dnax-proxy.example.com/gateway&#39;}):</span>
+<span class="sd">            ... stor.Path(&#39;dx://proj:/folder/mypath.csv&#39;).temp_url()</span>
+<span class="sd">            &#39;https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv&#39;</span>
+
+<span class="sd">        The file proxy is assumed to be a service that, when given DX path and project, will proxy</span>
+<span class="sd">        through to DNAnexus to render content.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lifetime (int): The time (in seconds) the temporary</span>
+<span class="sd">                URL will be valid (only for temp URL generation)</span>
+<span class="sd">            filename (str, optional): A urlencoded filename to use for</span>
+<span class="sd">                attachment, otherwise defaults to object name</span>
+<span class="sd">                (to use no filename at all, use ``filename=&#39;&#39;``)</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: The path points to a project</span>
+<span class="sd">            ValueError: ``file_proxy_url`` is set and ``filename`` does not match object name</span>
+<span class="sd">            ValueError: ``file_proxy_url`` does not look like a valid http(s) path</span>
+<span class="sd">            NotFoundError: The path could not be resolved to a file (when ``file_proxy_url`` unset)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;DX Projects cannot have a temporary download url&#39;</span><span class="p">)</span>
+        <span class="n">file_proxy_url</span> <span class="o">=</span> <span class="n">stor</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;dx&#39;</span><span class="p">][</span><span class="s1">&#39;file_proxy_url&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">file_proxy_url</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">file_proxy_url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;http&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;if set, ``file_proxy_url`` must be an http(s) path&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">and</span> <span class="n">filename</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;filename MUST match object name when file_proxy_url is set&#39;</span>
+                <span class="p">)</span>
+            <span class="k">return</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urljoin</span><span class="p">(</span>
+                <span class="n">file_proxy_url</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">virtual_project</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">virtual_resource</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">virtual_path</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">filename</span><span class="p">:</span>
+                <span class="c1"># e.g., set to empty string</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">file_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                       <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">file_handler</span><span class="o">.</span><span class="n">get_download_url</span><span class="p">(</span>
+                <span class="n">duration</span><span class="o">=</span><span class="n">lifetime</span><span class="p">,</span>
+                <span class="n">preauthenticated</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+                <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The virtual or canonical path to the file within the project (as a POSIXPath).</span>
+
+<span class="sd">        Examples:</span>
+
+<span class="sd">           &gt;&gt;&gt; Path(&#39;dx://project:dir/file&#39;).resource</span>
+<span class="sd">           PosixPath(&#39;dir/file&#39;)</span>
+<span class="sd">           &gt;&gt;&gt; Path(&#39;dx://project-123:file-456&#39;).resource</span>
+<span class="sd">           PosixPath(&#39;file-456&#39;)</span>
+
+<span class="sd">        NOTE: to avoid making API requests, this operation only uses the local string</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="n">joined_resource</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="n">joined_resource</span><span class="p">)</span> <span class="k">if</span> <span class="n">joined_resource</span> <span class="k">else</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="DXPath.dirname"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.dirname">[docs]</a>    <span class="k">def</span> <span class="nf">dirname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns directory name of path. Returns self if path is a project.</span>
+
+<span class="sd">        To avoid making API calls, canonical paths will return the project ID</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># paths like (&#39;dx://proj:file&#39;) need different logic</span>
+                <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span>
+                <span class="n">new_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">new_path</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DXPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">dirname</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;File or folder name of the path. Empty string for projects or folders</span>
+<span class="sd">        with trailing slash.</span>
+
+<span class="sd">        Makes no API calls to server, canonical paths are treated normally, and the basename</span>
+<span class="sd">        of the path is returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># paths like (&#39;dx://proj:file&#39;) need different logic</span>
+            <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;:&#39;</span>
+            <span class="n">new_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">new_path</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DXPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+
+<div class="viewcode-block" id="DXPath.remove"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes a single object from DX platform</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: The path is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;DXPath.remove() can only be called on single object&#39;</span><span class="p">)</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                   <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">file_handler</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_cached_properties</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DXPath.rmtree"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.rmtree">[docs]</a>    <span class="nd">@_wrap_dx_calls</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes a resource and all of its contents.</span>
+<span class="sd">        The path should point to a project or directory.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError: The path points to a nonexistent directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">proj_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="n">folders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">only</span><span class="o">=</span><span class="s1">&#39;folders&#39;</span><span class="p">)</span>
+            <span class="n">files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">only</span><span class="o">=</span><span class="s1">&#39;objects&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">folder_p</span> <span class="ow">in</span> <span class="n">folders</span><span class="p">:</span>
+                <span class="n">folder_p</span><span class="o">.</span><span class="n">rmtree</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">file_p</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="n">file_p</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">proj_handler</span><span class="o">.</span><span class="n">remove_folder</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span> <span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ResourceNotFound</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span><span class="s1">&#39;No folders were found with the given path (</span><span class="si">{}</span><span class="s1">)&#39;</span>
+                                                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">e</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_cached_properties</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="DXPath.makedirs_p"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.makedirs_p">[docs]</a>    <span class="k">def</span> <span class="nf">makedirs_p</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make directories, including parents on DX from DX folder paths.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode: unused, present for compatibility</span>
+<span class="sd">                (access permissions are managed at project level)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot create a project via makedirs_p()&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">proj_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">proj_handler</span><span class="o">.</span><span class="n">new_folder</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.isdir"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.isdir">[docs]</a>    <span class="k">def</span> <span class="nf">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine if path is directory-like</span>
+<span class="sd">        (i.e., it&#39;s a project, or it&#39;s a folder that can be listed)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if path is an existing folder path or project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>  <span class="c1"># path could be a project</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># or path could be a folder</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">only</span><span class="o">=</span><span class="s1">&#39;folders&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="DXPath.isfile"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.isfile">[docs]</a>    <span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine an object exists at the specified path</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if path points to an existing file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="k">def</span> <span class="nf">_rename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Rename a single data object on the DX Platform</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_name (str): New name of the object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: When trying to rename a project</span>
+<span class="sd">            NotFoundError: When path cannot be resolved to a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Projects cannot be renamed&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_name</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                   <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">file_handler</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">new_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_cached_properties</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_prep_for_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handles logic, for finalizing target destination, making parent folders</span>
+<span class="sd">        and deleting existing target, common to _clone and _move&quot;&quot;&quot;</span>
+        <span class="n">dest_is_dir</span> <span class="o">=</span> <span class="n">dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">()</span>
+        <span class="n">target_dest</span> <span class="o">=</span> <span class="n">dest</span>
+        <span class="k">if</span> <span class="n">dest_is_dir</span> <span class="ow">or</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+            <span class="n">target_dest</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dest_is_dir</span> <span class="ow">and</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">isfile</span><span class="p">():</span>
+            <span class="n">target_dest</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="n">should_rename</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">dest_is_dir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">target_dest</span><span class="p">,</span> <span class="n">should_rename</span>
+
+    <span class="k">def</span> <span class="nf">_clone</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clones the data object into the destination path.</span>
+<span class="sd">        The original file is retained.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path): The destination file/folder path in a different project</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If attempting to clone a project</span>
+<span class="sd">            DNAnexusError: If cloning within same project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot clone project (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Cannot clone within same project&#39;</span><span class="p">)</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                   <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="n">target_dest</span><span class="p">,</span> <span class="n">should_rename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prep_for_copy</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">new_file_h</span> <span class="o">=</span> <span class="n">file_handler</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+                                            <span class="n">folder</span><span class="o">=</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="c1"># no need to rename if we changed destination to include original name</span>
+            <span class="k">if</span> <span class="n">should_rename</span><span class="p">:</span>
+                <span class="n">new_file_h</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">dest</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Moves the data object to a different folder within project.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path): The destination file/folder path within same project</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: When attempting to move projects</span>
+<span class="sd">            DNAnexusError: If attempting to move across projects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot move project (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">:</span>
+            <span class="c1"># This can be implemented by clone and remove original</span>
+            <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Cannot move across different projects&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                   <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="n">target_dest</span><span class="p">,</span> <span class="n">should_rename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prep_for_copy</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">file_handler</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">should_rename</span><span class="p">:</span>
+                <span class="n">file_handler</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">dest</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_cached_properties</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DXPath.copy"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">raise_if_same_project</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies data object to destination path.</span>
+
+<span class="sd">        If dest already exists as a directory on the DX platform, the file is copied</span>
+<span class="sd">        underneath dest directory with original name.</span>
+
+<span class="sd">        If the target destination already exists as a file, it is first deleted before</span>
+<span class="sd">        the copy is attempted.</span>
+
+<span class="sd">        For example, assume the following file hierarchy::</span>
+
+<span class="sd">            dxProject/</span>
+<span class="sd">            - a/</span>
+<span class="sd">            - - 1.txt</span>
+
+<span class="sd">            anotherDxProject/</span>
+
+<span class="sd">        Doing a copy of ``1.txt`` to a new destination of ``b.txt`` is</span>
+<span class="sd">        performed with::</span>
+
+<span class="sd">            Path(&#39;dx://dxProject:/a/1.txt&#39;).copy(&#39;dx://anotherDxProject/b.txt&#39;)</span>
+
+<span class="sd">        The end result for anotherDxProject looks like::</span>
+
+<span class="sd">            anotherDxProject/</span>
+<span class="sd">            - b.txt</span>
+
+<span class="sd">        And, if the destination already exists as a directory, i.e. we have::</span>
+
+<span class="sd">            dxProject/</span>
+<span class="sd">            - a/</span>
+<span class="sd">            - - 1.txt</span>
+
+<span class="sd">            anotherDxProject/</span>
+<span class="sd">            - b.txt/</span>
+
+<span class="sd">        Performing copy with following command::</span>
+
+<span class="sd">            Path(&#39;dx://dxProject:/a/1.txt&#39;).copy(&#39;dx://anotherDxProject/b.txt&#39;)</span>
+
+<span class="sd">        Will yield the resulting structure to be::</span>
+
+<span class="sd">            anotherDxProject/</span>
+<span class="sd">            - b.txt/</span>
+<span class="sd">            - - 1.txt</span>
+
+<span class="sd">        If the source file and destination belong to the same project, the files are</span>
+<span class="sd">        moved instead of copied, if the raise_if_same_project flag is False; because</span>
+<span class="sd">        the same underlying file cannot appear in two locations in the same project.</span>
+
+<span class="sd">        If the final destination for the file already is an existing file,</span>
+<span class="sd">        that file is deleted before the file is copied.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path|str): The destination file or directory.</span>
+<span class="sd">            raise_if_same_project (bool, default False): Controls moving file within project</span>
+<span class="sd">                instead of cloning. If True, raises an error to prevent this move.</span>
+<span class="sd">                Only takes effect when both source and destination are</span>
+<span class="sd">                within the same DX Project</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DNAnexusError: When copying within same project with raise_if_same_project=False</span>
+<span class="sd">            NotFoundError: When the source file path doesn&#39;t exist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dx_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isfile</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">raise_if_same_project</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Source and destination are in same project. &#39;</span>
+                                            <span class="s1">&#39;Set raise_if_same_project=False to allow this.&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_clone</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                    <span class="s1">&#39;No data object was found for the given path on DNAnexus&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">DXPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>  <span class="c1"># for other filesystems, delegate to utils.copy</span></div>
+
+<div class="viewcode-block" id="DXPath.copytree"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.copytree">[docs]</a>    <span class="k">def</span> <span class="nf">copytree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">raise_if_same_project</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies a source directory to a destination directory.</span>
+<span class="sd">        This is not an atomic operation.</span>
+
+<span class="sd">        If the destination path already exists as a directory, the source tree</span>
+<span class="sd">        including the root folder is copied over as a subfolder of the destination.</span>
+
+<span class="sd">        If the source and destination directories belong to the same project,</span>
+<span class="sd">        the tree is moved instead of copied. Also, in such cases, the root folder</span>
+<span class="sd">        of the project cannot be the source path. Please listdir the root folder</span>
+<span class="sd">        and copy/copytree individual items if needed.</span>
+
+<span class="sd">        For example, assume the following file hierarchy::</span>
+
+<span class="sd">            project1/</span>
+<span class="sd">            - b/</span>
+<span class="sd">            - - 1.txt</span>
+
+<span class="sd">            project2/</span>
+
+<span class="sd">        Doing a copytree from ``project1:/b/`` to a new dx destination of</span>
+<span class="sd">        ``project2:/c`` is performed with::</span>
+
+<span class="sd">            Path(&#39;dx://project1:/b&#39;).copytree(&#39;dx://project2:/c&#39;)</span>
+
+<span class="sd">        The end result for project2 looks like::</span>
+
+<span class="sd">            project2/</span>
+<span class="sd">            - c/</span>
+<span class="sd">            - - 1.txt</span>
+
+<span class="sd">        If the destination path directory already exists, the folder is copied</span>
+<span class="sd">        as a subfolder of the destination. If this new destination also exists,</span>
+<span class="sd">        a TargetExistsError is raised.</span>
+
+<span class="sd">        If the source is a root folder, and is cloned to an existing destination directory</span>
+<span class="sd">        or if the destination is also a root folder, the tree is moved under project name.</span>
+
+<span class="sd">        Refer to ``dx`` docs for detailed information.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path|str): The directory to copy to. Must not exist if</span>
+<span class="sd">                its a posix directory</span>
+<span class="sd">            raise_if_same_project (bool, default False): Allows moving files within project</span>
+<span class="sd">                instead of cloning. If True, raises an error to prevent moving the directory.</span>
+<span class="sd">                Only takes effect when both source and destination directory are</span>
+<span class="sd">                within the same DX Project</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DNAnexusError: Attempt to clone within same project and raise_if_same_project=True</span>
+<span class="sd">            TargetExistsError: All possible destinations for source directory already exist</span>
+<span class="sd">            NotFoundError: source directory path doesn&#39;t exist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dx_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isdir</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">raise_if_same_project</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_movetree</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Source and destination are in same project. &#39;</span>
+                                            <span class="s1">&#39;Set raise_if_same_project=False to allow this.&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_clonetree</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                    <span class="s1">&#39;No project or directory was found at path (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">DXPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>  <span class="c1"># for other filesystems, delegate to utils.copytree</span></div>
+
+    <span class="k">def</span> <span class="nf">_prep_for_copytree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handles logic, for finalizing target destination, making parent folders</span>
+<span class="sd">        and checking for clashes, common to _clonetree and _movetree&quot;&quot;&quot;</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">remove_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">dest_is_dir</span> <span class="o">=</span> <span class="n">dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">()</span>
+        <span class="n">should_rename</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">target_dest</span> <span class="o">=</span> <span class="n">dest</span>
+
+        <span class="k">if</span> <span class="n">dest_is_dir</span> <span class="ow">or</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+            <span class="n">target_dest</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">/</span> <span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">resource</span> <span class="k">else</span> <span class="n">source</span><span class="o">.</span><span class="n">virtual_project</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">TargetExistsError</span><span class="p">(</span>
+                    <span class="s1">&#39;Destination path (</span><span class="si">{}</span><span class="s1">) already exists, will not cause &#39;</span>
+                    <span class="s1">&#39;duplicate folders to exist. Remove the original first&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_dest</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="n">should_rename</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">source</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="n">target_dest</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">dest_is_dir</span> <span class="ow">and</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>  <span class="c1"># don&#39;t call makedirs_p on project</span>
+            <span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+
+        <span class="n">moved_folder_path</span> <span class="o">=</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="n">target_dest</span><span class="p">,</span> <span class="n">should_rename</span><span class="p">,</span> <span class="n">moved_folder_path</span>
+
+    <span class="k">def</span> <span class="nf">_clonetree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Clones the project or directory into the destination path.</span>
+<span class="sd">        The original tree is retained.</span>
+
+<span class="sd">        If the destination path already exists as a directory, the source tree</span>
+<span class="sd">        including the root folder is copied over as a subfolder of the destination.</span>
+
+<span class="sd">        If the source root folder is cloned to an existing destination directory</span>
+<span class="sd">        or to root folder of destination, the tree is moved under project name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path): The destination directory path in a different project</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TargetExistsError: When all possible destinations for source directory already exist</span>
+<span class="sd">            DNAnexusError: When cloning within same project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Cannot clonetree within same project&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dest</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="o">+</span><span class="n">dest</span><span class="o">.</span><span class="n">project</span><span class="p">):</span>  <span class="c1"># need to convert dx://proj to dx://proj:</span>
+            <span class="n">dest</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span>
+        <span class="n">target_dest</span><span class="p">,</span> <span class="n">should_rename</span><span class="p">,</span> <span class="n">moved_folder_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prep_for_copytree</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+
+        <span class="n">project_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">project_handler</span><span class="o">.</span><span class="n">clone</span><span class="p">(</span>
+                <span class="n">container</span><span class="o">=</span><span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+                <span class="n">destination</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                             <span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="k">else</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
+                <span class="n">folders</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">and</span> <span class="n">should_rename</span><span class="p">:</span>
+                <span class="n">dxpy</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">project_rename_folder</span><span class="p">(</span>
+                    <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+                    <span class="n">input_params</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">moved_folder_path</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
+                        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_movetree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Moves the project or directory to a different folder within project.</span>
+
+<span class="sd">        Like copytree, if the destination exists as a folder already, the source dir is</span>
+<span class="sd">        moved inside that dest folder with its original name.</span>
+
+<span class="sd">        The source cannot be the root directory.</span>
+
+<span class="sd">        Refer to copytree or copytree for detailed information.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path): The destination directory path within same project</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TargetExistsError: When destination directory already exists</span>
+<span class="sd">            DNAnexusError: When attempting to move across projects</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Cannot movetree across different projects&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DNAnexusError</span><span class="p">(</span><span class="s1">&#39;Cannot move root folder within same project on DX&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">dest</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">dest</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="o">+</span><span class="n">dest</span><span class="o">.</span><span class="n">project</span><span class="p">):</span>  <span class="c1"># need to convert dx://proj to dx://proj:</span>
+            <span class="n">dest</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span>
+        <span class="n">target_dest</span><span class="p">,</span> <span class="n">should_rename</span><span class="p">,</span> <span class="n">moved_folder_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prep_for_copytree</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+
+        <span class="n">project_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">project_handler</span><span class="o">.</span><span class="n">move_folder</span><span class="p">(</span>
+                <span class="n">folder</span><span class="o">=</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
+                <span class="n">destination</span><span class="o">=</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">target_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">should_rename</span><span class="p">:</span>
+                <span class="n">dxpy</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">project_rename_folder</span><span class="p">(</span>
+                    <span class="n">dest</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+                    <span class="n">input_params</span><span class="o">=</span><span class="p">{</span>
+                        <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">moved_folder_path</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
+                        <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">target_dest</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_cached_properties</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DXPath.download_object"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.download_object">[docs]</a>    <span class="nd">@_wrap_dx_calls</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">download_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Download a single path or object to file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path): The output file</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError: When source path is not an existing file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dxpy</span><span class="o">.</span><span class="n">download_dxfile</span><span class="p">(</span>
+            <span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+            <span class="n">filename</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
+            <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.download_objects"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.download_objects">[docs]</a>    <span class="k">def</span> <span class="nf">download_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">dest</span><span class="p">,</span>
+                         <span class="n">objects</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">is_parent_dir</span><span class="p">(</span><span class="n">poss_parent</span><span class="p">,</span> <span class="n">poss_child</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Checks if poss_child is a sub-path of poss_parent&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">poss_parent</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">poss_child</span><span class="o">.</span><span class="n">resource</span> <span class="ow">and</span> <span class="n">poss_child</span><span class="o">.</span><span class="n">project</span> <span class="o">==</span> <span class="n">poss_parent</span><span class="o">.</span><span class="n">project</span>
+            <span class="k">return</span> <span class="n">poss_child</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="n">poss_parent</span><span class="p">))</span>
+
+        <span class="n">source</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">if</span> <span class="n">source</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">):</span>  <span class="c1"># need to convert dx://proj to dx://proj:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">DXPath</span><span class="p">(</span><span class="bp">self</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">objects</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dx_path</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_parent_dir</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">DXPath</span><span class="p">(</span><span class="n">obj</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot; must be child of download path &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+        <span class="c1"># Convert requested download objects to full object paths</span>
+        <span class="n">objs_to_download</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">obj</span><span class="p">:</span> <span class="n">DXPath</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dx_path</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">else</span> <span class="n">source</span> <span class="o">/</span> <span class="n">obj</span>
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">objects</span>
+        <span class="p">}</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="n">dx_obj</span> <span class="ow">in</span> <span class="n">objs_to_download</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dest_resource</span> <span class="o">=</span> <span class="n">dx_obj</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">source</span><span class="p">):]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">dest_obj</span> <span class="o">=</span> <span class="n">PosixPath</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="o">/</span> <span class="n">dest_resource</span>
+            <span class="n">dx_obj</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">dest_obj</span><span class="p">)</span>
+            <span class="n">results</span><span class="p">[</span><span class="n">obj</span><span class="p">]</span> <span class="o">=</span> <span class="n">dest_obj</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="DXPath.download"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.download">[docs]</a>    <span class="nd">@_wrap_dx_calls</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Download a directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (Path): The output directory</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError: When source or dest path is not a directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dxpy</span><span class="o">.</span><span class="n">download_folder</span><span class="p">(</span>
+            <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+            <span class="n">destdir</span><span class="o">=</span><span class="n">dest</span><span class="p">,</span>
+            <span class="n">folder</span><span class="o">=</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.upload"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.upload">[docs]</a>    <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">to_upload</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Upload a list of files and directories to a directory.</span>
+
+<span class="sd">        This is not a batch level operation.</span>
+<span class="sd">        If some file errors, the files uploaded before will remain present.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            to_upload (List[Union[str, OBSUploadObject]]): A list of posix file names,</span>
+<span class="sd">                directory names, or OBSUploadObject objects to upload.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: When source path is not a directory</span>
+<span class="sd">            TargetExistsError: When destination directory already exists</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dx_upload_objects</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">to_upload</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">OBSUploadObject</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">all_files_to_upload</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">walk_files_and_dirs</span><span class="p">([</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">to_upload</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">OBSUploadObject</span><span class="p">)</span>
+        <span class="p">])</span>
+        <span class="n">dx_upload_objects</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">f</span><span class="p">,</span>
+                            <span class="n">object_name</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span>
+                                         <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">/</span>
+                            <span class="n">utils</span><span class="o">.</span><span class="n">file_name_to_object_name</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">all_files_to_upload</span>
+        <span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">upload_obj</span> <span class="ow">in</span> <span class="n">dx_upload_objects</span><span class="p">:</span>
+            <span class="n">upload_obj</span><span class="o">.</span><span class="n">object_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">object_name</span><span class="p">)</span>
+            <span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+            <span class="n">dest_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{drive}{project}</span><span class="s1">:</span><span class="si">{path}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">drive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">object_name</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">isfile</span><span class="p">():</span>
+                <span class="n">dest_is_file</span> <span class="o">=</span> <span class="n">dest_file</span><span class="o">.</span><span class="n">isfile</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">dest_is_file</span><span class="p">:</span>  <span class="c1"># only occurs if upload is called directly with existing objects</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="s1">&#39;Destination path (</span><span class="si">{}</span><span class="s1">) already exists, will not cause &#39;</span>
+                        <span class="s1">&#39;duplicate file objects on the platform. Skipping...&#39;</span>
+                        <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest_file</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+                        <span class="n">dxpy</span><span class="o">.</span><span class="n">upload_local_file</span><span class="p">(</span>
+                            <span class="n">filename</span><span class="o">=</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+                            <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+                            <span class="n">folder</span><span class="o">=</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="n">dest_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                            <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">dest_file</span><span class="o">.</span><span class="n">name</span>
+                        <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">isdir</span><span class="p">():</span>
+                <span class="n">dest_file</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                    <span class="s1">&#39;Source path (</span><span class="si">{}</span><span class="s1">) does not exist. Please provide a valid source&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DXPath.read_object"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.read_object">[docs]</a>    <span class="k">def</span> <span class="nf">read_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads an individual object from DX.</span>
+<span class="sd">        Note dxpy for Py3 automatically decodes the DXFile.read using utf-8.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bytes: the raw bytes from the object on DX.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can only read_object() on a file path, not a project&#39;</span><span class="p">)</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                   <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">file_handler</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="c1"># TODO (akumar): allow other encoding after update of encoding in dxpy for Py3</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>  <span class="c1"># dxpy for py3 already decodes the data with &#39;utf-8&#39;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="DXPath.write_object"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.write_object">[docs]</a>    <span class="k">def</span> <span class="nf">write_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes an individual object to DX.</span>
+
+<span class="sd">        Note that this method writes the provided content to a temporary</span>
+<span class="sd">        file before uploading. This allows us to reuse code from DXPath&#39;s</span>
+<span class="sd">        uploader (multi part object support, etc.).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content (bytes): raw bytes to write to OBS</span>
+<span class="sd">            **kwargs: Keyword arguments to pass to</span>
+<span class="sd">                `DXPath.upload`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot write to project. Please provide a file path&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+            <span class="c1"># bytes/unicode a little confused so allow it</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;A future version of stor will raise a&#39;</span>
+                          <span class="s1">&#39; TypeError if content is not bytes&#39;</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;wb&#39;</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bytes</span> <span class="k">else</span> <span class="s1">&#39;wt&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isfile</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">suo</span> <span class="o">=</span> <span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">object_name</span><span class="o">=</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="n">suo</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.open"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Opens a OBSFile that can be read or written to and is uploaded to</span>
+<span class="sd">        the remote service.</span>
+
+<span class="sd">        For examples of reading and writing opened objects, view</span>
+<span class="sd">        OBSFile.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): The mode of object IO. Currently supports reading</span>
+<span class="sd">                (&quot;r&quot; or &quot;rb&quot;) and writing (&quot;w&quot;, &quot;wb&quot;)</span>
+<span class="sd">            encoding (str): text encoding to use. Defaults to</span>
+<span class="sd">                ``locale.getpreferredencoding(False)``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            OBSFile: The file object for Swift/S3/DX.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: if attempting to write to project</span>
+<span class="sd">            DNAnexusError: A dxpy client error occured.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">encoding</span> <span class="ow">and</span> <span class="n">encoding</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="s1">&#39;utf8&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;For DNAnexus paths, encoding is always assumed to be &#39;</span>
+                             <span class="s1">&#39;utf-8. Please switch your encoding&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only read or write on file paths not project paths&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.list"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">canonicalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">starts_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">classname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">condition</span><span class="o">=</span><span class="kc">None</span>
+             <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List contents using the resource of the path as a prefix. This will only</span>
+<span class="sd">        list the file resources (and not empty directories like other OBS).</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">            Prefer `list_iter()` to this method in production code. If there are many files (i.e.,</span>
+<span class="sd">            more than 1-2K) to list, this method may take a long time to return and use a lot of</span>
+<span class="sd">            memory to construct all of the objects.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; Path(&#39;dx://MyProject:/my/path/&#39;).list(canonicalize=False)</span>
+<span class="sd">            [Path(&#39;dx://MyProject:/my/path/to/file.txt, ...]</span>
+<span class="sd">            &gt;&gt;&gt; Path(&#39;dx://MyProject:/my/path/&#39;).list(canonicalize=True)</span>
+<span class="sd">            [Path(&#39;dx://project-123:file-123&#39;), ...]</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canonicalize (bool, default False): if True, return canonical paths</span>
+<span class="sd">            starts_with (str): Allows for an additional search path to</span>
+<span class="sd">                be appended to the resource of the dx path. Note that this</span>
+<span class="sd">                resource path is treated as a directory</span>
+<span class="sd">            limit (int): Limit the amount of results returned</span>
+<span class="sd">            classname (str): Restricting class : One of &#39;record&#39;, &#39;file&#39;, &#39;gtable,</span>
+<span class="sd">                &#39;applet&#39;, &#39;workflow&#39;</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results matches the condition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             List[DXPath]: Iterates over listed files that match an optional pattern.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">walkfiles</span><span class="p">(</span>
+            <span class="n">canonicalize</span><span class="o">=</span><span class="n">canonicalize</span><span class="p">,</span>
+            <span class="n">starts_with</span><span class="o">=</span><span class="n">starts_with</span><span class="p">,</span>
+            <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
+            <span class="n">classname</span><span class="o">=</span><span class="n">classname</span>
+        <span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>  <span class="c1"># when results == [[]]</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="DXPath.list_iter"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.list_iter">[docs]</a>    <span class="k">def</span> <span class="nf">list_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">canonicalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">starts_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">classname</span><span class="o">=</span><span class="kc">None</span>
+                  <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterable that yields objects under prefix (especially useful when a folder may have</span>
+<span class="sd">        many small files)</span>
+
+<span class="sd">        Note that this is a wrapper function to walkfiles.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canonicalize (bool, default False): if True, return canonical paths</span>
+<span class="sd">            starts_with (str): Allows for an additional search path to</span>
+<span class="sd">                be appended to the resource of the dx path. Note that this</span>
+<span class="sd">                resource path is treated as a directory</span>
+<span class="sd">            limit (int): Limit the amount of results returned</span>
+<span class="sd">            classname (str): Restricting class : One of &#39;record&#39;, &#39;file&#39;, &#39;gtable,</span>
+<span class="sd">                &#39;applet&#39;, &#39;workflow&#39;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             Iterable[DXPath]: Iterates over listed files that match an optional pattern.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">walkfiles</span><span class="p">(</span>
+            <span class="n">canonicalize</span><span class="o">=</span><span class="n">canonicalize</span><span class="p">,</span>
+            <span class="n">starts_with</span><span class="o">=</span><span class="n">starts_with</span><span class="p">,</span>
+            <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
+            <span class="n">classname</span><span class="o">=</span><span class="n">classname</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.listdir"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.listdir">[docs]</a>    <span class="k">def</span> <span class="nf">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">only</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">canonicalize</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List the path as a dir, returning top-level directories and files.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canonicalize (bool, default False): if True, return canonical paths</span>
+<span class="sd">            only (str): &quot;objects&quot; for only objects, &quot;folders&quot; for only folders,</span>
+<span class="sd">                    &quot;all&quot; for both</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[DXPath]: Iterates over listed files directly within the resource</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError: When resource folder is not present on DX platform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">proj_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span>
+        <span class="n">proj_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">virtual_project</span>
+        <span class="n">ans_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;only&#39;</span><span class="p">:</span> <span class="n">only</span><span class="p">,</span>
+            <span class="s1">&#39;describe&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}},</span>
+            <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">obj_dict</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="n">proj_id</span><span class="p">)</span><span class="o">.</span><span class="n">list_folder</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">obj_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">canonicalize</span><span class="p">:</span>
+                    <span class="n">ans_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DXCanonicalPath</span><span class="p">(</span><span class="s1">&#39;dx://</span><span class="si">{}</span><span class="s1">:/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">proj_id</span><span class="p">,</span> <span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;folders&#39;</span> <span class="k">else</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]))))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;folders&#39;</span><span class="p">:</span>
+                        <span class="n">ans_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DXVirtualPath</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{drive}{proj_name}</span><span class="s1">:</span><span class="si">{folder}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">drive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span> <span class="n">proj_name</span><span class="o">=</span><span class="n">proj_name</span><span class="p">,</span> <span class="n">folder</span><span class="o">=</span><span class="n">entry</span><span class="p">)))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ans_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DXVirtualPath</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{drive}{proj_name}</span><span class="s1">:</span><span class="si">{folder}</span><span class="s1">/</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">drive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span>
+                            <span class="n">proj_name</span><span class="o">=</span><span class="n">proj_name</span><span class="p">,</span>
+                            <span class="n">folder</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;describe&#39;</span><span class="p">][</span><span class="s1">&#39;folder&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">),</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s1">&#39;describe&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]))</span>
+                        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ans_list</span></div>
+
+<div class="viewcode-block" id="DXPath.listdir_iter"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.listdir_iter">[docs]</a>    <span class="k">def</span> <span class="nf">listdir_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canonicalize</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate the path as a dir, returning top-level directories and files.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canonicalize (bool, default False): if True, return canonical paths</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Iterable[DXPath]: Iterates over listed files directly within the resource</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">folders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">only</span><span class="o">=</span><span class="s1">&#39;folders&#39;</span><span class="p">,</span> <span class="n">canonicalize</span><span class="o">=</span><span class="n">canonicalize</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">folder</span> <span class="ow">in</span> <span class="n">folders</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">folder</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">walkfiles</span><span class="p">(</span><span class="n">canonicalize</span><span class="o">=</span><span class="n">canonicalize</span><span class="p">,</span> <span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="DXPath.walkfiles"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.walkfiles">[docs]</a>    <span class="k">def</span> <span class="nf">walkfiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">canonicalize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                  <span class="n">starts_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">classname</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterates over listed files that match an optional pattern.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): glob pattern to match the filenames against.</span>
+<span class="sd">            canonicalize (bool, default False): if True, return canonical paths</span>
+<span class="sd">            recurse (bool, default True): if True, look in subfolders of folder as well</span>
+<span class="sd">            starts_with (str): Allows for an additional search path to</span>
+<span class="sd">                be appended to the resource of the dx path. Note that this</span>
+<span class="sd">                resource path is treated as a directory</span>
+<span class="sd">            limit (int): Limit the amount of results returned</span>
+<span class="sd">            classname (str): Restricting class : One of &#39;record&#39;, &#39;file&#39;, &#39;gtable,</span>
+<span class="sd">                &#39;applet&#39;, &#39;workflow&#39;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             Iter[DXPath]: Iterates over listed files that match an optional pattern.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">proj_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span>
+        <span class="n">proj_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">virtual_project</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;project&#39;</span><span class="p">:</span> <span class="n">proj_id</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">pattern</span><span class="p">,</span>
+            <span class="s1">&#39;name_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;glob&#39;</span><span class="p">,</span>
+            <span class="c1"># the query performance is similar w/wo describe field,</span>
+            <span class="c1"># hence no need to customize query based on canonicalize flag</span>
+            <span class="s1">&#39;describe&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}},</span>
+            <span class="s1">&#39;recurse&#39;</span><span class="p">:</span> <span class="n">recurse</span><span class="p">,</span>
+            <span class="s1">&#39;classname&#39;</span><span class="p">:</span> <span class="n">classname</span><span class="p">,</span>
+            <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="n">limit</span><span class="p">,</span>
+            <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="n">starts_with</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">list_gen</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">find_data_objects</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">list_gen</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">canonicalize</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">DXCanonicalPath</span><span class="p">(</span><span class="s1">&#39;dx://</span><span class="si">{}</span><span class="s1">:/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;project&#39;</span><span class="p">],</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">DXVirtualPath</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{drive}{proj_name}</span><span class="s1">:</span><span class="si">{folder}</span><span class="s1">/</span><span class="si">{name}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">drive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span>
+                    <span class="n">proj_name</span><span class="o">=</span><span class="n">proj_name</span><span class="p">,</span>
+                    <span class="n">folder</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;describe&#39;</span><span class="p">][</span><span class="s1">&#39;folder&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">),</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">obj</span><span class="p">[</span><span class="s1">&#39;describe&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+                <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DXPath.glob"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.glob">[docs]</a>    <span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">canonicalize</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Glob for pattern relative to this directory.&quot;&quot;&quot;</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">walkfiles</span><span class="p">(</span>
+            <span class="n">canonicalize</span><span class="o">=</span><span class="n">canonicalize</span><span class="p">,</span>
+            <span class="n">pattern</span><span class="o">=</span><span class="n">pattern</span>
+        <span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>  <span class="c1"># when results == [[]]</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="DXPath.getsize"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.getsize">[docs]</a>    <span class="k">def</span> <span class="nf">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()[</span><span class="s1">&#39;dataUsage&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">1e9</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="DXPath.stat"><a class="viewcode-back" href="../../dx.html#stor.dx.DXPath.stat">[docs]</a>    <span class="nd">@_wrap_dx_calls</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs a stat on the path. This method follows (slightly vague) behavior of dxpy&#39;s</span>
+<span class="sd">        describe method. It works as expected for a virtual path. However, for a canonical path:</span>
+
+<span class="sd">            Path(&#39;dx://project-123:/file-123&#39;)</span>
+
+<span class="sd">        say project-123 exists and file-123 exists, but file-123 doesn&#39;t exist inside project-123,</span>
+<span class="sd">        stat will still return the describe response on file-123 (with its default project).</span>
+
+<span class="sd">        Use stor.exists to check if a canonical path actually exists.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            MultipleObjectsSameNameError: If project or resource is not unique</span>
+<span class="sd">            NotFoundError: When the project or resource cannot be found</span>
+<span class="sd">            ValueError: If path is folder path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                           <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get content type for DXObject. Returns empty string if not present or is project/&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;media&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span></div>
+
+
+<div class="viewcode-block" id="DXVirtualPath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXVirtualPath">[docs]</a><span class="k">class</span> <span class="nc">DXVirtualPath</span><span class="p">(</span><span class="n">DXPath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class Handler for DXPath of form &#39;dx://MyProject:/a/b/c&#39; or &#39;dx://project-{uuid}:/b/c&#39;&quot;&quot;&quot;</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span> <span class="nf">virtual_project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the virtual name of the project associated with the DXVirtualPath&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_valid_dxid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">):</span>
+            <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">virtual_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Human-readable path to the object in its DNAnexus Project (as PosixPath)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">virtual_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Path as DXVirtualPath&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span> <span class="nf">canonical_project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dxid of the unique project for the given project name. Only resolves</span>
+<span class="sd">        project user has access to.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            MultipleObjectsSameNameError: If project name is not unique on DX platform</span>
+<span class="sd">            NotFoundError: If project name doesn&#39;t exist on DNAnexus</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_valid_dxid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span>
+
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">proj_dict</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">find_one_project</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s1">&#39;VIEW&#39;</span><span class="p">,</span> <span class="n">zero_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">more_ok</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">DXSearchError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">MultipleObjectsSameNameError</span><span class="p">(</span><span class="s1">&#39;Found more than one project for given name: &#39;</span>
+                                                   <span class="s1">&#39;</span><span class="si">{!r}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">),</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">proj_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProjectNotFoundError</span><span class="p">(</span><span class="s1">&#39;Found no projects for name: </span><span class="si">{!r}</span><span class="s1">&#39;</span>
+                                       <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">proj_dict</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span> <span class="nf">canonical_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dxid of the file at this path</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            MultipleObjectsSameNameError: if filename is not unique</span>
+<span class="sd">            NotFoundError: if resource is not found on DX platform</span>
+<span class="sd">            ValueError: if path looks like a folder path (i.e., ends with trailing slash)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid operation (</span><span class="si">{method}</span><span class="s1">) on folder path (</span><span class="si">{path}</span><span class="s1">)&#39;</span>
+                             <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">))</span>
+        <span class="n">objects</span> <span class="o">=</span> <span class="p">[{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;folder&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span>
+            <span class="s1">&#39;project&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+            <span class="s1">&#39;batchsize&#39;</span><span class="p">:</span> <span class="mi">2</span>
+        <span class="p">}]</span>
+        <span class="k">with</span> <span class="n">_wrap_dx_calls</span><span class="p">():</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">resolve_data_objects</span><span class="p">(</span><span class="n">objects</span><span class="o">=</span><span class="n">objects</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MultipleObjectsSameNameError</span><span class="p">(</span><span class="s1">&#39;Multiple objects found at path (</span><span class="si">{}</span><span class="s1">). &#39;</span>
+                                               <span class="s1">&#39;Try using a canonical ID instead&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span>
+                <span class="s1">&#39;No data object was found for the given path (</span><span class="si">{}</span><span class="s1">) on DNAnexus&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">canonical_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The unique file or project that matches the given path&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">DXCanonicalPath</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{drive}{proj_id}</span><span class="s1">:/</span><span class="si">{resource}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">drive</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span> <span class="n">proj_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">,</span>
+            <span class="n">resource</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="DXVirtualPath.normpath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXVirtualPath.normpath">[docs]</a>    <span class="k">def</span> <span class="nf">normpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">normed_resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">))[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">norm_pth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">+</span> <span class="s1">&#39;:/&#39;</span> <span class="o">+</span> <span class="n">normed_resource</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">norm_pth</span><span class="p">,</span> <span class="n">DXCanonicalPath</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">norm_pth</span><span class="o">.</span><span class="n">normpath</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">norm_pth</span></div>
+
+<div class="viewcode-block" id="DXVirtualPath.splitpath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXVirtualPath.splitpath">[docs]</a>    <span class="k">def</span> <span class="nf">splitpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around base splitpath function which calls splitpath on the normpath of self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path_to_split</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normpath</span><span class="p">()</span>
+        <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path_to_split</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">parent</span><span class="p">),</span> <span class="n">child</span></div>
+
+<div class="viewcode-block" id="DXVirtualPath.exists"><a class="viewcode-back" href="../../dx.html#stor.dx.DXVirtualPath.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks existence of the path.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the path exists, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># first see if there is a specific corresponding object</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="c1"># otherwise we could be a directory, so try to listdir folder</span>
+        <span class="c1"># note: list doesn&#39;t error on non-existent folder and cannot be used here</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">only</span><span class="o">=</span><span class="s1">&#39;folders&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div></div>
+
+
+<div class="viewcode-block" id="DXCanonicalPath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXCanonicalPath">[docs]</a><span class="k">class</span> <span class="nc">DXCanonicalPath</span><span class="p">(</span><span class="n">DXPath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Represents fully canonicalized DNAnexus paths:</span>
+<span class="sd">    &#39;dx://project-{dxID}:/file-{dxID}&#39; or &#39;dx://project-{dxID}:&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">virtual_project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The virtual (human-readable) name of the project associated with this path&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">virtual_path</span><span class="o">.</span><span class="n">project</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">virtual_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The virtual (human-readable) path of the resource associated with this path&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">virtual_path</span><span class="o">.</span><span class="n">resource</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="nd">@_wrap_dx_calls</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">virtual_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The DXVirtualPath instance equivalent to the canonical path within the specified project</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">proj</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXProject</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+        <span class="n">virtual_p</span> <span class="o">=</span> <span class="n">DXVirtualPath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="n">proj</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;:/&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="n">file_h</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                 <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+            <span class="n">virtual_p</span> <span class="o">=</span> <span class="n">virtual_p</span> <span class="o">/</span> <span class="n">file_h</span><span class="o">.</span><span class="n">folder</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">/</span> <span class="n">file_h</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="n">virtual_p</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">canonical_project</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The canonical dxid for the project&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">canonical_resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The canonical dxID of the file resource&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">canonical_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get DXCanonicalPath instance for path&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="DXCanonicalPath.normpath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXCanonicalPath.normpath">[docs]</a>    <span class="k">def</span> <span class="nf">normpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DXCanonicalPath.splitpath"><a class="viewcode-back" href="../../dx.html#stor.dx.DXCanonicalPath.splitpath">[docs]</a>    <span class="k">def</span> <span class="nf">splitpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wrapper around base splitpath function which calls splitpath on the normpath of self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="n">path_to_split</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">+</span> <span class="s1">&#39;:/&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path_to_split</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">+</span> <span class="s1">&#39;:/&#39;</span><span class="p">)</span>
+
+        <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path_to_split</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">parent</span><span class="p">),</span> <span class="n">child</span></div>
+
+<div class="viewcode-block" id="DXCanonicalPath.exists"><a class="viewcode-back" href="../../dx.html#stor.dx.DXCanonicalPath.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks existence of the path.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the path exists, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="c1"># check that file exists AND is in the specified project</span>
+            <span class="c1"># (list_projects() returns {} when file id doesn&#39;t exist)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">canonical_project</span> <span class="ow">in</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">)</span><span class="o">.</span><span class="n">list_projects</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">except</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

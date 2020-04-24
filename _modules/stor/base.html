@@ -1,0 +1,818 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.base &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.base</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">ntpath</span>
+<span class="kn">import</span> <span class="nn">posixpath</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">import</span> <span class="nn">builtins</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<span class="k">class</span> <span class="nc">TreeWalkWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="Path"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path">[docs]</a><span class="k">class</span> <span class="nc">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wraps path operations with an object-oriented API that makes it easier to</span>
+<span class="sd">    combine and also to work with OBS and local paths via a single API. Methods</span>
+<span class="sd">    on this class will be implemented by all subclasses of path.</span>
+
+<span class="sd">    Using the class-level constructor returns a concrete subclass based on</span>
+<span class="sd">    prefix and current environment.</span>
+
+<span class="sd">    Examples::</span>
+
+<span class="sd">        &gt;&gt;&gt; from stor import Path</span>
+<span class="sd">        &gt;&gt;&gt; Path(&#39;/some/path&#39;)</span>
+<span class="sd">        PosixPath(&#39;/some/path&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Path(&#39;swift://AUTH_something/cont/blah&#39;)</span>
+<span class="sd">        SwiftPath(&#39;swift://AUTH_something/cont/blah&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Path(&#39;s3://bucket/prefix/key&#39;)</span>
+<span class="sd">        S3Path(&#39;s3://bucket/prefix/key&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="n">Path</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;startswith&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;must be a string like&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_dx_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="bp">cls</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">find_dx_class</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_swift_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">stor.swift</span> <span class="kn">import</span> <span class="n">SwiftPath</span>
+
+                <span class="bp">cls</span> <span class="o">=</span> <span class="n">SwiftPath</span>
+            <span class="k">elif</span> <span class="n">utils</span><span class="o">.</span><span class="n">is_s3_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+                <span class="kn">from</span> <span class="nn">stor.s3</span> <span class="kn">import</span> <span class="n">S3Path</span>
+
+                <span class="bp">cls</span> <span class="o">=</span> <span class="n">S3Path</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">ntpath</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">stor.windows</span> <span class="kn">import</span> <span class="n">WindowsPath</span>
+
+                <span class="bp">cls</span> <span class="o">=</span> <span class="n">WindowsPath</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">posixpath</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">stor.posix</span> <span class="kn">import</span> <span class="n">PosixPath</span>
+
+                <span class="bp">cls</span> <span class="o">=</span> <span class="n">PosixPath</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="k">assert</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;path is not compatible with stor&#39;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Path.path_class"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.path_class">[docs]</a>    <span class="nd">@utils</span><span class="o">.</span><span class="n">ClassProperty</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">path_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;What class should be used to construct new instances from this class&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span></div>
+
+<div class="viewcode-block" id="Path.parts_class"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.parts_class">[docs]</a>    <span class="nd">@utils</span><span class="o">.</span><span class="n">ClassProperty</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">parts_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;What class should be used to construct path *components*&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">cls</span></div>
+
+    <span class="k">def</span> <span class="nf">_has_incompatible_path_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns true if the other path is a stor path and has a</span>
+<span class="sd">        compatible path module for path operations&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">other</span><span class="o">.</span><span class="n">path_module</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span>
+
+    <span class="n">copy</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">copy</span>
+    <span class="n">copytree</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">copytree</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(</span><span class="si">%s</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="nb">super</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;u&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__div__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Join two path components (self / rel), adding a separator character if needed.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_incompatible_path_module</span><span class="p">(</span><span class="n">rel</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__rdiv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Join two path components (rel / self), adding a separator character if needed.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_incompatible_path_module</span><span class="p">(</span><span class="n">rel</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">rel</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+
+    <span class="c1"># Make the / operator work even when true division is enabled.</span>
+    <span class="fm">__truediv__</span> <span class="o">=</span> <span class="n">__div__</span>
+    <span class="fm">__rtruediv__</span> <span class="o">=</span> <span class="n">__rdiv__</span>
+
+    <span class="k">def</span> <span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">more</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_incompatible_path_module</span><span class="p">(</span><span class="n">more</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="n">more</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_incompatible_path_module</span><span class="p">(</span><span class="n">other</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">NotImplemented</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># --- Operations on Path strings.</span>
+
+<div class="viewcode-block" id="Path.abspath"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.abspath">[docs]</a>    <span class="k">def</span> <span class="nf">abspath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :func:`os.path.abspath` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.normcase"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.normcase">[docs]</a>    <span class="k">def</span> <span class="nf">normcase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :func:`os.path.normcase` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.normpath"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.normpath">[docs]</a>    <span class="k">def</span> <span class="nf">normpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :func:`os.path.normpath` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.realpath"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.realpath">[docs]</a>    <span class="k">def</span> <span class="nf">realpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover (temporary)</span>
+        <span class="sd">&quot;&quot;&quot;See :func:`os.path.realpath` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.expanduser"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.expanduser">[docs]</a>    <span class="k">def</span> <span class="nf">expanduser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :func:`os.path.expanduser` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.expandvars"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.expandvars">[docs]</a>    <span class="k">def</span> <span class="nf">expandvars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :func:`os.path.expandvars` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.dirname"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.dirname">[docs]</a>    <span class="k">def</span> <span class="nf">dirname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :attr:`parent`, :func:`os.path.dirname` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.basename"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.basename">[docs]</a>    <span class="k">def</span> <span class="nf">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See :attr:`name`, :func:`os.path.basename` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.expand"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.expand">[docs]</a>    <span class="k">def</span> <span class="nf">expand</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Clean up a filename by calling :meth:`expandvars()`,</span>
+<span class="sd">        :meth:`expanduser()`, and :meth:`normpath()` on it.</span>
+
+<span class="sd">        This is commonly everything needed to clean up a filename</span>
+<span class="sd">        read from a configuration file, for example.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expandvars</span><span class="p">()</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">normpath</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Path.fnmatch"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.fnmatch">[docs]</a>    <span class="k">def</span> <span class="nf">fnmatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">normcase</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return ``True`` if :attr:`name` matches the given ``pattern``.</span>
+
+<span class="sd">        .. seealso:: :func:`fnmatch.fnmatch`</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): A filename pattern with wildcards,</span>
+<span class="sd">                for example ``&#39;*.py&#39;``. If the pattern contains a `normcase`</span>
+<span class="sd">                attribute, it is applied to the name and path prior to comparison.</span>
+<span class="sd">            normcase (func, optional): A function used to normalize the pattern and</span>
+<span class="sd">                filename before matching. Defaults to :meth:`self.module`, which defaults</span>
+<span class="sd">                to :meth:`os.path.normcase`.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">default_normcase</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="s1">&#39;normcase&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">normcase</span><span class="p">)</span>
+        <span class="n">normcase</span> <span class="o">=</span> <span class="n">normcase</span> <span class="ow">or</span> <span class="n">default_normcase</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">normcase</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="n">normcase</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirname</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">basename</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">namebase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The same as :attr:`name`, but with one file extension stripped off.</span>
+
+<span class="sd">        For example,</span>
+<span class="sd">        ``Path(&#39;/home/guido/python.tar.gz&#39;).name == &#39;python.tar.gz&#39;``,</span>
+<span class="sd">        but</span>
+<span class="sd">        ``Path(&#39;/home/guido/python.tar.gz&#39;).namebase == &#39;python.tar&#39;``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">base</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">base</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">drive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitdrive</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The file extension, for example ``&#39;.py&#39;``. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitext</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Path.splitpath"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.splitpath">[docs]</a>    <span class="k">def</span> <span class="nf">splitpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; p.splitpath() -&gt; Return ``(p.parent, p.name)``.</span>
+
+<span class="sd">        (naming is to avoid colliding with str.split)</span>
+
+<span class="sd">        See: :attr:`parent`, :attr:`name`, :func:`os.path.split`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">parent</span><span class="p">),</span> <span class="n">child</span></div>
+
+<div class="viewcode-block" id="Path.splitext"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.splitext">[docs]</a>    <span class="k">def</span> <span class="nf">splitext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; p.splitext() -&gt; Return ``(p.stripext(), p.ext)``.</span>
+
+<span class="sd">        Split the filename extension from this path and return</span>
+<span class="sd">        the two parts.  Either part may be empty.</span>
+
+<span class="sd">        The extension is everything from ``&#39;.&#39;`` to the end of the</span>
+<span class="sd">        last path segment.  This has the property that if</span>
+<span class="sd">        ``(a, b) == p.splitext()``, then ``a + b == p``.</span>
+
+<span class="sd">        See: :func:`os.path.splitext`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filename</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">ext</span></div>
+
+<div class="viewcode-block" id="Path.splitdrive"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.splitdrive">[docs]</a>    <span class="k">def</span> <span class="nf">splitdrive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; p.splitdrive() -&gt; Return ``(p.drive, &lt;the rest of p&gt;)``.</span>
+
+<span class="sd">        Split the drive specifier from this path.  If there is</span>
+<span class="sd">        no drive specifier, :samp:`{p.drive}` is empty, so the return value</span>
+<span class="sd">        is simply ``(Path(&#39;&#39;), p)``.  This is always the case on Unix.</span>
+
+<span class="sd">        See: :func:`os.path.splitdrive`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">drive</span><span class="p">,</span> <span class="n">rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">splitdrive</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">drive</span><span class="p">),</span> <span class="n">rel</span></div>
+
+<div class="viewcode-block" id="Path.joinpath"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.joinpath">[docs]</a>    <span class="k">def</span> <span class="nf">joinpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Join first to zero or more :class:`Path` components, adding a separator</span>
+<span class="sd">        character (:samp:`{first}.module.sep`) if needed.  Returns a new</span>
+<span class="sd">        instance of :samp:`{first}.path_class`.</span>
+
+<span class="sd">        See: :func:`os.path.join`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">others</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Path.open"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open a file-like object.</span>
+
+<span class="sd">        The only cross-compatible arguments for this function are listed below.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode: first positional arg, mode of file descriptor</span>
+<span class="sd">            encoding: text encoding to use</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.list"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List all contents using the path as a prefix.</span>
+
+<span class="sd">        Note: Skips broken symlinks.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+    <span class="k">def</span> <span class="nf">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Path.glob"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.glob">[docs]</a>    <span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Glob for pattern relative to this directory.</span>
+
+<span class="sd">        Note that Swift currently only supports a single trailing *&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.exists"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks whether path exists on local filesystem or on swift.</span>
+
+<span class="sd">        For directories on swift, checks whether directory sentinel exists or</span>
+<span class="sd">        at least one subdirectory exists&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.isabs"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.isabs">[docs]</a>    <span class="k">def</span> <span class="nf">isabs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.isabs`</span>
+
+<span class="sd">        Always True with SwiftPath&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.isdir"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.isdir">[docs]</a>    <span class="k">def</span> <span class="nf">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.isdir` &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.isfile"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.isfile">[docs]</a>    <span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.isfile` &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.islink"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.islink">[docs]</a>    <span class="k">def</span> <span class="nf">islink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.islink`</span>
+
+<span class="sd">        Always False on Swift.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.ismount"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.ismount">[docs]</a>    <span class="k">def</span> <span class="nf">ismount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.ismount`</span>
+
+<span class="sd">        Always True on Swift.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.getsize"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.getsize">[docs]</a>    <span class="k">def</span> <span class="nf">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns size, in bytes of path.</span>
+
+<span class="sd">        For Swift containers and tenants, will return 0. For POSIX directories,</span>
+<span class="sd">        returns an undefined value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            os.error: if file does not exist or is inaccessible</span>
+<span class="sd">            NotFoundError/UnauthorizedError: from swift</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.remove"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Delete single path or object &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.rmtree"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.rmtree">[docs]</a>    <span class="k">def</span> <span class="nf">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete entire directory (or all paths starting with prefix).</span>
+
+<span class="sd">        See shutil.rmtree&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.makedirs_p"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.makedirs_p">[docs]</a>    <span class="k">def</span> <span class="nf">makedirs_p</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Like :func:`os.makedirs`, but does not raise an exception if the</span>
+<span class="sd">        directory already exists. &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="Path.walkfiles"><a class="viewcode-back" href="../../main_interface.html#stor.base.Path.walkfiles">[docs]</a>    <span class="k">def</span> <span class="nf">walkfiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over files recursively.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str, optional): Limits the results to files</span>
+<span class="sd">                with names that match the pattern.  For example,</span>
+<span class="sd">                ``mydir.walkfiles(&#39;*.tmp&#39;)`` yields only files with the ``.tmp``</span>
+<span class="sd">                extension.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Iter[Path]: Files recursively under the path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">FileSystemPath</span><span class="p">(</span><span class="n">Path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;&#39;Abstract&#39; class implementing file-system specific operations.</span>
+
+<span class="sd">    In particular: allows changing directory when used as contextmanager and</span>
+<span class="sd">    wraps Python&#39;s builtin open() to be compatible with swift_upload_args.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Opens a path and retains interface compatibility with</span>
+<span class="sd">        `SwiftPath` by popping the unused ``swift_upload_args`` keyword</span>
+<span class="sd">        argument.</span>
+
+<span class="sd">        Creates parent directory if it does not exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+        <span class="c1"># only set kwargs if they aren&#39;t set to avoid overwriting defaults</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">[(</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;encoding&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)]</span> <span class="k">if</span> <span class="n">v</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">builtins</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_old_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_old_dir</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">chdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c1"># no stat() because we want to provide a cross-compatible API at some point</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_always_unicode</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>  <span class="c1"># pragma: no cover (OS-dependent)</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ensure the path as retrieved from a Python API, such as</span>
+<span class="sd">        :func:`os.listdir`, is a proper Unicode string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">path</span>
+
+    <span class="k">def</span> <span class="nf">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;D.listdir() -&gt; List of items in this directory.</span>
+
+<span class="sd">        The elements of the list are Path objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span> <span class="o">/</span> <span class="n">child</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_always_unicode</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">))]</span>
+
+    <span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">):</span>
+        <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">cls</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="bp">self</span> <span class="o">/</span> <span class="n">pattern</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.exists` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">isabs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.isabs` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.isdir` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.isfile` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">islink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover (temporary)</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.islink` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">islink</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">ismount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover (temporary)</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.ismount` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">ismount</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.path.getsize` &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.remove` &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="n">rmtree</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span>
+
+    <span class="k">def</span> <span class="nf">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; See: :func:`os.makedirs` &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">makedirs_p</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Like :meth:`makedirs`, but does not raise an exception if the</span>
+<span class="sd">        directory already exists. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="c1"># no point in trying to make an empty relative path :)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span><span class="p">:</span>  <span class="c1"># pragma: no cover (temporary)</span>
+                <span class="k">raise</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">_splitall</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># pragma: no cover (temporary)</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot; Return a list of the path components in this path.</span>
+
+<span class="sd">        The first item in the list will be a Path.  Its value will be</span>
+<span class="sd">        either :data:`os.curdir`, :data:`os.pardir`, empty, or the root</span>
+<span class="sd">        directory of this path (for example, ``&#39;/&#39;`` or ``&#39;C:\\&#39;``).  The</span>
+<span class="sd">        other items in the list will be strings.</span>
+
+<span class="sd">        ``path.Path.joinpath(*result)`` will yield the original path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">while</span> <span class="n">loc</span> <span class="o">!=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span> <span class="ow">and</span> <span class="n">loc</span> <span class="o">!=</span> <span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">:</span>
+            <span class="n">prev</span> <span class="o">=</span> <span class="n">loc</span>
+            <span class="n">loc</span><span class="p">,</span> <span class="n">child</span> <span class="o">=</span> <span class="n">prev</span><span class="o">.</span><span class="n">splitpath</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">loc</span> <span class="o">==</span> <span class="n">prev</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parts</span>
+
+    <span class="k">def</span> <span class="nf">relpath</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return this path as a relative path,</span>
+<span class="sd">        based from `start`, which defaults to the current working directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cwd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cwd</span><span class="o">.</span><span class="n">relpathto</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">relpathto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>  <span class="c1"># pragma: no cover (temporary)</span>
+        <span class="sd">&quot;&quot;&quot; Return a relative path from `self` to `dest`.</span>
+
+<span class="sd">        If there is no relative path from `self` to `dest`, for example if</span>
+<span class="sd">        they reside on different drives in Windows, then this returns</span>
+<span class="sd">        ``dest.abspath()``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abspath</span><span class="p">()</span>
+        <span class="n">dest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">abspath</span><span class="p">()</span>
+
+        <span class="n">orig_list</span> <span class="o">=</span> <span class="n">origin</span><span class="o">.</span><span class="n">normcase</span><span class="p">()</span><span class="o">.</span><span class="n">_splitall</span><span class="p">()</span>
+        <span class="c1"># Don&#39;t normcase dest!  We want to preserve the case.</span>
+        <span class="n">dest_list</span> <span class="o">=</span> <span class="n">dest</span><span class="o">.</span><span class="n">_splitall</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">orig_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">dest_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="c1"># Can&#39;t get here from there.</span>
+            <span class="k">return</span> <span class="n">dest</span>
+
+        <span class="c1"># Find the location where the two paths start to differ.</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">start_seg</span><span class="p">,</span> <span class="n">dest_seg</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">orig_list</span><span class="p">,</span> <span class="n">dest_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">start_seg</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">normcase</span><span class="p">(</span><span class="n">dest_seg</span><span class="p">):</span>
+                <span class="k">break</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Now i is the point where the two paths diverge.</span>
+        <span class="c1"># Need a certain number of &quot;os.pardir&quot;s to work up</span>
+        <span class="c1"># from the origin to the point of divergence.</span>
+        <span class="n">segments</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">pardir</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">orig_list</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span>
+        <span class="c1"># Need to add the diverging part of dest_list.</span>
+        <span class="n">segments</span> <span class="o">+=</span> <span class="n">dest_list</span><span class="p">[</span><span class="n">i</span><span class="p">:]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">segments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># If they happen to be identical, use os.curdir.</span>
+            <span class="n">relpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">relpath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="n">segments</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="n">relpath</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; .. seealso:: :func:`os.mkdir` &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">mkdir_p</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Like :meth:`mkdir`, but does not raise an exception if the</span>
+<span class="sd">        directory already exists. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span><span class="p">:</span>  <span class="c1"># pragma: no cover (temporary)</span>
+                <span class="k">raise</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">rmdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; .. seealso:: :func:`os.rmdir` &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">rmdir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">rmdir_p</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Like :meth:`rmdir`, but does not raise an exception if the</span>
+<span class="sd">        directory is not empty or does not exist. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rmdir</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>  <span class="c1"># pragma: no cover (temporary)</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOTEMPTY</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">:</span>
+                <span class="k">raise</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__maybe_warn_for_walkfiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">warn_msg</span><span class="p">,</span> <span class="n">errors</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="sd">&quot;&quot;&quot;Split out warning handling to reduce complexity of walkfiles&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">errors</span> <span class="o">==</span> <span class="s1">&#39;ignore&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">errors</span> <span class="o">==</span> <span class="s1">&#39;warn&#39;</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="n">warn_msg</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">TreeWalkWarning</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">walkfiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;strict&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+        <span class="sd">&quot;&quot;&quot; D.walkfiles() -&gt; iterator over files in D, recursively.</span>
+<span class="sd">        The optional argument `pattern` limits the results to files</span>
+<span class="sd">        with names that match the pattern.  For example,</span>
+<span class="sd">        ``mydir.walkfiles(&#39;*.tmp&#39;)`` yields only files with the ``.tmp``</span>
+<span class="sd">        extension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">errors</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;strict&#39;</span><span class="p">,</span> <span class="s1">&#39;warn&#39;</span><span class="p">,</span> <span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid errors parameter&quot;</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">childList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listdir</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__maybe_warn_for_walkfiles</span><span class="p">(</span><span class="s2">&quot;Unable to list directory&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">):</span>
+                <span class="k">raise</span>
+
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">childList</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">isfile</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">isfile</span><span class="p">()</span>
+                <span class="n">isdir</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">isfile</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">isdir</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>   <span class="c1"># pragma: no cover</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">__maybe_warn_for_walkfiles</span><span class="p">(</span><span class="s2">&quot;Unable to access&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">):</span>
+                    <span class="k">raise</span>
+
+            <span class="k">if</span> <span class="n">isfile</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">child</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">child</span>
+            <span class="k">elif</span> <span class="n">isdir</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">walkfiles</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">errors</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">f</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

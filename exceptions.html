@@ -1,0 +1,351 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Stor Python Exceptions &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Testing" href="testing.html" />
+    <link rel="prev" title="Windows" href="windows.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Stor Python Exceptions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/exceptions.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-stor.exceptions">
+<span id="stor-python-exceptions"></span><h1>Stor Python Exceptions<a class="headerlink" href="#module-stor.exceptions" title="Permalink to this headline">¶</a></h1>
+<p>Provides exceptions classes thrown by various utilities of stor</p>
+<dl class="exception">
+<dt id="stor.exceptions.RemoteError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">RemoteError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#RemoteError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.RemoteError" title="Permalink to this definition">¶</a></dt>
+<dd><p>The top-level exception thrown for any errors from remote services
+(eg. swift, S3).</p>
+<p>The ‘caught_exception’ attribute of the exception must be examined in order
+to inspect the exception thrown by the swift or S3 service. A swift exception</p>
+<p>Swift has two types of caught exceptions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SwiftError</span></code> (thrown by <code class="docutils literal notranslate"><span class="pre">swiftclient.service</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ClientError</span></code> (thrown by <code class="docutils literal notranslate"><span class="pre">swiftclient.client</span></code>)</p></li>
+</ul>
+<p>S3 raises:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ClientError</span></code> (thrown by <code class="docutils literal notranslate"><span class="pre">botocore.client</span></code>).</p></li>
+</ul>
+<dl class="attribute">
+<dt id="stor.exceptions.RemoteError.caught_exception">
+<code class="sig-name descname">caught_exception</code><a class="headerlink" href="#stor.exceptions.RemoteError.caught_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>the underlying exception that was raised from service.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.8)">Exception</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.NotFoundError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">NotFoundError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#NotFoundError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.NotFoundError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a 404 response is returned.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.InvalidObjectStateError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">InvalidObjectStateError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#InvalidObjectStateError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.InvalidObjectStateError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for 403 errors from S3 dealing with storage classes.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.ObjectInColdStorageError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">ObjectInColdStorageError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#ObjectInColdStorageError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.ObjectInColdStorageError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a 403 is returned from S3/SwiftStack because backing data is on Glacier.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We don’t want to retry on this
+one, because the object will always be in cold storage.
+See AWS <a class="reference external" href="https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html">S3 Rest API GET</a> spec for more details.</p>
+</div>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.AlreadyRestoredError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">AlreadyRestoredError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#AlreadyRestoredError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.AlreadyRestoredError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown on attempt to restore object already not in Glacier</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.UnauthorizedError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">UnauthorizedError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#UnauthorizedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.UnauthorizedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a 403 response is returned.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Internal swift connection errors (e.g., when a particular node is
+unavailable) appear to translate themselves into 403 errors at the
+proxy layer, thus in general it’s a good idea to retry on authorization
+errors as equivalent to unavailable errors when doing PUT or GET
+operations (list / stat / etc never hit this issue).</p>
+</div>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.UnavailableError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">UnavailableError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#UnavailableError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.UnavailableError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a 503 response is returned.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.ConflictError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">ConflictError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#ConflictError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.ConflictError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a 409 response is returned.</p>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p><strong>Swift</strong>: This error is thrown when deleting a container and
+some object storage nodes report that the container
+has objects while others don’t.</p></li>
+<li><p><strong>S3</strong>: Raised when attempting to restore object that’s already being restored (as
+RestoreAlreadyInProgressError). Possibly in other cases.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.TargetExistsError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">TargetExistsError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#TargetExistsError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.TargetExistsError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a destination target already exists on DX for a folder
+that is being uploaded/copied/moved, etc.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.RestoreAlreadyInProgressError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">RestoreAlreadyInProgressError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#RestoreAlreadyInProgressError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.RestoreAlreadyInProgressError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when RestoreAlreadyInProgress on glacier restore</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.ConditionNotMetError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">ConditionNotMetError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#ConditionNotMetError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.ConditionNotMetError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a condition is not met.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.FailedTransferError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">FailedTransferError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#FailedTransferError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.FailedTransferError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a file transfer fails.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.FailedUploadError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">FailedUploadError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#FailedUploadError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.FailedUploadError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when an upload fails.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="stor.exceptions.FailedDownloadError">
+<em class="property">exception </em><code class="sig-prename descclassname">stor.exceptions.</code><code class="sig-name descname">FailedDownloadError</code><span class="sig-paren">(</span><em class="sig-param">message</em>, <em class="sig-param">caught_exception=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/exceptions.html#FailedDownloadError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.exceptions.FailedDownloadError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thrown when a download fails.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="testing.html" class="btn btn-neutral float-right" title="Testing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="windows.html" class="btn btn-neutral float-left" title="Windows" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

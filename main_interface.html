@@ -1,0 +1,1086 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Main Interface &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Swift" href="swift.html" />
+    <link rel="prev" title="CLI" href="cli.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Main Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#stor">stor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#path-class">Path Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-path-methods">Common Path Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#swiftpath">SwiftPath</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#s3path">S3Path</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#posixpath">PosixPath</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#windowspath">WindowsPath</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Main Interface</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/main_interface.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-stor">
+<span id="id1"></span><span id="main-interface"></span><h1>Main Interface<a class="headerlink" href="#module-stor" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="stor">
+<h2>stor<a class="headerlink" href="#stor" title="Permalink to this headline">¶</a></h2>
+<p>Stor is a library that aims to make it easy to write code that works
+with both local posix filesystems and Swift Object Based Storage. In general,
+you should be able to replace most uses of <code class="docutils literal notranslate"><span class="pre">os.path</span></code> and <code class="docutils literal notranslate"><span class="pre">open</span></code> with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">stor</span> <span class="k">as</span> <span class="nn">path</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="nb">open</span>
+</pre></div>
+</div>
+<p>And your code will work either with posix paths or swift paths (defined as
+strings in the format <code class="docutils literal notranslate"><span class="pre">swift://&lt;TENANT&gt;/&lt;CONTAINER&gt;/&lt;OBJECT&gt;</span></code>).  Stor
+also provides an object-oriented API similar to Python 3’s new pathlib,
+accessible via <code class="docutils literal notranslate"><span class="pre">stor.Path</span></code>.</p>
+<p>stor is heavily inspired by / based on the path.py library, but
+modified to avoid the need to know whether you have a Path or a string for most
+functions.</p>
+<p>See <a class="reference internal" href="swift.html#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">stor.swift</span></code></a> for more information on Swift-specific functionality.</p>
+<dl class="function">
+<dt id="stor.abspath">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">abspath</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.abspath" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.abspath" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.abspath()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.normcase">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">normcase</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.normcase" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.normcase" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.normcase()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.normpath">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">normpath</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.normpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.normpath" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.normpath()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.realpath">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">realpath</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.realpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.realpath" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.realpath()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.expanduser">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">expanduser</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.expanduser" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.expanduser" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.expanduser()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.expandvars">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">expandvars</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.expandvars" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.expandvars" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.expandvars()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.dirname">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">dirname</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.dirname" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-attr docutils literal notranslate"><span class="pre">parent</span></code>, <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.dirname" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.dirname()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.basename">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">basename</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.basename" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code>, <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.basename" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.basename()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.expand">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">expand</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean up a filename by calling <a class="reference internal" href="#stor.expandvars" title="stor.expandvars"><code class="xref py py-meth docutils literal notranslate"><span class="pre">expandvars()</span></code></a>,
+<a class="reference internal" href="#stor.expanduser" title="stor.expanduser"><code class="xref py py-meth docutils literal notranslate"><span class="pre">expanduser()</span></code></a>, and <a class="reference internal" href="#stor.normpath" title="stor.normpath"><code class="xref py py-meth docutils literal notranslate"><span class="pre">normpath()</span></code></a> on it.</p>
+<p>This is commonly everything needed to clean up a filename
+read from a configuration file, for example.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.join">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">join</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.join" title="Permalink to this definition">¶</a></dt>
+<dd><p>Join first to zero or more <code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code> components, adding a separator
+character (<code class="samp docutils literal notranslate"><em><span class="pre">first</span></em><span class="pre">.module.sep</span></code>) if needed.  Returns a new
+instance of <code class="samp docutils literal notranslate"><em><span class="pre">first</span></em><span class="pre">.path_class</span></code>.</p>
+<p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.join" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.join()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.split">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">split</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.split" title="Permalink to this definition">¶</a></dt>
+<dd><p>p.splitpath() -&gt; Return <code class="docutils literal notranslate"><span class="pre">(p.parent,</span> <span class="pre">p.name)</span></code>.</p>
+<p>(naming is to avoid colliding with str.split)</p>
+<p>See: <code class="xref py py-attr docutils literal notranslate"><span class="pre">parent</span></code>, <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code>, <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.split" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.split()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.splitext">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">splitext</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Return ``(p.stripext(), p.ext)``.<a class="headerlink" href="#stor.splitext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split the filename extension from this path and return
+the two parts.  Either part may be empty.</p>
+<p>The extension is everything from <code class="docutils literal notranslate"><span class="pre">'.'</span></code> to the end of the
+last path segment.  This has the property that if
+<code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b)</span> <span class="pre">==</span> <span class="pre">p.splitext()</span></code>, then <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span> <span class="pre">==</span> <span class="pre">p</span></code>.</p>
+<p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.splitext" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.splitext()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.glob">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">glob</code><span class="sig-paren">(</span><em class="sig-param">pth</em>, <em class="sig-param">pattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor.html#glob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Glob for pattern relative to <code class="docutils literal notranslate"><span class="pre">pth</span></code>.</p>
+<p>Note that Swift currently only supports a single trailing *</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.exists">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">exists</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether path exists on local filesystem or on swift.</p>
+<p>For directories on swift, checks whether directory sentinel exists or
+at least one subdirectory exists</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.isabs">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">isabs</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.isabs" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isabs" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isabs()</span></code></a></p>
+<p>Always True with SwiftPath</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.isdir">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">isdir</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.isdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isdir" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isdir()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.isfile">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">isfile</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.isfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isfile" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isfile()</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.islink">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">islink</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.islink" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.islink" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.islink()</span></code></a></p>
+<p>Always False on Swift.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.ismount">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">ismount</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.ismount" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.ismount" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.ismount()</span></code></a></p>
+<p>Always True on Swift.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.getsize">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">getsize</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.getsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns size, in bytes of path.</p>
+<p>For Swift containers and tenants, will return 0. For POSIX directories,
+returns an undefined value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/os.html#os.error" title="(in Python v3.8)"><strong>os.error</strong></a> – if file does not exist or is inaccessible</p></li>
+<li><p><strong>NotFoundError/UnauthorizedError</strong> – from swift</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.copy">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">copy</code><span class="sig-paren">(</span><em class="sig-param">source</em>, <em class="sig-param">dest</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source file to a destination file.</p>
+<p>Note that this utility can be called from either OBS, posix, or
+windows paths created with <code class="docutils literal notranslate"><span class="pre">stor.Path</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The destination file or directory.</p></li>
+<li><p><strong>swift_retry_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – Optional retry arguments to use for swift
+upload or download. View the
+<a class="reference internal" href="swift.html#swiftretry"><span class="std std-ref">swift module-level documentation</span></a> for more
+information on retry arguments</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Copying a swift file to a local path behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">swift_p</span> <span class="o">=</span> <span class="s1">&#39;swift://tenant/container/dir/file.txt&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># file.txt will be copied to other_dir/other_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stor</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">swift_p</span><span class="p">,</span> <span class="s1">&#39;other_dir/other_file.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Copying from a local path to swift behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;my/local/file.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># File will be uploaded to swift://tenant/container/dir/my_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Because of the ambiguity in whether a remote target is a file or directory, copy()
+will error on ambiguous paths.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">OBS destination must be file with extension or directory with slash</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.copytree">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">copytree</code><span class="sig-paren">(</span><em class="sig-param">source</em>, <em class="sig-param">dest</em>, <em class="sig-param">copy_cmd=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">headers=None</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#copytree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.copytree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source directory to a destination directory. Assumes that
+paths are capable of being copied to/from.</p>
+<p>Note that this function uses shutil.copytree by default, meaning
+that a posix or windows destination must not exist beforehand.</p>
+<p>For example, assume the following file hierarchy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Doing a copytree from <code class="docutils literal notranslate"><span class="pre">a</span></code> to a new posix destination of <code class="docutils literal notranslate"><span class="pre">c</span></code> is
+performed with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Note that the user can override which copy command is used for posix
+copies, and it is up to them to ensure that their code abides by the
+semantics of the provided copy command. This function has been tested
+in production using the default command of <code class="docutils literal notranslate"><span class="pre">cp</span> <span class="pre">-r</span></code> and using <code class="docutils literal notranslate"><span class="pre">mcp</span> <span class="pre">-r</span></code>.</p>
+<p>Using OBS source and destinations work in a similar manner. Assume
+the destination is a swift path and we upload the same <code class="docutils literal notranslate"><span class="pre">a</span></code> folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end swift result will have one object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/b/1.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly one can do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks the same as the above posix example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The directory to copy to. Must not exist if
+its a posix directory</p></li>
+<li><p><strong>copy_cmd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If copying to / from posix or windows, this command is
+used instead of shutil.copytree</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>default False</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>headers</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – if two OBS paths are specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.8)"><strong>OSError</strong></a> – if destination is a posix path and it already exists</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.remove">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete single path or object</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.rmtree">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">rmtree</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.rmtree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete entire directory (or all paths starting with prefix).</p>
+<p>See shutil.rmtree</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.walkfiles">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">walkfiles</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.walkfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over files recursively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – Limits the results to files
+with names that match the pattern.  For example,
+<code class="docutils literal notranslate"><span class="pre">mydir.walkfiles('*.tmp')</span></code> yields only files with the <code class="docutils literal notranslate"><span class="pre">.tmp</span></code>
+extension.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Files recursively under the path</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Iter[<a class="reference internal" href="#stor.base.Path" title="stor.base.Path">Path</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.is_filesystem_path">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">is_filesystem_path</code><span class="sig-paren">(</span><em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#is_filesystem_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.is_filesystem_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if the path is posix or windows filesystem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The path string</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if p is a Windows path, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.is_swift_path">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">is_swift_path</code><span class="sig-paren">(</span><em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#is_swift_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.is_swift_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if the path is a Swift path.</p>
+<p>All Swift paths start with swift://</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The path string</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if p is a Swift path, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.is_obs_path">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">is_obs_path</code><span class="sig-paren">(</span><em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#is_obs_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.is_obs_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines if the path is an OBS path (an S3 or Swift path).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The path string</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Returns</dt><dd><p>bool: True if p is an OBS path, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.NamedTemporaryDirectory">
+<code class="sig-prename descclassname">stor.</code><code class="sig-name descname">NamedTemporaryDirectory</code><span class="sig-paren">(</span><em class="sig-param">suffix=''</em>, <em class="sig-param">prefix='tmp'</em>, <em class="sig-param">dir=None</em>, <em class="sig-param">change_dir=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#NamedTemporaryDirectory"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.NamedTemporaryDirectory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context manager for creating and deleting temporary directory.</p>
+<p>Mimics the behavior of tempfile.NamedTemporaryFile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>suffix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If specified, the dir name will end with it.</p></li>
+<li><p><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If specified, the dir name will start with it,
+otherwise ‘tmp’ is used.</p></li>
+<li><p><strong>dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If specified, the dir will be created in this
+directory.</p></li>
+<li><p><strong>change_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – If specified, will change to the temporary
+directory.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields</dt>
+<dd class="field-even"><p><em>Path</em> – The temporary directory.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Name is CamelCase to match tempfile.NamedTemporaryFile.</p>
+</div>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">NamedTemporaryDirectory</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">NamedTemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># Do operations within &quot;d&quot;, which will be deleted afterwards</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<span class="target" id="module-stor.base"></span><div class="section" id="path-class">
+<h2>Path Class<a class="headerlink" href="#path-class" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">stor.Path</span></code> class is the parent to all concrete base classes and
+should be used as the main entry point to the object oriented API.</p>
+<dl class="class">
+<dt id="stor.base.Path">
+<em class="property">class </em><code class="sig-prename descclassname">stor.base.</code><code class="sig-name descname">Path</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps path operations with an object-oriented API that makes it easier to
+combine and also to work with OBS and local paths via a single API. Methods
+on this class will be implemented by all subclasses of path.</p>
+<p>Using the class-level constructor returns a concrete subclass based on
+prefix and current environment.</p>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;/some/path&#39;</span><span class="p">)</span>
+<span class="go">PosixPath(&#39;/some/path&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://AUTH_something/cont/blah&#39;</span><span class="p">)</span>
+<span class="go">SwiftPath(&#39;swift://AUTH_something/cont/blah&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;s3://bucket/prefix/key&#39;</span><span class="p">)</span>
+<span class="go">S3Path(&#39;s3://bucket/prefix/key&#39;)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="stor.base.Path.abspath">
+<code class="sig-name descname">abspath</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.abspath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.abspath" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.abspath" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.abspath()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.basename">
+<code class="sig-name descname">basename</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.basename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.basename" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code>, <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.basename" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.basename()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.base.Path.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source file to a destination file.</p>
+<p>Note that this utility can be called from either OBS, posix, or
+windows paths created with <code class="docutils literal notranslate"><span class="pre">stor.Path</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The destination file or directory.</p></li>
+<li><p><strong>swift_retry_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – Optional retry arguments to use for swift
+upload or download. View the
+<a class="reference internal" href="swift.html#swiftretry"><span class="std std-ref">swift module-level documentation</span></a> for more
+information on retry arguments</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Copying a swift file to a local path behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">swift_p</span> <span class="o">=</span> <span class="s1">&#39;swift://tenant/container/dir/file.txt&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># file.txt will be copied to other_dir/other_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stor</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">swift_p</span><span class="p">,</span> <span class="s1">&#39;other_dir/other_file.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Copying from a local path to swift behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;my/local/file.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># File will be uploaded to swift://tenant/container/dir/my_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Because of the ambiguity in whether a remote target is a file or directory, copy()
+will error on ambiguous paths.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">OBS destination must be file with extension or directory with slash</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.copytree">
+<code class="sig-name descname">copytree</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">copy_cmd=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">headers=None</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.base.Path.copytree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source directory to a destination directory. Assumes that
+paths are capable of being copied to/from.</p>
+<p>Note that this function uses shutil.copytree by default, meaning
+that a posix or windows destination must not exist beforehand.</p>
+<p>For example, assume the following file hierarchy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Doing a copytree from <code class="docutils literal notranslate"><span class="pre">a</span></code> to a new posix destination of <code class="docutils literal notranslate"><span class="pre">c</span></code> is
+performed with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Note that the user can override which copy command is used for posix
+copies, and it is up to them to ensure that their code abides by the
+semantics of the provided copy command. This function has been tested
+in production using the default command of <code class="docutils literal notranslate"><span class="pre">cp</span> <span class="pre">-r</span></code> and using <code class="docutils literal notranslate"><span class="pre">mcp</span> <span class="pre">-r</span></code>.</p>
+<p>Using OBS source and destinations work in a similar manner. Assume
+the destination is a swift path and we upload the same <code class="docutils literal notranslate"><span class="pre">a</span></code> folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end swift result will have one object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/b/1.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly one can do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks the same as the above posix example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The directory to copy to. Must not exist if
+its a posix directory</p></li>
+<li><p><strong>copy_cmd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If copying to / from posix or windows, this command is
+used instead of shutil.copytree</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>default False</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>headers</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – if two OBS paths are specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.8)"><strong>OSError</strong></a> – if destination is a posix path and it already exists</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.dirname">
+<code class="sig-name descname">dirname</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.dirname"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.dirname" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-attr docutils literal notranslate"><span class="pre">parent</span></code>, <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.dirname" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.dirname()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether path exists on local filesystem or on swift.</p>
+<p>For directories on swift, checks whether directory sentinel exists or
+at least one subdirectory exists</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.expand">
+<code class="sig-name descname">expand</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.expand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean up a filename by calling <a class="reference internal" href="#stor.base.Path.expandvars" title="stor.base.Path.expandvars"><code class="xref py py-meth docutils literal notranslate"><span class="pre">expandvars()</span></code></a>,
+<a class="reference internal" href="#stor.base.Path.expanduser" title="stor.base.Path.expanduser"><code class="xref py py-meth docutils literal notranslate"><span class="pre">expanduser()</span></code></a>, and <a class="reference internal" href="#stor.base.Path.normpath" title="stor.base.Path.normpath"><code class="xref py py-meth docutils literal notranslate"><span class="pre">normpath()</span></code></a> on it.</p>
+<p>This is commonly everything needed to clean up a filename
+read from a configuration file, for example.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.expanduser">
+<code class="sig-name descname">expanduser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.expanduser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.expanduser" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.expanduser" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.expanduser()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.expandvars">
+<code class="sig-name descname">expandvars</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.expandvars"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.expandvars" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.expandvars" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.expandvars()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.ext">
+<em class="property">property </em><code class="sig-name descname">ext</code><a class="headerlink" href="#stor.base.Path.ext" title="Permalink to this definition">¶</a></dt>
+<dd><p>The file extension, for example <code class="docutils literal notranslate"><span class="pre">'.py'</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.fnmatch">
+<code class="sig-name descname">fnmatch</code><span class="sig-paren">(</span><em class="sig-param">pattern</em>, <em class="sig-param">normcase=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.fnmatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.fnmatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return <code class="docutils literal notranslate"><span class="pre">True</span></code> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code> matches the given <code class="docutils literal notranslate"><span class="pre">pattern</span></code>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference external" href="https://docs.python.org/3/library/fnmatch.html#fnmatch.fnmatch" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">fnmatch.fnmatch()</span></code></a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – A filename pattern with wildcards,
+for example <code class="docutils literal notranslate"><span class="pre">'*.py'</span></code>. If the pattern contains a <a class="reference internal" href="#stor.base.Path.normcase" title="stor.base.Path.normcase"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">normcase</span></code></a>
+attribute, it is applied to the name and path prior to comparison.</p></li>
+<li><p><strong>normcase</strong> (<em>func</em><em>, </em><em>optional</em>) – A function used to normalize the pattern and
+filename before matching. Defaults to <code class="xref py py-meth docutils literal notranslate"><span class="pre">self.module()</span></code>, which defaults
+to <code class="xref py py-meth docutils literal notranslate"><span class="pre">os.path.normcase()</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.getsize">
+<code class="sig-name descname">getsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.getsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.getsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns size, in bytes of path.</p>
+<p>For Swift containers and tenants, will return 0. For POSIX directories,
+returns an undefined value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/os.html#os.error" title="(in Python v3.8)"><strong>os.error</strong></a> – if file does not exist or is inaccessible</p></li>
+<li><p><strong>NotFoundError/UnauthorizedError</strong> – from swift</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.glob">
+<code class="sig-name descname">glob</code><span class="sig-paren">(</span><em class="sig-param">pattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.glob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Glob for pattern relative to this directory.</p>
+<p>Note that Swift currently only supports a single trailing *</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.isabs">
+<code class="sig-name descname">isabs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.isabs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.isabs" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isabs" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isabs()</span></code></a></p>
+<p>Always True with SwiftPath</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.isdir">
+<code class="sig-name descname">isdir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.isdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.isdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isdir" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isdir()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.isfile">
+<code class="sig-name descname">isfile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.isfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.isfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isfile" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isfile()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.islink">
+<code class="sig-name descname">islink</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.islink"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.islink" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.islink" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.islink()</span></code></a></p>
+<p>Always False on Swift.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.ismount">
+<code class="sig-name descname">ismount</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.ismount"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.ismount" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.ismount" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.ismount()</span></code></a></p>
+<p>Always True on Swift.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.joinpath">
+<code class="sig-name descname">joinpath</code><span class="sig-paren">(</span><em class="sig-param">*others</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.joinpath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.joinpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Join first to zero or more <a class="reference internal" href="#stor.base.Path" title="stor.base.Path"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> components, adding a separator
+character (<code class="samp docutils literal notranslate"><em><span class="pre">first</span></em><span class="pre">.module.sep</span></code>) if needed.  Returns a new
+instance of <code class="samp docutils literal notranslate"><em><span class="pre">first</span></em><span class="pre">.path_class</span></code>.</p>
+<p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.join" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.join()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.list">
+<code class="sig-name descname">list</code><span class="sig-paren">(</span><em class="sig-param">*args</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all contents using the path as a prefix.</p>
+<p>Note: Skips broken symlinks.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.makedirs_p">
+<code class="sig-name descname">makedirs_p</code><span class="sig-paren">(</span><em class="sig-param">mode=511</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.makedirs_p"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.makedirs_p" title="Permalink to this definition">¶</a></dt>
+<dd><p>Like <a class="reference external" href="https://docs.python.org/3/library/os.html#os.makedirs" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.makedirs()</span></code></a>, but does not raise an exception if the
+directory already exists.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.namebase">
+<em class="property">property </em><code class="sig-name descname">namebase</code><a class="headerlink" href="#stor.base.Path.namebase" title="Permalink to this definition">¶</a></dt>
+<dd><p>The same as <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code>, but with one file extension stripped off.</p>
+<p>For example,
+<code class="docutils literal notranslate"><span class="pre">Path('/home/guido/python.tar.gz').name</span> <span class="pre">==</span> <span class="pre">'python.tar.gz'</span></code>,
+but
+<code class="docutils literal notranslate"><span class="pre">Path('/home/guido/python.tar.gz').namebase</span> <span class="pre">==</span> <span class="pre">'python.tar'</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.normcase">
+<code class="sig-name descname">normcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.normcase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.normcase" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.normcase" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.normcase()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.normpath">
+<code class="sig-name descname">normpath</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.normpath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.normpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.normpath" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.normpath()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param">mode: Optional[str] = None</em>, <em class="sig-param">encoding: Optional[str] = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a file-like object.</p>
+<p>The only cross-compatible arguments for this function are listed below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> – first positional arg, mode of file descriptor</p></li>
+<li><p><strong>encoding</strong> – text encoding to use</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stor.base.Path.parts_class">
+<code class="sig-name descname">parts_class</code><a class="reference internal" href="_modules/stor/base.html#Path.parts_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.parts_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#stor.base.Path" title="stor.base.Path"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stor.base.Path.path_class">
+<code class="sig-name descname">path_class</code><a class="reference internal" href="_modules/stor/base.html#Path.path_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.path_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <a class="reference internal" href="#stor.base.Path" title="stor.base.Path"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.realpath">
+<code class="sig-name descname">realpath</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.realpath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.realpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>See <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.realpath" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.realpath()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.remove">
+<code class="sig-name descname">remove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete single path or object</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.rmtree">
+<code class="sig-name descname">rmtree</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.rmtree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.rmtree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Delete entire directory (or all paths starting with prefix).</p>
+<p>See shutil.rmtree</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.splitdrive">
+<code class="sig-name descname">splitdrive</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Return ``(p.drive, &lt;the rest of p&gt;)``.<a class="reference internal" href="_modules/stor/base.html#Path.splitdrive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.splitdrive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split the drive specifier from this path.  If there is
+no drive specifier, <code class="samp docutils literal notranslate"><em><span class="pre">p.drive</span></em></code> is empty, so the return value
+is simply <code class="docutils literal notranslate"><span class="pre">(Path(''),</span> <span class="pre">p)</span></code>.  This is always the case on Unix.</p>
+<p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.splitdrive" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.splitdrive()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.splitext">
+<code class="sig-name descname">splitext</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Return ``(p.stripext(), p.ext)``.<a class="reference internal" href="_modules/stor/base.html#Path.splitext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.splitext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split the filename extension from this path and return
+the two parts.  Either part may be empty.</p>
+<p>The extension is everything from <code class="docutils literal notranslate"><span class="pre">'.'</span></code> to the end of the
+last path segment.  This has the property that if
+<code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b)</span> <span class="pre">==</span> <span class="pre">p.splitext()</span></code>, then <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span> <span class="pre">==</span> <span class="pre">p</span></code>.</p>
+<p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.splitext" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.splitext()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.splitpath">
+<code class="sig-name descname">splitpath</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Return ``(p.parent, p.name)``.<a class="reference internal" href="_modules/stor/base.html#Path.splitpath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.splitpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>(naming is to avoid colliding with str.split)</p>
+<p>See: <code class="xref py py-attr docutils literal notranslate"><span class="pre">parent</span></code>, <code class="xref py py-attr docutils literal notranslate"><span class="pre">name</span></code>, <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.split" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.split()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.base.Path.walkfiles">
+<code class="sig-name descname">walkfiles</code><span class="sig-paren">(</span><em class="sig-param">pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/base.html#Path.walkfiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.base.Path.walkfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over files recursively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – Limits the results to files
+with names that match the pattern.  For example,
+<code class="docutils literal notranslate"><span class="pre">mydir.walkfiles('*.tmp')</span></code> yields only files with the <code class="docutils literal notranslate"><span class="pre">.tmp</span></code>
+extension.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Files recursively under the path</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Iter[<a class="reference internal" href="#stor.base.Path" title="stor.base.Path">Path</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="common-path-methods">
+<h2>Common Path Methods<a class="headerlink" href="#common-path-methods" title="Permalink to this headline">¶</a></h2>
+<p>By using the top-level functions in the stor module (or the main
+<code class="docutils literal notranslate"><span class="pre">Path</span></code> interface) users can write code that is portable across Swift storage,
+Windows, and Posix-based filesystems.  In particular, the following methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">open</span></code>: Opens the resource identified by the path and returns a file (or file-like) object.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">glob</span></code>: Globs the path based on an input pattern. Returns matching path objects.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exists</span></code>: Returns True if the resource exists, False otherwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remove</span></code>: Removes the resource.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rmtree</span></code>: Removes a directory and all resources it contains.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">copy</span></code>: Copies the path to a destination.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">copytree</span></code>: Copies a directory to a destination.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">walkfiles</span></code>: Recursively walks files and matches an optional pattern.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">Path</span></code> fully implements the above methods, but <code class="docutils literal notranslate"><span class="pre">SwiftPath</span></code> may only
+partially implement the method (e.g. only allowing prefix globbing). Read
+the <code class="docutils literal notranslate"><span class="pre">SwiftPath</span></code> documentation below about restrictions on the methods.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Copying from object storage to windows is currently not supported.</p>
+</div>
+</div>
+<div class="section" id="swiftpath">
+<h2>SwiftPath<a class="headerlink" href="#swiftpath" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">SwiftPath</span></code> objects returned from the <code class="docutils literal notranslate"><span class="pre">path</span></code> factory partially support the
+common path methods listed above along with supporting the basic path
+manipulation methods (e.g. ‘my’ / ‘path’ == ‘my/path’). For more information on
+accessing swift, go to the <a class="reference internal" href="swift.html#swift"><span class="std std-ref">Swift</span></a> section.</p>
+</div>
+<div class="section" id="s3path">
+<h2>S3Path<a class="headerlink" href="#s3path" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">S3Path</span></code> objects returned from the <code class="docutils literal notranslate"><span class="pre">Path</span></code> factory partially support the
+common path methods listed above along with supporting the basic path
+manipulation methods (e.g. ‘my’ / ‘path’ == ‘my/path’). For more information on
+accessing swift, go to the <a class="reference internal" href="s3.html#s3"><span class="std std-ref">S3</span></a> section.</p>
+</div>
+<div class="section" id="posixpath">
+<h2>PosixPath<a class="headerlink" href="#posixpath" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">PosixPath</span></code> objects return from the <code class="docutils literal notranslate"><span class="pre">path</span></code> factory fully support the common
+path methods listed above and also provide additional functionality. For more
+information, go to the <a class="reference internal" href="posix.html#posix"><span class="std std-ref">Posix</span></a> section.</p>
+</div>
+<div class="section" id="windowspath">
+<h2>WindowsPath<a class="headerlink" href="#windowspath" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">WindowsPath</span></code> objects return from the <code class="docutils literal notranslate"><span class="pre">path</span></code> factory fully support the
+common path methods listed above and also provide additional functionality. For
+more information, go to the <a class="reference internal" href="windows.html#windows"><span class="std std-ref">Windows</span></a> section.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="swift.html" class="btn btn-neutral float-right" title="Swift" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cli.html" class="btn btn-neutral float-left" title="CLI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

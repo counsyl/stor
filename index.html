@@ -1,0 +1,289 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor Documentation &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Table of Contents" href="toc.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">stor Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cli-quick-start">CLI Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#library-quick-start">Library Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#in-depth-documentation">In Depth Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>stor Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="stor-documentation">
+<h1>stor Documentation<a class="headerlink" href="#stor-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Stor provides a cross-compatible API for doing file manipulation and file access on Posix/Windows file systems and object-based storage (OBS) systems.</p>
+<p>A rich command line interface and library is provided as part of Stor. Below is a quick start for using the <a class="reference internal" href="cli.html#cli"><span class="std std-ref">CLI</span></a> interface and the core library functionality of this module. Other low-level interfaces are described in the later sections.</p>
+<div class="section" id="cli-quick-start">
+<h2>CLI Quick Start<a class="headerlink" href="#cli-quick-start" title="Permalink to this headline">¶</a></h2>
+<p>Stor offers a command line interface for easy use of some common
+functions provided by the library. Accessing files and paths in object-based storage systems like Swift and S3 is easy: simply prefix the path with <code class="docutils literal notranslate"><span class="pre">swift://</span></code> or <code class="docutils literal notranslate"><span class="pre">s3://</span></code>.</p>
+<p>The <a class="reference internal" href="cli.html#cli"><span class="std std-ref">CLI</span></a> also offers some additional features such as copying from <code class="docutils literal notranslate"><span class="pre">stdin</span></code>,
+setting a current working directory for an OBS system, or outputting a
+file’s contents to <code class="docutils literal notranslate"><span class="pre">stdout</span></code> with a <code class="docutils literal notranslate"><span class="pre">cat</span></code> command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ stor cd s3://bucket
+$ stor pwd
+s3://bucket
+swift://
+$ stor list s3:.
+s3://bucket/obj1
+s3://bucket/obj2
+s3://bucket/dir/obj3
+$ echo &quot;hello world&quot; | stor cp - swift://tenant/container/file
+$ stor cat swift://tenant/container/file
+hello world
+</pre></div>
+</div>
+<p>For more details on using the CLI, go to the <a class="reference internal" href="cli.html#cli"><span class="std std-ref">CLI</span></a> section or see <code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">--help</span></code> on the command line after installing.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The CLI also has tab completion capabilities that can be installed with instructions <a class="reference internal" href="installation.html#cli-tab-completion-installation"><span class="std std-ref">here</span></a>.</p>
+</div>
+</div>
+<div class="section" id="library-quick-start">
+<h2>Library Quick Start<a class="headerlink" href="#library-quick-start" title="Permalink to this headline">¶</a></h2>
+<p>The library is designed to work either as a drop-in replacement
+for most functionality found in <code class="docutils literal notranslate"><span class="pre">os.path</span></code> or with an object-oriented API via
+<code class="docutils literal notranslate"><span class="pre">stor.Path</span></code>.</p>
+<p>Ultimately, stor lets you write one piece of code to work with local
+or remote files.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">stor</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="s1">&#39;/my/local/somemanifest.json&#39;</span>
+
+<span class="c1"># Perform normal path.py operations</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">stor</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s1">&#39;file&#39;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">stor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+  <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+
+<span class="c1"># Access swift object storage</span>
+<span class="n">p</span> <span class="o">=</span> <span class="s1">&#39;swift://tenant/container/object/somemanifest.json&#39;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">stor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+  <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>With this interface, one can write code that is compatible with S3, Swift, Posix, and Windows file storage. For more details about the library and how to access low-level interfaces directly, go to the <a class="reference internal" href="main_interface.html#main-interface"><span class="std std-ref">Main Interface</span></a> section.</p>
+</div>
+<div class="section" id="in-depth-documentation">
+<h2>In Depth Documentation<a class="headerlink" href="#in-depth-documentation" title="Permalink to this headline">¶</a></h2>
+<p>For more detailed documentation about the various interfaces offered by stor, check out the following:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="cli.html#cli"><span class="std std-ref">CLI</span></a>: In depth documentation about the command line interface.</p></li>
+<li><p><a class="reference internal" href="main_interface.html#main-interface"><span class="std std-ref">Main Interface</span></a>: In depth documentation about the main library interface.</p></li>
+<li><p><a class="reference internal" href="swift.html#swift"><span class="std std-ref">Swift</span></a>: In depth documentation about Swift access.</p></li>
+<li><p><a class="reference internal" href="posix.html#posix"><span class="std std-ref">Posix</span></a>: In depth documentation about Posix access.</p></li>
+<li><p><a class="reference internal" href="windows.html#windows"><span class="std std-ref">Windows</span></a>: In depth documentation about Windows access.</p></li>
+<li><p><a class="reference internal" href="testing.html#testing"><span class="std std-ref">Testing</span></a>: Testing components for testing with Swift storage.</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="toc.html" class="btn btn-neutral float-left" title="Table of Contents" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

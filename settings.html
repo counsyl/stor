@@ -1,0 +1,470 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Settings &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="SwiftStack Extension" href="extensions.html" />
+    <link rel="prev" title="Testing" href="testing.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Settings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#precedence">Precedence</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#default-settings">Default Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-stor.settings">Settings API</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Settings</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/settings.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="settings">
+<h1>Settings<a class="headerlink" href="#settings" title="Permalink to this headline">¶</a></h1>
+<p>Provides global settings and options for accessing OBS services like swift
+and configuring methods such as <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and <a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p>
+<p>Settings are stored internally as nested dictionaries. When using <a class="reference internal" href="#stor.settings.update" title="stor.settings.update"><code class="xref any py py-func docutils literal notranslate"><span class="pre">update</span></code></a> or
+<a class="reference internal" href="#stor.settings.use" title="stor.settings.use"><code class="xref any py py-attr docutils literal notranslate"><span class="pre">use</span></code></a>, this dictionary structure should be followed.</p>
+<p>Examples:</p>
+<blockquote>
+<div><p>An example settings dictionary.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">example_settings</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;swift:delete&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;object_threads&#39;</span><span class="p">:</span> <span class="mi">10</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;swift:download&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;container_threads&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s1">&#39;object_threads&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s1">&#39;shuffle&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;skip_identical&#39;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;swift:upload&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;changed&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;checksum&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;leave_segments&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">&#39;object_threads&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s1">&#39;segment_size&#39;</span><span class="p">:</span> <span class="mi">1073741824</span><span class="p">,</span>
+        <span class="s1">&#39;segment_threads&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s1">&#39;skip_identical&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s1">&#39;use_slo&#39;</span><span class="p">:</span> <span class="kc">True</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="section" id="precedence">
+<h2>Precedence<a class="headerlink" href="#precedence" title="Permalink to this headline">¶</a></h2>
+<p>Settings can be configured in the following ways in order of precedence:</p>
+<ol class="arabic simple">
+<li><p>When using the <a class="reference internal" href="cli.html#cli"><span class="std std-ref">CLI</span></a>, a configuration file specified using the <code class="docutils literal notranslate"><span class="pre">--config</span></code> flag.</p></li>
+<li><p>Setting environment variables.</p></li>
+<li><p>User-specified configuration in a <code class="docutils literal notranslate"><span class="pre">~/.stor.cfg</span></code> file.</p></li>
+</ol>
+</div>
+<div class="section" id="default-settings">
+<h2>Default Settings<a class="headerlink" href="#default-settings" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">stor</span><span class="p">]</span>
+
+<span class="p">[</span><span class="n">s3</span><span class="p">]</span>
+
+<span class="c1"># See boto3 docs for more detail on these parameters - all passed directly to boto3.session.Session *if* set</span>
+<span class="c1"># aws_access_key_id (string) -- AWS access key ID</span>
+<span class="n">aws_access_key_id</span> <span class="o">=</span>
+<span class="c1"># aws_secret_access_key (string) -- AWS secret access key</span>
+<span class="n">aws_secret_access_key</span> <span class="o">=</span>
+<span class="c1"># aws_session_token (string) -- AWS temporary session token</span>
+<span class="n">aws_session_token</span> <span class="o">=</span>
+<span class="c1"># region_name (string) -- Default region when creating new connections</span>
+<span class="n">region_name</span> <span class="o">=</span>
+<span class="c1"># profile_name (string) -- The name of a profile to use. If not given, then the default profile is used.</span>
+<span class="n">profile_name</span> <span class="o">=</span>
+
+<span class="p">[</span><span class="n">s3</span><span class="p">:</span><span class="n">upload</span><span class="p">]</span>
+<span class="c1"># segment_size (int|str): Upload files in segments no larger than </span>
+<span class="c1">#   &lt;segment_size&gt; (in bytes). Sizes may also be expressed as bytes with </span>
+<span class="c1">#   the B suffix, kilobytes with the K suffix, megabytes with the M suffix</span>
+<span class="c1">#   or gigabytes with the G suffix.</span>
+<span class="n">segment_size</span> <span class="o">=</span> <span class="mi">8388608</span> <span class="c1"># 8 MB</span>
+
+<span class="c1"># object_threads (int): The number of threads to use when uploading full</span>
+<span class="c1">#   objects to s3.</span>
+<span class="n">object_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># segment_threads (int): The number of threads to use when uploading object</span>
+<span class="c1">#   segments to s3 in multipart upload.</span>
+<span class="n">segment_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="p">[</span><span class="n">s3</span><span class="p">:</span><span class="n">download</span><span class="p">]</span>
+<span class="c1"># segment_size (int|str): Download files in segments no larger than </span>
+<span class="c1">#   &lt;segment_size&gt; (in bytes). Sizes may also be expressed as bytes with </span>
+<span class="c1">#   the B suffix, kilobytes with the K suffix, megabytes with the M suffix</span>
+<span class="c1">#   or gigabytes with the G suffix.</span>
+<span class="n">segment_size</span> <span class="o">=</span> <span class="mi">8388608</span> <span class="c1"># 8 MB</span>
+
+<span class="c1"># object_threads (int): The number of threads to use when downloading objects</span>
+<span class="c1">#   from s3.</span>
+<span class="n">object_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># segment_threads (int): The number of threads to use when downloading object</span>
+<span class="c1">#   segments to s3 in multipart download.</span>
+<span class="n">segment_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="p">[</span><span class="n">swift</span><span class="p">]</span>
+<span class="c1"># username (str): The swift username. If not set, the ``OS_USERNAME``</span>
+<span class="c1">#   environment variable will be used.</span>
+<span class="n">username</span> <span class="o">=</span>
+
+<span class="c1"># password (str): The swift password. If not set, the ``OS_PASSWORD``</span>
+<span class="c1">#   environment variable will be used.</span>
+<span class="n">password</span> <span class="o">=</span>
+
+<span class="c1"># auth_url (str): The swift authentication URL. If not set, the</span>
+<span class="c1">#   ``OS_AUTH_URL`` environment variable will be used.</span>
+<span class="n">auth_url</span> <span class="o">=</span>
+
+<span class="c1"># temp_url_key (str): The key for generating temporary URLs.</span>
+<span class="c1">#   If not set, the ``OS_TEMP_URL_KEY environment variable will be used.</span>
+<span class="n">temp_url_key</span> <span class="o">=</span>
+
+<span class="c1"># num_retries (int): The number of times to retry. Uses the</span>
+<span class="c1">#   ``OS_NUM_RETRIES`` environment variable or defaults to 0.</span>
+<span class="n">num_retries</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="p">[</span><span class="n">swift</span><span class="p">:</span><span class="n">delete</span><span class="p">]</span>
+<span class="c1"># object_threads (int): The number of threads to use when deleting objects</span>
+<span class="n">object_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="p">[</span><span class="n">swift</span><span class="p">:</span><span class="n">upload</span><span class="p">]</span>
+<span class="c1"># segment_size (int|str): Upload files in segments no larger than</span>
+<span class="c1">#   &lt;segment_size&gt; (in bytes) and then create a &quot;manifest&quot; file that will</span>
+<span class="c1">#   download all the segments as if it were the original file. Sizes may also</span>
+<span class="c1">#   be expressed as bytes with the B suffix, kilobytes with the K suffix,</span>
+<span class="c1">#   megabytes with the M suffix or gigabytes with the G suffix.</span>
+<span class="n">segment_size</span> <span class="o">=</span> <span class="mi">1073741824</span> <span class="c1"># 1 GB</span>
+
+<span class="c1"># object_threads (int): The number of threads to use when uploading full</span>
+<span class="c1">#   objects.</span>
+<span class="n">object_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># segment_threads (int): The number of threads to use when uploading object</span>
+<span class="c1">#   segments.</span>
+<span class="n">segment_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># use_slo (bool): When used in conjunction with segment_size, it will create</span>
+<span class="c1">#   a Static Large Object instead of the default Dynamic Large Object.</span>
+<span class="n">use_slo</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># leave_segments (bool): Indicates that you want the older segments of</span>
+<span class="c1">#   manifest objects left alone (in the case of overwrites).</span>
+<span class="n">leave_segments</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># changed (bool): Upload only files that have changed since last upload.</span>
+<span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># skip_identical (bool): Skip uploading files that are identical on both</span>
+<span class="c1">#   sides. Note this incurs reading the contents of all pre-existing local</span>
+<span class="c1">#   files.</span>
+<span class="n">skip_identical</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1"># checksum (bool): Peform checksum validation of upload.</span>
+<span class="n">checksum</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="p">[</span><span class="n">swift</span><span class="p">:</span><span class="n">download</span><span class="p">]</span>
+<span class="c1"># object_threads (int): The amount of threads to use for downloading objects.</span>
+<span class="n">object_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># container_threads (int): The amount of threads to use for downloading </span>
+<span class="c1">#   containers.</span>
+<span class="n">container_threads</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="c1"># skip_identical (bool): Skip downloading files that are identical on both</span>
+<span class="c1">#   sides. Note this incurs reading the contents of all pre-existing local</span>
+<span class="c1">#   files.</span>
+<span class="n">skip_identical</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># shuffle (bool): When downloading a complete container, download order is</span>
+<span class="c1">#   randomised in order to reduce the load on individual drives when doing</span>
+<span class="c1">#   threaded downloads. Disable this option to submit download jobs to</span>
+<span class="c1">#   the thread pool in the order they are listed in the object store.</span>
+<span class="n">shuffle</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="p">[</span><span class="n">dx</span><span class="p">]</span>
+<span class="c1"># auth_token (str): the login token for dxpy. If not set, ``DX_AUTH_TOKEN``</span>
+<span class="c1"># env variable will be used</span>
+<span class="n">auth_token</span> <span class="o">=</span>
+
+<span class="c1"># wait_on_close (int): The number of seconds to wait for DXFile to go to</span>
+<span class="c1"># closed state. Passed to DXFile.wait_on_close</span>
+<span class="n">wait_on_close</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># file_proxy_url (str): A custom proxy service for dx paths. It&#39;s assumed that</span>
+<span class="c1">#   you can construct URLs as urljoin({file_proxy_url}, f&#39;{project}/{resource}&#39;).</span>
+<span class="c1">#   If this is set, temp_url() will generate HTTP paths using the proxy;</span>
+<span class="c1">#   otherwise it&#39;ll use make_download_url().</span>
+<span class="c1">#   May also set via DX_FILE_PROXY_URL env var as well.</span>
+<span class="n">file_proxy_url</span> <span class="o">=</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="module-stor.settings">
+<span id="settings-api"></span><h2>Settings API<a class="headerlink" href="#module-stor.settings" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="stor.settings.get">
+<code class="sig-prename descclassname">stor.settings.</code><code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/settings.html#get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.settings.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a deep copy of global settings as a dictionary.</p>
+<p>This function should always be used rather than accessing
+<code class="docutils literal notranslate"><span class="pre">global_settings</span></code> directly.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.settings.parse_config_file">
+<code class="sig-prename descclassname">stor.settings.</code><code class="sig-name descname">parse_config_file</code><span class="sig-paren">(</span><em class="sig-param">filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/settings.html#parse_config_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.settings.parse_config_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a configuration file and returns a settings dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – File to read configuration settings from.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary of settings options.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="stor.settings.update">
+<code class="sig-prename descclassname">stor.settings.</code><code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param">settings=None</em>, <em class="sig-param">validate=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/settings.html#update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.settings.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates global settings permanently (in place).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>settings</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – A nested dictionary of settings options.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="stor.settings.use">
+<code class="sig-prename descclassname">stor.settings.</code><code class="sig-name descname">use</code><a class="headerlink" href="#stor.settings.use" title="Permalink to this definition">¶</a></dt>
+<dd><p>Context manager for temporarily modifying settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>settings</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – A nested dictionary of settings options.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift:upload&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;object_threads&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">}}):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># do something here</span>
+</pre></div>
+</div>
+<p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">stor.settings._Use</span></code></p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="extensions.html" class="btn btn-neutral float-right" title="SwiftStack Extension" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="testing.html" class="btn btn-neutral float-left" title="Testing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

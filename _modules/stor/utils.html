@@ -1,0 +1,953 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.utils &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">errno</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">check_call</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+
+<span class="kn">from</span> <span class="nn">dxpy.bindings</span> <span class="kn">import</span> <span class="n">verify_string_dxid</span>
+<span class="kn">from</span> <span class="nn">dxpy.exceptions</span> <span class="kn">import</span> <span class="n">DXError</span>
+
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">exceptions</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Name for the data manifest file when using the use_manifest option</span>
+<span class="c1"># for upload/download</span>
+<span class="n">DATA_MANIFEST_FILE_NAME</span> <span class="o">=</span> <span class="s1">&#39;.data_manifest.csv&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">str_to_bytes</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a given string into an integer representing bytes</span>
+<span class="sd">    where G is gigabytes, M is megabytes, K is kilobytes, and B</span>
+<span class="sd">    is bytes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">s</span>
+
+    <span class="n">units</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;K&#39;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="mi">1024</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">:</span> <span class="mi">1024</span> <span class="o">**</span> <span class="mi">3</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid size&#39;</span><span class="p">)</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">units</span><span class="p">[</span><span class="n">order</span><span class="p">]</span> <span class="o">*</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid size&#39;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid units&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="file_name_to_object_name"><a class="viewcode-back" href="../../swift.html#stor.file_name_to_object_name">[docs]</a><span class="k">def</span> <span class="nf">file_name_to_object_name</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a file path, construct its object name.</span>
+
+<span class="sd">    Any relative or absolute directory markers at the beginning of</span>
+<span class="sd">    the path will be stripped, for example::</span>
+
+<span class="sd">        ../../my_file -&gt; my_file</span>
+<span class="sd">        ./my_dir -&gt; my_dir</span>
+<span class="sd">        .hidden_dir/file -&gt; .hidden_dir/file</span>
+<span class="sd">        /absolute_dir -&gt; absolute_dir</span>
+
+<span class="sd">    Note that windows paths will have their back slashes changed to</span>
+<span class="sd">    forward slashes::</span>
+
+<span class="sd">        C:\\my\\windows\\file -&gt; my/windows/file</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The input path</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PosixPath: The object name. An empty path will be returned in</span>
+<span class="sd">            the case of the input path only consisting of absolute</span>
+<span class="sd">            or relative directory markers (i.e. &#39;/&#39; -&gt; &#39;&#39;, &#39;./&#39; -&gt; &#39;&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+    <span class="kn">from</span> <span class="nn">stor.posix</span> <span class="kn">import</span> <span class="n">PosixPath</span>
+
+    <span class="n">p_parts</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span><span class="o">.</span><span class="n">splitdrive</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span>
+    <span class="n">obj_start</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">part</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">p_parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">part</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">PosixPath</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p_parts</span><span class="p">[</span><span class="n">obj_start</span><span class="p">:])</span> <span class="k">if</span> <span class="n">obj_start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">make_dest_dir</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make directories if they do not already exist.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        OSError: An error occurred while creating the directories.</span>
+<span class="sd">            A specific exception is if a directory that is being created already exists as a file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">exc</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOTDIR</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="n">errno</span><span class="o">.</span><span class="n">ENOTDIR</span><span class="p">,</span>
+                          <span class="s1">&#39;a parent directory of </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s1"> already exists as a file&#39;</span> <span class="o">%</span> <span class="n">dest</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">exc</span><span class="o">.</span><span class="n">errno</span> <span class="o">!=</span> <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+            <span class="k">raise</span>
+
+
+<span class="k">def</span> <span class="nf">with_trailing_slash</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a path with a single trailing slash or None if not a path&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">p</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">)(</span><span class="n">p</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">has_trailing_slash</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks if a path has a single trailing slash&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">remove_trailing_slash</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a path with trailing slashes removed or None if not a path&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">p</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">p</span><span class="p">)(</span><span class="n">p</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Verifies condition is a function that takes one argument&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="s1">&#39;__call__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="s1">&#39;__code__&#39;</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;condition must be callable&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">condition</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_argcount</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;condition must take exactly one argument&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Checks the results against the condition.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ConditionNotMetError: If the condition returns False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">condition_met</span> <span class="o">=</span> <span class="n">condition</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">condition_met</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ConditionNotMetError</span><span class="p">(</span><span class="s1">&#39;condition not met&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">join_conditions</span><span class="p">(</span><span class="o">*</span><span class="n">conditions</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">conditions</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">generate_and_save_data_manifest</span><span class="p">(</span><span class="n">manifest_dir</span><span class="p">,</span> <span class="n">data_manifest_contents</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generates a data manifest for a given directory and saves it.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        manifest_dir (str): The directory in which the manifest will be saved</span>
+<span class="sd">        data_manifest_contents (List[str]): The list of all objects that will</span>
+<span class="sd">            be part of the manifest.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">stor</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+
+    <span class="n">manifest_file_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">manifest_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">DATA_MANIFEST_FILE_NAME</span>
+    <span class="k">with</span> <span class="n">stor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">manifest_file_name</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">out_file</span><span class="p">:</span>
+        <span class="n">contents</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_manifest_contents</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="n">out_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_data_manifest_contents</span><span class="p">(</span><span class="n">manifest_dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reads the manifest file and returns a set of expected files&quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">stor</span>
+
+    <span class="n">manifest</span> <span class="o">=</span> <span class="n">manifest_dir</span> <span class="o">/</span> <span class="n">DATA_MANIFEST_FILE_NAME</span>
+    <span class="k">with</span> <span class="n">stor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">manifest</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">manifest_file</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">manifest_file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">validate_manifest_list</span><span class="p">(</span><span class="n">expected_objs</span><span class="p">,</span> <span class="n">list_results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of expected object names and results,</span>
+<span class="sd">    verify all expected objects are in the listed results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">listed_objs</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="o">.</span><span class="n">resource</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">list_results</span><span class="p">}</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">expected_objs</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">listed_objs</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="is_swift_path"><a class="viewcode-back" href="../../main_interface.html#stor.is_swift_path">[docs]</a><span class="k">def</span> <span class="nf">is_swift_path</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if the path is a Swift path.</span>
+
+<span class="sd">    All Swift paths start with swift://</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The path string</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if p is a Swift path, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor.swift</span> <span class="kn">import</span> <span class="n">SwiftPath</span>
+    <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">SwiftPath</span><span class="o">.</span><span class="n">drive</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="is_filesystem_path"><a class="viewcode-back" href="../../main_interface.html#stor.is_filesystem_path">[docs]</a><span class="k">def</span> <span class="nf">is_filesystem_path</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if the path is posix or windows filesystem.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The path string</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if p is a Windows path, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_swift_path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_s3_path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">p</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">is_s3_path</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if the path is a S3 path.</span>
+
+<span class="sd">    All S3 paths start with ``s3://``</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The path string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        bool: True if p is a S3 path, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor.s3</span> <span class="kn">import</span> <span class="n">S3Path</span>
+    <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">S3Path</span><span class="o">.</span><span class="n">drive</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="is_obs_path"><a class="viewcode-back" href="../../main_interface.html#stor.is_obs_path">[docs]</a><span class="k">def</span> <span class="nf">is_obs_path</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if the path is an OBS path (an S3 or Swift path).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The path string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        bool: True if p is an OBS path, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">is_s3_path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_swift_path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">is_dx_path</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determines if the path is a DX path.</span>
+
+<span class="sd">    All DX paths start with ``dx://``</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The path string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        bool: True if p is a DX path, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor.dx</span> <span class="kn">import</span> <span class="n">DXPath</span>
+    <span class="k">return</span> <span class="n">p</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">DXPath</span><span class="o">.</span><span class="n">drive</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_valid_dxid</span><span class="p">(</span><span class="n">dxid</span><span class="p">,</span> <span class="n">expected_classes</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;wrapper class for verify_string_dxid, because</span>
+<span class="sd">    verify_string_dxid returns None if success, raises error if failed</span>
+
+<span class="sd">    Args: Accepts same args as verify_string_dxid</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        bool: Whether given dxid is a valid path of one of expected_classes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">verify_string_dxid</span><span class="p">(</span><span class="n">dxid</span><span class="p">,</span> <span class="n">expected_classes</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="n">DXError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">find_dx_class</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Finds the class of the DX path : DXVirtualPath or DXCanonicalPath</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        p (str): The path string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">        cls: DXVirtualPath or DXCanonicalPath</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor.dx</span> <span class="kn">import</span> <span class="n">DXPath</span><span class="p">,</span> <span class="n">DXCanonicalPath</span><span class="p">,</span> <span class="n">DXVirtualPath</span>
+    <span class="n">colon_pieces</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">DXPath</span><span class="o">.</span><span class="n">drive</span><span class="p">):]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">colon_pieces</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">colon_pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">colon_pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Project is required to construct a DXPath&#39;</span><span class="p">)</span>
+    <span class="n">project</span> <span class="o">=</span> <span class="n">colon_pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="p">(</span><span class="n">colon_pieces</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">colon_pieces</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">resource_parts</span> <span class="o">=</span> <span class="n">resource</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+    <span class="n">root_name</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">resource_parts</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">resource_parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">canonical_resource</span> <span class="o">=</span> <span class="n">is_valid_dxid</span><span class="p">(</span><span class="n">root_name</span><span class="p">,</span> <span class="s1">&#39;file&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">resource</span>
+    <span class="k">if</span> <span class="n">canonical_resource</span> <span class="ow">and</span> <span class="n">rest</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;DX folder paths that start with a valid file dxid are ambiguous&#39;</span><span class="p">)</span>
+    <span class="n">canonical_project</span> <span class="o">=</span> <span class="n">is_valid_dxid</span><span class="p">(</span><span class="n">project</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">canonical_project</span> <span class="ow">and</span> <span class="n">canonical_resource</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DXCanonicalPath</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DXVirtualPath</span>
+
+
+<span class="k">def</span> <span class="nf">is_writeable</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">swift_retry_options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine whether we have permission to write to path.</span>
+
+<span class="sd">    Behavior of this method is slightly different for different storage types when the</span>
+<span class="sd">    directory doesn&#39;t exist:</span>
+<span class="sd">    1. For local file systems, this function will return True if the target directory</span>
+<span class="sd">       exists and a file written to it.</span>
+<span class="sd">    2. For AWS S3, this function will return True only if the target bucket is already</span>
+<span class="sd">       present and we have write access to the bucket.</span>
+<span class="sd">    3. For Swift, this function will return True, only if the target tenant is already</span>
+<span class="sd">       present and we have write access to the tenant and container. The container doesn&#39;t</span>
+<span class="sd">       have to be present.</span>
+
+<span class="sd">    This is function is useful, because `stor.stat()` will succeed if we have read-only</span>
+<span class="sd">    permissions to `path`, but the eventual attempt to upload will fail.</span>
+
+<span class="sd">    Secondly, `path` might not exist yet. If the intent of the caller is to create it, ,</span>
+<span class="sd">    stor.stat() will fail, however the eventual upload attempt would succeed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (stor.Path|str): The path to check.</span>
+<span class="sd">        swift_retry_options (dict): Optional retry arguments to use for swift</span>
+<span class="sd">            upload or download. View the</span>
+<span class="sd">            `swift module-level documentation &lt;swiftretry&gt;` for more</span>
+<span class="sd">            information on retry arguments. If the goal is to not use</span>
+<span class="sd">            exponential backoff, pass ``{&#39;num_retries&#39;: 0}`` here.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: Whether ``path`` is writeable or not.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">basename</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">join</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">remove</span>
+    <span class="kn">from</span> <span class="nn">stor.swift</span> <span class="kn">import</span> <span class="n">ConflictError</span>
+    <span class="kn">from</span> <span class="nn">stor.swift</span> <span class="kn">import</span> <span class="n">SwiftPath</span>
+    <span class="kn">from</span> <span class="nn">stor.swift</span> <span class="kn">import</span> <span class="n">UnauthorizedError</span>
+    <span class="kn">from</span> <span class="nn">stor.swift</span> <span class="kn">import</span> <span class="n">UnavailableError</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">with_trailing_slash</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">is_filesystem_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">access</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">W_OK</span><span class="p">)</span>
+
+    <span class="n">container_path</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">container_existed</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">is_swift_path</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+        <span class="c1"># We want this function to behave as a no-op with regards to the underlying</span>
+        <span class="c1"># container structure. Therefore we need to remove any containers created by this</span>
+        <span class="c1"># function that were not present when it was called. The `container_existed`</span>
+        <span class="c1"># defined below will store whether the container that we&#39;re checking existed when</span>
+        <span class="c1"># calling this function, so that we know if it should be removed at the end.</span>
+        <span class="n">container_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">SwiftPath</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">tenant</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">.</span><span class="n">container</span>
+        <span class="p">))</span>
+        <span class="n">container_existed</span> <span class="o">=</span> <span class="n">container_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmpfile</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Attempt to create a file in the `path`.</span>
+            <span class="n">copy</span><span class="p">(</span><span class="n">tmpfile</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">swift_retry_options</span><span class="o">=</span><span class="n">swift_retry_options</span><span class="p">)</span>
+            <span class="c1"># Remove the file that was created.</span>
+            <span class="n">remove</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">basename</span><span class="p">(</span><span class="n">tmpfile</span><span class="o">.</span><span class="n">name</span><span class="p">)))</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">UnauthorizedError</span><span class="p">,</span> <span class="n">UnavailableError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">FailedUploadError</span><span class="p">):</span>  <span class="c1"># noqa</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Remove the Swift container if it didn&#39;t exist when calling this function, but exists</span>
+    <span class="c1"># now. This way this function remains a no-op with regards to container structure.</span>
+    <span class="k">if</span> <span class="n">container_existed</span> <span class="ow">is</span> <span class="kc">False</span> <span class="ow">and</span> <span class="n">container_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">container_path</span><span class="o">.</span><span class="n">remove_container</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">ConflictError</span><span class="p">:</span>
+            <span class="c1"># Ignore if some other thread/user created the container in the meantime.</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">answer</span>
+
+
+<div class="viewcode-block" id="copy"><a class="viewcode-back" href="../../main_interface.html#stor.copy">[docs]</a><span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copies a source file to a destination file.</span>
+
+<span class="sd">    Note that this utility can be called from either OBS, posix, or</span>
+<span class="sd">    windows paths created with ``stor.Path``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source (path|str): The source directory to copy from</span>
+<span class="sd">        dest (path|str): The destination file or directory.</span>
+<span class="sd">        swift_retry_options (dict): Optional retry arguments to use for swift</span>
+<span class="sd">            upload or download. View the</span>
+<span class="sd">            `swift module-level documentation &lt;swiftretry&gt;` for more</span>
+<span class="sd">            information on retry arguments</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        Copying a swift file to a local path behaves as follows::</span>
+
+<span class="sd">            &gt;&gt;&gt; import stor</span>
+<span class="sd">            &gt;&gt;&gt; swift_p = &#39;swift://tenant/container/dir/file.txt&#39;</span>
+<span class="sd">            &gt;&gt;&gt; # file.txt will be copied to other_dir/other_file.txt</span>
+<span class="sd">            &gt;&gt;&gt; stor.copy(swift_p, &#39;other_dir/other_file.txt&#39;)</span>
+
+<span class="sd">        Copying from a local path to swift behaves as follows::</span>
+
+<span class="sd">            &gt;&gt;&gt; from stor import Path</span>
+<span class="sd">            &gt;&gt;&gt; local_p = Path(&#39;my/local/file.txt&#39;)</span>
+<span class="sd">            &gt;&gt;&gt; # File will be uploaded to swift://tenant/container/dir/my_file.txt</span>
+<span class="sd">            &gt;&gt;&gt; local_p.copy(&#39;swift://tenant/container/dir/&#39;)</span>
+
+<span class="sd">        Because of the ambiguity in whether a remote target is a file or directory, copy()</span>
+<span class="sd">        will error on ambiguous paths.</span>
+
+<span class="sd">            &gt;&gt;&gt; local_p.copy(&#39;swift://tenant/container/dir&#39;)</span>
+<span class="sd">            Traceback (most recent call last):</span>
+<span class="sd">            ...</span>
+<span class="sd">            ValueError: OBS destination must be file with extension or directory with slash</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+    <span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSUploadObject</span>
+
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+    <span class="n">swift_retry_options</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;swift_retry_options&#39;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">swift_retry_options</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">source</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot copy one OBS path to another OBS path&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">is_s3_path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_swift_path</span><span class="p">(</span><span class="n">dest</span><span class="p">))</span> <span class="ow">and</span> <span class="n">dest</span><span class="o">.</span><span class="n">is_ambiguous</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;OBS destination must be file with extension or directory with slash&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">is_filesystem_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="n">dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+            <span class="n">dest_file</span> <span class="o">=</span> <span class="n">dest</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">()</span> <span class="k">else</span> <span class="n">dest</span> <span class="o">/</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">download_object</span><span class="p">(</span><span class="n">dest_file</span><span class="p">,</span> <span class="o">**</span><span class="n">swift_retry_options</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dest_file</span> <span class="o">=</span> <span class="n">dest</span>
+        <span class="k">if</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="ow">and</span> <span class="n">dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">():</span>
+            <span class="n">dest_file</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">/</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">if</span> <span class="n">dest_file</span><span class="o">.</span><span class="n">isfile</span><span class="p">():</span>
+                <span class="n">dest_file</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">dest</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">dest_file</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">/</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">if</span> <span class="n">is_swift_path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dest_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">((</span>
+                <span class="s1">&#39;cannot copy to tenant &quot;</span><span class="si">%s</span><span class="s1">&quot; and file &#39;</span>
+                <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">dest_file</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">dest_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">))</span>
+        <span class="n">dest_obj_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dest_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">/</span> <span class="n">dest_file</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">upload_obj</span> <span class="o">=</span> <span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest_obj_name</span><span class="p">)</span>
+        <span class="n">dest_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="n">upload_obj</span><span class="p">],</span>
+                                <span class="o">**</span><span class="n">swift_retry_options</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="copytree"><a class="viewcode-back" href="../../main_interface.html#stor.copytree">[docs]</a><span class="k">def</span> <span class="nf">copytree</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">copy_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Copies a source directory to a destination directory. Assumes that</span>
+<span class="sd">    paths are capable of being copied to/from.</span>
+
+<span class="sd">    Note that this function uses shutil.copytree by default, meaning</span>
+<span class="sd">    that a posix or windows destination must not exist beforehand.</span>
+
+<span class="sd">    For example, assume the following file hierarchy::</span>
+
+<span class="sd">        a/</span>
+<span class="sd">        - b/</span>
+<span class="sd">        - - 1.txt</span>
+
+<span class="sd">    Doing a copytree from ``a`` to a new posix destination of ``c`` is</span>
+<span class="sd">    performed with::</span>
+
+<span class="sd">        Path(&#39;a&#39;).copytree(&#39;c&#39;)</span>
+
+<span class="sd">    The end result for c looks like::</span>
+
+<span class="sd">        c/</span>
+<span class="sd">        - b/</span>
+<span class="sd">        - - 1.txt</span>
+
+<span class="sd">    Note that the user can override which copy command is used for posix</span>
+<span class="sd">    copies, and it is up to them to ensure that their code abides by the</span>
+<span class="sd">    semantics of the provided copy command. This function has been tested</span>
+<span class="sd">    in production using the default command of ``cp -r`` and using ``mcp -r``.</span>
+
+<span class="sd">    Using OBS source and destinations work in a similar manner. Assume</span>
+<span class="sd">    the destination is a swift path and we upload the same ``a`` folder::</span>
+
+<span class="sd">        Path(&#39;a&#39;).copytree(&#39;swift://tenant/container/folder&#39;)</span>
+
+<span class="sd">    The end swift result will have one object::</span>
+
+<span class="sd">        Path(&#39;swift://tenant/container/folder/b/1.txt&#39;)</span>
+
+<span class="sd">    Similarly one can do::</span>
+
+<span class="sd">        Path(&#39;swift://tenant/container/folder/&#39;).copytree(&#39;c&#39;)</span>
+
+<span class="sd">    The end result for c looks the same as the above posix example::</span>
+
+<span class="sd">        c/</span>
+<span class="sd">        - b/</span>
+<span class="sd">        - - 1.txt</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source (path|str): The source directory to copy from</span>
+<span class="sd">        dest (path|str): The directory to copy to. Must not exist if</span>
+<span class="sd">            its a posix directory</span>
+<span class="sd">        copy_cmd (str): If copying to / from posix or windows, this command is</span>
+<span class="sd">            used instead of shutil.copytree</span>
+<span class="sd">        use_manifest (bool, default False): See `SwiftPath.upload` and</span>
+<span class="sd">            `SwiftPath.download`.</span>
+<span class="sd">        condition (function(results) -&gt; bool): See `SwiftPath.upload` and</span>
+<span class="sd">            `SwiftPath.download`.</span>
+<span class="sd">        headers (List[str]): See `SwiftPath.upload`.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: if two OBS paths are specified</span>
+<span class="sd">        OSError: if destination is a posix path and it already exists</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+
+    <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">dest</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">source</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot copy one OBS path to another OBS path&#39;</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">stor.windows</span> <span class="kn">import</span> <span class="n">WindowsPath</span>
+    <span class="k">if</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">WindowsPath</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;OBS copytree to windows is not supported&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">is_filesystem_path</span><span class="p">(</span><span class="n">dest</span><span class="p">):</span>
+        <span class="n">dest</span><span class="o">.</span><span class="n">expand</span><span class="p">()</span><span class="o">.</span><span class="n">abspath</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">makedirs_p</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">is_obs_path</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+            <span class="n">source</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">use_manifest</span><span class="o">=</span><span class="n">use_manifest</span><span class="p">,</span>
+                            <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">copy_cmd</span><span class="p">:</span>
+                <span class="n">copy_cmd</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">copy_cmd</span><span class="p">)</span>
+                <span class="n">copy_cmd</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">abspath</span><span class="p">()</span><span class="o">.</span><span class="n">expand</span><span class="p">()),</span>
+                                 <span class="nb">str</span><span class="p">(</span><span class="n">dest</span><span class="o">.</span><span class="n">abspath</span><span class="p">()</span><span class="o">.</span><span class="n">expand</span><span class="p">())])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;performing copy with command - </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">copy_cmd</span><span class="p">)</span>
+                <span class="n">check_call</span><span class="p">(</span><span class="n">copy_cmd</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_dx_path</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">()</span> <span class="ow">or</span> <span class="n">dest</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)):</span>
+            <span class="n">dest</span> <span class="o">=</span> <span class="n">dest</span> <span class="o">/</span> <span class="n">remove_trailing_slash</span><span class="p">(</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">if</span> <span class="n">dest</span><span class="o">.</span><span class="n">isdir</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">TargetExistsError</span><span class="p">(</span>
+                    <span class="s1">&#39;Destination path (</span><span class="si">{}</span><span class="s1">) already exists, will not cause &#39;</span>
+                    <span class="s1">&#39;duplicate folders to exist. Remove the original first&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">with</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">dest</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="s1">&#39;.&#39;</span><span class="p">],</span> <span class="n">use_manifest</span><span class="o">=</span><span class="n">use_manifest</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                        <span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_safe_get_size</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the size of a file, handling weird edge cases like broken</span>
+<span class="sd">    symlinks by returning None&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">ENOENT</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="k">raise</span>
+
+
+<span class="k">def</span> <span class="nf">walk_files_and_dirs</span><span class="p">(</span><span class="n">files_and_dirs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Walk all files and directories.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        files_and_dirs (List[str]): All file or directory names to walk.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: All files and empty directories under files_and_dirs keyed to</span>
+<span class="sd">            their size. Dictionaries have a size of 0</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: The provided upload name is not a file or a directory.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from stor.utils import walk_files_and_dirs</span>
+<span class="sd">        &gt;&gt;&gt; results = walk_files_and_dirs([&#39;file_name&#39;, &#39;dir_name&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; print results</span>
+<span class="sd">        [&#39;file_name&#39;, &#39;dir_name/file1&#39;, &#39;dir_name/file2&#39;]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">walked_upload_names_and_sizes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">non_existent_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">files_and_dirs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">walked_upload_names_and_sizes</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_safe_get_size</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">dir_names</span><span class="p">,</span> <span class="n">file_names</span><span class="p">)</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="n">sizes</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">file_names</span><span class="p">:</span>
+                    <span class="n">full_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_dir</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+                    <span class="n">sz</span> <span class="o">=</span> <span class="n">_safe_get_size</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">sz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sz</span><span class="p">)</span>
+                        <span class="n">walked_upload_names_and_sizes</span><span class="p">[</span><span class="n">full_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">sz</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">non_existent_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">sizes</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dir_names</span><span class="p">:</span>
+                    <span class="c1"># we have an empty directory</span>
+                    <span class="n">walked_upload_names_and_sizes</span><span class="p">[</span><span class="n">root_dir</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;file &quot;</span><span class="si">%s</span><span class="s1">&quot; not found&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">non_existent_files</span><span class="p">:</span>
+        <span class="n">file_list</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">non_existent_files</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_existent_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="n">file_list</span> <span class="o">=</span> <span class="n">file_list</span><span class="p">[:</span><span class="mi">50</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;...&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Skipping </span><span class="si">%d</span><span class="s1"> non existent files in </span><span class="si">{!r}</span><span class="s1">. Files: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">files_and_dirs</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">non_existent_files</span><span class="p">),</span>
+                    <span class="n">file_list</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">walked_upload_names_and_sizes</span>
+
+
+<div class="viewcode-block" id="NamedTemporaryDirectory"><a class="viewcode-back" href="../../main_interface.html#stor.NamedTemporaryDirectory">[docs]</a><span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">NamedTemporaryDirectory</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;tmp&#39;</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">change_dir</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Context manager for creating and deleting temporary directory.</span>
+
+<span class="sd">    Mimics the behavior of tempfile.NamedTemporaryFile.</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">        suffix (str): If specified, the dir name will end with it.</span>
+<span class="sd">        prefix (str): If specified, the dir name will start with it,</span>
+<span class="sd">            otherwise &#39;tmp&#39; is used.</span>
+<span class="sd">        dir (str): If specified, the dir will be created in this</span>
+<span class="sd">            directory.</span>
+<span class="sd">        change_dir (bool): If specified, will change to the temporary</span>
+<span class="sd">            directory.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        Path: The temporary directory.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Name is CamelCase to match tempfile.NamedTemporaryFile.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; from stor import NamedTemporaryDirectory</span>
+<span class="sd">        &gt;&gt;&gt; with NamedTemporaryDirectory() as d:</span>
+<span class="sd">        &gt;&gt;&gt;     # Do operations within &quot;d&quot;, which will be deleted afterwards</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+
+    <span class="n">tempdir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="n">suffix</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="nb">dir</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">change_dir</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">tempdir</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">tempdir</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">tempdir</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">tempdir</span><span class="o">.</span><span class="n">rmtree</span><span class="p">()</span></div>
+
+
+<span class="k">class</span> <span class="nc">ClassProperty</span><span class="p">(</span><span class="nb">property</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="o">.</span><span class="fm">__get__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">owner</span><span class="p">)()</span>
+
+
+<span class="k">class</span> <span class="nc">BaseProgressLogger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class and methods for logging progress.</span>
+
+<span class="sd">    Progress loggers that inherit this base class have the ability to</span>
+<span class="sd">    track information related to the progress of a group of results.</span>
+
+<span class="sd">    Users instantiate the logger as a context manager::</span>
+
+<span class="sd">        for MyProgressLogger() as l:</span>
+<span class="sd">            for r in results:</span>
+<span class="sd">                l.add_result(r)</span>
+
+<span class="sd">    When the progress logger is instantiated, the message returned</span>
+<span class="sd">    from ``get_start_message`` is logged. As results are added, logs</span>
+<span class="sd">    are printed at each result interval. For example, if the</span>
+<span class="sd">    ``result_interval`` is 3, progress will be logged for every third result</span>
+<span class="sd">    added.</span>
+
+<span class="sd">    When exiting the context manager, the log message from ``get_finish_message``</span>
+<span class="sd">    is returned.</span>
+
+<span class="sd">    To accumulate more results, implement the ``update_progress`` method. For</span>
+<span class="sd">    example, to track the amount of bytes tracked so far::</span>
+
+<span class="sd">        def update_progress(self, result):</span>
+<span class="sd">            self.total_bytes += result[&#39;bytes&#39;]</span>
+
+<span class="sd">    Any custom results can be printed when implementing ``get_progress_message``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="n">result_interval</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result_interval</span> <span class="o">=</span> <span class="n">result_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_results</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">start_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_start_message</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">start_msg</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">,</span> <span class="n">start_msg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">finish_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_finish_message</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">finish_msg</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">,</span> <span class="n">finish_msg</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_elapsed_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
+
+    <span class="k">def</span> <span class="nf">format_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="n">time_elapsed</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
+        <span class="n">hours</span><span class="p">,</span> <span class="n">remainder</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">time_elapsed</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">(),</span> <span class="mi">3600</span><span class="p">)</span>
+        <span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">remainder</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%d</span><span class="s1">:</span><span class="si">%02d</span><span class="s1">:</span><span class="si">%02d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_start_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_finish_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_progress_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">update_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">add_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a result to the progress logger and logs messages.</span>
+
+<span class="sd">        Messages are logged every time the ``result_interval`` is met.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_results</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_progress</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_results</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">result_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">progress_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">progress_msg</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">,</span> <span class="n">progress_msg</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

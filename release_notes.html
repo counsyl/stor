@@ -1,0 +1,646 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Release Notes &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Roadmap" href="roadmap.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Release Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#v4-0-python-3-poetry">v4.0 - Python 3 + Poetry!</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#api-additions">API Additions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api-breaks">API Breaks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bug-fixes">Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#developer-changes">Developer Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-1-0">v3.1.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">API Additions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-0-5">v3.0.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-0-4">v3.0.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-0-3">v3.0.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-0-2">v3.0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-0-1">v3.0.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v3-0-0">v3.0.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">API Additions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id3">API Breaks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v2-1-3">v2.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v2-1-2">v2.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v2-1-1">v2.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v2-1-0">v2.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v2-0-0">v2.0.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cli-additions">CLI additions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">API Additions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id5">API Breaks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Bug fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-changes">Other Changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-2">v1.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-5-1">v1.5.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">API additions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consistency-fixes">Consistency Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#deprecations">Deprecations</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-6">v1.4.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-5">v1.4.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-4">v1.4.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-3">v1.4.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-2">v1.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-1">v1.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-4-0">v1.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-3">v1.3.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-2">v1.3.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-1">v1.3.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-3-0">v1.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-2">v1.2.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-1">v1.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-2-0">v1.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-2">v1.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-1">v1.1.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Release Notes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/release_notes.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="release-notes">
+<h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="v4-0-python-3-poetry">
+<h2>v4.0 - Python 3 + Poetry!<a class="headerlink" href="#v4-0-python-3-poetry" title="Permalink to this headline">¶</a></h2>
+<p>Only Python 3.6+ is supported - Python 2.7 and Python 3.5 support is dropped!</p>
+<p>Note: the major version bump is because we’ve dropped 2.7 support, aside from that
+this would be a feature level change.</p>
+<p>Now stor installs via <code class="docutils literal notranslate"><span class="pre">poetry</span></code> (this should be transparent to users).</p>
+<div class="section" id="api-additions">
+<h3>API Additions<a class="headerlink" href="#api-additions" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p>Tab completions are now available via the <code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">completions</span></code> command.
+Use it to dump completions to appropriate location (see <a class="reference internal" href="installation.html#cli-tab-completion-installation"><span class="std std-ref">installation instructions</span></a>
+for more detail).</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">content_type</span></code> property for OBS paths representing consistent
+Content-Type header that would be set on download.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">DX_FILE_PROXY_URL</span></code> and <code class="docutils literal notranslate"><span class="pre">[dx]</span> <span class="pre">-&gt;</span> <span class="pre">file_proxy_url</span></code> setting to allow for constructing
+DNAnexus paths with a custom gateway.  You might want this to be able to construct valid bam
+paths for samtools or IGV!</p>
+<p>Generally, usage will look like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ stor url dx://proj:/folder/mypath.csv
+https://dl.dnanex.us/F/D/awe1323/mypath.csv
+$ export DX_FILE_PROXY_URL=https://my-dnax-proxy.example.com/gateway
+$ stor url dx://proj:/folder/mypath.csv
+https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv
+</pre></div>
+</div>
+<p>Interested in your own file proxy gateway? Email <a class="reference external" href="mailto:support&#37;&#52;&#48;dnanexus&#46;com">support<span>&#64;</span>dnanexus<span>&#46;</span>com</a> to request it! :)
+Also, you can contact the Bioinformatics Software Engineering team at Myriad Genetics
+to ask to share code.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="api-breaks">
+<h3>API Breaks<a class="headerlink" href="#api-breaks" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stor-completions.bash</span></code> is no longer on the path (see <a class="reference internal" href="installation.html#cli-tab-completion-installation"><span class="std std-ref">installation instructions</span></a>
+for more detail).</p></li>
+<li><p>Only python3.6+ is supported. Python 2.7 and Python 3.5 are no longer supported.</p></li>
+</ul>
+</div>
+<div class="section" id="bug-fixes">
+<h3>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Do not ever <code class="docutils literal notranslate"><span class="pre">wait_on_close</span></code> when write happened in <code class="docutils literal notranslate"><span class="pre">__del__</span></code> method (so
+no accidental blocking of main thread). Fixes issues where malformed
+<code class="docutils literal notranslate"><span class="pre">OBSFile</span></code> objects would throw an exception in <code class="docutils literal notranslate"><span class="pre">__del__</span></code> method.</p></li>
+<li><p>Only call <code class="docutils literal notranslate"><span class="pre">OBSFile._wait_on_close()</span></code> when we actually wrote data AND we
+were in write mode.</p></li>
+<li><p>Eliminate exception in <code class="docutils literal notranslate"><span class="pre">__del__</span></code> method when calling <code class="docutils literal notranslate"><span class="pre">stor.open</span></code> on a DNAnexus project path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stor.open()</span></code> now throws an error earlier when incorrectly calling <code class="docutils literal notranslate"><span class="pre">open()</span></code> on a DNAnexus project path.</p></li>
+<li><p>Now <code class="docutils literal notranslate"><span class="pre">temp_url()</span></code> always sets filename to virtual object name when creating temp urls, matching the docstring.
+To get the old (buggy!) behavior, pass <code class="docutils literal notranslate"><span class="pre">filename=''</span></code> to <code class="docutils literal notranslate"><span class="pre">temp_url()</span></code></p></li>
+</ul>
+</div>
+<div class="section" id="developer-changes">
+<h3>Developer Changes<a class="headerlink" href="#developer-changes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stor</span></code> now installs via <code class="docutils literal notranslate"><span class="pre">poetry</span></code>. You’ll need it installed to work with the library.</p></li>
+<li><p>Tests for <code class="docutils literal notranslate"><span class="pre">stor</span></code> now run on Github Actions on Python 3.6+ and we’ve removed tox for local testing.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="v3-1-0">
+<h2>v3.1.0<a class="headerlink" href="#v3-1-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Added python 3.7 to test suite, removed EOL python 3.4</p></li>
+</ul>
+<div class="section" id="id1">
+<h3>API Additions<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">readable()</span></code>, <code class="docutils literal notranslate"><span class="pre">writable()</span></code>, and <code class="docutils literal notranslate"><span class="pre">seekable()</span></code> methods on
+<code class="docutils literal notranslate"><span class="pre">OBSFile</span></code> so it better implements <code class="docutils literal notranslate"><span class="pre">io.IOBase</span></code> specification.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="v3-0-5">
+<h2>v3.0.5<a class="headerlink" href="#v3-0-5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Changed <code class="docutils literal notranslate"><span class="pre">dxpy3</span></code> requirement to <code class="docutils literal notranslate"><span class="pre">dxpy</span></code> to reflect new Python3 compatible <code class="docutils literal notranslate"><span class="pre">dxpy</span></code> module.</p></li>
+</ul>
+</div>
+<div class="section" id="v3-0-4">
+<h2>v3.0.4<a class="headerlink" href="#v3-0-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fix release notes.</p></li>
+</ul>
+</div>
+<div class="section" id="v3-0-3">
+<h2>v3.0.3<a class="headerlink" href="#v3-0-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fix required version of <code class="docutils literal notranslate"><span class="pre">six</span></code> package. We need at least 1.9.0, because we’re using <code class="docutils literal notranslate"><span class="pre">six.raise_from</span></code>.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">--canonicalize</span></code> flag to <code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">ls</span></code> and <code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">walkfiles</span></code> cli commands</p></li>
+</ul>
+</div>
+<div class="section" id="v3-0-2">
+<h2>v3.0.2<a class="headerlink" href="#v3-0-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">DXPath.joinpath</span></code> and <code class="docutils literal notranslate"><span class="pre">DXPath.splitpath</span></code> to be custom implementations to handle paths
+with no resources, instead of defaulting to base behavior.</p></li>
+</ul>
+</div>
+<div class="section" id="v3-0-1">
+<h2>v3.0.1<a class="headerlink" href="#v3-0-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">DXPath.normpath</span></code> functionality  (i.e., for <code class="docutils literal notranslate"><span class="pre">DXVirtualPath</span></code> and <code class="docutils literal notranslate"><span class="pre">DXCanonicalPath</span></code>)
+when no resource present in provided path.</p></li>
+</ul>
+</div>
+<div class="section" id="v3-0-0">
+<h2>v3.0.0<a class="headerlink" href="#v3-0-0" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h3>API Additions<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Add API and CLI support for manipulating resources on DNAnexus platform via the <code class="docutils literal notranslate"><span class="pre">DXPath</span></code>
+(i.e., the <code class="docutils literal notranslate"><span class="pre">DXVirtualPath</span></code> and <code class="docutils literal notranslate"><span class="pre">DXCanonicalPath</span></code>) classes.</p></li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h3>API Breaks<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stor.open</span></code> api changed to only accept <code class="docutils literal notranslate"><span class="pre">mode</span></code> and <code class="docutils literal notranslate"><span class="pre">encoding</span></code> parameters. Other arguments
+(including <code class="docutils literal notranslate"><span class="pre">swift_upload_options</span></code>  / <code class="docutils literal notranslate"><span class="pre">swift_upload_kwargs</span></code> / <code class="docutils literal notranslate"><span class="pre">swift_download_kwargs</span></code>) removed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">write_object()</span></code> <em>only</em> allows <code class="docutils literal notranslate"><span class="pre">bytes</span></code> data in Python 3 (it will raise a
+<code class="docutils literal notranslate"><span class="pre">TypeError</span></code> otherwise). Behavior in Python 2 is unchanged.</p></li>
+<li><p>The alias <code class="docutils literal notranslate"><span class="pre">stor.swift.SwiftFile</span></code> (which pointed to <code class="docutils literal notranslate"><span class="pre">stor.obs.OBSFile</span></code>) is no longer available.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="v2-1-3">
+<h2>v2.1.3<a class="headerlink" href="#v2-1-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Retry upload on <code class="docutils literal notranslate"><span class="pre">AuthenticationError</span></code>.</p></li>
+</ul>
+</div>
+<div class="section" id="v2-1-2">
+<h2>v2.1.2<a class="headerlink" href="#v2-1-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Nicer README for PyPI</p></li>
+</ul>
+</div>
+<div class="section" id="v2-1-1">
+<h2>v2.1.1<a class="headerlink" href="#v2-1-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fix trove identifier for License and ensure MIT License is included with source distributions.</p></li>
+</ul>
+</div>
+<div class="section" id="v2-1-0">
+<h2>v2.1.0<a class="headerlink" href="#v2-1-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">stor.S3Path.restore(days,</span> <span class="pre">tier)</span></code> to restore <em>single</em> objects from Glacier to S3.
+Paired with this change are two specific exceptions related to S3 restores,
+<code class="docutils literal notranslate"><span class="pre">RestoreAlreadyInProgressError</span></code> (raised when restore has already started)
+and <code class="docutils literal notranslate"><span class="pre">AlreadyRestoredError</span></code> (raised when restoring object already in S3).</p></li>
+<li><p>Move <code class="docutils literal notranslate"><span class="pre">ConflictError</span></code> to <code class="docutils literal notranslate"><span class="pre">stor.exceptions</span></code> (still available under <code class="docutils literal notranslate"><span class="pre">stor.swift</span></code>)</p></li>
+</ul>
+</div>
+<div class="section" id="v2-0-0">
+<h2>v2.0.0<a class="headerlink" href="#v2-0-0" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="cli-additions">
+<h3>CLI additions<a class="headerlink" href="#cli-additions" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">url</span> <span class="pre">&lt;path&gt;</span></code> to translate swift and s3 paths to HTTP paths.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">convert-swiftstack</span> <span class="pre">[--bucket]</span> <span class="pre">&lt;path&gt;</span></code> cli tool to convert s3 &lt;-&gt; swiftstack paths.</p></li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h3>API Additions<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">to_url()</span></code> method on Path and <code class="docutils literal notranslate"><span class="pre">url</span></code> cli method to translate swift and s3 paths to HTTP paths.</p></li>
+<li><p>GETs on unrestored Glacier objects now raise a more useful <code class="docutils literal notranslate"><span class="pre">ObjectInColdStorageError</span></code>.</p></li>
+<li><p>Add <a class="reference internal" href="extensions.html#module-stor.extensions.swiftstack" title="stor.extensions.swiftstack"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">stor.extensions.swiftstack</span></code></a> module for translating swift paths to s3.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">stor.makedirs_p(path,</span> <span class="pre">mode=0o777)</span></code> to cross-compatible API. This does
+nothing on OBS-paths (just there for convenience).</p></li>
+</ul>
+</div>
+<div class="section" id="id5">
+<h3>API Breaks<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OBSFile</span></code> can no longer (accidentally or intentionally) create zero-byte objects.</p></li>
+<li><p>GETs on unrestored Glacier objects no longer raise <code class="docutils literal notranslate"><span class="pre">UnauthorizedError</span></code> (see above).</p></li>
+<li><p>Removed already-deprecated <code class="docutils literal notranslate"><span class="pre">stor.listpath</span></code> and <code class="docutils literal notranslate"><span class="pre">stor.path</span></code>.</p></li>
+</ul>
+</div>
+<div class="section" id="id6">
+<h3>Bug fixes<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OBSFile</span></code> objects no longer attempt to load buffers on garbage collection.
+This should resolve the <code class="docutils literal notranslate"><span class="pre">Exception</span> <span class="pre">ignored</span> <span class="pre">in</span> <span class="pre">OBSFile.__del__</span></code> messages and
+eliminate “hangs” on garbage collection or closing python terminal.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stor</span> <span class="pre">cp</span></code> no longer claims to be an alias of copy.</p></li>
+</ul>
+</div>
+<div class="section" id="other-changes">
+<h3>Other Changes<a class="headerlink" href="#other-changes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stor</span></code> no longer depends on <code class="docutils literal notranslate"><span class="pre">cached-property</span></code>.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="v1-5-2">
+<h2>v1.5.2<a class="headerlink" href="#v1-5-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Hoist <code class="docutils literal notranslate"><span class="pre">stor.utils.is_obs_path</span></code> –&gt; <code class="docutils literal notranslate"><span class="pre">stor.is_obs_path</span></code></p></li>
+<li><p>Build universal wheels for both Python 2 and Python 3.
+(no actual code changes)</p></li>
+</ul>
+</div>
+<div class="section" id="v1-5-1">
+<h2>v1.5.1<a class="headerlink" href="#v1-5-1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="summary">
+<h3>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h3>
+<p>Many changes to correctly handle binary and text data in both Python 2 and Python 3. Overall, falls
+back on <code class="docutils literal notranslate"><span class="pre">locale.getpreferredencoding(False)</span></code> to handle this behavior correctly.  This change
+should be completely backwards-compatible (any new behaviors would have raised an exception in
+earlier versions of stor).</p>
+<p>This release also includes some consistency fixes for certain rare edge cases relating to empty or
+non/existent files and directories. Drops testing for Python 3.3.</p>
+</div>
+<div class="section" id="id7">
+<h3>API additions<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">encoding</span></code> keyword argument (supported only in Python 3) to <code class="docutils literal notranslate"><span class="pre">open()</span></code> and <code class="docutils literal notranslate"><span class="pre">OBSFile</span></code>.
+This keyword arg overrides default encoding, otherwise, <code class="docutils literal notranslate"><span class="pre">encoding</span></code> for text data is pulled from
+<code class="docutils literal notranslate"><span class="pre">locale.getpreferredencoding(False)</span></code> the same as Python 3.</p></li>
+<li><p>File reading and writing now works in Python 3 in both text and binary modes.</p></li>
+</ul>
+</div>
+<div class="section" id="consistency-fixes">
+<h3>Consistency Fixes<a class="headerlink" href="#consistency-fixes" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Fix inconsistency with <code class="docutils literal notranslate"><span class="pre">walkfiles()</span></code> on <code class="docutils literal notranslate"><span class="pre">PosixPath</span></code> so that it does not
+return empty directories (causes a small potential perf hit).</p></li>
+<li><p>Auto-create parent directories on the filesystem for <code class="docutils literal notranslate"><span class="pre">stor.copy</span></code>, <code class="docutils literal notranslate"><span class="pre">stor.open</span></code>, and <code class="docutils literal notranslate"><span class="pre">stor.copytree</span></code>.</p></li>
+<li><p>Allow <code class="docutils literal notranslate"><span class="pre">stor.copytree</span></code> to work if it targets an empty target directory (removes the other directory first)</p></li>
+<li><p>Fix S3 integration tests so they are easier to run.</p></li>
+</ul>
+</div>
+<div class="section" id="deprecations">
+<h3>Deprecations<a class="headerlink" href="#deprecations" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><p>Using text data with <code class="docutils literal notranslate"><span class="pre">read_object()</span></code> and <code class="docutils literal notranslate"><span class="pre">write_object()</span></code> is deprecated. These functions
+ought to only work with <code class="docutils literal notranslate"><span class="pre">bytes</span></code> (and will have unexpected behavior otherwise).</p></li>
+<li><p>Python 3.3 is no longer tested in the test suite (but we still think stor
+will run correctly in Python 3.3 - but this was never explicitly supported)</p></li>
+</ul>
+<p>(v1.5.0 was a premature release and was removed from PyPI)</p>
+</div>
+</div>
+<div class="section" id="v1-4-6">
+<h2>v1.4.6<a class="headerlink" href="#v1-4-6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Tweak segment container hiding regex to be <code class="docutils literal notranslate"><span class="pre">.segments</span></code> instead of
+<code class="docutils literal notranslate"><span class="pre">.segments_</span></code> (more flexible in general).</p></li>
+</ul>
+</div>
+<div class="section" id="v1-4-5">
+<h2>v1.4.5<a class="headerlink" href="#v1-4-5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed release notes.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-4-4">
+<h2>v1.4.4<a class="headerlink" href="#v1-4-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">dirname()</span></code> for top-level Swift paths, like <code class="docutils literal notranslate"><span class="pre">swift://</span></code>.</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">dirname()</span></code> for top-level S3 paths, like <code class="docutils literal notranslate"><span class="pre">s3://</span></code>.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-4-3">
+<h2>v1.4.3<a class="headerlink" href="#v1-4-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">stor.utils.is_writeable</span></code>.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-4-2">
+<h2>v1.4.2<a class="headerlink" href="#v1-4-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Fix error message output when specifying <code class="docutils literal notranslate"><span class="pre">stor</span></code> without a command under Python 3.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-4-1">
+<h2>v1.4.1<a class="headerlink" href="#v1-4-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Support source-only releases in PyPI to allow pip installing from Python 3
+(python 3 wheels are still a TODO)</p></li>
+</ul>
+</div>
+<div class="section" id="v1-4-0">
+<h2>v1.4.0<a class="headerlink" href="#v1-4-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Python 3 compatibility :D</p></li>
+</ul>
+</div>
+<div class="section" id="v1-3-3">
+<h2>v1.3.3<a class="headerlink" href="#v1-3-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>New-style exception messages</p></li>
+</ul>
+</div>
+<div class="section" id="v1-3-2">
+<h2>v1.3.2<a class="headerlink" href="#v1-3-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Support multiple files with <code class="docutils literal notranslate"><span class="pre">use_manifest=True</span></code></p></li>
+</ul>
+</div>
+<div class="section" id="v1-3-1">
+<h2>v1.3.1<a class="headerlink" href="#v1-3-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Ensure OBSFile cleans itself up (commits to remote / deletes local buffer /
+etc) even when not used in <code class="docutils literal notranslate"><span class="pre">with</span></code> statement.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-3-0">
+<h2>v1.3.0<a class="headerlink" href="#v1-3-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>When deleting a swift container, also attempt to delete
+<code class="docutils literal notranslate"><span class="pre">$CONTAINER+segments</span></code>, which is the format that SwiftStack’s S3 emulation
+layer uses for multipart uploads.  (really tiny perf impact, since it only
+applies when directly working with containers).</p></li>
+</ul>
+</div>
+<div class="section" id="v1-2-2">
+<h2>v1.2.2<a class="headerlink" href="#v1-2-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Include <code class="docutils literal notranslate"><span class="pre">X-Trans-Id</span></code> on auth failures as well.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-2-1">
+<h2>v1.2.1<a class="headerlink" href="#v1-2-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Add explicit dependence on six to requirements.txt</p></li>
+</ul>
+</div>
+<div class="section" id="v1-2-0">
+<h2>v1.2.0<a class="headerlink" href="#v1-2-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Include <code class="docutils literal notranslate"><span class="pre">X-Trans-Id</span></code> header in Swift exception messages and reprs if
+available to facilitate debugging.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-1-2">
+<h2>v1.1.2<a class="headerlink" href="#v1-1-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Skip broken symlinks during upload, download and listing of files, allowing
+<code class="docutils literal notranslate"><span class="pre">copytree</span></code>, <code class="docutils literal notranslate"><span class="pre">list</span></code> to work on folders that contain broken symlinks.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-1-1">
+<h2>v1.1.1<a class="headerlink" href="#v1-1-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Added .travis.yml for testing against Python 2 and 3</p></li>
+<li><p>Added additional coverage to get to 100%</p></li>
+<li><p>Updated package classifiers</p></li>
+<li><p>Clarify <code class="docutils literal notranslate"><span class="pre">stor.glob()</span></code>’s strange calling format (that will be altered in a future version of the library).</p></li>
+<li><p>Ignore <code class="docutils literal notranslate"><span class="pre">DistributionNotFound</span></code> error in weird install situations.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-1-0">
+<h2>v1.1.0<a class="headerlink" href="#v1-1-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Rename <code class="docutils literal notranslate"><span class="pre">stor.listpath</span></code> to <code class="docutils literal notranslate"><span class="pre">stor.list</span></code> for simplicity.</p></li>
+</ul>
+</div>
+<div class="section" id="v1-0-0">
+<h2>v1.0.0<a class="headerlink" href="#v1-0-0" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Initial release of stor</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="roadmap.html" class="btn btn-neutral float-left" title="Roadmap" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

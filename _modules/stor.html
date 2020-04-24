@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Module code</a> &raquo;</li>
+        
+      <li>stor</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">stor</span>
+<span class="sd">====</span>
+
+<span class="sd">Stor is a library that aims to make it easy to write code that works</span>
+<span class="sd">with both local posix filesystems and Swift Object Based Storage. In general,</span>
+<span class="sd">you should be able to replace most uses of ``os.path`` and ``open`` with::</span>
+
+<span class="sd">    import stor as path</span>
+<span class="sd">    from stor import open</span>
+
+<span class="sd">And your code will work either with posix paths or swift paths (defined as</span>
+<span class="sd">strings in the format ``swift://&lt;TENANT&gt;/&lt;CONTAINER&gt;/&lt;OBJECT&gt;``).  Stor</span>
+<span class="sd">also provides an object-oriented API similar to Python 3&#39;s new pathlib,</span>
+<span class="sd">accessible via ``stor.Path``.</span>
+
+<span class="sd">stor is heavily inspired by / based on the path.py library, but</span>
+<span class="sd">modified to avoid the need to know whether you have a Path or a string for most</span>
+<span class="sd">functions.</span>
+
+<span class="sd">See `stor.swift` for more information on Swift-specific functionality.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">pkg_resources</span>
+
+<span class="kn">from</span> <span class="nn">stor.utils</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">stor.utils</span> <span class="kn">import</span> <span class="n">copytree</span>
+<span class="kn">from</span> <span class="nn">stor.utils</span> <span class="kn">import</span> <span class="n">is_filesystem_path</span>
+<span class="kn">from</span> <span class="nn">stor.utils</span> <span class="kn">import</span> <span class="n">is_swift_path</span>
+<span class="kn">from</span> <span class="nn">stor.utils</span> <span class="kn">import</span> <span class="n">is_obs_path</span>
+<span class="kn">from</span> <span class="nn">stor.utils</span> <span class="kn">import</span> <span class="n">NamedTemporaryDirectory</span>
+<span class="kn">from</span> <span class="nn">stor.base</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">settings</span>
+
+
+<span class="c1"># TODO: Compile this - costs ~700us to do this on import</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">__version__</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">get_distribution</span><span class="p">(</span><span class="s1">&#39;stor&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">version</span>
+<span class="k">except</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">DistributionNotFound</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="c1"># we are not pip installed in environment</span>
+    <span class="n">__version__</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">settings</span><span class="o">.</span><span class="n">_initialize</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_delegate_to_path</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">Path</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="n">wrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="c1"># extra compat!</span>
+<span class="nb">open</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;open&#39;</span><span class="p">)</span>
+<span class="n">abspath</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;abspath&#39;</span><span class="p">)</span>
+<span class="n">normcase</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;normcase&#39;</span><span class="p">)</span>
+<span class="n">normpath</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;normpath&#39;</span><span class="p">)</span>
+<span class="n">realpath</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;realpath&#39;</span><span class="p">)</span>
+<span class="n">expanduser</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;expanduser&#39;</span><span class="p">)</span>
+<span class="n">expandvars</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;expandvars&#39;</span><span class="p">)</span>
+<span class="n">dirname</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;dirname&#39;</span><span class="p">)</span>
+<span class="n">basename</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;basename&#39;</span><span class="p">)</span>
+<span class="n">expand</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;expand&#39;</span><span class="p">)</span>
+<span class="c1"># these two have special names to not collide with builtins</span>
+<span class="n">join</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;joinpath&#39;</span><span class="p">)</span>
+<span class="n">split</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;splitpath&#39;</span><span class="p">)</span>
+<span class="n">splitext</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;splitext&#39;</span><span class="p">)</span>
+<span class="nb">list</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;list&#39;</span><span class="p">)</span>
+<span class="n">listdir</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;listdir&#39;</span><span class="p">)</span>
+<span class="n">exists</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;exists&#39;</span><span class="p">)</span>
+<span class="n">isabs</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;isabs&#39;</span><span class="p">)</span>
+<span class="n">isdir</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;isdir&#39;</span><span class="p">)</span>
+<span class="n">isfile</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;isfile&#39;</span><span class="p">)</span>
+<span class="n">islink</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;islink&#39;</span><span class="p">)</span>
+<span class="n">ismount</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;ismount&#39;</span><span class="p">)</span>
+<span class="n">getsize</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;getsize&#39;</span><span class="p">)</span>
+<span class="n">makedirs_p</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;makedirs_p&#39;</span><span class="p">)</span>
+<span class="n">remove</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;remove&#39;</span><span class="p">)</span>
+<span class="n">rmtree</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;rmtree&#39;</span><span class="p">)</span>
+<span class="n">walkfiles</span> <span class="o">=</span> <span class="n">_delegate_to_path</span><span class="p">(</span><span class="s1">&#39;walkfiles&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="glob"><a class="viewcode-back" href="../main_interface.html#stor.glob">[docs]</a><span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="n">pattern</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="sd">&quot;&quot;&quot; Glob for pattern relative to ``pth``.</span>
+
+<span class="sd">    Note that Swift currently only supports a single trailing *&quot;&quot;&quot;</span>
+    <span class="c1"># TODO(jtratner): support single argument for glob, which is more</span>
+    <span class="c1"># comprehensible.</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span></div>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;abspath&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;normcase&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;normpath&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;realpath&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;expanduser&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;expandvars&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;dirname&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;basename&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;expand&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;join&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;split&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;splitext&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;listdir&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;glob&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;exists&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isabs&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isdir&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;isfile&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;islink&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;ismount&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;getsize&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;copy&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;copytree&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;remove&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;rmtree&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;walkfiles&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;is_filesystem_path&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;is_swift_path&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;is_obs_path&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;NamedTemporaryDirectory&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

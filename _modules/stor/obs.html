@@ -1,0 +1,701 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.obs &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.obs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.obs</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">locale</span>
+<span class="kn">import</span> <span class="nn">posixpath</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">dxpy</span>
+<span class="kn">from</span> <span class="nn">swiftclient.service</span> <span class="kn">import</span> <span class="n">SwiftError</span>
+<span class="kn">from</span> <span class="nn">swiftclient.service</span> <span class="kn">import</span> <span class="n">SwiftUploadObject</span>
+
+<span class="kn">from</span> <span class="nn">stor.base</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">stor.posix</span> <span class="kn">import</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">import</span> <span class="nn">stor</span>
+
+
+<span class="k">def</span> <span class="nf">_delegate_to_buffer</span><span class="p">(</span><span class="n">attr_name</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Factory function that delegates file-like properties to underlying buffer&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;I/O operation on closed file&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">valid_modes</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_modes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;File must be in modes </span><span class="si">%s</span><span class="s1"> to </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="n">valid_modes</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">))</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_or_create_buffer</span><span class="p">(),</span> <span class="n">attr_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">wrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">attr_name</span>
+    <span class="n">wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(),</span> <span class="n">attr_name</span><span class="p">)</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">class</span> <span class="nc">OBSUploadObject</span><span class="p">(</span><span class="n">SwiftUploadObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An upload object similar to swiftclient&#39;s SwiftUploadObject that allows the user</span>
+<span class="sd">    to specify a destination file name (full key) and upload options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">object_name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        An OBSUploadObject must be initialized with a source and destination path.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source (str): A path that specifies a source file.</span>
+<span class="sd">            dest (str): A path that specifies a destination file name (full key)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">OBSUploadObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">object_name</span><span class="o">=</span><span class="n">object_name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">SwiftError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;SwiftUploadObject&#39;</span> <span class="ow">in</span> <span class="n">exc</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;SwiftUploadObject&#39;</span><span class="p">,</span> <span class="s1">&#39;OBSUploadObject&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">OBSPath</span><span class="p">(</span><span class="n">Path</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base class that defines all methods available from Path objects that</span>
+<span class="sd">    interface with remote services, such as Swift and S3.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">path_module</span> <span class="o">=</span> <span class="n">posixpath</span>
+    <span class="n">parts_class</span> <span class="o">=</span> <span class="n">PosixPath</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pth</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates OBS path is in the proper format.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pth (str): A path that matches the format of</span>
+<span class="sd">                ``(drive)://{bucket_name}/{rest_of_path}`` where (drive)</span>
+<span class="sd">                can be any of s3 or swift.</span>
+<span class="sd">                The ``(drive)://`` prefix is required in the path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">pth</span><span class="p">,</span> <span class="s1">&#39;startswith&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">pth</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;path must have </span><span class="si">%s</span><span class="s1"> (got </span><span class="si">%r</span><span class="s1">)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span> <span class="n">pth</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">OBSPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">pth</span><span class="p">)</span>
+
+    <span class="n">copy</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">copy</span>
+    <span class="n">copytree</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">copytree</span>
+
+    <span class="k">def</span> <span class="nf">dirname</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the directory name of self.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">)</span>
+        <span class="n">rest</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_module</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">rest</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">(&quot;</span><span class="si">%s</span><span class="s1">&quot;)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">is_ambiguous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns true if it cannot be determined if the path is a</span>
+<span class="sd">        file or directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">ext</span>
+
+    <span class="k">def</span> <span class="nf">_get_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the path parts (excluding the drive) as a list of strings.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The name of the path, mimicking path.py&#39;s name property&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">OBSPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The parent of the path, mimicking path.py&#39;s parent property&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="nb">super</span><span class="p">(</span><span class="n">OBSPath</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the resource as a ``PosixPath`` object or None.</span>
+
+<span class="sd">        A resource can be a single object or a prefix to objects.</span>
+<span class="sd">        Note that it&#39;s important to keep the trailing slash in a resource</span>
+<span class="sd">        name for prefix queries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="n">joined_resource</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="n">joined_resource</span><span class="p">)</span> <span class="k">if</span> <span class="n">joined_resource</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">normpath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Normalize path following linux conventions (keeps drive prefix)&quot;&quot;&quot;</span>
+        <span class="n">normed</span> <span class="o">=</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):])[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="n">normed</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">read_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads an individual object from OBS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bytes: the raw bytes from the object on OBS.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">write_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes an individual object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content (bytes): raw bytes to write to OBS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Opens a OBSFile that can be read or written to and is uploaded to</span>
+<span class="sd">        the remote service.</span>
+
+<span class="sd">        For examples of reading and writing opened objects, view</span>
+<span class="sd">        OBSFile.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): The mode of object IO. Currently supports reading</span>
+<span class="sd">                (&quot;r&quot; or &quot;rb&quot;) and writing (&quot;w&quot;, &quot;wb&quot;)</span>
+<span class="sd">            encoding (str): text encoding to use. Defaults to</span>
+<span class="sd">                ``locale.getpreferredencoding(False)``</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            OBSFile: The file object for Swift/S3/DX.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">            DNAnexusError: A dxpy client error occured.</span>
+<span class="sd">            RemoteError: A s3 client error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">OBSFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List contents using the resource of the path as a prefix.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;list the path as a dir, returning top-level directories and files.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Glob for pattern relative to this directory.</span>
+
+<span class="sd">        Note that Swift currently only supports a single trailing *&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks whether path exists on local filesystem or on swift.</span>
+
+<span class="sd">        For directories on swift, checks whether directory sentinel exists or</span>
+<span class="sd">        at least one subdirectory exists&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">isabs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">islink</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">ismount</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># NOTE: we only have makedirs_p() because the other mkdir/mkdir_p/makedirs methods are expected</span>
+    <span class="c1"># to raise errors if directories exist or intermediate directories don&#39;t exist.</span>
+    <span class="k">def</span> <span class="nf">makedirs_p</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o777</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;No-op (no directories on OBS)&quot;&quot;&quot;</span>
+        <span class="k">return</span>
+
+    <span class="k">def</span> <span class="nf">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns size, in bytes of path.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Delete single path or object &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Delete entire directory (or all paths starting with prefix).</span>
+
+<span class="sd">        See shutil.rmtree&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns content type, as a string, if present and makes sense for object type.</span>
+
+<span class="sd">        Returns Empty string otherwise&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">walkfiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over files recursively.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str, optional): Limits the results to files</span>
+<span class="sd">                with names that match the pattern.  For example,</span>
+<span class="sd">                ``mydir.walkfiles(&#39;*.tmp&#39;)`` yields only files with the ``.tmp``</span>
+<span class="sd">                extension.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Iter[Path]: Files recursively under the path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">ignore_dir_markers</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">f</span>
+
+    <span class="k">def</span> <span class="nf">download_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Download a single path or object to file.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">download_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">objects</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downloads a list of objects to a destination folder.</span>
+
+<span class="sd">        Note that this method takes a list of complete relative or absolute</span>
+<span class="sd">        OBSPaths to objects (in contrast to taking a prefix). If any object</span>
+<span class="sd">        does not exist, the call will fail with partially downloaded objects</span>
+<span class="sd">        residing in the destination path.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (str): The destination folder to download to. The directory</span>
+<span class="sd">                will be created if it doesnt exist.</span>
+<span class="sd">            objects (List[str|PosixPath|SwiftPath]): The list of objects to</span>
+<span class="sd">                download. The objects can be paths relative to the download path</span>
+<span class="sd">                or absolute obs paths. Any absolute obs path must be</span>
+<span class="sd">                children of the download path</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A mapping of all requested ``objs`` to their location on</span>
+<span class="sd">                disk</span>
+
+<span class="sd">        Examples:</span>
+
+<span class="sd">            To download a objects to a ``dest/folder`` destination::</span>
+
+<span class="sd">                from stor import Path</span>
+<span class="sd">                p = Path(&#39;dx://project:/dir/&#39;)</span>
+<span class="sd">                results = p.download_objects(&#39;dest/folder&#39;, [&#39;subdir/f1.txt&#39;,</span>
+<span class="sd">                                                             &#39;subdir/f2.txt&#39;])</span>
+<span class="sd">                print results</span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;subdir/f1.txt&#39;: &#39;dest/folder/subdir/f1.txt&#39;,</span>
+<span class="sd">                    &#39;subdir/f2.txt&#39;: &#39;dest/folder/subdir/f2.txt&#39;</span>
+<span class="sd">                }</span>
+
+<span class="sd">            To download full obs paths relative to a download path::</span>
+
+<span class="sd">                from stor import Path</span>
+<span class="sd">                p = Path(&#39;dx://project:/dir/&#39;)</span>
+<span class="sd">                results = p.download_objects(&#39;dest/folder&#39;, [</span>
+<span class="sd">                    &#39;dx://project:/dir/subdir/f1.txt&#39;,</span>
+<span class="sd">                    &#39;dx://project:/dir/subdir/f2.txt&#39;</span>
+<span class="sd">                ])</span>
+<span class="sd">                print results</span>
+<span class="sd">                {</span>
+<span class="sd">                    &#39;dx://project:/dir/subdir/f1.txt&#39;: &#39;dest/folder/subdir/f1.txt&#39;,</span>
+<span class="sd">                    &#39;dx://project:/dir/subdir/f2.txt&#39;: &#39;dest/folder/subdir/f2.txt&#39;</span>
+<span class="sd">                }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Download a directory.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Upload a list of files and directories to a directory.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">to_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get HTTPS URL for given path&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+
+<span class="k">class</span> <span class="nc">OBSFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides methods for reading and writing OBS objects returned by</span>
+<span class="sd">    `OBSPath.open`.</span>
+
+<span class="sd">    Objects are retrieved from `OBSPath.open`. For example::</span>
+
+<span class="sd">        obj = Path(&#39;swift://tenant/container/object&#39;).open(mode=&#39;r&#39;)</span>
+<span class="sd">        contents = obj.read()</span>
+
+<span class="sd">    The above opens an object and reads its contents. To write to an</span>
+<span class="sd">    object::</span>
+
+<span class="sd">        obj = Path(&#39;s3://bucket/object&#39;).open(mode=&#39;w&#39;)</span>
+<span class="sd">        obj.write(&#39;hello &#39;)</span>
+<span class="sd">        obj.write(&#39;world&#39;)</span>
+<span class="sd">        obj.close()</span>
+
+<span class="sd">    If *any* data is written to the file&#39;s internal buffer, it will be written to object storage</span>
+<span class="sd">    on ``flush()``, ``close()`` (or leaving a with statement / `__exit__()`) or when the</span>
+<span class="sd">    ``OBSFile`` is garbage collected. You *cannot* create a zero-byte object on OBS.</span>
+
+<span class="sd">    Just like with Python file objects, it&#39;s good practice to use it in a contextmanager::</span>
+
+<span class="sd">        with Path(&#39;swift://tenant/container/object&#39;).open(mode=&#39;w&#39;) as obj:</span>
+<span class="sd">            obj.write(&#39;Hello world!&#39;)</span>
+
+<span class="sd">    Specifically for DNAnexus resources, although ``dxpy`` also has an open functionality on their</span>
+<span class="sd">    DXFile, this is not carried over to stor. One of the main reasons to do this is to wrap</span>
+<span class="sd">    the scope of dxfile.open to what is expected of stor. While using ``dxpy``&#39;s open, the user</span>
+<span class="sd">    would have to know the different internal states of a file on the DNAnexus platform,</span>
+<span class="sd">    what they mean, when they happen, what operations are allowed on them, etc.</span>
+<span class="sd">    By instantiating ``stor.obs.OBSFile`` for ``open``, this is no longer needed, while maintaining</span>
+<span class="sd">    the support that is standard by stor without any real decrease in functionality.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        Unlike python file objects, OBSFile does not create an empty sentinel file if you</span>
+<span class="sd">        call open and then do not close it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">closed</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">_READ_MODES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">_WRITE_MODES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+    <span class="n">_VALID_MODES</span> <span class="o">=</span> <span class="n">_READ_MODES</span> <span class="o">+</span> <span class="n">_WRITE_MODES</span>
+    <span class="c1"># we have to know whether we&#39;ve generated a buffer at all</span>
+    <span class="c1"># to know whether we need to close the underlying buffer</span>
+    <span class="n">_buffer</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pth</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a file object</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pth (Path): The path that represents an individual</span>
+<span class="sd">                object</span>
+<span class="sd">            mode (str): The mode of the resource. Can be &quot;r&quot; and &quot;rb&quot; for</span>
+<span class="sd">                reading the resource and &quot;w&quot; and &quot;wb&quot; for writing the</span>
+<span class="sd">                resource.</span>
+<span class="sd">            encoding (str): the text encoding to use on read/write, defaults to</span>
+<span class="sd">                ``locale.getpreferredencoding(False)`` if not set. We *strongly* encourage you to</span>
+<span class="sd">                use binary mode OR explicitly set an encoding when reading/writing text (because</span>
+<span class="sd">                writers from different computers may store data on OBS in different ways).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VALID_MODES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;invalid mode for file: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">pth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span> <span class="ow">or</span> <span class="n">locale</span><span class="o">.</span><span class="n">getpreferredencoding</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;I/O operation on closed file.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># ape file object behavior by returning self (and attempting *not* to</span>
+        <span class="c1"># give users access to underlying buffer)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stream_cls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The class used for the IO stream&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;rb&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span>
+
+    <span class="k">def</span> <span class="nf">_get_or_create_buffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="s2">&quot;Cached buffer of data read from or to be written to Object Storage&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_cls</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">read_object</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;rb&#39;</span><span class="p">:</span>
+            <span class="n">buf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_cls</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">read_object</span><span class="p">())</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">):</span>
+            <span class="n">buf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_cls</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot obtain buffer in mode: </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">buf</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span>
+
+    <span class="n">seek</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;seek&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_VALID_MODES</span><span class="p">)</span>
+    <span class="n">tell</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;tell&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_VALID_MODES</span><span class="p">)</span>
+
+    <span class="n">read</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;read&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_READ_MODES</span><span class="p">)</span>
+    <span class="n">readlines</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;readlines&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_READ_MODES</span><span class="p">)</span>
+    <span class="n">readline</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;readline&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_READ_MODES</span><span class="p">)</span>
+
+    <span class="fm">__next__</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;__next__&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_READ_MODES</span><span class="p">)</span>
+
+    <span class="n">write</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;write&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_WRITE_MODES</span><span class="p">)</span>
+    <span class="n">writelines</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;writelines&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_WRITE_MODES</span><span class="p">)</span>
+    <span class="n">truncate</span> <span class="o">=</span> <span class="n">_delegate_to_buffer</span><span class="p">(</span><span class="s1">&#39;truncate&#39;</span><span class="p">,</span> <span class="n">valid_modes</span><span class="o">=</span><span class="n">_WRITE_MODES</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WRITE_MODES</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="c1"># we want to wait_on_close on DXPath only if no error was thrown while writing the</span>
+                <span class="c1"># file</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()):</span>  <span class="c1"># pragma: no cover</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_wait_on_close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closed</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_wait_on_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">stor</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">DXPath</span><span class="p">):</span>
+            <span class="n">wait_on_close</span> <span class="o">=</span> <span class="n">stor</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;dx&#39;</span><span class="p">][</span><span class="s1">&#39;wait_on_close&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">wait_on_close</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">stor</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">_wrap_dx_calls</span><span class="p">():</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXFile</span><span class="p">(</span><span class="n">dxid</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">canonical_resource</span><span class="p">,</span>
+                                    <span class="n">project</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">canonical_project</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">wait_on_close</span><span class="p">(</span><span class="n">wait_on_close</span><span class="p">)</span>
+                    <span class="c1"># ignore timeout because we want client code to deal with it</span>
+                    <span class="k">except</span> <span class="n">dxpy</span><span class="o">.</span><span class="n">DXError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                        <span class="k">if</span> <span class="s1">&#39;timeout&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+                            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flushes the write buffer to the OBS path (if it exists)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WRITE_MODES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;File must be in modes </span><span class="si">%s</span><span class="s2"> to &#39;flush&#39;&quot;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_WRITE_MODES</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># NOTE: this helps ensure that only non-zero objects are uploaded with open.</span>
+        <span class="c1"># Otherwise you have weird behavior where calling open().tell() will cause an empty object</span>
+        <span class="c1"># to be created on OBS on exit. Instead, philosophy is &quot;if buffer has data, we&#39;ll upload it</span>
+        <span class="c1"># on close&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;w&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">write_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="o">.</span><span class="n">write_object</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">readable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_READ_MODES</span>
+
+    <span class="k">def</span> <span class="nf">writable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WRITE_MODES</span>
+
+    <span class="k">def</span> <span class="nf">seekable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,1604 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Swift &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="S3" href="s3.html" />
+    <link rel="prev" title="Main Interface" href="main_interface.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Swift</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#retry-settings">Retry Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#swiftpath">SwiftPath</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-swift-conditions-with-retry-settings">Using Swift Conditions with Retry Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#swiftuploadobject">SwiftUploadObject</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#utilities">Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Swift</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/swift.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <span class="target" id="module-stor.swift"></span><div class="section" id="swift">
+<span id="id1"></span><h1>Swift<a class="headerlink" href="#swift" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="retry-settings">
+<span id="swiftretry"></span><h2>Retry Settings<a class="headerlink" href="#retry-settings" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="stor.swift.initial_retry_sleep">
+<code class="sig-prename descclassname">stor.swift.</code><code class="sig-name descname">initial_retry_sleep</code><em class="property"> = 1</em><a class="headerlink" href="#stor.swift.initial_retry_sleep" title="Permalink to this definition">¶</a></dt>
+<dd><p>The time to sleep before the first retry</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="stor.swift.retry_sleep_function">
+<code class="sig-prename descclassname">stor.swift.</code><code class="sig-name descname">retry_sleep_function</code><em class="property"> = &lt;function _default_retry_sleep_function&gt;</em><a class="headerlink" href="#stor.swift.retry_sleep_function" title="Permalink to this definition">¶</a></dt>
+<dd><p>The function that increases sleep time when retrying.</p>
+<p>This function needs to take two integer
+arguments (time slept last attempt, attempt number) and
+return a time to sleep in seconds.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="swiftpath">
+<h2>SwiftPath<a class="headerlink" href="#swiftpath" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="stor.swift.SwiftPath">
+<em class="property">class </em><code class="sig-prename descclassname">stor.swift.</code><code class="sig-name descname">SwiftPath</code><span class="sig-paren">(</span><em class="sig-param">pth</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provides the ability to manipulate and access resources on swift
+with a similar interface to the path library.</p>
+<dl class="method">
+<dt id="stor.swift.SwiftPath.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param">mode='r'</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.swift.SwiftPath.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a OBSFile that can be read or written to and is uploaded to
+the remote service.</p>
+<p>For examples of reading and writing opened objects, view
+OBSFile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The mode of object IO. Currently supports reading
+(“r” or “rb”) and writing (“w”, “wb”)</p></li>
+<li><p><strong>encoding</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – text encoding to use. Defaults to
+<code class="docutils literal notranslate"><span class="pre">locale.getpreferredencoding(False)</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The file object for Swift/S3/DX.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>OBSFile</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="dx.html#stor.dx.DNAnexusError" title="stor.dx.DNAnexusError"><strong>DNAnexusError</strong></a> – A dxpy client error occured.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.RemoteError" title="stor.exceptions.RemoteError"><strong>RemoteError</strong></a> – A s3 client error occurred.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.glob">
+<code class="sig-name descname">glob</code><span class="sig-paren">(</span><em class="sig-param">pattern</em>, <em class="sig-param">num_objs_cond=None</em>, <em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.glob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.glob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Globs all objects in the path with the pattern.</p>
+<p>This glob is only compatible with patterns that end in * because of
+swift’s inability to do searches other than prefix queries.</p>
+<p>Note that this method assumes the current resource is a directory path
+and treats it as such. For example, if the user has a swift path of
+swift://tenant/container/my_dir (without the trailing slash), this
+method will perform a swift query with a prefix of mydir/pattern.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the number of globbed patterns does not match the <code class="docutils literal notranslate"><span class="pre">condition</span></code>
+condition. View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a>
+for more information about configuring retry logic at the module or
+method level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The pattern to match. The pattern can only have
+up to one ‘*’ at the end.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the number of results matches the condition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Every matching path.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#stor.swift.SwiftPath" title="stor.swift.SwiftPath">SwiftPath</a>]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Results were returned, but they did not
+    meet the condition.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.exists">
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks existence of the path.</p>
+<p>Returns True if the path exists, False otherwise.</p>
+<p>See <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level retry</span></a> documentation for more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the path exists, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)">bool</a></p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>SwiftError</strong> – A non-404 swift client error occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.remove">
+<code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a single object.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – The path is invalid.</p></li>
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.rmtree">
+<code class="sig-name descname">rmtree</code><span class="sig-paren">(</span><em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.rmtree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.rmtree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a resource and all of its contents.
+This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">module-level</span> <span class="pre">documentation</span></code></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<p>Note that when removing a container, the associated segment container
+will also be removed if it exists. So, if one removes
+<code class="docutils literal notranslate"><span class="pre">swift://tenant/container</span></code>, <code class="docutils literal notranslate"><span class="pre">swift://tenant/container_segments</span></code>
+will also be deleted.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Calling rmtree on a directory marker will delete everything under the
+directory marker but not the marker itself.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Listing the objects after rmtree returns results,
+    indicating something went wrong with the rmtree operation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">swift_retry_args=None</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.swift.SwiftPath.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source file to a destination file.</p>
+<p>Note that this utility can be called from either OBS, posix, or
+windows paths created with <code class="docutils literal notranslate"><span class="pre">stor.Path</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The destination file or directory.</p></li>
+<li><p><strong>swift_retry_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – Optional retry arguments to use for swift
+upload or download. View the
+<a class="reference internal" href="#swiftretry"><span class="std std-ref">swift module-level documentation</span></a> for more
+information on retry arguments</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Copying a swift file to a local path behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">swift_p</span> <span class="o">=</span> <span class="s1">&#39;swift://tenant/container/dir/file.txt&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># file.txt will be copied to other_dir/other_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stor</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">swift_p</span><span class="p">,</span> <span class="s1">&#39;other_dir/other_file.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Copying from a local path to swift behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;my/local/file.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># File will be uploaded to swift://tenant/container/dir/my_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Because of the ambiguity in whether a remote target is a file or directory, copy()
+will error on ambiguous paths.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">OBS destination must be file with extension or directory with slash</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.copytree">
+<code class="sig-name descname">copytree</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">copy_cmd='cp -r'</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.swift.SwiftPath.copytree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source directory to a destination directory. Assumes that
+paths are capable of being copied to/from.</p>
+<p>Note that this function uses shutil.copytree by default, meaning
+that a posix or windows destination must not exist beforehand.</p>
+<p>For example, assume the following file hierarchy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Doing a copytree from <code class="docutils literal notranslate"><span class="pre">a</span></code> to a new posix destination of <code class="docutils literal notranslate"><span class="pre">c</span></code> is
+performed with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Note that the user can override which copy command is used for posix
+copies, and it is up to them to ensure that their code abides by the
+semantics of the provided copy command. This function has been tested
+in production using the default command of <code class="docutils literal notranslate"><span class="pre">cp</span> <span class="pre">-r</span></code> and using <code class="docutils literal notranslate"><span class="pre">mcp</span> <span class="pre">-r</span></code>.</p>
+<p>Using OBS source and destinations work in a similar manner. Assume
+the destination is a swift path and we upload the same <code class="docutils literal notranslate"><span class="pre">a</span></code> folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end swift result will have one object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/b/1.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly one can do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks the same as the above posix example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The directory to copy to. Must not exist if
+its a posix directory</p></li>
+<li><p><strong>copy_cmd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If copying to / from posix or windows, this command is
+used instead of shutil.copytree</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>default False</em>) – See <a class="reference internal" href="#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – See <a class="reference internal" href="#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>headers</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – See <a class="reference internal" href="#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – if two OBS paths are specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.8)"><strong>OSError</strong></a> – if destination is a posix path and it already exists</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.upload">
+<code class="sig-name descname">upload</code><span class="sig-paren">(</span><em class="sig-param">to_upload</em>, <em class="sig-param">segment_size=DEFAULT_SEGMENT_SIZE</em>, <em class="sig-param">use_slo=True</em>, <em class="sig-param">segment_container=None</em>, <em class="sig-param">leave_segments=False</em>, <em class="sig-param">changed=False</em>, <em class="sig-param">object_name=None</em>, <em class="sig-param">object_threads=10</em>, <em class="sig-param">segment_threads=10</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.upload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uploads a list of files and directories to swift.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the returned upload result does not match the <code class="docutils literal notranslate"><span class="pre">condition</span></code>
+condition. View <a class="reference internal" href="#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">module-level</span> <span class="pre">documentation</span></code></a>
+for more information about configuring retry logic at the module or
+method level.</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">path</span><span class="p">(</span><span class="s1">&#39;/path/to/upload/dir&#39;</span><span class="p">):</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="s1">&#39;.&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This method upload on paths relative to the current
+directory. In order to load files relative to a target directory,
+use path as a context manager to change the directory.</p></li>
+<li><p>When large files are split into segments, they are uploaded
+to a segment container named .segments_${container_name}</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>to_upload</strong> (<em>List</em>) – A list of file names, directory names, or
+OBSUploadObject objects to upload.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the results of upload matches the condition. In the event of the
+condition never matching after retries, partially uploaded
+results will not be deleted. Note that users are not expected to write
+conditions for upload without an understanding of the structure of the results.</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – <p>Generate a data manifest and validate the upload results
+are in the manifest. In case of a single directory being uploaded, the
+manifest file will be created inside this directory. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stor</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://AUTH_foo/bar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="s1">&#39;logs&#39;</span><span class="p">],</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The manifest will be located at
+<code class="docutils literal notranslate"><span class="pre">swift://AUTH_foo/bar/logs/.data_manifest.csv</span></code></p>
+<p>Alternatively, when multiple directories are uploaded, manifest file will
+be created in the current directory. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stor</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://AUTH_foo/bar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;logs&#39;</span><span class="p">,</span> <span class="s1">&#39;test.txt&#39;</span><span class="p">],</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The manifest will be located at
+<code class="docutils literal notranslate"><span class="pre">swift://AUTH_foo/bar/.data_manifest.csv</span></code></p>
+</p></li>
+<li><p><strong>headers</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – A list of object headers to apply to every object. Note
+that these are not applied if passing OBSUploadObjects directly to upload.
+Headers must be specified as a list of colon-delimited strings,
+e.g. [‘X-Delete-After:1000’]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – The <code class="docutils literal notranslate"><span class="pre">condition</span></code> argument did not pass after <code class="docutils literal notranslate"><span class="pre">num_retries</span></code>
+    or the <code class="docutils literal notranslate"><span class="pre">use_manifest</span></code> option was turned on and the upload results could not
+    be verified. Partially uploaded results are not deleted.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A list of every operation performed in the upload by the</dt><dd><p>underlying swift client</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.download">
+<code class="sig-name descname">download</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">object_threads=10</em>, <em class="sig-param">container_threads=10</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.download"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.download" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads a directory to a destination.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the returned download result does not match the <code class="docutils literal notranslate"><span class="pre">condition</span></code>
+condition. View <a class="reference internal" href="#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">module-level</span> <span class="pre">documentation</span></code></a>
+for more information about configuring retry logic at the module or
+method level.</p>
+<p>Note that the destintation directory will be created automatically if
+it doesn’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dest</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The destination directory to download results to.
+The directory will be created if it doesn’t exist.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the results of download matches the condition. In the event of the
+condition never matching after retries, partially downloaded
+results will not be deleted. Note that users are not expected to write
+conditions for download without an understanding of the structure of the results.</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Perform the download and use the data manfest file to validate
+the download.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Results were returned, but they did not
+    meet the condition.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A list of every operation performed in the download by the</dt><dd><p>underlying swift client</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.download_objects">
+<code class="sig-name descname">download_objects</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">objects</em>, <em class="sig-param">object_threads=10</em>, <em class="sig-param">container_threads=10</em>, <em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.download_objects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.download_objects" title="Permalink to this definition">¶</a></dt>
+<dd><p>See baseclass for complete method documentation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dest</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The destination folder to download to. The directory
+will be created if it doesnt exist.</p></li>
+<li><p><strong>objects</strong> (<em>List</em><em>[</em><em>str|PosixPath|SwiftPath</em><em>]</em>) – The list of objects to
+download. The objects can paths relative to the download path
+or absolute swift paths. Any absolute swift path must be
+children of the download path</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A mapping of all requested <code class="docutils literal notranslate"><span class="pre">objs</span></code> to their location on</dt><dd><p>disk</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – This method was called on a path that has no
+    container</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.first">
+<code class="sig-name descname">first</code><span class="sig-paren">(</span><em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.first"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.first" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first result from the list results of the path</p>
+<p>See <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level retry</span></a> documentation for more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>SwiftError</strong> – A swift client error occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.list">
+<code class="sig-name descname">list</code><span class="sig-paren">(</span><em class="sig-param">starts_with=None</em>, <em class="sig-param">limit=None</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.list" title="Permalink to this definition">¶</a></dt>
+<dd><p>List contents using the resource of the path as a prefix.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable
+or if the number of objects returned does not match the
+<code class="docutils literal notranslate"><span class="pre">condition</span></code> condition. View
+<a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>starts_with</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Allows for an additional search path to
+be appended to the resource of the swift path. Note that the
+current resource path is treated as a directory</p></li>
+<li><p><strong>limit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Limit the amount of results returned</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the results matches the condition.</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Perform the list and use the data manfest file to validate
+the list.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Every path in the listing.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#stor.swift.SwiftPath" title="stor.swift.SwiftPath">SwiftPath</a>]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Results were returned, but they did not
+    meet the condition.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.post">
+<code class="sig-name descname">post</code><span class="sig-paren">(</span><em class="sig-param">options=None</em>, <em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Post operations on the path.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – <p>A dictionary containing options to override the
+global options specified during the service object creation.
+These options are applied to all post operations performed by
+this call, unless overridden on a per object basis. Possible
+options are given below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;meta&#39;</span><span class="p">:</span> <span class="p">[],</span>   <span class="c1"># Meta values will be prefixed with X-Object-Meta</span>
+                  <span class="c1"># (or X-Container*  X-Account* depending on path type)</span>
+    <span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="c1"># Header values will not be manipulated like meta values</span>
+                  <span class="c1"># when being posted.</span>
+    <span class="s1">&#39;read_acl&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>   <span class="c1"># For containers only</span>
+    <span class="s1">&#39;write_acl&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># For containers only</span>
+    <span class="s1">&#39;sync_to&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>    <span class="c1"># For containers only</span>
+    <span class="s1">&#39;sync_key&#39;</span><span class="p">:</span> <span class="kc">None</span>    <span class="c1"># For containers only</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>SwiftError</strong> – A swift client error occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.stat">
+<code class="sig-name descname">stat</code><span class="sig-paren">(</span><em class="sig-param">**retry_args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.stat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.stat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a stat on the path.</p>
+<p>Note that the path can be a tenant, container, or
+object. Using <code class="docutils literal notranslate"><span class="pre">stat</span></code> on a directory of objects will
+produce a <a class="reference internal" href="exceptions.html#stor.exceptions.NotFoundError" title="stor.exceptions.NotFoundError"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">NotFoundError</span></code></a>.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more information
+about configuring retry logic at the module or method level.</p>
+<p>The return value is dependent on if the path points to a tenant,
+container, or object.</p>
+<p>For tenants, an example return dictionary is the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;content-length&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-storage-policy-3xreplica-container-count&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;4655&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-meta-temp-url-key&#39;</span><span class="p">:</span> <span class="s1">&#39;temp_url_key&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-object-count&#39;</span><span class="p">:</span> <span class="s1">&#39;428634&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;1450732238.21562&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-storage-policy-3xreplica-bytes-used&#39;</span><span class="p">:</span> <span class="s1">&#39;175654877752&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-trans-id&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;transaction_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;Wed, 06 Apr 2016 18:30:28 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-bytes-used&#39;</span><span class="p">:</span> <span class="s1">&#39;175654877752&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-container-count&#39;</span><span class="p">:</span> <span class="s1">&#39;4655&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/plain; charset=utf-8&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;accept-ranges&#39;</span><span class="p">:</span> <span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-storage-policy-3xreplica-object-count&#39;</span><span class="p">:</span> <span class="s1">&#39;428634&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;Account&#39;</span><span class="p">:</span> <span class="s1">&#39;AUTH_seq_upload_prod&#39;</span><span class="p">,</span>
+    <span class="c1"># The number of containers in the tenant</span>
+    <span class="s1">&#39;Containers&#39;</span><span class="p">:</span> <span class="mi">31</span><span class="p">,</span>
+    <span class="c1"># The number of objects in the tenant</span>
+    <span class="s1">&#39;Objects&#39;</span><span class="p">:</span> <span class="s1">&#39;19955615&#39;</span><span class="p">,</span>
+    <span class="c1"># The total bytes used in the tenant</span>
+    <span class="s1">&#39;Bytes&#39;</span><span class="p">:</span> <span class="s1">&#39;24890576770484&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Containers-in-policy-&quot;3xreplica&quot;&#39;</span><span class="p">:</span> <span class="s1">&#39;31&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Objects-in-policy-&quot;3xreplica&quot;&#39;</span><span class="p">:</span> <span class="s1">&#39;19955615&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Bytes-in-policy-&quot;3xreplica&quot;&#39;</span><span class="p">:</span> <span class="s1">&#39;24890576770484&#39;</span><span class="p">,</span>
+    <span class="c1"># The tenant ACLs. An empty dict is returned if the user</span>
+    <span class="c1"># does not have admin privileges on the tenant</span>
+    <span class="s1">&#39;Account-Access&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;admin&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;swft_labprod_admin&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;read-only&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;seq_upload_rnd&#39;</span><span class="p">,</span><span class="s1">&#39;swft_labprod&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;read-write&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;svc_svc_seq&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For containers, an example return dictionary is the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;content-length&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-container-object-count&#39;</span><span class="p">:</span> <span class="s1">&#39;99&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;accept-ranges&#39;</span><span class="p">:</span> <span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-storage-policy&#39;</span><span class="p">:</span> <span class="s1">&#39;3xReplica&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed, 06 Apr 2016 18:32:47 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;1457631707.95682&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-trans-id&#39;</span><span class="p">:</span> <span class="s1">&#39;transaction_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-container-bytes-used&#39;</span><span class="p">:</span> <span class="s1">&#39;5389060&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/plain; charset=utf-8&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;Account&#39;</span><span class="p">:</span> <span class="s1">&#39;AUTH_seq_upload_prod&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Container&#39;</span><span class="p">:</span> <span class="s1">&#39;2016-01&#39;</span><span class="p">,</span>
+    <span class="c1"># The number of objects in the container</span>
+    <span class="s1">&#39;Objects&#39;</span><span class="p">:</span> <span class="s1">&#39;43868&#39;</span><span class="p">,</span>
+    <span class="c1"># The size of all objects in the container</span>
+    <span class="s1">&#39;Bytes&#39;</span><span class="p">:</span> <span class="s1">&#39;55841489571&#39;</span><span class="p">,</span>
+    <span class="c1"># Read and write ACLs for the container</span>
+    <span class="s1">&#39;Read-ACL&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Write-ACL&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Sync-To&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Sync-Key&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For objects, an example return dictionary is the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;content-length&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-delete-at&#39;</span><span class="p">:</span> <span class="s1">&#39;1459967915&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;accept-ranges&#39;</span><span class="p">:</span> <span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;last-modified&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed, 06 Apr 2016 18:21:56 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;etag&#39;</span><span class="p">:</span> <span class="s1">&#39;d41d8cd98f00b204e9800998ecf8427e&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;1459966915.96956&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-trans-id&#39;</span><span class="p">:</span> <span class="s1">&#39;transaction_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed, 06 Apr 2016 18:33:48 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/plain&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-object-meta-mtime&#39;</span><span class="p">:</span> <span class="s1">&#39;1459965986.000000&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;Account&#39;</span><span class="p">:</span> <span class="s1">&#39;AUTH_seq_upload_prod&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Container&#39;</span><span class="p">:</span> <span class="s1">&#39;2016-01&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Object&#39;</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;object.txt&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/octet-stream&#39;</span><span class="p">,</span>
+    <span class="c1"># The size of the object</span>
+    <span class="s1">&#39;Content-Length&#39;</span><span class="p">:</span> <span class="s1">&#39;112&#39;</span><span class="p">,</span>
+    <span class="c1"># The last time the object was modified</span>
+    <span class="s1">&#39;Last-Modified&#39;</span><span class="p">:</span> <span class="s1">&#39;Fri, 15 Jan 2016 05:22:46 GMT&#39;</span><span class="p">,</span>
+    <span class="c1"># The MD5 checksum of the object. NOTE that if a large</span>
+    <span class="c1"># object is uploaded in segments that this will be the</span>
+    <span class="c1"># checksum of the *manifest* file of the object</span>
+    <span class="s1">&#39;ETag&#39;</span><span class="p">:</span> <span class="s1">&#39;87f0b7f04557315e6d1e6db21742d31c&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Manifest&#39;</span><span class="p">:</span> <span class="kc">None</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="exceptions.html#stor.exceptions.NotFoundError" title="stor.exceptions.NotFoundError"><strong>NotFoundError</strong></a> – When the tenant, container, or
+    object can’t be found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.temp_url">
+<code class="sig-name descname">temp_url</code><span class="sig-paren">(</span><em class="sig-param">lifetime=300</em>, <em class="sig-param">method='GET'</em>, <em class="sig-param">inline=True</em>, <em class="sig-param">filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.temp_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.temp_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtains a temporary URL to an object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lifetime</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The time (in seconds) the temporary
+URL will be valid</p></li>
+<li><p><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The HTTP method that can be used on
+the temporary URL</p></li>
+<li><p><strong>inline</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>default True</em>) – If False, URL will have a
+Content-Disposition header that causes browser to download as
+attachment.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – A urlencoded filename to use for
+attachment, otherwise defaults to object name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.abspath">
+<code class="sig-name descname">abspath</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#stor.swift.SwiftPath.abspath" title="Permalink to this definition">¶</a></dt>
+<dd><p>No-op for ‘abspath’</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.container">
+<em class="property">property </em><code class="sig-name descname">container</code><a class="headerlink" href="#stor.swift.SwiftPath.container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the container name from the path or None.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.content_type">
+<em class="property">property </em><code class="sig-name descname">content_type</code><a class="headerlink" href="#stor.swift.SwiftPath.content_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns content-type. Empty string if not set or if an account or container</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">download</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">use_manifest=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.download"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Downloads a directory to a destination.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the returned download result does not match the <code class="docutils literal notranslate"><span class="pre">condition</span></code>
+condition. View <a class="reference internal" href="#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">module-level</span> <span class="pre">documentation</span></code></a>
+for more information about configuring retry logic at the module or
+method level.</p>
+<p>Note that the destintation directory will be created automatically if
+it doesn’t exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dest</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The destination directory to download results to.
+The directory will be created if it doesn’t exist.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the results of download matches the condition. In the event of the
+condition never matching after retries, partially downloaded
+results will not be deleted. Note that users are not expected to write
+conditions for download without an understanding of the structure of the results.</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Perform the download and use the data manfest file to validate
+the download.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Results were returned, but they did not
+    meet the condition.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A list of every operation performed in the download by the</dt><dd><p>underlying swift client</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.download_object">
+<code class="sig-name descname">download_object</code><span class="sig-paren">(</span><em class="sig-param">out_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.download_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.download_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Downloads a single object to an output file.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View module-level documentation for more information about configuring
+retry logic at the module or method level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>out_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The output file</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – This method was called on a path that has no
+    container or object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">download_objects</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">objects</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.download_objects"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>See baseclass for complete method documentation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dest</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The destination folder to download to. The directory
+will be created if it doesnt exist.</p></li>
+<li><p><strong>objects</strong> (<em>List</em><em>[</em><em>str|PosixPath|SwiftPath</em><em>]</em>) – The list of objects to
+download. The objects can paths relative to the download path
+or absolute swift paths. Any absolute swift path must be
+children of the download path</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A mapping of all requested <code class="docutils literal notranslate"><span class="pre">objs</span></code> to their location on</dt><dd><p>disk</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a></p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – This method was called on a path that has no
+    container</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.exists"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Checks existence of the path.</p>
+<p>Returns True if the path exists, False otherwise.</p>
+<p>See <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level retry</span></a> documentation for more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>True if the path exists, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)">bool</a></p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>SwiftError</strong> – A non-404 swift client error occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.expanduser">
+<code class="sig-name descname">expanduser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#stor.swift.SwiftPath.expanduser" title="Permalink to this definition">¶</a></dt>
+<dd><p>No-op for ‘expanduser’</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">first</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.first"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Returns the first result from the list results of the path</p>
+<p>See <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level retry</span></a> documentation for more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><strong>SwiftError</strong> – A swift client error occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.getsize">
+<code class="sig-name descname">getsize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.getsize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.getsize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns content-length of object in Swift.</p>
+<p>Note that for containers / tenants, there will be no content-length, in
+which case this function returns 0 (<code class="docutils literal notranslate"><span class="pre">os.path.getsize</span></code> has no
+contract)</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">glob</code><span class="sig-paren">(</span><em class="sig-param">pattern</em>, <em class="sig-param">condition=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.glob"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Globs all objects in the path with the pattern.</p>
+<p>This glob is only compatible with patterns that end in * because of
+swift’s inability to do searches other than prefix queries.</p>
+<p>Note that this method assumes the current resource is a directory path
+and treats it as such. For example, if the user has a swift path of
+swift://tenant/container/my_dir (without the trailing slash), this
+method will perform a swift query with a prefix of mydir/pattern.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the number of globbed patterns does not match the <code class="docutils literal notranslate"><span class="pre">condition</span></code>
+condition. View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a>
+for more information about configuring retry logic at the module or
+method level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The pattern to match. The pattern can only have
+up to one ‘*’ at the end.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the number of results matches the condition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Every matching path.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#stor.swift.SwiftPath" title="stor.swift.SwiftPath">SwiftPath</a>]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Results were returned, but they did not
+    meet the condition.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.is_segment_container">
+<code class="sig-name descname">is_segment_container</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.is_segment_container"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.is_segment_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>True if this path is a segment container</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.isdir">
+<code class="sig-name descname">isdir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.isdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.isdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>See: <a class="reference external" href="https://docs.python.org/3/library/os.path.html#os.path.isdir" title="(in Python v3.8)"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.path.isdir()</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.isfile">
+<code class="sig-name descname">isfile</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.isfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.isfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the object exists &amp; is not a directory sentinel on Swift.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">list</code><span class="sig-paren">(</span><em class="sig-param">starts_with=None</em>, <em class="sig-param">limit=None</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">list_as_dir=False</em>, <em class="sig-param">ignore_segment_containers=True</em>, <em class="sig-param">ignore_dir_markers=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.list"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>List contents using the resource of the path as a prefix.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable
+or if the number of objects returned does not match the
+<code class="docutils literal notranslate"><span class="pre">condition</span></code> condition. View
+<a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>starts_with</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Allows for an additional search path to
+be appended to the resource of the swift path. Note that the
+current resource path is treated as a directory</p></li>
+<li><p><strong>limit</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Limit the amount of results returned</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the results matches the condition.</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Perform the list and use the data manfest file to validate
+the list.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Every path in the listing.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[<a class="reference internal" href="#stor.swift.SwiftPath" title="stor.swift.SwiftPath">SwiftPath</a>]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Results were returned, but they did not
+    meet the condition.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.listdir">
+<code class="sig-name descname">listdir</code><span class="sig-paren">(</span><em class="sig-param">ignore_segment_containers=True</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.listdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.listdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists the path as a dir, returning top-level directories and files</p>
+<p>For information about retry logic on this method, see
+<a class="reference internal" href="#stor.swift.SwiftPath.list" title="stor.swift.SwiftPath.list"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.list</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">post</code><span class="sig-paren">(</span><em class="sig-param">options=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.post"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Post operations on the path.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – <p>A dictionary containing options to override the
+global options specified during the service object creation.
+These options are applied to all post operations performed by
+this call, unless overridden on a per object basis. Possible
+options are given below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;meta&#39;</span><span class="p">:</span> <span class="p">[],</span>   <span class="c1"># Meta values will be prefixed with X-Object-Meta</span>
+                  <span class="c1"># (or X-Container*  X-Account* depending on path type)</span>
+    <span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="c1"># Header values will not be manipulated like meta values</span>
+                  <span class="c1"># when being posted.</span>
+    <span class="s1">&#39;read_acl&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>   <span class="c1"># For containers only</span>
+    <span class="s1">&#39;write_acl&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># For containers only</span>
+    <span class="s1">&#39;sync_to&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>    <span class="c1"># For containers only</span>
+    <span class="s1">&#39;sync_key&#39;</span><span class="p">:</span> <span class="kc">None</span>    <span class="c1"># For containers only</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>SwiftError</strong> – A swift client error occurred.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.read_object">
+<code class="sig-name descname">read_object</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.read_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.read_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads an individual object from OBS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the raw bytes from the object on OBS.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.8)">bytes</a></p>
+</dd>
+</dl>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the object is not found. View
+<a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.realpath">
+<code class="sig-name descname">realpath</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#stor.swift.SwiftPath.realpath" title="Permalink to this definition">¶</a></dt>
+<dd><p>No-op for ‘realpath’</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">remove</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.remove"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Removes a single object.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – The path is invalid.</p></li>
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.remove_container">
+<code class="sig-name descname">remove_container</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.remove_container"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.remove_container" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove swift container if it’s not empty.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.resource">
+<em class="property">property </em><code class="sig-name descname">resource</code><a class="headerlink" href="#stor.swift.SwiftPath.resource" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the resource as a <code class="docutils literal notranslate"><span class="pre">PosixPath</span></code> object or None.</p>
+<p>A resource can be a single object or a prefix to objects.
+Note that it’s important to keep the trailing slash in a resource
+name for prefix queries.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">rmtree</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.rmtree"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Removes a resource and all of its contents.
+This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">module-level</span> <span class="pre">documentation</span></code></a> for more
+information about configuring retry logic at the module or method
+level.</p>
+<p>Note that when removing a container, the associated segment container
+will also be removed if it exists. So, if one removes
+<code class="docutils literal notranslate"><span class="pre">swift://tenant/container</span></code>, <code class="docutils literal notranslate"><span class="pre">swift://tenant/container_segments</span></code>
+will also be deleted.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Calling rmtree on a directory marker will delete everything under the
+directory marker but not the marker itself.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – Listing the objects after rmtree returns results,
+    indicating something went wrong with the rmtree operation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">stat</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.stat"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Performs a stat on the path.</p>
+<p>Note that the path can be a tenant, container, or
+object. Using <code class="docutils literal notranslate"><span class="pre">stat</span></code> on a directory of objects will
+produce a <a class="reference internal" href="exceptions.html#stor.exceptions.NotFoundError" title="stor.exceptions.NotFoundError"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">NotFoundError</span></code></a>.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable.
+View <a class="reference internal" href="#swiftretry"><span class="std std-ref">module-level documentation</span></a> for more information
+about configuring retry logic at the module or method level.</p>
+<p>The return value is dependent on if the path points to a tenant,
+container, or object.</p>
+<p>For tenants, an example return dictionary is the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;content-length&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-storage-policy-3xreplica-container-count&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;4655&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-meta-temp-url-key&#39;</span><span class="p">:</span> <span class="s1">&#39;temp_url_key&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-object-count&#39;</span><span class="p">:</span> <span class="s1">&#39;428634&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;1450732238.21562&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-storage-policy-3xreplica-bytes-used&#39;</span><span class="p">:</span> <span class="s1">&#39;175654877752&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-trans-id&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;transaction_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="sa">u</span><span class="s1">&#39;Wed, 06 Apr 2016 18:30:28 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-bytes-used&#39;</span><span class="p">:</span> <span class="s1">&#39;175654877752&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-container-count&#39;</span><span class="p">:</span> <span class="s1">&#39;4655&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/plain; charset=utf-8&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;accept-ranges&#39;</span><span class="p">:</span> <span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-account-storage-policy-3xreplica-object-count&#39;</span><span class="p">:</span> <span class="s1">&#39;428634&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;Account&#39;</span><span class="p">:</span> <span class="s1">&#39;AUTH_seq_upload_prod&#39;</span><span class="p">,</span>
+    <span class="c1"># The number of containers in the tenant</span>
+    <span class="s1">&#39;Containers&#39;</span><span class="p">:</span> <span class="mi">31</span><span class="p">,</span>
+    <span class="c1"># The number of objects in the tenant</span>
+    <span class="s1">&#39;Objects&#39;</span><span class="p">:</span> <span class="s1">&#39;19955615&#39;</span><span class="p">,</span>
+    <span class="c1"># The total bytes used in the tenant</span>
+    <span class="s1">&#39;Bytes&#39;</span><span class="p">:</span> <span class="s1">&#39;24890576770484&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Containers-in-policy-&quot;3xreplica&quot;&#39;</span><span class="p">:</span> <span class="s1">&#39;31&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Objects-in-policy-&quot;3xreplica&quot;&#39;</span><span class="p">:</span> <span class="s1">&#39;19955615&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Bytes-in-policy-&quot;3xreplica&quot;&#39;</span><span class="p">:</span> <span class="s1">&#39;24890576770484&#39;</span><span class="p">,</span>
+    <span class="c1"># The tenant ACLs. An empty dict is returned if the user</span>
+    <span class="c1"># does not have admin privileges on the tenant</span>
+    <span class="s1">&#39;Account-Access&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;admin&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;swft_labprod_admin&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;read-only&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;seq_upload_rnd&#39;</span><span class="p">,</span><span class="s1">&#39;swft_labprod&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;read-write&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;svc_svc_seq&#39;</span><span class="p">]</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For containers, an example return dictionary is the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;content-length&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-container-object-count&#39;</span><span class="p">:</span> <span class="s1">&#39;99&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;accept-ranges&#39;</span><span class="p">:</span> <span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-storage-policy&#39;</span><span class="p">:</span> <span class="s1">&#39;3xReplica&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed, 06 Apr 2016 18:32:47 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;1457631707.95682&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-trans-id&#39;</span><span class="p">:</span> <span class="s1">&#39;transaction_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-container-bytes-used&#39;</span><span class="p">:</span> <span class="s1">&#39;5389060&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/plain; charset=utf-8&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;Account&#39;</span><span class="p">:</span> <span class="s1">&#39;AUTH_seq_upload_prod&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Container&#39;</span><span class="p">:</span> <span class="s1">&#39;2016-01&#39;</span><span class="p">,</span>
+    <span class="c1"># The number of objects in the container</span>
+    <span class="s1">&#39;Objects&#39;</span><span class="p">:</span> <span class="s1">&#39;43868&#39;</span><span class="p">,</span>
+    <span class="c1"># The size of all objects in the container</span>
+    <span class="s1">&#39;Bytes&#39;</span><span class="p">:</span> <span class="s1">&#39;55841489571&#39;</span><span class="p">,</span>
+    <span class="c1"># Read and write ACLs for the container</span>
+    <span class="s1">&#39;Read-ACL&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Write-ACL&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Sync-To&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Sync-Key&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>For objects, an example return dictionary is the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;content-length&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-delete-at&#39;</span><span class="p">:</span> <span class="s1">&#39;1459967915&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;accept-ranges&#39;</span><span class="p">:</span> <span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;last-modified&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed, 06 Apr 2016 18:21:56 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;etag&#39;</span><span class="p">:</span> <span class="s1">&#39;d41d8cd98f00b204e9800998ecf8427e&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-timestamp&#39;</span><span class="p">:</span> <span class="s1">&#39;1459966915.96956&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-trans-id&#39;</span><span class="p">:</span> <span class="s1">&#39;transaction_id&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;date&#39;</span><span class="p">:</span> <span class="s1">&#39;Wed, 06 Apr 2016 18:33:48 GMT&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;text/plain&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;x-object-meta-mtime&#39;</span><span class="p">:</span> <span class="s1">&#39;1459965986.000000&#39;</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;Account&#39;</span><span class="p">:</span> <span class="s1">&#39;AUTH_seq_upload_prod&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Container&#39;</span><span class="p">:</span> <span class="s1">&#39;2016-01&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Object&#39;</span><span class="p">:</span> <span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;object.txt&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/octet-stream&#39;</span><span class="p">,</span>
+    <span class="c1"># The size of the object</span>
+    <span class="s1">&#39;Content-Length&#39;</span><span class="p">:</span> <span class="s1">&#39;112&#39;</span><span class="p">,</span>
+    <span class="c1"># The last time the object was modified</span>
+    <span class="s1">&#39;Last-Modified&#39;</span><span class="p">:</span> <span class="s1">&#39;Fri, 15 Jan 2016 05:22:46 GMT&#39;</span><span class="p">,</span>
+    <span class="c1"># The MD5 checksum of the object. NOTE that if a large</span>
+    <span class="c1"># object is uploaded in segments that this will be the</span>
+    <span class="c1"># checksum of the *manifest* file of the object</span>
+    <span class="s1">&#39;ETag&#39;</span><span class="p">:</span> <span class="s1">&#39;87f0b7f04557315e6d1e6db21742d31c&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Manifest&#39;</span><span class="p">:</span> <span class="kc">None</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="exceptions.html#stor.exceptions.NotFoundError" title="stor.exceptions.NotFoundError"><strong>NotFoundError</strong></a> – When the tenant, container, or
+    object can’t be found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">temp_url</code><span class="sig-paren">(</span><em class="sig-param">lifetime=300</em>, <em class="sig-param">method='GET'</em>, <em class="sig-param">inline=True</em>, <em class="sig-param">filename=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.temp_url"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Obtains a temporary URL to an object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lifetime</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The time (in seconds) the temporary
+URL will be valid</p></li>
+<li><p><strong>method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The HTTP method that can be used on
+the temporary URL</p></li>
+<li><p><strong>inline</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>default True</em>) – If False, URL will have a
+Content-Disposition header that causes browser to download as
+attachment.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – A urlencoded filename to use for
+attachment, otherwise defaults to object name</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.tenant">
+<em class="property">property </em><code class="sig-name descname">tenant</code><a class="headerlink" href="#stor.swift.SwiftPath.tenant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tenant name from the path or return None</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.to_url">
+<code class="sig-name descname">to_url</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.to_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.to_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns URI for object (based on storage URL)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the HTTP url to the object</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)">str</a></p>
+</dd>
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p><a class="reference internal" href="exceptions.html#stor.exceptions.UnauthorizedError" title="stor.exceptions.UnauthorizedError"><strong>UnauthorizedError</strong></a> – if we cannot authenticate to get a storage URL</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="sig-name descname">upload</code><span class="sig-paren">(</span><em class="sig-param">to_upload</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.upload"><span class="viewcode-link">[source]</span></a></dt>
+<dd><p>Uploads a list of files and directories to swift.</p>
+<p>This method retries <code class="docutils literal notranslate"><span class="pre">num_retries</span></code> times if swift is unavailable or if
+the returned upload result does not match the <code class="docutils literal notranslate"><span class="pre">condition</span></code>
+condition. View <a class="reference internal" href="#module-stor.swift" title="stor.swift"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">module-level</span> <span class="pre">documentation</span></code></a>
+for more information about configuring retry logic at the module or
+method level.</p>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">path</span><span class="p">(</span><span class="s1">&#39;/path/to/upload/dir&#39;</span><span class="p">):</span>
+    <span class="n">path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="s1">&#39;.&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This method upload on paths relative to the current
+directory. In order to load files relative to a target directory,
+use path as a context manager to change the directory.</p></li>
+<li><p>When large files are split into segments, they are uploaded
+to a segment container named .segments_${container_name}</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>to_upload</strong> (<em>List</em>) – A list of file names, directory names, or
+OBSUploadObject objects to upload.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – The method will only return
+when the results of upload matches the condition. In the event of the
+condition never matching after retries, partially uploaded
+results will not be deleted. Note that users are not expected to write
+conditions for upload without an understanding of the structure of the results.</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – <p>Generate a data manifest and validate the upload results
+are in the manifest. In case of a single directory being uploaded, the
+manifest file will be created inside this directory. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stor</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://AUTH_foo/bar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="s1">&#39;logs&#39;</span><span class="p">],</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The manifest will be located at
+<code class="docutils literal notranslate"><span class="pre">swift://AUTH_foo/bar/logs/.data_manifest.csv</span></code></p>
+<p>Alternatively, when multiple directories are uploaded, manifest file will
+be created in the current directory. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stor</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://AUTH_foo/bar&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upload</span><span class="p">(</span>
+    <span class="p">[</span><span class="s1">&#39;logs&#39;</span><span class="p">,</span> <span class="s1">&#39;test.txt&#39;</span><span class="p">],</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The manifest will be located at
+<code class="docutils literal notranslate"><span class="pre">swift://AUTH_foo/bar/.data_manifest.csv</span></code></p>
+</p></li>
+<li><p><strong>headers</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – A list of object headers to apply to every object. Note
+that these are not applied if passing OBSUploadObjects directly to upload.
+Headers must be specified as a list of colon-delimited strings,
+e.g. [‘X-Delete-After:1000’]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>SwiftError</strong> – A swift client error occurred.</p></li>
+<li><p><a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><strong>ConditionNotMetError</strong></a> – The <code class="docutils literal notranslate"><span class="pre">condition</span></code> argument did not pass after <code class="docutils literal notranslate"><span class="pre">num_retries</span></code>
+    or the <code class="docutils literal notranslate"><span class="pre">use_manifest</span></code> option was turned on and the upload results could not
+    be verified. Partially uploaded results are not deleted.</p></li>
+</ul>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A list of every operation performed in the upload by the</dt><dd><p>underlying swift client</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)">dict</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.walkfiles">
+<code class="sig-name descname">walkfiles</code><span class="sig-paren">(</span><em class="sig-param">pattern=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.walkfiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.walkfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates over listed files that match an optional pattern.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pattern</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>, </em><em>optional</em>) – Only return files that match this pattern</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>All files that match the optional pattern. Swift directory</dt><dd><p>markers are not returned.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Iter[<a class="reference internal" href="#stor.swift.SwiftPath" title="stor.swift.SwiftPath">SwiftPath</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.swift.SwiftPath.write_object">
+<code class="sig-name descname">write_object</code><span class="sig-paren">(</span><em class="sig-param">content: bytes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/swift.html#SwiftPath.write_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.swift.SwiftPath.write_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes an individual object.</p>
+<p>Note that this method writes the provided content to a temporary
+file before uploading. This allows us to reuse code from swift’s
+uploader (static large object support, etc.).</p>
+<p>For information about the retry logic of this method, view
+<a class="reference internal" href="#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>content</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.8)"><em>bytes</em></a>) – raw bytes to write to OBS</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="using-swift-conditions-with-retry-settings">
+<h2>Using Swift Conditions with Retry Settings<a class="headerlink" href="#using-swift-conditions-with-retry-settings" title="Permalink to this headline">¶</a></h2>
+<p>Swift is a storage system with eventual consistency, meaning (for example) that
+uploaded objects may not be able to be listed immediately after being uploaded.
+In order to make applications more resilient to consistency issues, various
+swift methods can take conditions that must pass before results are returned.</p>
+<p>For example, imagine your application is downloading data using the
+<a class="reference internal" href="#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a> method. In order to ensure that your application downloads
+exactly 10 objects, one can do the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SwiftPath</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="k">lambda</span> <span class="n">results</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the above, <code class="docutils literal notranslate"><span class="pre">condition</span></code> takes the results from <a class="reference internal" href="#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a> and verifies there are
+10 elements. If the condition fails, <a class="reference internal" href="#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a> will retry based on <a class="reference internal" href="#swiftretry"><span class="std std-ref">retry settings</span></a>
+until finally throwing a <a class="reference internal" href="exceptions.html#stor.exceptions.ConditionNotMetError" title="stor.exceptions.ConditionNotMetError"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">ConditionNotMetError</span></code></a> if the condition is not met. If <code class="docutils literal notranslate"><span class="pre">condition</span></code> passes,
+<code class="docutils literal notranslate"><span class="pre">download</span></code> returns results.</p>
+<p>Note that if you want to combine multiple conditions, you can do this easily as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">condition</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">results</span><span class="p">:</span> <span class="nb">all</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">my_list_of_conditions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="swiftuploadobject">
+<h2>SwiftUploadObject<a class="headerlink" href="#swiftuploadobject" title="Permalink to this headline">¶</a></h2>
+<dl class="attribute">
+<dt id="stor.swift.SwiftUploadObject">
+<code class="sig-prename descclassname">stor.swift.</code><code class="sig-name descname">SwiftUploadObject</code><a class="headerlink" href="#stor.swift.SwiftUploadObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">stor.obs.OBSUploadObject</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="stor.utils.file_name_to_object_name">
+<code class="sig-prename descclassname">stor.utils.</code><code class="sig-name descname">file_name_to_object_name</code><span class="sig-paren">(</span><em class="sig-param">p</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/utils.html#file_name_to_object_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.utils.file_name_to_object_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a file path, construct its object name.</p>
+<p>Any relative or absolute directory markers at the beginning of
+the path will be stripped, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">../../</span><span class="n">my_file</span> <span class="o">-&gt;</span> <span class="n">my_file</span>
+<span class="o">./</span><span class="n">my_dir</span> <span class="o">-&gt;</span> <span class="n">my_dir</span>
+<span class="o">.</span><span class="n">hidden_dir</span><span class="o">/</span><span class="n">file</span> <span class="o">-&gt;</span> <span class="o">.</span><span class="n">hidden_dir</span><span class="o">/</span><span class="n">file</span>
+<span class="o">/</span><span class="n">absolute_dir</span> <span class="o">-&gt;</span> <span class="n">absolute_dir</span>
+</pre></div>
+</div>
+<p>Note that windows paths will have their back slashes changed to
+forward slashes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">C</span><span class="p">:</span>\<span class="n">my</span>\<span class="n">windows</span>\<span class="n">file</span> <span class="o">-&gt;</span> <span class="n">my</span><span class="o">/</span><span class="n">windows</span><span class="o">/</span><span class="n">file</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – The input path</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The object name. An empty path will be returned in</dt><dd><p>the case of the input path only consisting of absolute
+or relative directory markers (i.e. ‘/’ -&gt; ‘’, ‘./’ -&gt; ‘’)</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="posix.html#stor.posix.PosixPath" title="stor.posix.PosixPath">PosixPath</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="s3.html" class="btn btn-neutral float-right" title="S3" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="main_interface.html" class="btn btn-neutral float-left" title="Main Interface" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

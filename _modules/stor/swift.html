@@ -1,0 +1,1726 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.swift &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.swift</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.swift</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides utilities for accessing swift object storage.</span>
+
+<span class="sd">Different configuration options are available at the module level, and</span>
+<span class="sd">these variables are documented in the default configuration.</span>
+
+<span class="sd">For swift authentication, the `auth_url`, `username`, and</span>
+<span class="sd">`password` variables are used.</span>
+
+<span class="sd">For methods that take conditions, the `initial_retry_sleep`,</span>
+<span class="sd">``num_retries``, and `retry_sleep_function` variables are used to</span>
+<span class="sd">configure the logic around retrying when the condition is not met.</span>
+<span class="sd">Note that these variables can also be passed to the methods themselves.</span>
+
+<span class="sd">Examples:</span>
+
+<span class="sd">    A basic example of configuring the swift authentication parameters</span>
+<span class="sd">    and downloading a directory::</span>
+
+<span class="sd">    &gt;&gt;&gt; from stor import swift</span>
+<span class="sd">    &gt;&gt;&gt; from stor import settings</span>
+<span class="sd">    &gt;&gt;&gt; settings.update({</span>
+<span class="sd">    ...     &#39;swift&#39;: {</span>
+<span class="sd">    ...         &#39;auth_url&#39;: &#39;swift_auth_url.com&#39;,</span>
+<span class="sd">    ...         &#39;username&#39;: &#39;swift_user&#39;,</span>
+<span class="sd">    ...         &#39;password&#39;: &#39;swift_pass&#39;</span>
+<span class="sd">    ...     }</span>
+<span class="sd">    ... })</span>
+<span class="sd">    &gt;&gt;&gt; swift_path = swift.SwiftPath(&#39;swift://tenant/container/prefix&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; swift_path.download(&#39;dest_dir&#39;)</span>
+
+<span class="sd">More examples and documentations for swift methods can be found under</span>
+<span class="sd">the `SwiftPath` class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">parse</span>
+<span class="kn">from</span> <span class="nn">swiftclient</span> <span class="kn">import</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">swift_exceptions</span>
+<span class="kn">from</span> <span class="nn">swiftclient</span> <span class="kn">import</span> <span class="n">service</span> <span class="k">as</span> <span class="n">swift_service</span>
+<span class="kn">from</span> <span class="nn">swiftclient</span> <span class="kn">import</span> <span class="n">client</span> <span class="k">as</span> <span class="n">swift_client</span>
+<span class="kn">from</span> <span class="nn">swiftclient.utils</span> <span class="kn">import</span> <span class="n">generate_temp_url</span>
+
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">stor_exceptions</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">is_swift_path</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">stor.base</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSPath</span>
+<span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSUploadObject</span>
+<span class="kn">from</span> <span class="nn">stor.posix</span> <span class="kn">import</span> <span class="n">PosixPath</span>
+<span class="kn">from</span> <span class="nn">stor.third_party.backoff</span> <span class="kn">import</span> <span class="n">with_backoff</span>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">progress_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.progress&#39;</span> <span class="o">%</span> <span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># python-swiftclient has a subtle bug in get_auth_keystone. If</span>
+<span class="c1"># the auth_token is set beforehand and a token refresh happens,</span>
+<span class="c1"># the invalid auth_token persists in the os_options argument,</span>
+<span class="c1"># causing it to enter an infinite retry loop on authentication</span>
+<span class="c1"># errors. Patch the get_auth_keystone function with one that</span>
+<span class="c1"># clears the auth_token parameter on any Exceptions.</span>
+<span class="c1"># Note that this behavior is tested in</span>
+<span class="c1"># stor.tests.test_integration_swift:SwiftIntegrationTest.test_cached_auth_and_auth_invalidation</span>
+<span class="n">real_get_auth_keystone</span> <span class="o">=</span> <span class="n">swift_client</span><span class="o">.</span><span class="n">get_auth_keystone</span>
+
+
+<span class="k">def</span> <span class="nf">patched_get_auth_keystone</span><span class="p">(</span><span class="n">auth_url</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">os_options</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">real_get_auth_keystone</span><span class="p">(</span><span class="n">auth_url</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">os_options</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+        <span class="n">os_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;auth_token&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+
+<span class="n">swift_client</span><span class="o">.</span><span class="n">get_auth_keystone</span> <span class="o">=</span> <span class="n">patched_get_auth_keystone</span>
+
+<span class="c1"># singleton that collects together auth tokens for storage URLs</span>
+<span class="n">_cached_auth_token_map</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">_singleton_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<span class="c1"># Content types that are assigned to empty directories</span>
+<span class="n">DIR_MARKER_TYPES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;text/directory&#39;</span><span class="p">,</span> <span class="s1">&#39;application/directory&#39;</span><span class="p">)</span>
+
+<span class="c1"># These variables are used to configure retry logic for swift.</span>
+<span class="c1"># These variables can also be passed to the methods themselves</span>
+<span class="n">initial_retry_sleep</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="sd">&quot;&quot;&quot;The time to sleep before the first retry&quot;&quot;&quot;</span>
+
+<span class="c1"># Make new Exceptions structure backwards compatible</span>
+<span class="n">SwiftError</span> <span class="o">=</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">RemoteError</span>
+<span class="n">NotFoundError</span> <span class="o">=</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">NotFoundError</span>
+<span class="n">ConditionNotMetError</span> <span class="o">=</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">ConditionNotMetError</span>
+<span class="n">ConflictError</span> <span class="o">=</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">ConflictError</span>
+<span class="n">UnavailableError</span> <span class="o">=</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">UnavailableError</span>
+<span class="n">UnauthorizedError</span> <span class="o">=</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">UnauthorizedError</span>
+<span class="n">SwiftUploadObject</span> <span class="o">=</span> <span class="n">OBSUploadObject</span>
+
+
+<span class="k">def</span> <span class="nf">_default_retry_sleep_function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">attempt</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">t</span> <span class="o">*</span> <span class="mi">2</span>
+
+
+<span class="n">retry_sleep_function</span> <span class="o">=</span> <span class="n">_default_retry_sleep_function</span>
+<span class="sd">&quot;&quot;&quot;The function that increases sleep time when retrying.</span>
+
+<span class="sd">This function needs to take two integer</span>
+<span class="sd">arguments (time slept last attempt, attempt number) and</span>
+<span class="sd">return a time to sleep in seconds.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">get_progress_logger</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns the swift progress logger&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">progress_logger</span>
+
+
+<span class="k">def</span> <span class="nf">_get_or_create_auth_credentials</span><span class="p">(</span><span class="n">tenant_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets the cached auth credential or creates one if none exists.</span>
+
+<span class="sd">    If any auth setting is updated, all cached auth credentials are</span>
+<span class="sd">    cleared and new auth credentials are created for the requested tenant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift&#39;</span><span class="p">]</span>
+    <span class="n">auth_url</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;auth_url&#39;</span><span class="p">)</span>
+    <span class="n">username</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
+    <span class="n">password</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">tenant_name</span> <span class="ow">in</span> <span class="n">_cached_auth_token_map</span><span class="p">:</span>
+        <span class="n">cached_params</span> <span class="o">=</span> <span class="n">_cached_auth_token_map</span><span class="p">[</span><span class="n">tenant_name</span><span class="p">][</span><span class="s1">&#39;params&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">auth_url</span> <span class="o">==</span> <span class="n">cached_params</span><span class="p">[</span><span class="s1">&#39;auth_url&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">username</span> <span class="o">==</span> <span class="n">cached_params</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="ow">and</span>
+                <span class="n">password</span> <span class="o">==</span> <span class="n">cached_params</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]):</span>
+            <span class="k">return</span> <span class="n">_cached_auth_token_map</span><span class="p">[</span><span class="n">tenant_name</span><span class="p">][</span><span class="s1">&#39;creds&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_clear_cached_auth_credentials</span><span class="p">()</span>
+
+    <span class="n">storage_url</span><span class="p">,</span> <span class="n">auth_token</span> <span class="o">=</span> <span class="n">swift_client</span><span class="o">.</span><span class="n">get_auth_keystone</span><span class="p">(</span>
+        <span class="n">auth_url</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span>
+        <span class="p">{</span><span class="s1">&#39;tenant_name&#39;</span><span class="p">:</span> <span class="n">tenant_name</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">creds</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;os_storage_url&#39;</span><span class="p">:</span> <span class="n">storage_url</span><span class="p">,</span>
+        <span class="s1">&#39;os_auth_token&#39;</span><span class="p">:</span> <span class="n">auth_token</span>
+    <span class="p">}</span>
+    <span class="n">cached_result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;creds&#39;</span><span class="p">:</span> <span class="n">creds</span><span class="p">,</span>
+        <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;auth_url&#39;</span><span class="p">:</span> <span class="n">auth_url</span><span class="p">,</span>
+            <span class="s1">&#39;username&#39;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+            <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">password</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Note: we are intentionally ignoring the rare race condition where</span>
+    <span class="c1"># authentication starts in one thread, then settings are updated, and</span>
+    <span class="c1"># then authentication finishes in the other.</span>
+    <span class="k">with</span> <span class="n">_singleton_lock</span><span class="p">:</span>
+        <span class="n">_cached_auth_token_map</span><span class="p">[</span><span class="n">tenant_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cached_result</span>
+    <span class="k">return</span> <span class="n">creds</span>
+
+
+<span class="k">def</span> <span class="nf">_clear_cached_auth_credentials</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">_singleton_lock</span><span class="p">:</span>
+        <span class="n">_cached_auth_token_map</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">FailedUploadError</span><span class="p">(</span><span class="n">stor_exceptions</span><span class="o">.</span><span class="n">FailedUploadError</span><span class="p">,</span> <span class="n">UnavailableError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when an upload fails because of availability issues.</span>
+
+<span class="sd">    The exception hierarchy is different for swift because FailedUploadError is nearly always a 503</span>
+<span class="sd">    in Swift world (and thus almost always retry-able)&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">AuthenticationError</span><span class="p">(</span><span class="n">SwiftError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a client has improper authentication credentials.</span>
+
+<span class="sd">    Swiftclient throws this error when trying to authenticate with</span>
+<span class="sd">    the keystone client. This is similar to a 401 HTTP response.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">InconsistentDownloadError</span><span class="p">(</span><span class="n">SwiftError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when an etag or content length does not match.</span>
+
+<span class="sd">    Currently, we experience this during periods when the cluster is under</span>
+<span class="sd">    heavy load, potentially because of unexpectedly quick terminations&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">ConfigurationError</span><span class="p">(</span><span class="n">SwiftError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when swift is not configured properly.</span>
+
+<span class="sd">    Swift needs either module-level or environment authentication</span>
+<span class="sd">    variables set in order to be configured.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+
+<span class="k">def</span> <span class="nf">_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Allows `SwiftPath` methods to take optional retry configuration</span>
+<span class="sd">    parameters for doing retry logic</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">decorated</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">retries</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;num_retries&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift&#39;</span><span class="p">][</span><span class="s1">&#39;num_retries&#39;</span><span class="p">])</span>
+            <span class="n">initial_sleep</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;initial_retry_sleep&#39;</span><span class="p">,</span>
+                                       <span class="n">initial_retry_sleep</span><span class="p">)</span>
+            <span class="n">sleep_function</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;retry_sleep_function&#39;</span><span class="p">,</span>
+                                        <span class="n">retry_sleep_function</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">with_backoff</span><span class="p">(</span><span class="n">func</span><span class="p">,</span>
+                                <span class="n">exceptions</span><span class="o">=</span><span class="n">exceptions</span><span class="p">,</span>
+                                <span class="n">sleep_function</span><span class="o">=</span><span class="n">sleep_function</span><span class="p">,</span>
+                                <span class="n">retries</span><span class="o">=</span><span class="n">retries</span><span class="p">,</span>
+                                <span class="n">initial_sleep</span><span class="o">=</span><span class="n">initial_sleep</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+    <span class="k">return</span> <span class="n">decorated</span>
+
+
+<span class="k">def</span> <span class="nf">_swiftclient_error_to_descriptive_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts swiftclient errors to more descriptive exceptions with</span>
+<span class="sd">    transaction ID&quot;&quot;&quot;</span>
+    <span class="c1"># SwiftErrors catch Client exceptions and store them in the</span>
+    <span class="c1"># &#39;exception&#39; attribute. Try to get the client exception</span>
+    <span class="c1"># here if there is one so that its http status can be</span>
+    <span class="c1"># examined to throw specific exceptions.</span>
+    <span class="n">client_exception</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="s1">&#39;exception&#39;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+
+    <span class="n">http_status</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">client_exception</span><span class="p">,</span> <span class="s1">&#39;http_status&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">exc_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+    <span class="n">exc_headers</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">client_exception</span><span class="p">,</span> <span class="s1">&#39;http_response_headers&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exc_headers</span> <span class="ow">and</span> <span class="n">exc_headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;X-Trans-Id&#39;</span><span class="p">):</span>
+        <span class="n">exc_str</span> <span class="o">+=</span> <span class="s1">&#39; X-Trans-Id: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">exc_headers</span><span class="p">[</span><span class="s1">&#39;X-Trans-Id&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">403</span><span class="p">:</span>
+        <span class="c1"># pass through of the InvalidObjectState error from S3 (but we only get exception message)</span>
+        <span class="k">if</span> <span class="s2">&quot;storage class&quot;</span> <span class="ow">in</span> <span class="n">exc_str</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">stor_exceptions</span><span class="o">.</span><span class="n">ObjectInColdStorageError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;unauthorized error in swift operation - </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_str</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">UnauthorizedError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">NotFoundError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">409</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ConflictError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">503</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;unavailable error in swift operation - </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">UnavailableError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;reset contents for reupload&#39;</span> <span class="ow">in</span> <span class="n">exc_str</span><span class="p">:</span>
+        <span class="c1"># When experiencing HA issues, we sometimes encounter a</span>
+        <span class="c1"># ClientException from swiftclient during upload. The exception</span>
+        <span class="c1"># is thrown here -</span>
+        <span class="c1"># https://github.com/openstack/python-swiftclient/blob/84d110c63ecf671377d4b2338060e9b00da44a4f/swiftclient/client.py#L1625  # noqa</span>
+        <span class="c1"># Treat this as a FailedUploadError</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;upload error in swift put_object operation - </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_str</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">FailedUploadError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+    <span class="k">elif</span> <span class="s1">&#39;Unauthorized.&#39;</span> <span class="ow">in</span> <span class="n">exc_str</span><span class="p">:</span>
+        <span class="c1"># Swiftclient catches keystone auth errors at</span>
+        <span class="c1"># https://github.com/openstack/python-swiftclient/blob/master/swiftclient/client.py#L536 # noqa</span>
+        <span class="c1"># Parse the message since they don&#39;t bubble the exception or</span>
+        <span class="c1"># provide more information</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;auth error in swift operation - </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_str</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">AuthenticationError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+    <span class="k">elif</span> <span class="s1">&#39;md5sum != etag&#39;</span> <span class="ow">in</span> <span class="n">exc_str</span> <span class="ow">or</span> <span class="s1">&#39;read_length != content_length&#39;</span> <span class="ow">in</span> <span class="n">exc_str</span><span class="p">:</span>
+        <span class="c1"># We encounter this error when cluster is under heavy</span>
+        <span class="c1"># replication load (at least that&#39;s the theory). So retry and</span>
+        <span class="c1"># ensure we track consistency errors</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Hit consistency issue. Likely related to&#39;</span>
+                     <span class="s1">&#39; cluster load: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">InconsistentDownloadError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;unexpected swift error - </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">exc_str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SwiftError</span><span class="p">(</span><span class="n">exc_str</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_propagate_swift_exceptions</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Bubbles all swift exceptions as `SwiftError` classes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">swift_service</span><span class="o">.</span><span class="n">SwiftError</span><span class="p">,</span>
+                <span class="n">swift_exceptions</span><span class="o">.</span><span class="n">ClientException</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_swiftclient_error_to_descriptive_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_retry_on_cached_auth_err</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Retry a function with cleared auth credentials on AuthenticationError&quot;&quot;&quot;</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">AuthenticationError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;auth failed, retrying with cleared auth cache&#39;</span><span class="p">)</span>
+            <span class="n">_clear_cached_auth_credentials</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_manifest_upload</span><span class="p">(</span><span class="n">expected_objs</span><span class="p">,</span> <span class="n">upload_results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of expected object names and a list of dictionaries of</span>
+<span class="sd">    `SwiftPath.upload` results, verify that all expected objects are in</span>
+<span class="sd">    the upload results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uploaded_objs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">r</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">upload_results</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;upload_object&#39;</span><span class="p">,</span> <span class="s1">&#39;create_dir_marker&#39;</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">expected_objs</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">uploaded_objs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_manifest_download</span><span class="p">(</span><span class="n">expected_objs</span><span class="p">,</span> <span class="n">download_results</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Given a list of expected object names and a list of dictionaries of</span>
+<span class="sd">    `SwiftPath.download` results, verify that all expected objects are in</span>
+<span class="sd">    the download results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">downloaded_objs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">r</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">download_results</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;download_object&#39;</span><span class="p">,)</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">expected_objs</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">downloaded_objs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SwiftDownloadLogger</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseProgressLogger</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SwiftDownloadLogger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">progress_logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">downloaded_bytes</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">update_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tracks number of bytes downloaded.</span>
+
+<span class="sd">        The ``read_length`` property in swift download results contains the</span>
+<span class="sd">        total size of the object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">downloaded_bytes</span> <span class="o">+=</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;read_length&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Only add results to progress if they are ``download_object`` actions.</span>
+
+<span class="sd">        The ``download_object`` action encompasses creating an empty directory</span>
+<span class="sd">        marker</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;action&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;download_object&#39;</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">SwiftDownloadLogger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_start_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;starting download&#39;</span>
+
+    <span class="k">def</span> <span class="nf">get_finish_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;download complete - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_progress_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_elapsed_time</span><span class="p">()</span>
+        <span class="n">formatted_elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_time</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">)</span>
+        <span class="n">mb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">downloaded_bytes</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">)</span>
+        <span class="n">mb_s</span> <span class="o">=</span> <span class="n">mb</span> <span class="o">/</span> <span class="n">elapsed_time</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="k">if</span> <span class="n">elapsed_time</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB/s&#39;</span>
+        <span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_results</span><span class="p">,</span> <span class="n">formatted_elapsed_time</span><span class="p">,</span> <span class="n">mb</span><span class="p">,</span> <span class="n">mb_s</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SwiftUploadLogger</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseProgressLogger</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_upload_objects</span><span class="p">,</span> <span class="n">upload_object_sizes</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SwiftUploadLogger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">progress_logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_upload_objects</span> <span class="o">=</span> <span class="n">total_upload_objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_object_sizes</span> <span class="o">=</span> <span class="n">upload_object_sizes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uploaded_bytes</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">update_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Keep track of total uploaded bytes by referencing the object sizes&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uploaded_bytes</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">upload_object_sizes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Only add results if they are ``upload_object`` and ``create_dir_marker``</span>
+<span class="sd">        actions&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;action&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;upload_object&#39;</span><span class="p">,</span> <span class="s1">&#39;create_dir_marker&#39;</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">SwiftUploadLogger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_start_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;starting upload of </span><span class="si">%s</span><span class="s1"> objects&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_upload_objects</span>
+
+    <span class="k">def</span> <span class="nf">get_finish_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;upload complete - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_progress_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_elapsed_time</span><span class="p">()</span>
+        <span class="n">formatted_elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_time</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">)</span>
+        <span class="n">mb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uploaded_bytes</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">)</span>
+        <span class="n">mb_s</span> <span class="o">=</span> <span class="n">mb</span> <span class="o">/</span> <span class="n">elapsed_time</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="k">if</span> <span class="n">elapsed_time</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB/s&#39;</span>
+        <span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_results</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_upload_objects</span><span class="p">,</span> <span class="n">formatted_elapsed_time</span><span class="p">,</span> <span class="n">mb</span><span class="p">,</span> <span class="n">mb_s</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SwiftPath"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath">[docs]</a><span class="k">class</span> <span class="nc">SwiftPath</span><span class="p">(</span><span class="n">OBSPath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides the ability to manipulate and access resources on swift</span>
+<span class="sd">    with a similar interface to the path library.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">drive</span> <span class="o">=</span> <span class="s1">&#39;swift://&#39;</span>
+
+<div class="viewcode-block" id="SwiftPath.is_segment_container"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.is_segment_container">[docs]</a>    <span class="k">def</span> <span class="nf">is_segment_container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if this path is a segment container&quot;&quot;&quot;</span>
+        <span class="n">container</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">and</span> <span class="n">container</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;.segments&#39;</span><span class="p">)</span> <span class="ow">or</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_segments&#39;</span><span class="p">)</span> <span class="ow">or</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;+segments&#39;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">tenant</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the tenant name from the path or return None&quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the container name from the path or None.&quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resource</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the resource as a ``PosixPath`` object or None.</span>
+
+<span class="sd">        A resource can be a single object or a prefix to objects.</span>
+<span class="sd">        Note that it&#39;s important to keep the trailing slash in a resource</span>
+<span class="sd">        name for prefix queries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="n">joined_resource</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="n">joined_resource</span><span class="p">)</span> <span class="k">if</span> <span class="n">joined_resource</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_get_swift_connection_options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns options for constructing ``SwiftService`` and</span>
+<span class="sd">        ``Connection`` objects.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            options: Additional options that are directly passed</span>
+<span class="sd">                into connection options.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ConfigurationError: The needed swift environment variables</span>
+<span class="sd">                aren&#39;t set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">global_options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift&#39;</span><span class="p">]</span>
+        <span class="n">auth_url</span> <span class="o">=</span> <span class="n">global_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;auth_url&#39;</span><span class="p">)</span>
+        <span class="n">username</span> <span class="o">=</span> <span class="n">global_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="n">global_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">username</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">password</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">auth_url</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigurationError</span><span class="p">((</span>
+                <span class="s1">&#39;OS_AUTH_URL, OS_USERNAME, and OS_PASSWORD environment vars &#39;</span>
+                <span class="s1">&#39;must be set for swift authentication. The username, password &#39;</span>
+                <span class="s1">&#39;and auth_url settings variables may also be set with settings.update.&#39;</span>
+            <span class="p">))</span>
+
+        <span class="c1"># Set additional options on top of what was passed in</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;os_tenant_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tenant</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;os_auth_url&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">auth_url</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;os_username&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;os_password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="n">options</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">_get_or_create_auth_credentials</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tenant</span><span class="p">))</span>
+
+        <span class="c1"># Merge options with global and local ones</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">swift_service</span><span class="o">.</span><span class="n">_default_global_options</span><span class="p">,</span>
+                       <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="n">swift_service</span><span class="o">.</span><span class="n">_default_local_options</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">options</span><span class="p">))</span>
+        <span class="n">swift_service</span><span class="o">.</span><span class="n">process_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">options</span>
+
+    <span class="k">def</span> <span class="nf">_get_swift_service</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a swift service based on the path.</span>
+
+<span class="sd">        Uses the tenant name of the path and an auth url to instantiate</span>
+<span class="sd">        the swift service. The ``OS_AUTH_URL`` environment variable is used</span>
+<span class="sd">        as the authentication url if set, otherwise the default auth</span>
+<span class="sd">        url setting is used.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            options: Additional options that are directly passed</span>
+<span class="sd">                into swift service creation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            swiftclient.service.SwiftService: The service instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">conn_opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_swift_connection_options</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">swift_service</span><span class="o">.</span><span class="n">SwiftService</span><span class="p">(</span><span class="n">conn_opts</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_swift_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize a swift client connection based on the path.</span>
+
+<span class="sd">        The python-swiftclient package offers a couple ways to access data,</span>
+<span class="sd">        with a raw Connection object being a lower-level interface to swift.</span>
+<span class="sd">        For cases like reading individual objects, a raw Connection object</span>
+<span class="sd">        is easier to utilize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            options: Additional options that are directly passed</span>
+<span class="sd">                into swift connection creation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            swiftclient.client.Connection: The connection instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">conn_opts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_swift_connection_options</span><span class="p">(</span><span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">swift_service</span><span class="o">.</span><span class="n">get_conn</span><span class="p">(</span><span class="n">conn_opts</span><span class="p">)</span>
+
+    <span class="nd">@_retry_on_cached_auth_err</span>
+    <span class="nd">@_propagate_swift_exceptions</span>
+    <span class="k">def</span> <span class="nf">_swift_connection_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Instantiates a ``Connection`` object and runs ``method_name``.</span>
+
+<span class="sd">        Note that obtaining the connection and doing the call in one method</span>
+<span class="sd">        is intentional (instead of allowing the user to get a connection and</span>
+<span class="sd">        then call a method on it directly). This is because sometimes a cached</span>
+<span class="sd">        auth token can expire, causing a method to fail. If a method is retried,</span>
+<span class="sd">        we want it to always get the swift connection again so that it will also</span>
+<span class="sd">        re-auth in the case of an expired or invalid auth token.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_swift_connection</span><span class="p">()</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@_retry_on_cached_auth_err</span>
+    <span class="nd">@_propagate_swift_exceptions</span>
+    <span class="k">def</span> <span class="nf">_swift_service_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Instantiates a ``SwiftService`` object and runs ``method_name``.</span>
+
+<span class="sd">        Note that getting the swift service and doing the call in the same method</span>
+<span class="sd">        is done for the same reasons explained in ``_swift_connection_call``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">method_options</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">service_options</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">method_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_service_options&#39;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">service_progress_logger</span> <span class="o">=</span> <span class="n">method_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_progress_logger&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_swift_service</span><span class="p">(</span><span class="o">**</span><span class="n">service_options</span><span class="p">)</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+        <span class="n">results_iter</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">method_options</span><span class="p">)</span>
+
+        <span class="n">results_iter</span> <span class="o">=</span> <span class="p">[</span><span class="n">results_iter</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">results_iter</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">results_iter</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results_iter</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+                <span class="n">http_status</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">],</span> <span class="s1">&#39;http_status&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">http_status</span> <span class="ow">or</span> <span class="n">http_status</span> <span class="o">&gt;=</span> <span class="mi">400</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">service_progress_logger</span><span class="p">:</span>
+                <span class="n">service_progress_logger</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+<div class="viewcode-block" id="SwiftPath.read_object"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.read_object">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="n">UnavailableError</span><span class="p">,</span>
+                              <span class="n">InconsistentDownloadError</span><span class="p">,</span> <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">read_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reads an individual object from OBS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bytes: the raw bytes from the object on OBS.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable or if</span>
+<span class="sd">        the object is not found. View</span>
+<span class="sd">        `module-level documentation &lt;swiftretry&gt;` for more</span>
+<span class="sd">        information about configuring retry logic at the module or method</span>
+<span class="sd">        level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">headers</span><span class="p">,</span> <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_connection_call</span><span class="p">(</span><span class="s1">&#39;get_object&#39;</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">content</span></div>
+
+<div class="viewcode-block" id="SwiftPath.temp_url"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.temp_url">[docs]</a>    <span class="k">def</span> <span class="nf">temp_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="n">inline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Obtains a temporary URL to an object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lifetime (int): The time (in seconds) the temporary</span>
+<span class="sd">                URL will be valid</span>
+<span class="sd">            method (str): The HTTP method that can be used on</span>
+<span class="sd">                the temporary URL</span>
+<span class="sd">            inline (bool, default True): If False, URL will have a</span>
+<span class="sd">                Content-Disposition header that causes browser to download as</span>
+<span class="sd">                attachment.</span>
+<span class="sd">            filename (str, optional): A urlencoded filename to use for</span>
+<span class="sd">                attachment, otherwise defaults to object name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">global_options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift&#39;</span><span class="p">]</span>
+        <span class="n">auth_url</span> <span class="o">=</span> <span class="n">global_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;auth_url&#39;</span><span class="p">)</span>
+        <span class="n">temp_url_key</span> <span class="o">=</span> <span class="n">global_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;temp_url_key&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;can only create temporary URL on object&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">temp_url_key</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;a temporary url key must be set with settings.update &#39;</span>
+                <span class="s1">&#39;or by setting the OS_TEMP_URL_KEY environment variable&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_url</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;an auth url must be set with settings.update &#39;</span>
+                <span class="s1">&#39;or by setting the OS_AUTH_URL environment variable&#39;</span><span class="p">)</span>
+
+        <span class="n">obj_path</span> <span class="o">=</span> <span class="s1">&#39;/v1/</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">):]</span>
+        <span class="c1"># Generate the temp url using swifts helper. Note that this method is ONLY</span>
+        <span class="c1"># useful for obtaining the temp_url_sig and the temp_url_expires parameters.</span>
+        <span class="c1"># These parameters will be used to construct a properly-escaped temp url</span>
+        <span class="n">obj_url</span> <span class="o">=</span> <span class="n">generate_temp_url</span><span class="p">(</span><span class="n">obj_path</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">temp_url_key</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+        <span class="n">query_begin</span> <span class="o">=</span> <span class="n">obj_url</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s1">&#39;temp_url_sig&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">obj_url</span><span class="p">))</span>
+        <span class="n">obj_url_query</span> <span class="o">=</span> <span class="n">obj_url</span><span class="p">[</span><span class="n">query_begin</span><span class="p">:]</span>
+        <span class="n">obj_url_query</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">parse</span><span class="o">.</span><span class="n">parse_qsl</span><span class="p">(</span><span class="n">obj_url_query</span><span class="p">))</span>
+
+        <span class="n">query</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;temp_url_sig=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">obj_url_query</span><span class="p">[</span><span class="s1">&#39;temp_url_sig&#39;</span><span class="p">],</span>
+                 <span class="s1">&#39;temp_url_expires=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">obj_url_query</span><span class="p">[</span><span class="s1">&#39;temp_url_expires&#39;</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">inline</span><span class="p">:</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;inline&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="n">query</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;filename=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+
+        <span class="n">auth_url_parts</span> <span class="o">=</span> <span class="n">parse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">auth_url</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parse</span><span class="o">.</span><span class="n">urlunparse</span><span class="p">((</span><span class="n">auth_url_parts</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                                 <span class="n">auth_url_parts</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+                                 <span class="n">parse</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">obj_path</span><span class="p">),</span>
+                                 <span class="n">auth_url_parts</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+                                 <span class="s1">&#39;&amp;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">query</span><span class="p">),</span>
+                                 <span class="n">auth_url_parts</span><span class="o">.</span><span class="n">fragment</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SwiftPath.write_object"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.write_object">[docs]</a>    <span class="k">def</span> <span class="nf">write_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes an individual object.</span>
+
+<span class="sd">        Note that this method writes the provided content to a temporary</span>
+<span class="sd">        file before uploading. This allows us to reuse code from swift&#39;s</span>
+<span class="sd">        uploader (static large object support, etc.).</span>
+
+<span class="sd">        For information about the retry logic of this method, view</span>
+<span class="sd">        `SwiftPath.upload`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content (bytes): raw bytes to write to OBS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;write_object() expects bytes, not text data&#39;</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;wb&#39;</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bytes</span> <span class="k">else</span> <span class="s1">&#39;wt&#39;</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="n">suo</span> <span class="o">=</span> <span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">object_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="n">suo</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SwiftPath.list"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.list">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">ConditionNotMetError</span><span class="p">,</span> <span class="n">UnavailableError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">starts_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="c1"># intentionally not documented</span>
+             <span class="n">list_as_dir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">ignore_segment_containers</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+             <span class="n">ignore_dir_markers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List contents using the resource of the path as a prefix.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable</span>
+<span class="sd">        or if the number of objects returned does not match the</span>
+<span class="sd">        ``condition`` condition. View</span>
+<span class="sd">        `module-level documentation &lt;swiftretry&gt;` for more</span>
+<span class="sd">        information about configuring retry logic at the module or method</span>
+<span class="sd">        level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            starts_with (str): Allows for an additional search path to</span>
+<span class="sd">                be appended to the resource of the swift path. Note that the</span>
+<span class="sd">                current resource path is treated as a directory</span>
+<span class="sd">            limit (int): Limit the amount of results returned</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results matches the condition.</span>
+<span class="sd">            use_manifest (bool): Perform the list and use the data manfest file to validate</span>
+<span class="sd">                the list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[SwiftPath]: Every path in the listing.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">            ConditionNotMetError: Results were returned, but they did not</span>
+<span class="sd">                meet the condition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tenant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tenant</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span>
+        <span class="n">full_listing</span> <span class="o">=</span> <span class="n">limit</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="n">object_names</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_data_manifest_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">manifest_cond</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">validate_manifest_list</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">join_conditions</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">manifest_cond</span><span class="p">)</span>
+                         <span class="k">if</span> <span class="n">condition</span> <span class="k">else</span> <span class="n">manifest_cond</span><span class="p">)</span>
+
+        <span class="c1"># When starts_with is provided, treat the resource as a</span>
+        <span class="c1"># directory that has the starts_with parameter after it. This allows</span>
+        <span class="c1"># the user to specify a path like tenant/container/mydir</span>
+        <span class="c1"># and do an additional glob on a directory-like structure</span>
+        <span class="k">if</span> <span class="n">starts_with</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">/</span> <span class="n">starts_with</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">starts_with</span>
+
+        <span class="n">list_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;full_listing&#39;</span><span class="p">:</span> <span class="n">full_listing</span><span class="p">,</span>
+            <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="n">limit</span><span class="p">,</span>
+            <span class="s1">&#39;prefix&#39;</span><span class="p">:</span> <span class="n">prefix</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="ow">and</span> <span class="n">list_as_dir</span><span class="p">:</span>
+            <span class="c1"># Swift doesn&#39;t allow a delimeter for tenant-level listing,</span>
+            <span class="c1"># however, this isn&#39;t a problem for list_as_dir since a tenant</span>
+            <span class="c1"># will only have containers</span>
+            <span class="n">list_kwargs</span><span class="p">[</span><span class="s1">&#39;delimiter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+
+            <span class="c1"># Ensure that the prefix has a &#39;/&#39; at the end of it for listdir</span>
+            <span class="n">list_kwargs</span><span class="p">[</span><span class="s1">&#39;prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="n">list_kwargs</span><span class="p">[</span><span class="s1">&#39;prefix&#39;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_connection_call</span><span class="p">(</span><span class="s1">&#39;get_container&#39;</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                                  <span class="o">**</span><span class="n">list_kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_connection_call</span><span class="p">(</span><span class="s1">&#39;get_account&#39;</span><span class="p">,</span>
+                                                  <span class="o">**</span><span class="n">list_kwargs</span><span class="p">)</span>
+
+        <span class="n">result_objs</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ignore_dir_markers</span><span class="p">:</span>
+            <span class="n">result_objs</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result_objs</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content_type&#39;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">DIR_MARKER_TYPES</span><span class="p">]</span>
+
+        <span class="n">path_pre</span> <span class="o">=</span> <span class="n">SwiftPath</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span> <span class="n">tenant</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">({</span>
+            <span class="n">path_pre</span> <span class="o">/</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;subdir&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result_objs</span>
+        <span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">ignore_segment_containers</span><span class="p">:</span>
+            <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">p</span><span class="o">.</span><span class="n">is_segment_container</span><span class="p">()]</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">paths</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">paths</span></div>
+
+<div class="viewcode-block" id="SwiftPath.listdir"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.listdir">[docs]</a>    <span class="k">def</span> <span class="nf">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ignore_segment_containers</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lists the path as a dir, returning top-level directories and files</span>
+
+<span class="sd">        For information about retry logic on this method, see</span>
+<span class="sd">        `SwiftPath.list`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span>
+            <span class="n">list_as_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">ignore_segment_containers</span><span class="o">=</span><span class="n">ignore_segment_containers</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SwiftPath.glob"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.glob">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">ConditionNotMetError</span><span class="p">,</span> <span class="n">UnavailableError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">glob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Globs all objects in the path with the pattern.</span>
+
+<span class="sd">        This glob is only compatible with patterns that end in * because of</span>
+<span class="sd">        swift&#39;s inability to do searches other than prefix queries.</span>
+
+<span class="sd">        Note that this method assumes the current resource is a directory path</span>
+<span class="sd">        and treats it as such. For example, if the user has a swift path of</span>
+<span class="sd">        swift://tenant/container/my_dir (without the trailing slash), this</span>
+<span class="sd">        method will perform a swift query with a prefix of mydir/pattern.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable or if</span>
+<span class="sd">        the number of globbed patterns does not match the ``condition``</span>
+<span class="sd">        condition. View `module-level documentation &lt;swiftretry&gt;`</span>
+<span class="sd">        for more information about configuring retry logic at the module or</span>
+<span class="sd">        method level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): The pattern to match. The pattern can only have</span>
+<span class="sd">                up to one &#39;*&#39; at the end.</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the number of results matches the condition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[SwiftPath]: Every matching path.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">            ConditionNotMetError: Results were returned, but they did not</span>
+<span class="sd">                meet the condition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">pattern</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;multiple pattern globs not supported&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">pattern</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">pattern</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;only prefix queries are supported&#39;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_retries&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}):</span>
+            <span class="n">paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">starts_with</span><span class="o">=</span><span class="n">pattern</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">paths</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">paths</span></div>
+
+<div class="viewcode-block" id="SwiftPath.first"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.first">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="n">UnavailableError</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">first</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the first result from the list results of the path</span>
+
+<span class="sd">        See `module-level retry &lt;swiftretry&gt;` documentation for more.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_retries&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">results</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="SwiftPath.exists"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.exists">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="n">UnavailableError</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks existence of the path.</span>
+
+<span class="sd">        Returns True if the path exists, False otherwise.</span>
+
+<span class="sd">        See `module-level retry &lt;swiftretry&gt;` documentation for more.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the path exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A non-404 swift client error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># first see if there is a specific corresponding object</span>
+            <span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_retries&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># otherwise we could be a directory, so try to grab first</span>
+            <span class="c1"># file/subfolder</span>
+            <span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_retries&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}):</span>
+                <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">())</span>
+        <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="SwiftPath.download_object"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.download_object">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">UnavailableError</span><span class="p">,</span> <span class="n">InconsistentDownloadError</span><span class="p">,</span>
+                              <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">download_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downloads a single object to an output file.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable.</span>
+<span class="sd">        View module-level documentation for more information about configuring</span>
+<span class="sd">        retry logic at the module or method level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            out_file (str): The output file</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: This method was called on a path that has no</span>
+<span class="sd">                container or object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;can only call download_object on object path&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">,</span>
+                                 <span class="n">container</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                 <span class="n">objects</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">],</span>
+                                 <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;out_file&#39;</span><span class="p">:</span> <span class="n">out_file</span><span class="p">})</span></div>
+
+<div class="viewcode-block" id="SwiftPath.download_objects"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.download_objects">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">UnavailableError</span><span class="p">,</span> <span class="n">InconsistentDownloadError</span><span class="p">,</span>
+                              <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">download_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">dest</span><span class="p">,</span>
+                         <span class="n">objects</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See baseclass for complete method documentation</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (str): The destination folder to download to. The directory</span>
+<span class="sd">                will be created if it doesnt exist.</span>
+<span class="sd">            objects (List[str|PosixPath|SwiftPath]): The list of objects to</span>
+<span class="sd">                download. The objects can paths relative to the download path</span>
+<span class="sd">                or absolute swift paths. Any absolute swift path must be</span>
+<span class="sd">                children of the download path</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: A mapping of all requested ``objs`` to their location on</span>
+<span class="sd">                disk</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: This method was called on a path that has no</span>
+<span class="sd">                container</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot call download_objects on tenant with no container&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Convert requested download objects to full object paths</span>
+        <span class="n">obj_base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">objs_to_download</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">obj</span><span class="p">:</span> <span class="n">SwiftPath</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="n">resource</span> <span class="k">if</span> <span class="n">is_swift_path</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">else</span> <span class="n">obj_base</span> <span class="o">/</span> <span class="n">obj</span>
+            <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">objects</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">objs_to_download</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_swift_path</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot; must be child of download path &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="p">))</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift:download&#39;</span><span class="p">]</span>
+
+        <span class="n">service_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;object_dd_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;object_threads&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;container_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;container_threads&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">download_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;prefix&#39;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">),</span>
+            <span class="s1">&#39;out_directory&#39;</span><span class="p">:</span> <span class="n">dest</span><span class="p">,</span>
+            <span class="s1">&#39;remove_prefix&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;skip_identical&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;skip_identical&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;shuffle&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;shuffle&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">,</span>
+                                           <span class="n">_service_options</span><span class="o">=</span><span class="n">service_options</span><span class="p">,</span>
+                                           <span class="n">container</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                           <span class="n">objects</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">objs_to_download</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+                                           <span class="n">options</span><span class="o">=</span><span class="n">download_options</span><span class="p">)</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]:</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">}</span>
+
+        <span class="c1"># Return results mapped back to their input name</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">obj</span><span class="p">:</span> <span class="n">results</span><span class="p">[</span><span class="n">objs_to_download</span><span class="p">[</span><span class="n">obj</span><span class="p">]]</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">objects</span><span class="p">}</span></div>
+
+<div class="viewcode-block" id="SwiftPath.download"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.download">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">ConditionNotMetError</span><span class="p">,</span> <span class="n">UnavailableError</span><span class="p">,</span>
+                              <span class="n">InconsistentDownloadError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">dest</span><span class="p">,</span>
+                 <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downloads a directory to a destination.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable or if</span>
+<span class="sd">        the returned download result does not match the ``condition``</span>
+<span class="sd">        condition. View `module-level documentation &lt;stor.swift&gt;`</span>
+<span class="sd">        for more information about configuring retry logic at the module or</span>
+<span class="sd">        method level.</span>
+
+<span class="sd">        Note that the destintation directory will be created automatically if</span>
+<span class="sd">        it doesn&#39;t exist.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (str): The destination directory to download results to.</span>
+<span class="sd">                The directory will be created if it doesn&#39;t exist.</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results of download matches the condition. In the event of the</span>
+<span class="sd">                condition never matching after retries, partially downloaded</span>
+<span class="sd">                results will not be deleted. Note that users are not expected to write</span>
+<span class="sd">                conditions for download without an understanding of the structure of the results.</span>
+<span class="sd">            use_manifest (bool): Perform the download and use the data manfest file to validate</span>
+<span class="sd">                the download.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">            ConditionNotMetError: Results were returned, but they did not</span>
+<span class="sd">                meet the condition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[dict]: A list of every operation performed in the download by the</span>
+<span class="sd">                underlying swift client</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot call download on tenant with no container&#39;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="c1"># Do a full list with the manifest before the download. This will retry until</span>
+            <span class="c1"># all results in the manifest can be listed, which helps ensure the download</span>
+            <span class="c1"># can be performed without having to be retried</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">use_manifest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">object_names</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_data_manifest_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">manifest_cond</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">_validate_manifest_download</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">join_conditions</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">manifest_cond</span><span class="p">)</span>
+                         <span class="k">if</span> <span class="n">condition</span> <span class="k">else</span> <span class="n">manifest_cond</span><span class="p">)</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift:download&#39;</span><span class="p">]</span>
+        <span class="n">service_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;object_dd_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;object_threads&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;container_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;container_threads&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">download_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;prefix&#39;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">),</span>
+            <span class="s1">&#39;out_directory&#39;</span><span class="p">:</span> <span class="n">dest</span><span class="p">,</span>
+            <span class="s1">&#39;remove_prefix&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;skip_identical&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;skip_identical&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;shuffle&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;shuffle&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="k">with</span> <span class="n">SwiftDownloadLogger</span><span class="p">()</span> <span class="k">as</span> <span class="n">dl</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;download&#39;</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                               <span class="n">options</span><span class="o">=</span><span class="n">download_options</span><span class="p">,</span>
+                                               <span class="n">_progress_logger</span><span class="o">=</span><span class="n">dl</span><span class="p">,</span>
+                                               <span class="n">_service_options</span><span class="o">=</span><span class="n">service_options</span><span class="p">)</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="SwiftPath.upload"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.upload">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span>
+        <span class="n">exceptions</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">ConditionNotMetError</span><span class="p">,</span>
+            <span class="n">UnavailableError</span><span class="p">,</span>
+            <span class="n">UnauthorizedError</span><span class="p">,</span>
+            <span class="n">AuthenticationError</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+               <span class="n">to_upload</span><span class="p">,</span>
+               <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+               <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Uploads a list of files and directories to swift.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable or if</span>
+<span class="sd">        the returned upload result does not match the ``condition``</span>
+<span class="sd">        condition. View `module-level documentation &lt;stor.swift&gt;`</span>
+<span class="sd">        for more information about configuring retry logic at the module or</span>
+<span class="sd">        method level.</span>
+
+<span class="sd">        For example::</span>
+
+<span class="sd">            with path(&#39;/path/to/upload/dir&#39;):</span>
+<span class="sd">                path(&#39;swift://tenant/container&#39;).upload([&#39;.&#39;])</span>
+
+<span class="sd">        Notes:</span>
+
+<span class="sd">            - This method upload on paths relative to the current</span>
+<span class="sd">              directory. In order to load files relative to a target directory,</span>
+<span class="sd">              use path as a context manager to change the directory.</span>
+
+<span class="sd">            - When large files are split into segments, they are uploaded</span>
+<span class="sd">              to a segment container named .segments_${container_name}</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            to_upload (List): A list of file names, directory names, or</span>
+<span class="sd">                OBSUploadObject objects to upload.</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results of upload matches the condition. In the event of the</span>
+<span class="sd">                condition never matching after retries, partially uploaded</span>
+<span class="sd">                results will not be deleted. Note that users are not expected to write</span>
+<span class="sd">                conditions for upload without an understanding of the structure of the results.</span>
+<span class="sd">            use_manifest (bool): Generate a data manifest and validate the upload results</span>
+<span class="sd">                are in the manifest. In case of a single directory being uploaded, the</span>
+<span class="sd">                manifest file will be created inside this directory. For example::</span>
+
+<span class="sd">                    stor.Path(&#39;swift://AUTH_foo/bar&#39;).upload([&#39;logs&#39;], use_manifest=True)</span>
+
+<span class="sd">                The manifest will be located at</span>
+<span class="sd">                ``swift://AUTH_foo/bar/logs/.data_manifest.csv``</span>
+
+<span class="sd">                Alternatively, when multiple directories are uploaded, manifest file will</span>
+<span class="sd">                be created in the current directory. For example::</span>
+
+<span class="sd">                    stor.Path(&#39;swift://AUTH_foo/bar&#39;).upload(</span>
+<span class="sd">                        [&#39;logs&#39;, &#39;test.txt&#39;], use_manifest=True)</span>
+
+<span class="sd">                The manifest will be located at</span>
+<span class="sd">                ``swift://AUTH_foo/bar/.data_manifest.csv``</span>
+
+<span class="sd">            headers (List[str]): A list of object headers to apply to every object. Note</span>
+<span class="sd">                that these are not applied if passing OBSUploadObjects directly to upload.</span>
+<span class="sd">                Headers must be specified as a list of colon-delimited strings,</span>
+<span class="sd">                e.g. [&#39;X-Delete-After:1000&#39;]</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">            ConditionNotMetError: The ``condition`` argument did not pass after ``num_retries``</span>
+<span class="sd">                or the ``use_manifest`` option was turned on and the upload results could not</span>
+<span class="sd">                be verified. Partially uploaded results are not deleted.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[dict]: A list of every operation performed in the upload by the</span>
+<span class="sd">                underlying swift client</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must specify container when uploading&#39;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="n">swift_upload_objects</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">to_upload</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">OBSUploadObject</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">all_files_to_upload</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">walk_files_and_dirs</span><span class="p">([</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">to_upload</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">OBSUploadObject</span><span class="p">)</span>
+        <span class="p">])</span>
+
+        <span class="c1"># Convert everything to swift upload objects and prepend the relative</span>
+        <span class="c1"># resource directory to uploaded results. Ignore the manifest file in the case of</span>
+        <span class="c1"># since it will be uploaded individually</span>
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_upload</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">to_upload</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">manifest_path_prefix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">to_upload</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">manifest_path_prefix</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+            <span class="n">manifest_file_name</span> <span class="o">=</span> <span class="n">manifest_path_prefix</span> <span class="o">/</span> <span class="n">utils</span><span class="o">.</span><span class="n">DATA_MANIFEST_FILE_NAME</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">manifest_path_prefix</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">manifest_file_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">resource_base</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span> <span class="ow">or</span> <span class="n">PosixPath</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">upload_object_options</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;header&#39;</span><span class="p">:</span> <span class="n">headers</span> <span class="ow">or</span> <span class="p">[]}</span>
+        <span class="n">swift_upload_objects</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">f</span><span class="p">,</span>
+                            <span class="n">object_name</span><span class="o">=</span><span class="n">resource_base</span> <span class="o">/</span> <span class="n">utils</span><span class="o">.</span><span class="n">file_name_to_object_name</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+                            <span class="n">options</span><span class="o">=</span><span class="n">upload_object_options</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">all_files_to_upload</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="n">manifest_file_name</span>
+        <span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="c1"># Generate the data manifest and save it remotely</span>
+            <span class="n">object_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">o</span><span class="o">.</span><span class="n">object_name</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">swift_upload_objects</span><span class="p">]</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">generate_and_save_data_manifest</span><span class="p">(</span><span class="n">manifest_path_prefix</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">manifest_obj_name</span> <span class="o">=</span> <span class="n">resource_base</span> <span class="o">/</span> <span class="n">utils</span><span class="o">.</span><span class="n">file_name_to_object_name</span><span class="p">(</span><span class="n">manifest_file_name</span><span class="p">)</span>
+            <span class="n">manifest_obj</span> <span class="o">=</span> <span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">manifest_file_name</span><span class="p">,</span>
+                                           <span class="n">object_name</span><span class="o">=</span><span class="n">manifest_obj_name</span><span class="p">,</span>
+                                           <span class="n">options</span><span class="o">=</span><span class="n">upload_object_options</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;upload&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span> <span class="p">[</span><span class="n">manifest_obj</span><span class="p">])</span>
+
+            <span class="c1"># Make a condition for validating the upload</span>
+            <span class="n">manifest_cond</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">_validate_manifest_upload</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">join_conditions</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">manifest_cond</span><span class="p">)</span>
+                         <span class="k">if</span> <span class="n">condition</span> <span class="k">else</span> <span class="n">manifest_cond</span><span class="p">)</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;swift:upload&#39;</span><span class="p">]</span>
+        <span class="n">service_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;object_uu_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;object_threads&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;segment_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;segment_threads&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">upload_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;segment_size&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;segment_size&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;use_slo&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;use_slo&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;segment_container&#39;</span><span class="p">:</span> <span class="s1">&#39;.segments_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+            <span class="s1">&#39;leave_segments&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;leave_segments&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;changed&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;changed&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;skip_identical&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;skip_identical&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;checksum&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;checksum&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="k">with</span> <span class="n">SwiftUploadLogger</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">swift_upload_objects</span><span class="p">),</span> <span class="n">all_files_to_upload</span><span class="p">)</span> <span class="k">as</span> <span class="n">ul</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;upload&#39;</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                               <span class="n">swift_upload_objects</span><span class="p">,</span>
+                                               <span class="n">options</span><span class="o">=</span><span class="n">upload_options</span><span class="p">,</span>
+                                               <span class="n">_progress_logger</span><span class="o">=</span><span class="n">ul</span><span class="p">,</span>
+                                               <span class="n">_service_options</span><span class="o">=</span><span class="n">service_options</span><span class="p">)</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="SwiftPath.remove"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.remove">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">UnavailableError</span><span class="p">,</span> <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes a single object.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable.</span>
+<span class="sd">        View `module-level documentation &lt;swiftretry&gt;` for more</span>
+<span class="sd">        information about configuring retry logic at the module or method</span>
+<span class="sd">        level.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: The path is invalid.</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;path must contain a container and resource to &#39;</span>
+                             <span class="s1">&#39;remove a single file&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;delete&#39;</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SwiftPath.rmtree"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.rmtree">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">UnavailableError</span><span class="p">,</span> <span class="n">ConflictError</span><span class="p">,</span>
+                              <span class="n">ConditionNotMetError</span><span class="p">,</span> <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes a resource and all of its contents.</span>
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable.</span>
+<span class="sd">        View `module-level documentation &lt;stor.swift&gt;` for more</span>
+<span class="sd">        information about configuring retry logic at the module or method</span>
+<span class="sd">        level.</span>
+
+<span class="sd">        Note that when removing a container, the associated segment container</span>
+<span class="sd">        will also be removed if it exists. So, if one removes</span>
+<span class="sd">        ``swift://tenant/container``, ``swift://tenant/container_segments``</span>
+<span class="sd">        will also be deleted.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Calling rmtree on a directory marker will delete everything under the</span>
+<span class="sd">            directory marker but not the marker itself.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">            ConditionNotMetError: Listing the objects after rmtree returns results,</span>
+<span class="sd">                indicating something went wrong with the rmtree operation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;swift path must include container for rmtree&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Ensure that we treat this path as a dir</span>
+        <span class="n">to_delete</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="n">deleting_segments</span> <span class="o">=</span> <span class="s1">&#39;segments&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span>
+        <span class="k">if</span> <span class="n">deleting_segments</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;performing rmtree with segment container &quot;</span><span class="si">%s</span><span class="s1">&quot;. &#39;</span>
+                           <span class="s1">&#39;This could cause issues when accessing objects &#39;</span>
+                           <span class="s1">&#39;referencing those segments. Note that segments &#39;</span>
+                           <span class="s1">&#39;and segment containers are automatically deleted &#39;</span>
+                           <span class="s1">&#39;when their associated objects or containers are &#39;</span>
+                           <span class="s1">&#39;deleted.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">)</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+        <span class="n">service_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;object_dd_threads&#39;</span><span class="p">:</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;swift:delete&#39;</span><span class="p">][</span><span class="s1">&#39;object_threads&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+
+        <span class="k">def</span> <span class="nf">_ignore_not_found</span><span class="p">(</span><span class="n">service_call</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Ignores 404 errors when performing a swift service call&quot;&quot;&quot;</span>
+            <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">service_call</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">[]</span>
+            <span class="k">return</span> <span class="n">wrapper</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">to_delete</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">_ignore_not_found</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">)(</span><span class="s1">&#39;delete&#39;</span><span class="p">,</span>
+                                                                  <span class="n">to_delete</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                                                  <span class="n">_service_options</span><span class="o">=</span><span class="n">service_options</span><span class="p">)</span>
+            <span class="c1"># Try to delete a segment container since swift client does not</span>
+            <span class="c1"># do this automatically</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">deleting_segments</span><span class="p">:</span>
+                <span class="n">segment_containers</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_segments&#39;</span> <span class="o">%</span> <span class="n">to_delete</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                      <span class="s1">&#39;.segments_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">to_delete</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                      <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">+segments&#39;</span> <span class="o">%</span> <span class="n">to_delete</span><span class="o">.</span><span class="n">container</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">segment_container</span> <span class="ow">in</span> <span class="n">segment_containers</span><span class="p">:</span>
+                    <span class="n">_ignore_not_found</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">)(</span><span class="s1">&#39;delete&#39;</span><span class="p">,</span>
+                                                                <span class="n">segment_container</span><span class="p">,</span>
+                                                                <span class="n">_service_options</span><span class="o">=</span><span class="n">service_options</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">objs_to_delete</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">resource</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">to_delete</span><span class="o">.</span><span class="n">list</span><span class="p">()]</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">_ignore_not_found</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">)(</span><span class="s1">&#39;delete&#39;</span><span class="p">,</span>
+                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                                                  <span class="n">objs_to_delete</span><span class="p">,</span>
+                                                                  <span class="n">_service_options</span><span class="o">=</span><span class="n">service_options</span><span class="p">)</span>
+
+        <span class="c1"># Verify that all objects have been deleted before returning. Otherwise try deleting again</span>
+        <span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_retries&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}):</span>
+            <span class="n">_ignore_not_found</span><span class="p">(</span><span class="n">to_delete</span><span class="o">.</span><span class="n">list</span><span class="p">)(</span><span class="n">condition</span><span class="o">=</span><span class="k">lambda</span> <span class="n">results</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+
+<div class="viewcode-block" id="SwiftPath.remove_container"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.remove_container">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">UnavailableError</span><span class="p">,</span> <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">remove_container</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove swift container if it&#39;s not empty.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;swift path must include container for remove_container&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;swift path must not include resource for remove_container&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_connection_call</span><span class="p">(</span><span class="s1">&#39;delete_container&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SwiftPath.stat"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.stat">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="n">UnavailableError</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs a stat on the path.</span>
+
+<span class="sd">        Note that the path can be a tenant, container, or</span>
+<span class="sd">        object. Using ``stat`` on a directory of objects will</span>
+<span class="sd">        produce a `NotFoundError`.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable.</span>
+<span class="sd">        View `module-level documentation &lt;swiftretry&gt;` for more information</span>
+<span class="sd">        about configuring retry logic at the module or method level.</span>
+
+<span class="sd">        The return value is dependent on if the path points to a tenant,</span>
+<span class="sd">        container, or object.</span>
+
+<span class="sd">        For tenants, an example return dictionary is the following::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &#39;headers&#39;: {</span>
+<span class="sd">                    &#39;content-length&#39;: u&#39;0&#39;,</span>
+<span class="sd">                    &#39;x-account-storage-policy-3xreplica-container-count&#39;: u&#39;4655&#39;,</span>
+<span class="sd">                    &#39;x-account-meta-temp-url-key&#39;: &#39;temp_url_key&#39;,</span>
+<span class="sd">                    &#39;x-account-object-count&#39;: &#39;428634&#39;,</span>
+<span class="sd">                    &#39;x-timestamp&#39;: &#39;1450732238.21562&#39;,</span>
+<span class="sd">                    &#39;x-account-storage-policy-3xreplica-bytes-used&#39;: &#39;175654877752&#39;,</span>
+<span class="sd">                    &#39;x-trans-id&#39;: u&#39;transaction_id&#39;,</span>
+<span class="sd">                    &#39;date&#39;: u&#39;Wed, 06 Apr 2016 18:30:28 GMT&#39;,</span>
+<span class="sd">                    &#39;x-account-bytes-used&#39;: &#39;175654877752&#39;,</span>
+<span class="sd">                    &#39;x-account-container-count&#39;: &#39;4655&#39;,</span>
+<span class="sd">                    &#39;content-type&#39;: &#39;text/plain; charset=utf-8&#39;,</span>
+<span class="sd">                    &#39;accept-ranges&#39;: &#39;bytes&#39;,</span>
+<span class="sd">                    &#39;x-account-storage-policy-3xreplica-object-count&#39;: &#39;428634&#39;</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;Account&#39;: &#39;AUTH_seq_upload_prod&#39;,</span>
+<span class="sd">                # The number of containers in the tenant</span>
+<span class="sd">                &#39;Containers&#39;: 31,</span>
+<span class="sd">                # The number of objects in the tenant</span>
+<span class="sd">                &#39;Objects&#39;: &#39;19955615&#39;,</span>
+<span class="sd">                # The total bytes used in the tenant</span>
+<span class="sd">                &#39;Bytes&#39;: &#39;24890576770484&#39;,</span>
+<span class="sd">                &#39;Containers-in-policy-&quot;3xreplica&quot;&#39;: &#39;31&#39;,</span>
+<span class="sd">                &#39;Objects-in-policy-&quot;3xreplica&quot;&#39;: &#39;19955615&#39;,</span>
+<span class="sd">                &#39;Bytes-in-policy-&quot;3xreplica&quot;&#39;: &#39;24890576770484&#39;,</span>
+<span class="sd">                # The tenant ACLs. An empty dict is returned if the user</span>
+<span class="sd">                # does not have admin privileges on the tenant</span>
+<span class="sd">                &#39;Account-Access&#39;: {</span>
+<span class="sd">                    &#39;admin&#39;: [&#39;swft_labprod_admin&#39;],</span>
+<span class="sd">                    &#39;read-only&#39;: [&#39;seq_upload_rnd&#39;,&#39;swft_labprod&#39;],</span>
+<span class="sd">                    &#39;read-write&#39;: [&#39;svc_svc_seq&#39;]</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        For containers, an example return dictionary is the following::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &#39;headers&#39;: {</span>
+<span class="sd">                    &#39;content-length&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;x-container-object-count&#39;: &#39;99&#39;,</span>
+<span class="sd">                    &#39;accept-ranges&#39;: &#39;bytes&#39;,</span>
+<span class="sd">                    &#39;x-storage-policy&#39;: &#39;3xReplica&#39;,</span>
+<span class="sd">                    &#39;date&#39;: &#39;Wed, 06 Apr 2016 18:32:47 GMT&#39;,</span>
+<span class="sd">                    &#39;x-timestamp&#39;: &#39;1457631707.95682&#39;,</span>
+<span class="sd">                    &#39;x-trans-id&#39;: &#39;transaction_id&#39;,</span>
+<span class="sd">                    &#39;x-container-bytes-used&#39;: &#39;5389060&#39;,</span>
+<span class="sd">                    &#39;content-type&#39;: &#39;text/plain; charset=utf-8&#39;</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;Account&#39;: &#39;AUTH_seq_upload_prod&#39;,</span>
+<span class="sd">                &#39;Container&#39;: &#39;2016-01&#39;,</span>
+<span class="sd">                # The number of objects in the container</span>
+<span class="sd">                &#39;Objects&#39;: &#39;43868&#39;,</span>
+<span class="sd">                # The size of all objects in the container</span>
+<span class="sd">                &#39;Bytes&#39;: &#39;55841489571&#39;,</span>
+<span class="sd">                # Read and write ACLs for the container</span>
+<span class="sd">                &#39;Read-ACL&#39;: &#39;&#39;,</span>
+<span class="sd">                &#39;Write-ACL&#39;: &#39;&#39;,</span>
+<span class="sd">                &#39;Sync-To&#39;: &#39;&#39;,</span>
+<span class="sd">                &#39;Sync-Key&#39;: &#39;&#39;</span>
+<span class="sd">            }</span>
+
+<span class="sd">        For objects, an example return dictionary is the following::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &#39;headers&#39;: {</span>
+<span class="sd">                    &#39;content-length&#39;: &#39;0&#39;,</span>
+<span class="sd">                    &#39;x-delete-at&#39;: &#39;1459967915&#39;,</span>
+<span class="sd">                    &#39;accept-ranges&#39;: &#39;bytes&#39;,</span>
+<span class="sd">                    &#39;last-modified&#39;: &#39;Wed, 06 Apr 2016 18:21:56 GMT&#39;,</span>
+<span class="sd">                    &#39;etag&#39;: &#39;d41d8cd98f00b204e9800998ecf8427e&#39;,</span>
+<span class="sd">                    &#39;x-timestamp&#39;: &#39;1459966915.96956&#39;,</span>
+<span class="sd">                    &#39;x-trans-id&#39;: &#39;transaction_id&#39;,</span>
+<span class="sd">                    &#39;date&#39;: &#39;Wed, 06 Apr 2016 18:33:48 GMT&#39;,</span>
+<span class="sd">                    &#39;content-type&#39;: &#39;text/plain&#39;,</span>
+<span class="sd">                    &#39;x-object-meta-mtime&#39;: &#39;1459965986.000000&#39;</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;Account&#39;: &#39;AUTH_seq_upload_prod&#39;,</span>
+<span class="sd">                &#39;Container&#39;: &#39;2016-01&#39;,</span>
+<span class="sd">                &#39;Object&#39;: PosixPath(&#39;object.txt&#39;),</span>
+<span class="sd">                &#39;Content-Type&#39;: &#39;application/octet-stream&#39;,</span>
+<span class="sd">                # The size of the object</span>
+<span class="sd">                &#39;Content-Length&#39;: &#39;112&#39;,</span>
+<span class="sd">                # The last time the object was modified</span>
+<span class="sd">                &#39;Last-Modified&#39;: &#39;Fri, 15 Jan 2016 05:22:46 GMT&#39;,</span>
+<span class="sd">                # The MD5 checksum of the object. NOTE that if a large</span>
+<span class="sd">                # object is uploaded in segments that this will be the</span>
+<span class="sd">                # checksum of the *manifest* file of the object</span>
+<span class="sd">                &#39;ETag&#39;: &#39;87f0b7f04557315e6d1e6db21742d31c&#39;,</span>
+<span class="sd">                &#39;Manifest&#39;: None</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotFoundError: When the tenant, container, or</span>
+<span class="sd">                object can&#39;t be found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stat_objects</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;stat&#39;</span><span class="p">,</span>
+                                          <span class="n">container</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                          <span class="n">objects</span><span class="o">=</span><span class="n">stat_objects</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">stat_values</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">):</span> <span class="n">v</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">stat_values</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;action&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;stat_account&#39;</span><span class="p">:</span>
+            <span class="c1"># Load account ACLs</span>
+            <span class="n">stat_values</span><span class="p">[</span><span class="s1">&#39;Access-Control&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+                <span class="n">result</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;x-account-access-control&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">stat_values</span></div>
+
+<div class="viewcode-block" id="SwiftPath.getsize"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.getsize">[docs]</a>    <span class="k">def</span> <span class="nf">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns content-length of object in Swift.</span>
+
+<span class="sd">        Note that for containers / tenants, there will be no content-length, in</span>
+<span class="sd">        which case this function returns 0 (``os.path.getsize`` has no</span>
+<span class="sd">        contract)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Length&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns content-type. Empty string if not set or if an account or container&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+
+<div class="viewcode-block" id="SwiftPath.post"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.post">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="p">(</span><span class="n">UnavailableError</span><span class="p">,</span> <span class="n">UnauthorizedError</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Post operations on the path.</span>
+
+<span class="sd">        This method retries ``num_retries`` times if swift is unavailable.</span>
+<span class="sd">        View `module-level documentation &lt;swiftretry&gt;` for more</span>
+<span class="sd">        information about configuring retry logic at the module or method</span>
+<span class="sd">        level.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            options (dict): A dictionary containing options to override the</span>
+<span class="sd">                global options specified during the service object creation.</span>
+<span class="sd">                These options are applied to all post operations performed by</span>
+<span class="sd">                this call, unless overridden on a per object basis. Possible</span>
+<span class="sd">                options are given below::</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;meta&#39;: [],   # Meta values will be prefixed with X-Object-Meta</span>
+<span class="sd">                                      # (or X-Container*  X-Account* depending on path type)</span>
+<span class="sd">                        &#39;header&#39;: [], # Header values will not be manipulated like meta values</span>
+<span class="sd">                                      # when being posted.</span>
+<span class="sd">                        &#39;read_acl&#39;: None,   # For containers only</span>
+<span class="sd">                        &#39;write_acl&#39;: None,  # For containers only</span>
+<span class="sd">                        &#39;sync_to&#39;: None,    # For containers only</span>
+<span class="sd">                        &#39;sync_key&#39;: None    # For containers only</span>
+<span class="sd">                    }</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            SwiftError: A swift client error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_swift_service_call</span><span class="p">(</span><span class="s1">&#39;post&#39;</span><span class="p">,</span>
+                                        <span class="n">container</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+                                        <span class="n">objects</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                                        <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_noop</span><span class="p">(</span><span class="n">attr_name</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">attr_name</span>
+        <span class="n">wrapper</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s1">&#39;No-op for </span><span class="si">%r</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">attr_name</span>
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="n">abspath</span> <span class="o">=</span> <span class="n">_noop</span><span class="p">(</span><span class="s1">&#39;abspath&#39;</span><span class="p">)</span>
+    <span class="n">realpath</span> <span class="o">=</span> <span class="n">_noop</span><span class="p">(</span><span class="s1">&#39;realpath&#39;</span><span class="p">)</span>
+    <span class="n">expanduser</span> <span class="o">=</span> <span class="n">_noop</span><span class="p">(</span><span class="s1">&#39;expanduser&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SwiftPath.isdir"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.isdir">[docs]</a>    <span class="k">def</span> <span class="nf">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">():</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;directory&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="SwiftPath.isfile"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.isfile">[docs]</a>    <span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks the object exists &amp; is not a directory sentinel on Swift.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">and</span> <span class="s1">&#39;directory&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="SwiftPath.walkfiles"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.walkfiles">[docs]</a>    <span class="nd">@_swift_retry</span><span class="p">(</span><span class="n">exceptions</span><span class="o">=</span><span class="n">UnavailableError</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">walkfiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterates over listed files that match an optional pattern.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str, optional): Only return files that match this pattern</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Iter[SwiftPath]: All files that match the optional pattern. Swift directory</span>
+<span class="sd">                markers are not returned.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">settings</span><span class="o">.</span><span class="n">use</span><span class="p">({</span><span class="s1">&#39;swift&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;num_retries&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}):</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">ignore_dir_markers</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">f</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">f</span></div>
+
+<div class="viewcode-block" id="SwiftPath.to_url"><a class="viewcode-back" href="../../swift.html#stor.swift.SwiftPath.to_url">[docs]</a>    <span class="k">def</span> <span class="nf">to_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns URI for object (based on storage URL)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the HTTP url to the object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            UnauthorizedError: if we cannot authenticate to get a storage URL&quot;&quot;&quot;</span>
+        <span class="n">storage_url</span> <span class="o">=</span> <span class="n">_get_or_create_auth_credentials</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tenant</span><span class="p">)[</span><span class="s1">&#39;os_storage_url&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="o">*</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">[</span><span class="n">storage_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">container</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">])))</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

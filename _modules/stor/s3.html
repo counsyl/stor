@@ -1,0 +1,989 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.s3 &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.s3</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.s3</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">An experimental implementation of S3 in stor</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">multiprocessing.pool</span> <span class="kn">import</span> <span class="n">ThreadPool</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+
+<span class="kn">import</span> <span class="nn">boto3</span>
+<span class="kn">from</span> <span class="nn">boto3</span> <span class="kn">import</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">boto3_exceptions</span>
+<span class="kn">from</span> <span class="nn">boto3.s3.transfer</span> <span class="kn">import</span> <span class="n">S3Transfer</span>
+<span class="kn">from</span> <span class="nn">boto3.s3.transfer</span> <span class="kn">import</span> <span class="n">TransferConfig</span>
+<span class="kn">from</span> <span class="nn">botocore</span> <span class="kn">import</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">botocore_exceptions</span>
+
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">exceptions</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">stor.base</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSPath</span>
+<span class="kn">from</span> <span class="nn">stor.obs</span> <span class="kn">import</span> <span class="n">OBSUploadObject</span>
+
+<span class="c1"># Thread-local variable used to cache the client</span>
+<span class="n">_thread_local</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">progress_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">.progress&#39;</span> <span class="o">%</span> <span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_s3_error</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses botocore.exception.ClientError exceptions to throw a more</span>
+<span class="sd">    informative exception.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">http_status</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ResponseMetadata&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;HTTPStatusCode&#39;</span><span class="p">)</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Message&#39;</span><span class="p">,</span> <span class="s1">&#39;Unknown&#39;</span><span class="p">)</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Code&#39;</span><span class="p">)</span>
+    <span class="n">operation_name</span> <span class="o">=</span> <span class="n">exc</span><span class="o">.</span><span class="n">operation_name</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39; Bucket: &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Bucket&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;Bucket&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39; Key: &#39;</span> <span class="o">+</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Key&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;Key&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">403</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;storage class&#39;</span> <span class="ow">in</span> <span class="n">msg</span> <span class="ow">and</span> <span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;InvalidObjectState&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">operation_name</span> <span class="o">==</span> <span class="s1">&#39;GetObject&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ObjectInColdStorageError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">operation_name</span> <span class="o">==</span> <span class="s1">&#39;RestoreObject&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">AlreadyRestoredError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">UnauthorizedError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">UnauthorizedError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">404</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">503</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">UnavailableError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">http_status</span> <span class="o">==</span> <span class="mi">409</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;Object restore is already in progress&#39;</span> <span class="ow">in</span> <span class="n">msg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">RestoreAlreadyInProgressError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">ConflictError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">RemoteError</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_s3_client</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns the boto3 client and initializes one if it doesn&#39;t already exist.</span>
+
+<span class="sd">    We use a different boto3 client for each thread/process because boto3 clients</span>
+<span class="sd">    are not thread-safe.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        boto3.Client: An instance of the S3 client.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">_thread_local</span><span class="p">,</span> <span class="s1">&#39;s3_client&#39;</span><span class="p">):</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;s3&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># only pass through keyword arguments that are set to avoid</span>
+            <span class="c1"># overriding Boto3&#39;s default lookup behavior</span>
+            <span class="k">if</span> <span class="n">v</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">boto3</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">Session</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">_thread_local</span><span class="o">.</span><span class="n">s3_client</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">client</span><span class="p">(</span><span class="s1">&#39;s3&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_thread_local</span><span class="o">.</span><span class="n">s3_client</span>
+
+
+<span class="k">def</span> <span class="nf">_get_s3_transfer</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a boto3 S3Transfer object and initializes one if it doesn&#39;t</span>
+<span class="sd">    already exist or if config options are different.</span>
+
+<span class="sd">    Like the boto3 client, we use a different transfer for each thread/process</span>
+<span class="sd">    for thread-safety.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        config (dict): A dict of config options</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        boto3.s3.S3Transfer: An instance of an S3Transfer object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">_thread_local</span><span class="p">,</span> <span class="s1">&#39;s3_transfer&#39;</span><span class="p">)</span> <span class="ow">or</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">_thread_local</span><span class="p">,</span> <span class="s1">&#39;s3_transfer_config&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">transfer_config</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">config</span><span class="p">:</span>
+            <span class="n">transfer_config</span> <span class="o">=</span> <span class="n">TransferConfig</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">_thread_local</span><span class="o">.</span><span class="n">s3_transfer</span> <span class="o">=</span> <span class="n">S3Transfer</span><span class="p">(</span><span class="n">_get_s3_client</span><span class="p">(),</span> <span class="n">config</span><span class="o">=</span><span class="n">transfer_config</span><span class="p">)</span>
+        <span class="n">_thread_local</span><span class="o">.</span><span class="n">s3_transfer_config</span> <span class="o">=</span> <span class="n">config</span>
+    <span class="k">return</span> <span class="n">_thread_local</span><span class="o">.</span><span class="n">s3_transfer</span>
+
+
+<div class="viewcode-block" id="S3DownloadLogger"><a class="viewcode-back" href="../../s3.html#stor.s3.S3DownloadLogger">[docs]</a><span class="k">class</span> <span class="nc">S3DownloadLogger</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseProgressLogger</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_download_objects</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3DownloadLogger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">progress_logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_download_objects</span> <span class="o">=</span> <span class="n">total_download_objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">downloaded_bytes</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="S3DownloadLogger.update_progress"><a class="viewcode-back" href="../../s3.html#stor.s3.S3DownloadLogger.update_progress">[docs]</a>    <span class="k">def</span> <span class="nf">update_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tracks number of bytes downloaded.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">downloaded_bytes</span> <span class="o">+=</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">])</span>
+                                  <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">get_start_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;starting download of </span><span class="si">%s</span><span class="s1"> objects&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_download_objects</span>
+
+    <span class="k">def</span> <span class="nf">get_finish_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;download complete - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_progress_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_elapsed_time</span><span class="p">()</span>
+        <span class="n">formatted_elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_time</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">)</span>
+        <span class="n">mb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">downloaded_bytes</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">)</span>
+        <span class="n">mb_s</span> <span class="o">=</span> <span class="n">mb</span> <span class="o">/</span> <span class="n">elapsed_time</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="k">if</span> <span class="n">elapsed_time</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB/s&#39;</span>
+        <span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_results</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_download_objects</span><span class="p">,</span> <span class="n">formatted_elapsed_time</span><span class="p">,</span> <span class="n">mb</span><span class="p">,</span> <span class="n">mb_s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="S3UploadLogger"><a class="viewcode-back" href="../../s3.html#stor.s3.S3UploadLogger">[docs]</a><span class="k">class</span> <span class="nc">S3UploadLogger</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">BaseProgressLogger</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_upload_objects</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">S3UploadLogger</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">progress_logger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_upload_objects</span> <span class="o">=</span> <span class="n">total_upload_objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uploaded_bytes</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="S3UploadLogger.update_progress"><a class="viewcode-back" href="../../s3.html#stor.s3.S3UploadLogger.update_progress">[docs]</a>    <span class="k">def</span> <span class="nf">update_progress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Keep track of total uploaded bytes by referencing the object sizes&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uploaded_bytes</span> <span class="o">+=</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">])</span>
+                                <span class="k">if</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">])</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">get_start_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;starting upload of </span><span class="si">%s</span><span class="s1"> objects&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_upload_objects</span>
+
+    <span class="k">def</span> <span class="nf">get_finish_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;upload complete - </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_progress_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_progress_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_elapsed_time</span><span class="p">()</span>
+        <span class="n">formatted_elapsed_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_time</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">)</span>
+        <span class="n">mb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">uploaded_bytes</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mf">1024.0</span><span class="p">)</span>
+        <span class="n">mb_s</span> <span class="o">=</span> <span class="n">mb</span> <span class="o">/</span> <span class="n">elapsed_time</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="k">if</span> <span class="n">elapsed_time</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">/</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%s</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB</span><span class="se">\t</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="si">%0.2f</span><span class="s1"> MB/s&#39;</span>
+        <span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_results</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_upload_objects</span><span class="p">,</span> <span class="n">formatted_elapsed_time</span><span class="p">,</span> <span class="n">mb</span><span class="p">,</span> <span class="n">mb_s</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="S3Path"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path">[docs]</a><span class="k">class</span> <span class="nc">S3Path</span><span class="p">(</span><span class="n">OBSPath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides the ability to manipulate and access S3 resources</span>
+<span class="sd">    with a similar interface to the path library.</span>
+
+<span class="sd">    Right now, the client defaults to Amazon S3 endpoints, but in the</span>
+<span class="sd">    near-future, users should be able to custom configure the S3 client.</span>
+
+<span class="sd">    Note that any S3 object whose name ends with a ``/`` is considered to be an empty directory</span>
+<span class="sd">    marker.</span>
+<span class="sd">    These objects will not be downloaded and instead an empty directory will be created.</span>
+<span class="sd">    This follows Amazon&#39;s convention as described in the</span>
+<span class="sd">    `S3 User Guide &lt;http://docs.aws.amazon.com/AmazonS3/latest/UG/FolderOperations.html&gt;`_.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">drive</span> <span class="o">=</span> <span class="s1">&#39;s3://&#39;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bucket</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the bucket name from the path or None&quot;&quot;&quot;</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_parts</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_s3_client_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a boto3 S3 ``Client`` object and runs ``method_name``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">s3_client</span> <span class="o">=</span> <span class="n">_get_s3_client</span><span class="p">()</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">s3_client</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">botocore_exceptions</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_parse_s3_error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+    <span class="k">def</span> <span class="nf">_get_s3_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a boto3 ``S3.Paginator`` object and returns an iterator</span>
+<span class="sd">        that runs over results from ``method_name``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">s3_client</span> <span class="o">=</span> <span class="n">_get_s3_client</span><span class="p">()</span>
+        <span class="n">paginator</span> <span class="o">=</span> <span class="n">s3_client</span><span class="o">.</span><span class="n">get_paginator</span><span class="p">(</span><span class="n">method_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">paginator</span><span class="o">.</span><span class="n">paginate</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_s3_transfer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a boto3 ``S3Transfer`` object for doing multipart uploads</span>
+<span class="sd">        and downloads and executes the given method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">transfer</span> <span class="o">=</span> <span class="n">_get_s3_transfer</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">transfer</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">boto3_exceptions</span><span class="o">.</span><span class="n">S3UploadFailedError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">FailedUploadError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="k">except</span> <span class="n">boto3_exceptions</span><span class="o">.</span><span class="n">RetriesExceededError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">FailedDownloadError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+<div class="viewcode-block" id="S3Path.list"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">starts_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">limit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+             <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="c1"># hidden args</span>
+             <span class="n">list_as_dir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">ignore_dir_markers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List contents using the resource of the path as a prefix.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            starts_with (str): Allows for an additional search path to be</span>
+<span class="sd">                appended to the current swift path. The current path will be</span>
+<span class="sd">                treated as a directory.</span>
+<span class="sd">            limit (int): Limit the amount of results returned.</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results matches the condition.</span>
+<span class="sd">            use_manifest (bool): Perform the list and use the data manfest file to validate</span>
+<span class="sd">                the list.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[S3Path]: Every path in the listing</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RemoteError: An s3 client error occurred.</span>
+<span class="sd">            ConditionNotMetError: Results were returned, but they did not meet the condition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="n">object_names</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_data_manifest_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">manifest_cond</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">validate_manifest_list</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">join_conditions</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">manifest_cond</span><span class="p">)</span>
+                         <span class="k">if</span> <span class="n">condition</span> <span class="k">else</span> <span class="n">manifest_cond</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">starts_with</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">/</span> <span class="n">starts_with</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">starts_with</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+
+        <span class="n">list_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;Bucket&#39;</span><span class="p">:</span> <span class="n">bucket</span><span class="p">,</span>
+            <span class="s1">&#39;Prefix&#39;</span><span class="p">:</span> <span class="n">prefix</span><span class="p">,</span>
+            <span class="s1">&#39;PaginationConfig&#39;</span><span class="p">:</span> <span class="p">{}</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">limit</span><span class="p">:</span>
+            <span class="n">list_kwargs</span><span class="p">[</span><span class="s1">&#39;PaginationConfig&#39;</span><span class="p">][</span><span class="s1">&#39;MaxItems&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">limit</span>
+
+        <span class="k">if</span> <span class="n">list_as_dir</span><span class="p">:</span>
+            <span class="c1"># Ensure the the prefix has a trailing slash if there is a prefix</span>
+            <span class="n">list_kwargs</span><span class="p">[</span><span class="s1">&#39;Prefix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">list_kwargs</span><span class="p">[</span><span class="s1">&#39;Delimiter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span>
+
+        <span class="n">path_prefix</span> <span class="o">=</span> <span class="n">S3Path</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span><span class="p">,</span> <span class="n">bucket</span><span class="p">))</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_s3_iterator</span><span class="p">(</span><span class="s1">&#39;list_objects_v2&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">list_kwargs</span><span class="p">)</span>
+        <span class="n">list_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">&#39;Contents&#39;</span> <span class="ow">in</span> <span class="n">page</span><span class="p">:</span>
+                    <span class="n">list_results</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                        <span class="n">path_prefix</span> <span class="o">/</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;Key&#39;</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">page</span><span class="p">[</span><span class="s1">&#39;Contents&#39;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">ignore_dir_markers</span> <span class="ow">or</span>
+                        <span class="p">(</span><span class="n">ignore_dir_markers</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;Key&#39;</span><span class="p">]))</span>
+                    <span class="p">])</span>
+                <span class="k">if</span> <span class="n">list_as_dir</span> <span class="ow">and</span> <span class="s1">&#39;CommonPrefixes&#39;</span> <span class="ow">in</span> <span class="n">page</span><span class="p">:</span>
+                    <span class="n">list_results</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                        <span class="n">path_prefix</span> <span class="o">/</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;Prefix&#39;</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">page</span><span class="p">[</span><span class="s1">&#39;CommonPrefixes&#39;</span><span class="p">]</span>
+                    <span class="p">])</span>
+        <span class="k">except</span> <span class="n">botocore_exceptions</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_parse_s3_error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">list_results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">list_results</span></div>
+
+<div class="viewcode-block" id="S3Path.listdir"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.listdir">[docs]</a>    <span class="k">def</span> <span class="nf">listdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List the path as a dir, returning top-level directories and files.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">list_as_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Path.exists"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks existence of the path.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the path exists, False otherwise.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RemoteError: A non-404 error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;head_bucket&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">))</span>
+            <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">())</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="S3Path.isdir"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.isdir">[docs]</a>    <span class="k">def</span> <span class="nf">isdir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Any S3 object whose name ends with a ``/`` is considered to be an empty directory marker.</span>
+<span class="sd">        These objects will not be downloaded and instead an empty directory will be created.</span>
+<span class="sd">        This follows Amazon&#39;s convention as described in the</span>
+<span class="sd">        `S3 User Guide &lt;http://docs.aws.amazon.com/AmazonS3/latest/UG/FolderOperations.html&gt;`_.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Handle buckets separately (in case the bucket is empty)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;head_bucket&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">))</span>
+            <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="S3Path.isfile"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.isfile">[docs]</a>    <span class="k">def</span> <span class="nf">isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="S3Path.getsize"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.getsize">[docs]</a>    <span class="k">def</span> <span class="nf">getsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the content length of an object in S3.</span>
+
+<span class="sd">        Directories and buckets have no length and will return 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bucket</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="c1"># check for existence of bucket</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;head_bucket&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;head_object&#39;</span><span class="p">,</span>
+                                            <span class="n">Bucket</span><span class="o">=</span><span class="n">bucket</span><span class="p">,</span>
+                                            <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ContentLength&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">NotFoundError</span><span class="p">:</span>
+                <span class="c1"># Check if path is a directory</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="k">raise</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="S3Path.remove"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes a single object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: The path is invalid.</span>
+<span class="sd">            RemoteError: An s3 client error occurred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resource</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;cannot remove a bucket&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;delete_object&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="n">resource</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Path.rmtree"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.rmtree">[docs]</a>    <span class="k">def</span> <span class="nf">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes a resource and all of its contents. The path should point to a directory.</span>
+
+<span class="sd">        If the specified resource is an object, nothing will happen.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Ensure there is a trailing slash (path is a dir)</span>
+        <span class="n">delete_path</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">delete_list</span> <span class="o">=</span> <span class="n">delete_path</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">delete_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># boto3 only allows deletion of up to 1000 objects at a time</span>
+            <span class="n">len_range</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">delete_list</span><span class="p">),</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="n">objects</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Objects&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;Key&#39;</span><span class="p">:</span> <span class="n">delete_list</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">resource</span><span class="p">}</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">len_range</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;delete_objects&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Delete</span><span class="o">=</span><span class="n">objects</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;Errors&#39;</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">RemoteError</span><span class="p">(</span><span class="s1">&#39;an error occurred while using rmtree: </span><span class="si">%s</span><span class="s1">, Key: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                                             <span class="o">%</span> <span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;Errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Message&#39;</span><span class="p">),</span>
+                                                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Errors&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Key&#39;</span><span class="p">)),</span>
+                                             <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Errors&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="S3Path.stat"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.stat">[docs]</a>    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs a stat on the path.</span>
+
+<span class="sd">        ``stat`` only works on paths that are objects.</span>
+<span class="sd">        Using ``stat`` on a directory of objects will produce a `NotFoundError`.</span>
+
+<span class="sd">        An example return dictionary is the following::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &#39;DeleteMarker&#39;: True|False,</span>
+<span class="sd">                &#39;AcceptRanges&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;Expiration&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;Restore&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;LastModified&#39;: datetime(2015, 1, 1),</span>
+<span class="sd">                &#39;ContentLength&#39;: 123,</span>
+<span class="sd">                &#39;ETag&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;MissingMeta&#39;: 123,</span>
+<span class="sd">                &#39;VersionId&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;CacheControl&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;ContentDisposition&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;ContentEncoding&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;ContentLanguage&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;ContentType&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;Expires&#39;: datetime(2015, 1, 1),</span>
+<span class="sd">                &#39;WebsiteRedirectLocation&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;ServerSideEncryption&#39;: &#39;AES256&#39;|&#39;aws:kms&#39;,</span>
+<span class="sd">                &#39;Metadata&#39;: {</span>
+<span class="sd">                    &#39;string&#39;: &#39;string&#39;</span>
+<span class="sd">                },</span>
+<span class="sd">                &#39;SSECustomerAlgorithm&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;SSECustomerKeyMD5&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;SSEKMSKeyId&#39;: &#39;string&#39;,</span>
+<span class="sd">                &#39;StorageClass&#39;: &#39;STANDARD&#39;|&#39;REDUCED_REDUNDANCY&#39;|&#39;STANDARD_IA&#39;,</span>
+<span class="sd">                &#39;RequestCharged&#39;: &#39;requester&#39;,</span>
+<span class="sd">                &#39;ReplicationStatus&#39;: &#39;COMPLETE&#39;|&#39;PENDING&#39;|&#39;FAILED&#39;|&#39;REPLICA&#39;</span>
+<span class="sd">            }</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;stat cannot be called on a bucket&#39;</span><span class="p">)</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;head_object&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;ResponseMetadata&#39;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">response</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">content_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get content type for path (using ContentType field from Boto) or empty string.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ContentType&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="S3Path.read_object"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.read_object">[docs]</a>    <span class="k">def</span> <span class="nf">read_object</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read an individual object from OBS.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bytes: the raw bytes from the object on OBS.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;get_object&#39;</span><span class="p">,</span> <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span> <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)[</span><span class="s1">&#39;Body&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">body</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="S3Path.write_object"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.write_object">[docs]</a>    <span class="k">def</span> <span class="nf">write_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Writes an individual object.</span>
+
+<span class="sd">        Note that this method writes the provided content to a temporary</span>
+<span class="sd">        file before uploading.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            content: raw bytes to write to OBS</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;write_object() expects bytes, not text data&#39;</span><span class="p">)</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;wb&#39;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;w&#39;</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="n">fp</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upload</span><span class="p">([</span><span class="n">OBSUploadObject</span><span class="p">(</span><span class="n">fp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)])</span></div>
+
+<div class="viewcode-block" id="S3Path.download_object"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.download_object">[docs]</a>    <span class="k">def</span> <span class="nf">download_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Downloads a file from S3 to a destination file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (str): The destination path to download file to.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - The destination directory will be created automatically if it doesn&#39;t exist.</span>
+
+<span class="sd">            - This method downloads to paths relative to the current</span>
+<span class="sd">              directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="n">dest</span><span class="p">,</span>
+            <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="c1"># Handle directory markers separately</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">make_dest_dir</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dest</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">dl_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;bucket&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">),</span>
+            <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">dest</span><span class="p">),</span>
+            <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">config</span>
+        <span class="p">}</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">make_dest_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_make_s3_transfer</span><span class="p">(</span><span class="s1">&#39;download_file&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">dl_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">RemoteError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="k">def</span> <span class="nf">_download_object_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj_params</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downloads a single object. Helper for threaded download.&quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_class</span><span class="p">(</span><span class="n">obj_params</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">][</span><span class="nb">len</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)):])</span>
+        <span class="k">return</span> <span class="n">obj_params</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">download_object</span><span class="p">(</span><span class="n">obj_params</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">name</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+
+<div class="viewcode-block" id="S3Path.download"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.download">[docs]</a>    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Downloads a directory from S3 to a destination directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dest (str): The destination path to download file to. If downloading to a directory,</span>
+<span class="sd">                there must be a trailing slash. The directory will be created if it doesn&#39;t exist.</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results of download matches the condition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[S3Path]: A list of the downloaded objects.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">        - The destination directory will be created automatically if it doesn&#39;t exist.</span>
+<span class="sd">        - This method downloads to paths relative to the current directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="n">object_names</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_data_manifest_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">manifest_cond</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">validate_manifest_list</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">join_conditions</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">manifest_cond</span><span class="p">)</span>
+                         <span class="k">if</span> <span class="n">condition</span> <span class="k">else</span> <span class="n">manifest_cond</span><span class="p">)</span>
+
+        <span class="n">source</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">files_to_download</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="n">file</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="n">dest</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">list</span><span class="p">()</span>
+        <span class="p">]</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;s3:download&#39;</span><span class="p">]</span>
+        <span class="n">segment_size</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">str_to_bytes</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;segment_size&#39;</span><span class="p">))</span>
+        <span class="n">transfer_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;multipart_threshold&#39;</span><span class="p">:</span> <span class="n">segment_size</span><span class="p">,</span>
+            <span class="s1">&#39;max_concurrency&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;segment_threads&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;multipart_chunksize&#39;</span><span class="p">:</span> <span class="n">segment_size</span>
+        <span class="p">}</span>
+        <span class="n">download_w_config</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_object_worker</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">transfer_config</span><span class="p">)</span>
+
+        <span class="n">downloaded</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">with</span> <span class="n">S3DownloadLogger</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files_to_download</span><span class="p">))</span> <span class="k">as</span> <span class="n">dl</span><span class="p">:</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">ThreadPool</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;object_threads&#39;</span><span class="p">])</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result_iter</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="n">download_w_config</span><span class="p">,</span> <span class="n">files_to_download</span><span class="p">)</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">result_iter</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="mh">0xFFFF</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]:</span>
+                            <span class="n">dl</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                            <span class="n">downloaded</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">downloaded</span><span class="p">[</span><span class="s1">&#39;failed&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+                <span class="k">raise</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">downloaded</span><span class="p">[</span><span class="s1">&#39;failed&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">FailedDownloadError</span><span class="p">(</span><span class="s1">&#39;an error occurred while downloading&#39;</span><span class="p">,</span> <span class="n">downloaded</span><span class="p">)</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">downloaded</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">downloaded</span></div>
+
+    <span class="k">def</span> <span class="nf">_upload_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upload_obj</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Upload a single object given an OBSUploadObject.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">utils</span><span class="o">.</span><span class="n">has_trailing_slash</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">object_name</span><span class="p">):</span>
+            <span class="c1"># Handle empty directories separately</span>
+            <span class="n">ul_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Bucket&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span>
+                <span class="s1">&#39;Key&#39;</span><span class="p">:</span> <span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">object_name</span><span class="p">))</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">options</span> <span class="ow">and</span> <span class="s1">&#39;headers&#39;</span> <span class="ow">in</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">options</span><span class="p">:</span>
+                <span class="n">ul_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">])</span>
+            <span class="n">s3_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;put_object&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ul_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;bucket&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span>
+                <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">upload_obj</span><span class="o">.</span><span class="n">object_name</span><span class="p">),</span>
+                <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+                <span class="s1">&#39;config&#39;</span><span class="p">:</span> <span class="n">config</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">options</span> <span class="ow">and</span> <span class="s1">&#39;headers&#39;</span> <span class="ow">in</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">options</span><span class="p">:</span>
+                <span class="n">ul_kwargs</span><span class="p">[</span><span class="s1">&#39;extra_args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;headers&#39;</span><span class="p">]</span>
+            <span class="n">s3_call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_s3_transfer</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="s1">&#39;upload_file&#39;</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="n">upload_obj</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+            <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="n">S3Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">drive</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">ul_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;key&#39;</span><span class="p">)</span> <span class="ow">or</span>
+                                                        <span class="n">ul_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Key&#39;</span><span class="p">)),</span>
+            <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">s3_call</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">ul_kwargs</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">RemoteError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+<div class="viewcode-block" id="S3Path.upload"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.upload">[docs]</a>    <span class="k">def</span> <span class="nf">upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_manifest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Uploads a list of files and directories to s3.</span>
+
+<span class="sd">        Note that the S3Path is treated as a directory.</span>
+
+<span class="sd">        Note that for user-provided OBSUploadObjects, an empty directory&#39;s destination</span>
+<span class="sd">        must have a trailing slash.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source (List[str|OBSUploadObject]): A list of source files, directories, and</span>
+<span class="sd">                OBSUploadObjects to upload to S3.</span>
+<span class="sd">            condition (function(results) -&gt; bool): The method will only return</span>
+<span class="sd">                when the results of upload matches the condition.</span>
+<span class="sd">            use_manifest (bool): Generate a data manifest and validate the upload results</span>
+<span class="sd">                are in the manifest.</span>
+<span class="sd">            headers (dict): A dictionary of object headers to apply to the object.</span>
+<span class="sd">                Headers will not be applied to OBSUploadObjects and any headers</span>
+<span class="sd">                specified by an OBSUploadObject will override these headers.</span>
+<span class="sd">                Headers should be specified as key-value pairs,</span>
+<span class="sd">                e.g. {&#39;ContentLanguage&#39;: &#39;en&#39;}</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[S3Path]: A list of the uploaded files as S3Paths.</span>
+
+<span class="sd">        Notes:</span>
+
+<span class="sd">        - This method uploads to paths relative to the current</span>
+<span class="sd">          directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">use_manifest</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;can only upload one directory with use_manifest=True&#39;</span><span class="p">)</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">validate_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+
+        <span class="n">files_to_convert</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">walk_files_and_dirs</span><span class="p">([</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">source</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">OBSUploadObject</span><span class="p">)</span>
+        <span class="p">])</span>
+        <span class="n">files_to_upload</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">obj</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">source</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">OBSUploadObject</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">manifest_file_name</span> <span class="o">=</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">utils</span><span class="o">.</span><span class="n">DATA_MANIFEST_FILE_NAME</span>
+                              <span class="k">if</span> <span class="n">use_manifest</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">resource_base</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource</span> <span class="ow">or</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">files_to_upload</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+            <span class="n">OBSUploadObject</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span>
+                <span class="n">resource_base</span> <span class="o">/</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">with_trailing_slash</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">file_name_to_object_name</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+                                 <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">isdir</span><span class="p">()</span> <span class="k">else</span> <span class="n">utils</span><span class="o">.</span><span class="n">file_name_to_object_name</span><span class="p">(</span><span class="n">name</span><span class="p">)),</span>
+                <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="n">headers</span><span class="p">}</span> <span class="k">if</span> <span class="n">headers</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">files_to_convert</span> <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="n">manifest_file_name</span>
+        <span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">use_manifest</span><span class="p">:</span>
+            <span class="c1"># Generate the data manifest and save it remotely</span>
+            <span class="n">object_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">o</span><span class="o">.</span><span class="n">object_name</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">files_to_upload</span><span class="p">]</span>
+            <span class="n">utils</span><span class="o">.</span><span class="n">generate_and_save_data_manifest</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">manifest_obj_name</span> <span class="o">=</span> <span class="n">resource_base</span> <span class="o">/</span> <span class="n">utils</span><span class="o">.</span><span class="n">file_name_to_object_name</span><span class="p">(</span><span class="n">manifest_file_name</span><span class="p">)</span>
+            <span class="n">manifest_obj</span> <span class="o">=</span> <span class="n">OBSUploadObject</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">manifest_file_name</span><span class="p">),</span>
+                                           <span class="n">manifest_obj_name</span><span class="p">,</span>
+                                           <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;headers&#39;</span><span class="p">:</span> <span class="n">headers</span><span class="p">}</span> <span class="k">if</span> <span class="n">headers</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_upload_object</span><span class="p">(</span><span class="n">manifest_obj</span><span class="p">)</span>
+
+            <span class="c1"># Make a condition for validating the upload</span>
+            <span class="n">manifest_cond</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">validate_manifest_list</span><span class="p">,</span> <span class="n">object_names</span><span class="p">)</span>
+            <span class="n">condition</span> <span class="o">=</span> <span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">join_conditions</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">manifest_cond</span><span class="p">)</span>
+                         <span class="k">if</span> <span class="n">condition</span> <span class="k">else</span> <span class="n">manifest_cond</span><span class="p">)</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="s1">&#39;s3:upload&#39;</span><span class="p">]</span>
+        <span class="n">segment_size</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">str_to_bytes</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;segment_size&#39;</span><span class="p">))</span>
+        <span class="n">transfer_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;multipart_threshold&#39;</span><span class="p">:</span> <span class="n">segment_size</span><span class="p">,</span>
+            <span class="s1">&#39;max_concurrency&#39;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;segment_threads&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;multipart_chunksize&#39;</span><span class="p">:</span> <span class="n">segment_size</span>
+        <span class="p">}</span>
+        <span class="n">upload_w_config</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_upload_object</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">transfer_config</span><span class="p">)</span>
+
+        <span class="n">uploaded</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;completed&#39;</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">&#39;failed&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">with</span> <span class="n">S3UploadLogger</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">files_to_upload</span><span class="p">))</span> <span class="k">as</span> <span class="n">ul</span><span class="p">:</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">ThreadPool</span><span class="p">(</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;object_threads&#39;</span><span class="p">])</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result_iter</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="n">upload_w_config</span><span class="p">,</span> <span class="n">files_to_upload</span><span class="p">)</span>
+                <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">result</span> <span class="o">=</span> <span class="n">result_iter</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="mh">0xFFFF</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;success&#39;</span><span class="p">]:</span>
+                            <span class="n">ul</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                            <span class="n">uploaded</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">uploaded</span><span class="p">[</span><span class="s1">&#39;failed&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+                <span class="k">raise</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">uploaded</span><span class="p">[</span><span class="s1">&#39;failed&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">FailedUploadError</span><span class="p">(</span><span class="s1">&#39;an error occurred while uploading&#39;</span><span class="p">,</span> <span class="n">uploaded</span><span class="p">)</span>
+
+        <span class="n">utils</span><span class="o">.</span><span class="n">check_condition</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">uploaded</span><span class="p">[</span><span class="s1">&#39;completed&#39;</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">uploaded</span></div>
+
+<div class="viewcode-block" id="S3Path.to_url"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.to_url">[docs]</a>    <span class="k">def</span> <span class="nf">to_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns HTTP url for object (virtual host-style)&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">u</span><span class="s1">&#39;https://</span><span class="si">{bucket}</span><span class="s1">.s3.amazonaws.com/</span><span class="si">{key}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span>
+                                                                 <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="S3Path.restore"><a class="viewcode-back" href="../../s3.html#stor.s3.S3Path.restore">[docs]</a>    <span class="k">def</span> <span class="nf">restore</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tier</span><span class="o">=</span><span class="s1">&#39;Bulk&#39;</span><span class="p">,</span> <span class="n">days</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Issue a restore command for a single object from glacier.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            tier (str, default &#39;Bulk&#39;): restore speed (see Glacier docs for details)</span>
+<span class="sd">            days (int, default 10): number of days to keep data in S3 post-restore.</span>
+<span class="sd">        Note:</span>
+<span class="sd">            Calling ``restore()`` on a directory will not work correctly. Only use this for single</span>
+<span class="sd">            objects! (you can always do ``[s.restore() for s in stor.list(&lt;directory&gt;)]``)</span>
+
+<span class="sd">        Ignores RestoreAlreadyInProgressError and AlreadyRestoredError (note that you can&#39;t force</span>
+<span class="sd">        S3 to do a faster restore once you&#39;ve chosen a tier)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid_tiers</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Standard&#39;</span><span class="p">,</span> <span class="s1">&#39;Bulk&#39;</span><span class="p">,</span> <span class="s1">&#39;Expedited&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tier</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_tiers</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`tier` must be one of </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">valid_tiers</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_s3_client_call</span><span class="p">(</span><span class="s1">&#39;restore_object&#39;</span><span class="p">,</span>
+                                 <span class="n">Bucket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bucket</span><span class="p">,</span>
+                                 <span class="n">Key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resource</span><span class="p">,</span>
+                                 <span class="n">RestoreRequest</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Days&#39;</span><span class="p">:</span> <span class="n">days</span><span class="p">,</span>
+                                                 <span class="s1">&#39;GlacierJobParameters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Tier&#39;</span><span class="p">:</span> <span class="n">tier</span><span class="p">}})</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">RestoreAlreadyInProgressError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;restore already started, not doing anything&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">AlreadyRestoredError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;already restored, not doing anything&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

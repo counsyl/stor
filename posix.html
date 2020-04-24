@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Posix &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Windows" href="windows.html" />
+    <link rel="prev" title="DNAnexus" href="dx.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Posix</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/posix.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="posix">
+<span id="id1"></span><h1>Posix<a class="headerlink" href="#posix" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="stor.posix.PosixPath">
+<em class="property">class </em><code class="sig-prename descclassname">stor.posix.</code><code class="sig-name descname">PosixPath</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/posix.html#PosixPath"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.posix.PosixPath" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a posix path.</p>
+<p>This class inherits a vendored path.py <code class="docutils literal notranslate"><span class="pre">Path</span></code> object and
+overrides methods for cross compatibility with swift.</p>
+<p>This class overrides <code class="docutils literal notranslate"><span class="pre">Path</span></code> object’s
+<code class="docutils literal notranslate"><span class="pre">module</span></code> attribute and sets it to <code class="docutils literal notranslate"><span class="pre">posixpath</span></code> to ensure
+that it always represents a posix path.</p>
+<dl class="method">
+<dt id="stor.posix.PosixPath.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.posix.PosixPath.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source file to a destination file.</p>
+<p>Note that this utility can be called from either OBS, posix, or
+windows paths created with <code class="docutils literal notranslate"><span class="pre">stor.Path</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The destination file or directory.</p></li>
+<li><p><strong>swift_retry_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – Optional retry arguments to use for swift
+upload or download. View the
+<a class="reference internal" href="swift.html#swiftretry"><span class="std std-ref">swift module-level documentation</span></a> for more
+information on retry arguments</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Copying a swift file to a local path behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">stor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">swift_p</span> <span class="o">=</span> <span class="s1">&#39;swift://tenant/container/dir/file.txt&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># file.txt will be copied to other_dir/other_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stor</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">swift_p</span><span class="p">,</span> <span class="s1">&#39;other_dir/other_file.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Copying from a local path to swift behaves as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">stor</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;my/local/file.txt&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># File will be uploaded to swift://tenant/container/dir/my_file.txt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir/&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Because of the ambiguity in whether a remote target is a file or directory, copy()
+will error on ambiguous paths.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">local_p</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/dir&#39;</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">ValueError</span>: <span class="n">OBS destination must be file with extension or directory with slash</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.posix.PosixPath.copytree">
+<code class="sig-name descname">copytree</code><span class="sig-paren">(</span><em class="sig-param">dest</em>, <em class="sig-param">copy_cmd=None</em>, <em class="sig-param">use_manifest=False</em>, <em class="sig-param">headers=None</em>, <em class="sig-param">condition=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.posix.PosixPath.copytree" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a source directory to a destination directory. Assumes that
+paths are capable of being copied to/from.</p>
+<p>Note that this function uses shutil.copytree by default, meaning
+that a posix or windows destination must not exist beforehand.</p>
+<p>For example, assume the following file hierarchy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Doing a copytree from <code class="docutils literal notranslate"><span class="pre">a</span></code> to a new posix destination of <code class="docutils literal notranslate"><span class="pre">c</span></code> is
+performed with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Note that the user can override which copy command is used for posix
+copies, and it is up to them to ensure that their code abides by the
+semantics of the provided copy command. This function has been tested
+in production using the default command of <code class="docutils literal notranslate"><span class="pre">cp</span> <span class="pre">-r</span></code> and using <code class="docutils literal notranslate"><span class="pre">mcp</span> <span class="pre">-r</span></code>.</p>
+<p>Using OBS source and destinations work in a similar manner. Assume
+the destination is a swift path and we upload the same <code class="docutils literal notranslate"><span class="pre">a</span></code> folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end swift result will have one object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/b/1.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Similarly one can do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;swift://tenant/container/folder/&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The end result for c looks the same as the above posix example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">c</span><span class="o">/</span>
+<span class="o">-</span> <span class="n">b</span><span class="o">/</span>
+<span class="o">-</span> <span class="o">-</span> <span class="mf">1.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>path|str</em>) – The source directory to copy from</p></li>
+<li><p><strong>dest</strong> (<em>path|str</em>) – The directory to copy to. Must not exist if
+its a posix directory</p></li>
+<li><p><strong>copy_cmd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – If copying to / from posix or windows, this command is
+used instead of shutil.copytree</p></li>
+<li><p><strong>use_manifest</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a><em>, </em><em>default False</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>condition</strong> (<em>function</em><em>(</em><em>results</em><em>) </em><em>-&gt; bool</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a> and
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath.download" title="stor.swift.SwiftPath.download"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.download</span></code></a>.</p></li>
+<li><p><strong>headers</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – See <a class="reference internal" href="swift.html#stor.swift.SwiftPath.upload" title="stor.swift.SwiftPath.upload"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">SwiftPath.upload</span></code></a>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.8)"><strong>ValueError</strong></a> – if two OBS paths are specified</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.8)"><strong>OSError</strong></a> – if destination is a posix path and it already exists</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.posix.PosixPath.open">
+<code class="sig-name descname">open</code><span class="sig-paren">(</span><em class="sig-param">mode=None</em>, <em class="sig-param">encoding=None</em><span class="sig-paren">)</span><a class="headerlink" href="#stor.posix.PosixPath.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a path and retains interface compatibility with
+<a class="reference internal" href="swift.html#stor.swift.SwiftPath" title="stor.swift.SwiftPath"><code class="xref any py py-class docutils literal notranslate"><span class="pre">SwiftPath</span></code></a> by popping the unused <code class="docutils literal notranslate"><span class="pre">swift_upload_args</span></code> keyword
+argument.</p>
+<p>Creates parent directory if it does not exist.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="windows.html" class="btn btn-neutral float-right" title="Windows" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="dx.html" class="btn btn-neutral float-left" title="DNAnexus" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

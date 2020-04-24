@@ -1,0 +1,321 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>stor.exceptions &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../toc.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+          <li><a href="../stor.html">stor</a> &raquo;</li>
+        
+      <li>stor.exceptions</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for stor.exceptions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Provides exceptions classes thrown by various utilities of stor</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="RemoteError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.RemoteError">[docs]</a><span class="k">class</span> <span class="nc">RemoteError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The top-level exception thrown for any errors from remote services</span>
+<span class="sd">    (eg. swift, S3).</span>
+
+<span class="sd">    The &#39;caught_exception&#39; attribute of the exception must be examined in order</span>
+<span class="sd">    to inspect the exception thrown by the swift or S3 service. A swift exception</span>
+
+<span class="sd">    Swift has two types of caught exceptions:</span>
+
+<span class="sd">    * ``SwiftError`` (thrown by ``swiftclient.service``)</span>
+<span class="sd">    * ``ClientError`` (thrown by ``swiftclient.client``)</span>
+
+<span class="sd">    S3 raises:</span>
+
+<span class="sd">    * ``ClientError`` (thrown by ``botocore.client``).</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        caught_exception (Exception): the underlying exception that was raised from service.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">caught_exception</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">caught_exception</span> <span class="o">=</span> <span class="n">caught_exception</span></div>
+
+
+<div class="viewcode-block" id="NotFoundError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.NotFoundError">[docs]</a><span class="k">class</span> <span class="nc">NotFoundError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a 404 response is returned.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InvalidObjectStateError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.InvalidObjectStateError">[docs]</a><span class="k">class</span> <span class="nc">InvalidObjectStateError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for 403 errors from S3 dealing with storage classes.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ObjectInColdStorageError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.ObjectInColdStorageError">[docs]</a><span class="k">class</span> <span class="nc">ObjectInColdStorageError</span><span class="p">(</span><span class="n">InvalidObjectStateError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a 403 is returned from S3/SwiftStack because backing data is on Glacier.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        We don&#39;t want to retry on this</span>
+<span class="sd">        one, because the object will always be in cold storage.</span>
+<span class="sd">        See AWS `S3 Rest API GET`_ spec for more details.</span>
+
+<span class="sd">    .. _S3 Rest API GET: https://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectGET.html</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="AlreadyRestoredError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.AlreadyRestoredError">[docs]</a><span class="k">class</span> <span class="nc">AlreadyRestoredError</span><span class="p">(</span><span class="n">InvalidObjectStateError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown on attempt to restore object already not in Glacier&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="UnauthorizedError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.UnauthorizedError">[docs]</a><span class="k">class</span> <span class="nc">UnauthorizedError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a 403 response is returned.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Internal swift connection errors (e.g., when a particular node is</span>
+<span class="sd">        unavailable) appear to translate themselves into 403 errors at the</span>
+<span class="sd">        proxy layer, thus in general it&#39;s a good idea to retry on authorization</span>
+<span class="sd">        errors as equivalent to unavailable errors when doing PUT or GET</span>
+<span class="sd">        operations (list / stat / etc never hit this issue).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UnavailableError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.UnavailableError">[docs]</a><span class="k">class</span> <span class="nc">UnavailableError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a 503 response is returned.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ConflictError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.ConflictError">[docs]</a><span class="k">class</span> <span class="nc">ConflictError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a 409 response is returned.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        * **Swift**: This error is thrown when deleting a container and</span>
+<span class="sd">          some object storage nodes report that the container</span>
+<span class="sd">          has objects while others don&#39;t.</span>
+<span class="sd">        * **S3**: Raised when attempting to restore object that&#39;s already being restored (as</span>
+<span class="sd">          RestoreAlreadyInProgressError). Possibly in other cases.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="TargetExistsError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.TargetExistsError">[docs]</a><span class="k">class</span> <span class="nc">TargetExistsError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a destination target already exists on DX for a folder</span>
+<span class="sd">    that is being uploaded/copied/moved, etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="RestoreAlreadyInProgressError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.RestoreAlreadyInProgressError">[docs]</a><span class="k">class</span> <span class="nc">RestoreAlreadyInProgressError</span><span class="p">(</span><span class="n">ConflictError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when RestoreAlreadyInProgress on glacier restore&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ConditionNotMetError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.ConditionNotMetError">[docs]</a><span class="k">class</span> <span class="nc">ConditionNotMetError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a condition is not met.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FailedTransferError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.FailedTransferError">[docs]</a><span class="k">class</span> <span class="nc">FailedTransferError</span><span class="p">(</span><span class="n">RemoteError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a file transfer fails.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FailedUploadError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.FailedUploadError">[docs]</a><span class="k">class</span> <span class="nc">FailedUploadError</span><span class="p">(</span><span class="n">FailedTransferError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when an upload fails.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FailedDownloadError"><a class="viewcode-back" href="../../exceptions.html#stor.exceptions.FailedDownloadError">[docs]</a><span class="k">class</span> <span class="nc">FailedDownloadError</span><span class="p">(</span><span class="n">FailedTransferError</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Thrown when a download fails.&quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

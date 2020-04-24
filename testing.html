@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Testing &mdash; stor b&#39;4.0.0&#39; documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Settings" href="settings.html" />
+    <link rel="prev" title="Stor Python Exceptions" href="exceptions.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="toc.html" class="icon icon-home"> stor
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                b'4.0.0'
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">stor Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">CLI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="main_interface.html">Main Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="swift.html">Swift</a></li>
+<li class="toctree-l1"><a class="reference internal" href="s3.html">S3</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dx.html">DNAnexus</a></li>
+<li class="toctree-l1"><a class="reference internal" href="posix.html">Posix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="windows.html">Windows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="exceptions.html">Stor Python Exceptions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="settings.html">Settings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensions.html">SwiftStack Extension</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="release_notes.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="toc.html">stor</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="toc.html">Docs</a> &raquo;</li>
+        
+      <li>Testing</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/testing.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="testing">
+<span id="id1"></span><h1>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h1>
+<p>Stor provides a test case to use when testing against Swift storage. It also
+provides a mixin class that can be used when creating other base test classes</p>
+<span class="target" id="module-stor.test"></span><dl class="class">
+<dt id="stor.test.SwiftTestMixin">
+<em class="property">class </em><code class="sig-prename descclassname">stor.test.</code><code class="sig-name descname">SwiftTestMixin</code><a class="reference internal" href="_modules/stor/test.html#SwiftTestMixin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.test.SwiftTestMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>A mixin with helpers for mocking out swift.</p>
+<p>SwiftTestMixin should be used to create base test classes for anything
+that accesses swift.</p>
+<dl class="method">
+<dt id="stor.test.SwiftTestMixin.assertSwiftListResultsEqual">
+<code class="sig-name descname">assertSwiftListResultsEqual</code><span class="sig-paren">(</span><em class="sig-param">r1</em>, <em class="sig-param">r2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/test.html#SwiftTestMixin.assertSwiftListResultsEqual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.test.SwiftTestMixin.assertSwiftListResultsEqual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Swift list resolves duplicates, so the ordering of the results are not
+always the same as what the swift client returns. Compare results as
+sorted lists</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.test.SwiftTestMixin.disable_get_swift_service_mock">
+<code class="sig-name descname">disable_get_swift_service_mock</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/test.html#SwiftTestMixin.disable_get_swift_service_mock"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.test.SwiftTestMixin.disable_get_swift_service_mock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disables the mock for getting the swift service.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="stor.test.SwiftTestMixin.setup_swift_mocks">
+<code class="sig-name descname">setup_swift_mocks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/test.html#SwiftTestMixin.setup_swift_mocks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.test.SwiftTestMixin.setup_swift_mocks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets all of the relevant mocks for Swift communication.</p>
+<p>If you are testing outside of this library, you should either mock
+swift object methods or you should focus on manipulating return value
+of mock_swift.</p>
+<p>The following variables are set up when calling this:</p>
+<ul class="simple">
+<li><p>mock_swift_service: A mock of the SwiftService class defined in
+swiftclient.service.</p></li>
+<li><p>mock_swift_get_conn: A mock of the get_conn function in the
+swiftclient.service module</p></li>
+<li><p>mock_swift_conn: A mock of the SwiftConnection returned by
+get_conn</p></li>
+<li><p>mock_swift_get_auth_keystone: mock of the get_keystone_auth function
+that caches identity credentials</p></li>
+<li><p>mock_get_swift_service: A mock of the _get_swift_service method of
+SwiftPath</p></li>
+<li><p>mock_swift: A mock of the SwiftService instance returned by
+_get_swift_service in SwiftPath</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="stor.test.SwiftTestCase">
+<em class="property">class </em><code class="sig-prename descclassname">stor.test.</code><code class="sig-name descname">SwiftTestCase</code><span class="sig-paren">(</span><em class="sig-param">methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/test.html#SwiftTestCase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.test.SwiftTestCase" title="Permalink to this definition">¶</a></dt>
+<dd><p>A TestCase class that sets up swift mocks and provides additional assertions</p>
+<dl class="method">
+<dt id="stor.test.SwiftTestCase.setUp">
+<code class="sig-name descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stor/test.html#SwiftTestCase.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stor.test.SwiftTestCase.setUp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hook method for setting up the test fixture before exercising it.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="settings.html" class="btn btn-neutral float-right" title="Settings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="exceptions.html" class="btn btn-neutral float-left" title="Stor Python Exceptions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2015, Counsyl Inc
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
