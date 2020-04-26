@@ -1005,6 +1005,8 @@ class TestTempUrl(DXTestCase):
                 with pytest.raises(ValueError, match='filename MUST match object name'):
                     dx_p.temp_url(filename='another_name.txt')
 
+            assert proxy_path in dx_p.temp_url()
+
     def test_on_file_with_proxy_url(self):
         self.setup_temporary_project()
         self.setup_file('/temp_file.txt')

@@ -221,6 +221,9 @@ class DXPath(OBSPath):
                 raise ValueError(
                     'filename MUST match object name when file_proxy_url is set'
                 )
+            # Append trailing slash, so that full proxy URL is included in the generated URL.
+            if not file_proxy_url.endswith("/"):
+                file_proxy_url += "/"
             return urllib.parse.urljoin(
                 file_proxy_url,
                 f'{self.virtual_project}/{self.virtual_resource}'
