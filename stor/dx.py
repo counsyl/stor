@@ -191,7 +191,7 @@ class DXPath(OBSPath):
             >>> stor.Path('dx://proj:/folder/mypath.csv').temp_url()
             'https://dl.dnanex.us/F/D/awe1323/mypath.csv'
             >>> with stor.settings.use({'dx': {'file_proxy_url':
-            ...     'https://my-dnax-proxy.example.com/gateway'}):
+            ...     'https://my-dnax-proxy.example.com/gateway'}}):
             ... stor.Path('dx://proj:/folder/mypath.csv').temp_url()
             'https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv'
 
