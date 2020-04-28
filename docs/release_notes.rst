@@ -1,12 +1,17 @@
 Release Notes
 =============
 
+v4.0.1
+------
+
+* Add trailing slash to file_proxy_url if absent, to fix a bug with generating temp URLs.
+
 v4.0 - Python 3 + Poetry!
 -------------------------
 
 Only Python 3.6+ is supported - Python 2.7 and Python 3.5 support is dropped!
 
-Note: the major version bump is because we've dropped 2.7 support, aside from that 
+Note: the major version bump is because we've dropped 2.7 support, aside from that
 this would be a feature level change.
 
 Now stor installs via ``poetry`` (this should be transparent to users).

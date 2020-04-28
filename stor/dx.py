@@ -191,7 +191,7 @@ class DXPath(OBSPath):
             >>> stor.Path('dx://proj:/folder/mypath.csv').temp_url()
             'https://dl.dnanex.us/F/D/awe1323/mypath.csv'
             >>> with stor.settings.use({'dx': {'file_proxy_url':
-            ...     'https://my-dnax-proxy.example.com/gateway'}):
+            ...     'https://my-dnax-proxy.example.com/gateway'}}):
             ... stor.Path('dx://proj:/folder/mypath.csv').temp_url()
             'https://my-dnax-proxy.example.com/gateway/proj/folder/mypath.csv'
 
@@ -221,6 +221,9 @@ class DXPath(OBSPath):
                 raise ValueError(
                     'filename MUST match object name when file_proxy_url is set'
                 )
+            # Append trailing slash, so that full proxy URL is included in the generated URL.
+            if not file_proxy_url.endswith("/"):
+                file_proxy_url += "/"
             return urllib.parse.urljoin(
                 file_proxy_url,
                 f'{self.virtual_project}/{self.virtual_resource}'
