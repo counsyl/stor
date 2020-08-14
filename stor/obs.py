@@ -128,7 +128,7 @@ class OBSPath(Path):
         normed = posixpath.normpath('/' + str(self)[len(self.drive):])[1:]
         return self.path_class(self.drive + normed)
 
-    def read_object(self):
+    def read_object(self, mode='r'):
         """Reads an individual object from OBS.
 
         Returns:
@@ -413,7 +413,7 @@ class OBSFile(object):
         if self.mode == 'r':
             buf = self.stream_cls(self._path.read_object().decode(self.encoding))
         elif self.mode == 'rb':
-            buf = self.stream_cls(self._path.read_object())
+            buf = self.stream_cls(self._path.read_object(mode='rb'))
         elif self.mode in ('w', 'wb'):
             buf = self.stream_cls()
         else:
