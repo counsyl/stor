@@ -3,7 +3,7 @@ import copy
 import os
 import threading
 
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'
