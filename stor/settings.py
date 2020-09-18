@@ -66,10 +66,10 @@ def parse_config_file(filename):
     Returns:
         dict: A dictionary of settings options.
     """
-    parser = SafeConfigParser()
+    parser = ConfigParser()
 
     with open(filename) as fp:
-        parser.readfp(fp)
+        parser.read_file(fp)
 
     settings = {
         section: {
