@@ -3,7 +3,7 @@ import copy
 import os
 import threading
 
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
 CONFIG_FILE = 'default.cfg'
 USER_CONFIG_FILE = '~/.stor.cfg'
@@ -66,10 +66,10 @@ def parse_config_file(filename):
     Returns:
         dict: A dictionary of settings options.
     """
-    parser = SafeConfigParser()
+    parser = ConfigParser()
 
     with open(filename) as fp:
-        parser.readfp(fp)
+        parser.read_file(fp)
 
     settings = {
         section: {
