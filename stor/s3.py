@@ -744,7 +744,8 @@ class S3Path(OBSPath):
                 pool.join()
 
         if uploaded['failed']:
-            raise exceptions.FailedUploadError('an error occurred while uploading', uploaded)
+            raise exceptions.FailedUploadError(
+                'an error occurred while uploading, info={info}'.format(info=uploaded))
 
         utils.check_condition(condition, [r['dest'] for r in uploaded['completed']])
         return uploaded
