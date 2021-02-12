@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.0.2
+------
+* fix DeprecationWarning (#140)
+* More verbose error msg. (#139)
+
 v4.0.1
 ------
 
