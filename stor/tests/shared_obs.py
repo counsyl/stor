@@ -65,6 +65,39 @@ class SharedOBSFileCases(object):
                     gzip_fp.seek(3)
                     assert_same_data(fp, gzip_fp)
 
+    @mock_read_object
+    def test_xopen_gzip(self, mock_read_object):
+        gzip_path = stor.join(stor.dirname(__file__), 'file_data', 's_3_2126.bcl.gz')
+
+        correct_binary_data = stor.open(gzip_path, 'rb').read()
+        mock_read_object.return_value = correct_binary_data
+
+        with stor.xopen(stor.join(self.drive, 'A/C/s_3_2126.bcl.gz'), 'r') as fp:
+            with gzip.open(gzip_path) as gzip_fp:
+                assert_same_data(fp, gzip_fp)
+
+        with stor.xopen(stor.join(self.drive, 'A/C/s_3_2126.bcl.gz'), 'r') as fp:
+            with gzip.open(gzip_path) as gzip_fp:
+                # after seeking, the rest of the data should still be the same
+                fp.seek(3)
+                gzip_fp.seek(3)
+                assert_same_data(fp, gzip_fp)
+
+    @mock_read_object
+    def test_xopen_regular(self, mock_read_object):
+        fpath = stor.join(stor.dirname(__file__), 'file_data', 'utf8_file_with_unicode.txt')
+        correct_binary_data = stor.open(fpath, 'rb').read()
+        mock_read_object.return_value = correct_binary_data
+
+        for mode in 'r', 'rb':
+            with stor.xopen(fpath, mode) as xfp:
+                with stor.open(fpath, mode) as fp:
+                    assert_same_data(xfp, fp)
+
+        with stor.xopen(stor.join(self.drive, 'A/C/utf8_file_with_unicode.txt'), 'rb') as xfp:
+            with stor.open(fpath, 'rb') as fp:
+                assert_same_data(xfp, fp)
+
     def test_makedirs_p_does_nothing(self):
         # dumb test... but why not?
         self.normal_path.makedirs_p()

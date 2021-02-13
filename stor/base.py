@@ -7,6 +7,7 @@ import posixpath
 import shutil
 import sys
 import warnings
+import gzip
 
 import builtins
 
@@ -271,6 +272,22 @@ class Path(str):
         """
 
         raise NotImplementedError
+
+    def xopen(self, mode='r', *args, **kwargs):
+        """Open a file-like object, transparently handling gzip compression.
+
+        See: :func:`open`
+        """
+        if self.endswith('.gz'):
+            if mode == 'r':
+                mode = 'rb'
+            if mode == 'w':
+                mode = 'wb'
+            fp = self.open(mode, *args, **kwargs)
+            gzfp = gzip.GzipFile(fileobj=fp)
+            return gzfp
+        else:
+            return self.open(mode, *args, **kwargs)
 
     def list(self, *args, **kwargs):
         """List all contents using the path as a prefix.

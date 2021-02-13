@@ -54,6 +54,7 @@ def _delegate_to_path(name):
 
 # extra compat!
 open = _delegate_to_path('open')
+xopen = _delegate_to_path('xopen')
 abspath = _delegate_to_path('abspath')
 normcase = _delegate_to_path('normcase')
 normpath = _delegate_to_path('normpath')
