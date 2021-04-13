@@ -1210,6 +1210,8 @@ class DXVirtualPath(DXPath):
         if utils.has_trailing_slash(self):
             raise ValueError('Invalid operation ({method}) on folder path ({path})'
                              .format(path=self, method=sys._getframe(2).f_code.co_name))
+        if utils.is_valid_dxid(self.resource, "file"):
+            return self.resource
         objects = [{
             'name': self.name,
             'folder': ('/' + self.resource).parent,
