@@ -187,8 +187,7 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from stor.swift import SwiftPath
-    return p.startswith(SwiftPath.drive)
+    return p.startswith('swift://')
 
 
 def is_filesystem_path(p):
@@ -214,8 +213,7 @@ def is_s3_path(p):
     Returns
         bool: True if p is a S3 path, False otherwise.
     """
-    from stor.s3 import S3Path
-    return p.startswith(S3Path.drive)
+    return p.startswith('s3://')
 
 
 def is_obs_path(p):
@@ -241,8 +239,7 @@ def is_dx_path(p):
     Returns
         bool: True if p is a DX path, False otherwise.
     """
-    from stor.dx import DXPath
-    return p.startswith(DXPath.drive)
+    return p.startswith('dx://')
 
 
 def is_valid_dxid(dxid, expected_classes):
