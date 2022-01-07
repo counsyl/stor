@@ -3,10 +3,6 @@ import locale
 import posixpath
 import sys
 
-import dxpy
-from swiftclient.service import SwiftError
-from swiftclient.service import SwiftUploadObject
-
 from stor.base import Path
 from stor.posix import PosixPath
 from stor import utils
@@ -28,6 +24,17 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
     return wrapper
 
 
+try:
+    from swiftclient.service import SwiftUploadObject
+except ImportError:
+    class SwiftUploadObject(object):
+        """Give 90% of the utility of SwiftUploadObject class without swiftclient!"""
+        def __init__(self, source, object_name=None, options=None):
+            self.source = source
+            self.object_name = object_name
+            self.options = options
+
+
 class OBSUploadObject(SwiftUploadObject):
     """
     An upload object similar to swiftclient's SwiftUploadObject that allows the user
@@ -41,6 +48,8 @@ class OBSUploadObject(SwiftUploadObject):
             source (str): A path that specifies a source file.
             dest (str): A path that specifies a destination file name (full key)
         """
+        from swiftclient.service import SwiftError
+
         try:
             super(OBSUploadObject, self).__init__(source, object_name=object_name, options=options)
         except SwiftError as exc:
@@ -452,6 +461,8 @@ class OBSFile(object):
         self.closed = True
 
     def _wait_on_close(self):
+        import dxpy
+
         if isinstance(self._path, stor.dx.DXPath):
             wait_on_close = stor.settings.get()['dx']['wait_on_close']
             if wait_on_close:

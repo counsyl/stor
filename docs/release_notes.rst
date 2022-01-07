@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.0.3
+------
+* Guard dxpy imports in utils so you can use stor without dxpy installed.
+
+
 v4.0.2
 ------
 * fix DeprecationWarning (#140)
