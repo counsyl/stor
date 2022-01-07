@@ -26,7 +26,7 @@ def _delegate_to_buffer(attr_name, valid_modes=None):
 
 try:
     from swiftclient.service import SwiftUploadObject
-except ImportError:
+except ImportError:  # pragma: no cover
     class SwiftUploadObject(object):
         """Give 90% of the utility of SwiftUploadObject class without swiftclient!"""
         def __init__(self, source, object_name=None, options=None):
