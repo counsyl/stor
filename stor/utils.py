@@ -8,9 +8,6 @@ import shutil
 from subprocess import check_call
 import tempfile
 
-from dxpy.bindings import verify_string_dxid
-from dxpy.exceptions import DXError
-
 from stor import exceptions
 
 logger = logging.getLogger(__name__)
@@ -257,6 +254,9 @@ def is_valid_dxid(dxid, expected_classes):
     Returns
         bool: Whether given dxid is a valid path of one of expected_classes
     """
+    from dxpy.bindings import verify_string_dxid
+    from dxpy.exceptions import DXError
+
     try:
         return verify_string_dxid(dxid, expected_classes) is None
     except DXError:
