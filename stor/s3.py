@@ -3,7 +3,7 @@ An experimental implementation of S3 in stor
 """
 from functools import partial
 import logging
-from multiprocessing.pool import ThreadPool
+from concurrent.futures import as_completed, ThreadPoolExecutor
 import os
 import tempfile
 import threading
@@ -580,25 +580,18 @@ class S3Path(OBSPath):
 
         downloaded = {'completed': [], 'failed': []}
         with S3DownloadLogger(len(files_to_download)) as dl:
-            pool = ThreadPool(options['object_threads'])
-            try:
-                result_iter = pool.imap_unordered(download_w_config, files_to_download)
-                while True:
-                    try:
-                        result = result_iter.next(0xFFFF)
-                        if result['success']:
-                            dl.add_result(result)
-                            downloaded['completed'].append(result)
-                        else:
-                            downloaded['failed'].append(result)
-                    except StopIteration:
-                        break
-                pool.close()
-            except BaseException:
-                pool.terminate()
-                raise
-            finally:
-                pool.join()
+            with ThreadPoolExecutor(max_workers=options.get("object_threads")) as executor:
+                futures = {
+                    executor.submit(download_w_config, file_to_download): file_to_download
+                    for file_to_download in files_to_download
+                }
+                for fut in as_completed(futures):
+                    result = fut.result()
+                    if result["success"]:
+                        dl.add_result(result)
+                        downloaded['completed'].append(result)
+                    else:
+                        downloaded['failed'].append(result)
 
         if downloaded['failed']:
             raise exceptions.FailedDownloadError('an error occurred while downloading', downloaded)
@@ -723,25 +716,18 @@ class S3Path(OBSPath):
 
         uploaded = {'completed': [], 'failed': []}
         with S3UploadLogger(len(files_to_upload)) as ul:
-            pool = ThreadPool(options['object_threads'])
-            try:
-                result_iter = pool.imap_unordered(upload_w_config, files_to_upload)
-                while True:
-                    try:
-                        result = result_iter.next(0xFFFF)
-                        if result['success']:
-                            ul.add_result(result)
-                            uploaded['completed'].append(result)
-                        else:
-                            uploaded['failed'].append(result)
-                    except StopIteration:
-                        break
-                pool.close()
-            except BaseException:
-                pool.terminate()
-                raise
-            finally:
-                pool.join()
+            with ThreadPoolExecutor(max_workers=options.get("object_threads")) as executor:
+                futures = {
+                    executor.submit(upload_w_config, file_to_upload): file_to_upload
+                    for file_to_upload in files_to_upload
+                }
+                for fut in as_completed(futures):
+                    result = fut.result()
+                    if result["success"]:
+                        ul.add_result(result)
+                        uploaded['completed'].append(result)
+                    else:
+                        uploaded['failed'].append(result)
 
         if uploaded['failed']:
             raise exceptions.FailedUploadError(
