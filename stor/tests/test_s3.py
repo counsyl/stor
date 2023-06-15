@@ -1,3 +1,5 @@
+from concurrent.futures._base import FINISHED, Future
+from concurrent.futures.thread import _WorkItem
 import datetime
 import ntpath
 from tempfile import NamedTemporaryFile
@@ -1276,18 +1278,25 @@ class TestDownload(S3TestCase):
         self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    @mock.patch('stor.s3.ThreadPool', autospec=True)
-    def test_download_object_threads(self, mock_pool, mock_list, mock_getsize,
-                                     mock_make_dest_dir):
+    @mock.patch.object(
+        Future,
+        "result",
+        autospec=True,
+        return_value={"success": "complete", "dest": 10, "source": 90}
+    )
+    @mock.patch("stor.s3.as_completed", return_value=[Future() for x in range(0, 20)])
+    @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True)
+    def test_download_object_threads(
+        self, mock_pool, mock_completed, mock_future, mock_list, mock_getsize, mock_make_dest_dir
+    ):
         mock_list.return_value = [
             S3Path('s3://bucket/file%s' % i)
             for i in range(20)
         ]
-        mock_pool.return_value.imap_unordered.return_value.next.side_effect = StopIteration
         s3_p = S3Path('s3://bucket')
         with settings.use({'s3:download': {'object_threads': 20}}):
             s3_p.download(['test'])
-        mock_pool.assert_called_once_with(20)
+        mock_pool.assert_called_once_with(max_workers=20)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_remote_error(self, mock_list, mock_getsize, mock_make_dest_dir):
