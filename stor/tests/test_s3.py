@@ -1087,19 +1087,27 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
-    @mock.patch('stor.s3.ThreadPool', autospec=True)
-    def test_upload_object_threads(self, mock_pool, mock_getsize, mock_files):
+    @mock.patch.object(
+        Future,
+        "result",
+        autospec=True,
+        return_value={"success": "complete", "dest": 10, "source": 90}
+    )
+    @mock.patch("stor.s3.as_completed", return_value=[Future() for x in range(0, 20)])
+    @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True)
+    def test_upload_object_threads(
+        self, mock_pool, mock_completed, mock_future, mock_getsize, mock_files
+    ):
         mock_files.return_value = {
             'file%s' % i: 20
             for i in range(20)
         }
         mock_getsize.return_value = 20
-        mock_pool.return_value.imap_unordered.return_value.next.side_effect = StopIteration
 
         s3_p = S3Path('s3://bucket')
         with settings.use({'s3:upload': {'object_threads': 20}}):
             s3_p.upload(['test'])
-        mock_pool.assert_called_once_with(20)
+        mock_pool.assert_called_once_with(max_workers=20)
 
     def test_upload_remote_error(self, mock_getsize, mock_files):
         mock_files.return_value = {
