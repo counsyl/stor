@@ -1,5 +1,4 @@
-from concurrent.futures._base import FINISHED, Future
-from concurrent.futures.thread import _WorkItem
+from concurrent.futures.thread import _base
 import datetime
 import ntpath
 from tempfile import NamedTemporaryFile
@@ -1088,12 +1087,12 @@ class TestUpload(S3TestCase):
                                               use_manifest=True)
 
     @mock.patch.object(
-        Future,
+        _base.Future,
         "result",
         autospec=True,
         return_value={"success": "complete", "dest": 10, "source": 90}
     )
-    @mock.patch("stor.s3.as_completed", return_value=[Future() for x in range(0, 20)])
+    @mock.patch("stor.s3.as_completed", return_value=[_base.Future() for x in range(0, 20)])
     @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True)
     def test_upload_object_threads(
         self, mock_pool, mock_completed, mock_future, mock_getsize, mock_files
@@ -1287,12 +1286,12 @@ class TestDownload(S3TestCase):
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     @mock.patch.object(
-        Future,
+        _base.Future,
         "result",
         autospec=True,
         return_value={"success": "complete", "dest": 10, "source": 90}
     )
-    @mock.patch("stor.s3.as_completed", return_value=[Future() for x in range(0, 20)])
+    @mock.patch("stor.s3.as_completed", return_value=[_base.Future() for x in range(0, 20)])
     @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True)
     def test_download_object_threads(
         self, mock_pool, mock_completed, mock_future, mock_list, mock_getsize, mock_make_dest_dir
