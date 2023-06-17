@@ -355,7 +355,11 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
 class MockFuture():
     """A class to minimally mock methods for Future objects in ThreadPoolExecutor."""
     def __init__(self, **kwargs):
-        self.__result = {"success": "complete", "dest": kwargs.get("dest"), "source": kwargs.get("source")}
+        self.__result = {
+            "success": "complete",
+            "dest": kwargs.get("dest"),
+            "source": kwargs.get("source")
+        }
 
     def result(self):
         return self.__result

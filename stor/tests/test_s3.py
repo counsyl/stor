@@ -18,7 +18,7 @@ from stor import Path
 from stor import settings
 from stor import s3
 from stor.s3 import S3Path
-from stor.test import MockExecutor, MockFuture, S3TestCase
+from stor.test import MockExecutor, S3TestCase
 from stor.tests.shared_obs import SharedOBSFileCases
 from stor import utils
 
@@ -1085,7 +1085,11 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
-    @mock.patch("stor.s3.as_completed", autospec=True, side_effect=lambda futures: [fut for fut in futures])
+    @mock.patch(
+        "stor.s3.as_completed",
+        autospec=True,
+        side_effect=lambda futures: [fut for fut in futures]
+    )
     @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True, return_value=MockExecutor())
     def test_upload_object_threads(
         self, mock_pool, mock_completed, mock_getsize, mock_files
@@ -1292,7 +1296,11 @@ class TestDownload(S3TestCase):
         self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    @mock.patch("stor.s3.as_completed", autospec=True, side_effect=lambda futures: [fut for fut in futures])
+    @mock.patch(
+        "stor.s3.as_completed",
+        autospec=True,
+        side_effect=lambda futures: [fut for fut in futures]
+    )
     @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True, return_value=MockExecutor())
     def test_download_object_threads(
         self, mock_pool, mock_completed, mock_list, mock_getsize, mock_make_dest_dir
@@ -1316,7 +1324,10 @@ class TestDownload(S3TestCase):
         assert len(mock_completed_called_with_futures) == 20
         assert all(
             [
-                fut.result()["dest"] == ["test"] and fut.result()["source"] == f"s3://bucket/file{idx}"
+                (
+                    fut.result()["dest"] == ["test"] and
+                    fut.result()["source"] == f"s3://bucket/file{idx}"
+                )
                 for idx, fut in enumerate(mock_completed_called_with_futures)
             ]
         )
