@@ -1,6 +1,8 @@
+from concurrent.futures import Executor
 import inspect
 import os
 import sys
+from threading import Lock
 import unittest
 from unittest import mock
 import uuid
@@ -348,3 +350,34 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
     def teardown_project(self):
         self.project_handler.destroy()
         self.project_handler = None
+
+
+class MockFuture():
+    """A class to minimally mock methods for Future objects in ThreadPoolExecutor."""
+    def __init__(self, **kwargs):
+        self.__result = {"success": "complete", "dest": kwargs.get("dest"), "source": kwargs.get("source")}
+
+    def result(self):
+        return self.__result
+
+
+class MockExecutor(Executor):
+    """An Executor class to minimally mock methods for ThreadPoolExecutor."""
+    def __init__(self):
+        self._shutdown = False
+        self._shutdownLock = Lock()
+
+    def submit(self, fn, *args, **kwargs):
+        obj = args[0]
+        if isinstance(obj, dict):
+            dest = obj.get("dest")
+            source = obj.get("source")
+        else:
+            dest = None
+            source = obj.source
+
+        return MockFuture(dest=dest, source=source)
+
+    def shutdown(self, wait=True):
+        with self._shutdownLock:
+            self._shutdown = True

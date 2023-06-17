@@ -1,8 +1,6 @@
-from concurrent.futures import Executor
 import datetime
 import ntpath
 from tempfile import NamedTemporaryFile
-from threading import Lock
 import unittest
 
 from boto3.exceptions import RetriesExceededError
@@ -20,30 +18,9 @@ from stor import Path
 from stor import settings
 from stor import s3
 from stor.s3 import S3Path
-from stor.test import S3TestCase
+from stor.test import MockExecutor, MockFuture, S3TestCase
 from stor.tests.shared_obs import SharedOBSFileCases
 from stor import utils
-
-
-class MockFuture():
-    def __init__(self, **kwargs):
-        pass
-
-    def result(self):
-        return {"success": "complete", "dest": 10, "source": 90}
-
-
-class MockExecutor(Executor):
-    def __init__(self):
-        self._shutdown = False
-        self._shutdownLock = Lock()
-
-    def submit(self, fn, *args, **kwargs):
-        return MockFuture()
-
-    def shutdown(self, wait=True):
-        with self._shutdownLock:
-            self._shutdown = True
 
 
 class TestBasicPathMethods(unittest.TestCase):
@@ -1108,21 +1085,24 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
-    @mock.patch("stor.s3.as_completed", return_value=[MockFuture() for x in range(0, 20)])
-    @mock.patch("stor.s3.ThreadPoolExecutor", return_value=MockExecutor())
+    @mock.patch("stor.s3.as_completed", autospec=True, side_effect=lambda futures: [fut for fut in futures])
+    @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True, return_value=MockExecutor())
     def test_upload_object_threads(
         self, mock_pool, mock_completed, mock_getsize, mock_files
     ):
         mock_files.return_value = {
-            'file%s' % i: 20
+            f"file{i}": 20
             for i in range(20)
         }
         mock_getsize.return_value = 20
 
-        s3_p = S3Path('s3://bucket')
-        with settings.use({'s3:upload': {'object_threads': 20}}):
-            s3_p.upload(['test'])
+        s3_p = S3Path("s3://bucket")
+        with settings.use({"s3:upload": {"object_threads": 20}}):
+            s3_p.upload(["test"])
+
+        # confirm ThreadPoolExecutor called with expected args
         mock_pool.assert_called_once_with(max_workers=20)
+
 
     def test_upload_remote_error(self, mock_getsize, mock_files):
         mock_files.return_value = {
@@ -1301,19 +1281,21 @@ class TestDownload(S3TestCase):
         self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
-    @mock.patch("stor.s3.as_completed", return_value=[MockFuture() for x in range(0, 20)])
-    @mock.patch("stor.s3.ThreadPoolExecutor", return_value=MockExecutor())
+    @mock.patch("stor.s3.as_completed", autospec=True, side_effect=lambda futures: [fut for fut in futures])
+    @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True, return_value=MockExecutor())
     def test_download_object_threads(
         self, mock_pool, mock_completed, mock_list, mock_getsize, mock_make_dest_dir
     ):
         mock_list.return_value = [
-            S3Path('s3://bucket/file%s' % i)
+            S3Path(f"s3://bucket/file{i}")
             for i in range(20)
         ]
         s3_p = S3Path('s3://bucket')
 
-        with settings.use({'s3:download': {'object_threads': 20}}):
-            s3_p.download(['test'])
+        with settings.use({"s3:download": {"object_threads": 20}}):
+            s3_p.download(["test"])
+
+        # confirm ThreadPoolExecutor called with expected args
         mock_pool.assert_called_once_with(max_workers=20)
 
     @mock.patch.object(S3Path, 'list', autospec=True)
