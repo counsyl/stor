@@ -1103,6 +1103,17 @@ class TestUpload(S3TestCase):
         # confirm ThreadPoolExecutor called with expected args
         mock_pool.assert_called_once_with(max_workers=20)
 
+        # confirm as_completed called with expected args
+        mock_completed.assert_called_once()
+        # check length of MockFutures list passed in to as_completed
+        mock_completed_called_with_futures = mock_completed.call_args[0][0]
+        assert len(mock_completed_called_with_futures) == 20
+        assert all(
+            [
+                fut.result()["dest"] is None and fut.result()["source"] == f"file{idx}"
+                for idx, fut in enumerate(mock_completed_called_with_futures)
+            ]
+        )
 
     def test_upload_remote_error(self, mock_getsize, mock_files):
         mock_files.return_value = {
@@ -1297,6 +1308,18 @@ class TestDownload(S3TestCase):
 
         # confirm ThreadPoolExecutor called with expected args
         mock_pool.assert_called_once_with(max_workers=20)
+
+        # confirm as_completed called with expected args
+        mock_completed.assert_called_once()
+        # check length of MockFutures list passed in to as_completed
+        mock_completed_called_with_futures = mock_completed.call_args[0][0]
+        assert len(mock_completed_called_with_futures) == 20
+        assert all(
+            [
+                fut.result()["dest"] == ["test"] and fut.result()["source"] == f"s3://bucket/file{idx}"
+                for idx, fut in enumerate(mock_completed_called_with_futures)
+            ]
+        )
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_remote_error(self, mock_list, mock_getsize, mock_make_dest_dir):
