@@ -1,13 +1,12 @@
 import inspect
-import unittest
 import os
 import sys
+import unittest
+from unittest import mock
 import uuid
 
 import dxpy
 import vcr
-
-from unittest import mock
 
 from stor import Path
 from stor import s3
@@ -263,6 +262,10 @@ class S3TestCase(unittest.TestCase, S3TestMixin):
             del s3._thread_local.s3_transfer_config
         except AttributeError:
             pass
+
+    def tearDown(self):
+        super(S3TestCase, self).tearDown()
+        self.doCleanups()
 
 
 class DXTestCase(DXTestMixin, unittest.TestCase):
