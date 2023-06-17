@@ -589,9 +589,9 @@ class S3Path(OBSPath):
                     result = fut.result()
                     if result["success"]:
                         dl.add_result(result)
-                        downloaded['completed'].append(result)
+                        downloaded["completed"].append(result)
                     else:
-                        downloaded['failed'].append(result)
+                        downloaded["failed"].append(result)
 
         if downloaded['failed']:
             raise exceptions.FailedDownloadError('an error occurred while downloading', downloaded)
@@ -725,9 +725,9 @@ class S3Path(OBSPath):
                     result = fut.result()
                     if result["success"]:
                         ul.add_result(result)
-                        uploaded['completed'].append(result)
+                        uploaded["completed"].append(result)
                     else:
-                        uploaded['failed'].append(result)
+                        uploaded["failed"].append(result)
 
         if uploaded['failed']:
             raise exceptions.FailedUploadError(
