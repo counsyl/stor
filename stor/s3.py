@@ -585,16 +585,26 @@ class S3Path(OBSPath):
                     executor.submit(download_w_config, file_to_download): file_to_download
                     for file_to_download in files_to_download
                 }
-                for fut in as_completed(futures):
-                    result = fut.result()
+                for fut in as_completed(futures.keys()):
+                    source, dest = futures[fut]
+                    try:
+                        result = fut.result()
+                    except Exception as e:
+                        raise exceptions.FailedDownloadError(
+                            "An exception occured while attempting to download file "
+                            f"{futures[fut][source]}: {e}"
+                        )
+
                     if result["success"]:
                         dl.add_result(result)
                         downloaded["completed"].append(result)
                     else:
                         downloaded["failed"].append(result)
 
-        if downloaded['failed']:
-            raise exceptions.FailedDownloadError('an error occurred while downloading', downloaded)
+        if downloaded["failed"]:
+            raise exceptions.FailedDownloadError(
+                f"An error occurred while downloading the following files: {downloaded}"
+            )
 
         utils.check_condition(condition, [r['source'] for r in downloaded['completed']])
         return downloaded

@@ -1,3 +1,4 @@
+from concurrent.futures.thread import _WorkItem
 import datetime
 import ntpath
 from tempfile import NamedTemporaryFile
@@ -1295,7 +1296,7 @@ class TestDownload(S3TestCase):
                       condition=lambda results: len(results) == 3)
         self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
-    @mock.patch.object(S3Path, 'list', autospec=True)
+    @mock.patch.object(S3Path, "list", autospec=True)
     @mock.patch(
         "stor.s3.as_completed",
         autospec=True,
@@ -1309,7 +1310,7 @@ class TestDownload(S3TestCase):
             S3Path(f"s3://bucket/file{i}")
             for i in range(20)
         ]
-        s3_p = S3Path('s3://bucket')
+        s3_p = S3Path("s3://bucket")
 
         with settings.use({"s3:download": {"object_threads": 20}}):
             s3_p.download(["test"])
@@ -1332,6 +1333,23 @@ class TestDownload(S3TestCase):
             ]
         )
 
+    @mock.patch.object(S3Path, "list", autospec=True)
+    @mock.patch.object(
+        _WorkItem,
+        "run",
+        autospec=True,
+        side_effect=lambda self: self.future.set_exception(Exception("Error")),
+    )
+    def test_download_future_error(
+        self, mock_completed, mock_list, mock_getsize, mock_make_dest_dir
+    ):
+        mock_list.return_value = [
+            S3Path('s3://bucket/my/obj1'),
+        ]
+
+        with self.assertRaisesRegex(exceptions.FailedDownloadError, f"{mock_list.return_value[0]}"):
+            S3Path('s3://bucket/path').download('test')
+
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_remote_error(self, mock_list, mock_getsize, mock_make_dest_dir):
         mock_list.return_value = [
@@ -1341,7 +1359,7 @@ class TestDownload(S3TestCase):
         ]
         self.mock_s3_transfer.download_file.side_effect = RetriesExceededError('failed')
 
-        with self.assertRaises(exceptions.FailedDownloadError):
+        with self.assertRaisesRegex(exceptions.FailedDownloadError, f"{mock_list.return_value}"):
             S3Path('s3://bucket/path').download('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
@@ -1351,9 +1369,9 @@ class TestDownload(S3TestCase):
             S3Path('s3://bucket/my/obj2'),
             S3Path('s3://bucket/my/obj3')
         ]
-        self.mock_s3_transfer.download_file.side_effect = ValueError
+        self.mock_s3_transfer.download_file.side_effect = ValueError("Error information")
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(exceptions.FailedDownloadError):
             S3Path('s3://bucket/path').download('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
