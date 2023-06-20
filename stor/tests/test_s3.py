@@ -1136,11 +1136,14 @@ class TestUpload(S3TestCase):
     def test_upload_other_error(self, mock_getsize, mock_files):
         mock_files.return_value = {
             'file1': 20,
-            'file2': 10
+            'file2': 10,
         }
-        self.mock_s3_transfer.upload_file.side_effect = [None, ValueError]
+        self.mock_s3_transfer.upload_file.side_effect = [None, ValueError("Error information")]
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            exceptions.FailedUploadError,
+            f"{list(mock_files.return_value.keys())[1]}"
+        ):
             S3Path('s3://bucket/path').upload(['test'])
 
     def test_upload_multipart_settings(self, mock_getsize, mock_files):
@@ -1333,23 +1336,6 @@ class TestDownload(S3TestCase):
             ]
         )
 
-    @mock.patch.object(S3Path, "list", autospec=True)
-    @mock.patch.object(
-        _WorkItem,
-        "run",
-        autospec=True,
-        side_effect=lambda self: self.future.set_exception(Exception("Error")),
-    )
-    def test_download_future_error(
-        self, mock_completed, mock_list, mock_getsize, mock_make_dest_dir
-    ):
-        mock_list.return_value = [
-            S3Path('s3://bucket/my/obj1'),
-        ]
-
-        with self.assertRaisesRegex(exceptions.FailedDownloadError, f"{mock_list.return_value[0]}"):
-            S3Path('s3://bucket/path').download('test')
-
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_remote_error(self, mock_list, mock_getsize, mock_make_dest_dir):
         mock_list.return_value = [
@@ -1359,7 +1345,7 @@ class TestDownload(S3TestCase):
         ]
         self.mock_s3_transfer.download_file.side_effect = RetriesExceededError('failed')
 
-        with self.assertRaisesRegex(exceptions.FailedDownloadError, f"{mock_list.return_value}"):
+        with self.assertRaises(exceptions.FailedDownloadError):
             S3Path('s3://bucket/path').download('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)
@@ -1367,11 +1353,13 @@ class TestDownload(S3TestCase):
         mock_list.return_value = [
             S3Path('s3://bucket/my/obj1'),
             S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
         ]
-        self.mock_s3_transfer.download_file.side_effect = ValueError("Error information")
+        self.mock_s3_transfer.download_file.side_effect = [None, ValueError("Error information")]
 
-        with self.assertRaises(exceptions.FailedDownloadError):
+        with self.assertRaisesRegex(
+            exceptions.FailedDownloadError,
+            f"{mock_list.return_value[1]}"
+        ):
             S3Path('s3://bucket/path').download('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)

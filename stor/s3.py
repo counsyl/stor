@@ -731,8 +731,15 @@ class S3Path(OBSPath):
                     executor.submit(upload_w_config, file_to_upload): file_to_upload
                     for file_to_upload in files_to_upload
                 }
-                for fut in as_completed(futures):
-                    result = fut.result()
+                for fut in as_completed(futures.keys()):
+                    try:
+                        result = fut.result()
+                    except Exception as e:
+                        raise exceptions.FailedUploadError(
+                            "An exception occured while attempting to upload file "
+                            f"{futures[fut].source}: {e}"
+                        )
+
                     if result["success"]:
                         ul.add_result(result)
                         uploaded["completed"].append(result)
@@ -741,7 +748,8 @@ class S3Path(OBSPath):
 
         if uploaded['failed']:
             raise exceptions.FailedUploadError(
-                'an error occurred while uploading, info={info}'.format(info=uploaded))
+                f"An error occurred while uploading the following files: {uploaded}"
+            )
 
         utils.check_condition(condition, [r['dest'] for r in uploaded['completed']])
         return uploaded
