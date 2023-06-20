@@ -353,7 +353,11 @@ class DXTestCase(DXTestMixin, unittest.TestCase):
 
 
 class MockFuture():
-    """A class to minimally mock methods for Future objects in ThreadPoolExecutor."""
+    """A class to minimally mock methods for Future objects in ThreadPoolExecutor.
+
+    This mock Future class returns a completed result immediately to prevent test hanging.
+    'dest' and 'source' keys are expected in the inputs provided to set the result value;
+    this follows the result construction of Futures in file download and upload."""
     def __init__(self, **kwargs):
         self.__result = {
             "success": "complete",
@@ -366,12 +370,32 @@ class MockFuture():
 
 
 class MockExecutor(Executor):
-    """An Executor class to minimally mock methods for ThreadPoolExecutor."""
+    """An Executor class to minimally mock methods for ThreadPoolExecutor.
+
+    This mock executor returns mock Future objects to avoid additional complexity in creating a
+    queue and executing passed-in functions. This prevents unit tests from hanging."""
     def __init__(self):
         self._shutdown = False
         self._shutdownLock = Lock()
 
     def submit(self, fn, *args, **kwargs):
+        """Mock the executor.submit function to immediately return a done mocked Future.
+
+        Does not implement a work queue nor use the passed in function to calculate results.
+        Based on the object submitted for the job, the Future will have specific dict keys to
+        be used in testing to confirm used of the upload/download information passed in.
+        The object submitted for download is a dict with keys "source" and "dest".
+        The object submitted for upload is an OBSUploadObject.
+
+        Args:
+            fn: function used to get a result value
+            args: args to be passed into fn
+            kwargs: kwargs to be passed into fn
+
+        Returns:
+            MockFuture: a mock Future class with a completed result containing a success status,
+                a source value, and a dest value
+        """
         obj = args[0]
         if isinstance(obj, dict):
             dest = obj.get("dest")
