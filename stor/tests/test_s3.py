@@ -1,4 +1,3 @@
-from concurrent.futures.thread import _WorkItem
 import datetime
 import ntpath
 from tempfile import NamedTemporaryFile
