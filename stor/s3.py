@@ -586,13 +586,12 @@ class S3Path(OBSPath):
                     for file_to_download in files_to_download
                 }
                 for fut in as_completed(futures.keys()):
-                    source, dest = futures[fut]
                     try:
                         result = fut.result()
                     except Exception as e:
                         raise exceptions.FailedDownloadError(
                             "An exception occured while attempting to download file "
-                            f"{futures[fut][source]}: {e}"
+                            f'{futures[fut]["source"]}: {e}'
                         )
 
                     if result["success"]:
