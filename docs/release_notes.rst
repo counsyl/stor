@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.1.0
+------
+* Replace ``multiprocessing.ThreadPool`` with ``concurrent.futures.ThreadPoolExecutor``
+  to support using stor on AWS Lambda with a Python 3.8 runtime.
+
 v4.0.2
 ------
 * fix DeprecationWarning (#140)
