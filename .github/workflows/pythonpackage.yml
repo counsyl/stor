@@ -32,7 +32,7 @@ jobs:
         poetry config --local virtualenvs.in-project true
     - name: Install venv
       run: |
-        export POETRY_EXTRAS=${{matrix.POETRY_EXTRAS}}
+        export POETRY_EXTRAS="${{matrix.POETRY_EXTRAS}}"
         make venv
     - name: List versions - pip
       run: |
