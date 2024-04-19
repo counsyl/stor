@@ -18,7 +18,7 @@ from stor import Path
 from stor import settings
 from stor import s3
 from stor.s3 import S3Path
-from stor.test import S3TestCase
+from stor.test import MockExecutor, S3TestCase
 from stor.tests.shared_obs import SharedOBSFileCases
 from stor import utils
 
@@ -1085,19 +1085,39 @@ class TestUpload(S3TestCase):
             S3Path('s3://bucket/path').upload(['file'],
                                               use_manifest=True)
 
-    @mock.patch('stor.s3.ThreadPool', autospec=True)
-    def test_upload_object_threads(self, mock_pool, mock_getsize, mock_files):
+    @mock.patch(
+        "stor.s3.as_completed",
+        autospec=True,
+        side_effect=lambda futures: [fut for fut in futures]
+    )
+    @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True, return_value=MockExecutor())
+    def test_upload_object_threads(
+        self, mock_pool, mock_completed, mock_getsize, mock_files
+    ):
         mock_files.return_value = {
-            'file%s' % i: 20
+            f"file{i}": 20
             for i in range(20)
         }
         mock_getsize.return_value = 20
-        mock_pool.return_value.imap_unordered.return_value.next.side_effect = StopIteration
 
-        s3_p = S3Path('s3://bucket')
-        with settings.use({'s3:upload': {'object_threads': 20}}):
-            s3_p.upload(['test'])
-        mock_pool.assert_called_once_with(20)
+        s3_p = S3Path("s3://bucket")
+        with settings.use({"s3:upload": {"object_threads": 20}}):
+            s3_p.upload(["test"])
+
+        # confirm ThreadPoolExecutor called with expected args
+        mock_pool.assert_called_once_with(max_workers=20)
+
+        # confirm as_completed called with expected args
+        mock_completed.assert_called_once()
+        # check length of MockFutures list passed in to as_completed
+        mock_completed_called_with_futures = mock_completed.call_args[0][0]
+        assert len(mock_completed_called_with_futures) == 20
+        assert all(
+            [
+                fut.result()["dest"] is None and fut.result()["source"] == f"file{idx}"
+                for idx, fut in enumerate(mock_completed_called_with_futures)
+            ]
+        )
 
     def test_upload_remote_error(self, mock_getsize, mock_files):
         mock_files.return_value = {
@@ -1115,11 +1135,14 @@ class TestUpload(S3TestCase):
     def test_upload_other_error(self, mock_getsize, mock_files):
         mock_files.return_value = {
             'file1': 20,
-            'file2': 10
+            'file2': 10,
         }
-        self.mock_s3_transfer.upload_file.side_effect = [None, ValueError]
+        self.mock_s3_transfer.upload_file.side_effect = [None, ValueError("Error information")]
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            exceptions.FailedUploadError,
+            f"{list(mock_files.return_value.keys())[1]}"
+        ):
             S3Path('s3://bucket/path').upload(['test'])
 
     def test_upload_multipart_settings(self, mock_getsize, mock_files):
@@ -1275,19 +1298,42 @@ class TestDownload(S3TestCase):
                       condition=lambda results: len(results) == 3)
         self.assertEquals(self.mock_s3_transfer.download_file.call_count, 3)
 
-    @mock.patch.object(S3Path, 'list', autospec=True)
-    @mock.patch('stor.s3.ThreadPool', autospec=True)
-    def test_download_object_threads(self, mock_pool, mock_list, mock_getsize,
-                                     mock_make_dest_dir):
+    @mock.patch.object(S3Path, "list", autospec=True)
+    @mock.patch(
+        "stor.s3.as_completed",
+        autospec=True,
+        side_effect=lambda futures: [fut for fut in futures]
+    )
+    @mock.patch("stor.s3.ThreadPoolExecutor", autospec=True, return_value=MockExecutor())
+    def test_download_object_threads(
+        self, mock_pool, mock_completed, mock_list, mock_getsize, mock_make_dest_dir
+    ):
         mock_list.return_value = [
-            S3Path('s3://bucket/file%s' % i)
+            S3Path(f"s3://bucket/file{i}")
             for i in range(20)
         ]
-        mock_pool.return_value.imap_unordered.return_value.next.side_effect = StopIteration
-        s3_p = S3Path('s3://bucket')
-        with settings.use({'s3:download': {'object_threads': 20}}):
-            s3_p.download(['test'])
-        mock_pool.assert_called_once_with(20)
+        s3_p = S3Path("s3://bucket")
+
+        with settings.use({"s3:download": {"object_threads": 20}}):
+            s3_p.download(["test"])
+
+        # confirm ThreadPoolExecutor called with expected args
+        mock_pool.assert_called_once_with(max_workers=20)
+
+        # confirm as_completed called with expected args
+        mock_completed.assert_called_once()
+        # check length of MockFutures list passed in to as_completed
+        mock_completed_called_with_futures = mock_completed.call_args[0][0]
+        assert len(mock_completed_called_with_futures) == 20
+        assert all(
+            [
+                (
+                    fut.result()["dest"] == ["test"] and
+                    fut.result()["source"] == f"s3://bucket/file{idx}"
+                )
+                for idx, fut in enumerate(mock_completed_called_with_futures)
+            ]
+        )
 
     @mock.patch.object(S3Path, 'list', autospec=True)
     def test_download_remote_error(self, mock_list, mock_getsize, mock_make_dest_dir):
@@ -1306,11 +1352,13 @@ class TestDownload(S3TestCase):
         mock_list.return_value = [
             S3Path('s3://bucket/my/obj1'),
             S3Path('s3://bucket/my/obj2'),
-            S3Path('s3://bucket/my/obj3')
         ]
-        self.mock_s3_transfer.download_file.side_effect = [None, ValueError]
+        self.mock_s3_transfer.download_file.side_effect = [None, ValueError("Error information")]
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(
+            exceptions.FailedDownloadError,
+            f"{mock_list.return_value[1]}"
+        ):
             S3Path('s3://bucket/path').download('test')
 
     @mock.patch.object(S3Path, 'list', autospec=True)

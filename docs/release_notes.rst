@@ -1,10 +1,14 @@
 Release Notes
 =============
 
-v4.0.3
+v4.2.0
 ------
-* Guard dxpy imports in utils so you can use stor without dxpy installed.
+* Guard dxpy imports in utils so you can use stor without either dxpy or swift installed.
 
+v4.1.0
+------
+* Replace ``multiprocessing.ThreadPool`` with ``concurrent.futures.ThreadPoolExecutor``
+  to support using stor on AWS Lambda with a Python 3.8 runtime.
 
 v4.0.2
 ------
