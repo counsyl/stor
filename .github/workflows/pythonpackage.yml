@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
+        POETRY_EXTRAS: ["-E swift -E dxpy", ""]
 
     steps:
     - uses: actions/checkout@v2
@@ -30,7 +31,9 @@ jobs:
         pip install poetry==${{env.POETRY_VERSION}}
         poetry config --local virtualenvs.in-project true
     - name: Install venv
-      run: make venv
+      run: |
+        export POETRY_EXTRAS=${{matrix.POETRY_EXTRAS}}
+        make venv
     - name: List versions - pip
       run: |
         mkdir htmlcov
