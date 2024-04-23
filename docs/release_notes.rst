@@ -1,9 +1,23 @@
 Release Notes
 =============
 
-v4.2.0
-------
-* Guard dxpy imports in utils so you can use stor without either dxpy or swift installed.
+v5.0 - Optional dxpy and swift!
+-------------------------------
+
+This release is almost entirely backwards compatible, but removes `dxpy` and `swiftclient` related requirements as direct dependencies.
+For most users, this should be a transparent change (because they already depend on `dxpy` or `swiftclient` separately). However, this
+would break workflows where stor was passively pulling in `dxpy` and `swiftclient`. To simplify updates, simply change your `requirements.txt` 
+file to explicitly specify the dxpy and swift extras:
+
+```
+# Before
+stor < 5
+# After
+stor[dxpy,swift] >= 5
+```
+
+
+* Guard dxpy imports in utils so you can use stor without either dxpy or swift installed. (#150)
 
 v4.1.0
 ------
