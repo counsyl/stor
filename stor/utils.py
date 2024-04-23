@@ -7,6 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
+import warnings
 
 from stor import exceptions
 
@@ -741,3 +742,23 @@ class BaseProgressLogger(object):
             progress_msg = self.get_progress_message()
             if progress_msg:  # pragma: no cover
                 self.logger.log(self.level, progress_msg)
+
+def missing_storage_library_exception(module: str, exc: Exception):
+    """Generate a helpful error for user about why their import failed.
+
+    Meant to be used as:
+
+        try:
+            ...
+        except Import Error as e:
+            raise missing_storage_library_exception('dx') from e
+    """
+    return ImportError(
+        f"{type(exc).__name__}: {exc}\n"
+        f"To use a '{module}' path, stor needs an additional python library. "
+        f"Please specify it as an extra in the installation.\n"
+        f"i.e.,: `pip install stor[{module}]` or `stor[{module}] >= 5` "
+        f"in requirements.txt or `poetry add stor[{module}]`.\n"
+        f"Alternatively, change an existing "
+        f'pyproject.toml file to specify `stor = {{version="5.0", extras = {module}}}`'
+    )
