@@ -3,12 +3,13 @@ Installation
 
 To install the latest release, type::
 
-    pip install stor
+    pip install stor[dx,swift]
 
 To install the latest code directly from source, type::
 
     pip install git+git://github.com/counsyl/stor.git
 
+You can omit the ``dx`` or ``swift`` extras if you do not need to use those storage providers.
 
 ..  _cli_tab_completion_installation:
 

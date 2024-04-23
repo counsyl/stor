@@ -24,7 +24,7 @@ WITH_PBR=$(WITH_VENV) PBR_REQUIREMENTS_FILES=requirements-pbr.txt
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): poetry.lock
-	poetry install
+	poetry install $(POETRY_EXTRAS)
 	touch $@
 
 develop: venv

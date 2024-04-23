@@ -6,9 +6,6 @@ import warnings
 
 from cached_property import cached_property
 from contextlib import contextmanager
-import dxpy
-from dxpy.exceptions import DXError
-from dxpy.exceptions import DXSearchError
 
 from stor import exceptions as stor_exceptions
 from stor import Path
@@ -18,6 +15,14 @@ from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
 import stor.settings
+
+
+try:
+    import dxpy
+    from dxpy.exceptions import DXError
+    from dxpy.exceptions import DXSearchError
+except ImportError as e:
+    raise utils.missing_storage_library_exception("dx", e) from e
 
 
 logger = logging.getLogger(__name__)

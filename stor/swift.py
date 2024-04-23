@@ -42,10 +42,6 @@ import tempfile
 import threading
 
 from urllib import parse
-from swiftclient import exceptions as swift_exceptions
-from swiftclient import service as swift_service
-from swiftclient import client as swift_client
-from swiftclient.utils import generate_temp_url
 
 from stor import exceptions as stor_exceptions
 from stor import is_swift_path
@@ -56,6 +52,14 @@ from stor.obs import OBSPath
 from stor.obs import OBSUploadObject
 from stor.posix import PosixPath
 from stor.third_party.backoff import with_backoff
+
+try:
+    from swiftclient import exceptions as swift_exceptions
+    from swiftclient import service as swift_service
+    from swiftclient import client as swift_client
+    from swiftclient.utils import generate_temp_url
+except ImportError as e:
+    raise utils.missing_storage_library_exception("swift", e) from e
 
 
 logger = logging.getLogger(__name__)

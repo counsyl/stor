@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]  # NOTE: 3.6 no longer supported
+        python-version: [3.7, 3.8, 3.9]
+        POETRY_EXTRAS: ["-E swift", "-E dx", "", "-E swift -E dx"]
 
     steps:
     - uses: actions/checkout@v2
@@ -30,7 +31,9 @@ jobs:
         pip install poetry==${{env.POETRY_VERSION}}
         poetry config --local virtualenvs.in-project true
     - name: Install venv
-      run: make venv
+      run: |
+        export POETRY_EXTRAS="${{matrix.POETRY_EXTRAS}}"
+        make venv
     - name: List versions - pip
       run: |
         mkdir htmlcov

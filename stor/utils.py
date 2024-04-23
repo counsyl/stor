@@ -7,9 +7,7 @@ import shlex
 import shutil
 from subprocess import check_call
 import tempfile
-
-from dxpy.bindings import verify_string_dxid
-from dxpy.exceptions import DXError
+import warnings
 
 from stor import exceptions
 
@@ -190,8 +188,7 @@ def is_swift_path(p):
     Returns:
         bool: True if p is a Swift path, False otherwise.
     """
-    from stor.swift import SwiftPath
-    return p.startswith(SwiftPath.drive)
+    return p.startswith('swift://')
 
 
 def is_filesystem_path(p):
@@ -217,8 +214,7 @@ def is_s3_path(p):
     Returns
         bool: True if p is a S3 path, False otherwise.
     """
-    from stor.s3 import S3Path
-    return p.startswith(S3Path.drive)
+    return p.startswith('s3://')
 
 
 def is_obs_path(p):
@@ -244,8 +240,7 @@ def is_dx_path(p):
     Returns
         bool: True if p is a DX path, False otherwise.
     """
-    from stor.dx import DXPath
-    return p.startswith(DXPath.drive)
+    return p.startswith('dx://')
 
 
 def is_valid_dxid(dxid, expected_classes):
@@ -257,6 +252,9 @@ def is_valid_dxid(dxid, expected_classes):
     Returns
         bool: Whether given dxid is a valid path of one of expected_classes
     """
+    from dxpy.bindings import verify_string_dxid
+    from dxpy.exceptions import DXError
+
     try:
         return verify_string_dxid(dxid, expected_classes) is None
     except DXError:
@@ -744,3 +742,23 @@ class BaseProgressLogger(object):
             progress_msg = self.get_progress_message()
             if progress_msg:  # pragma: no cover
                 self.logger.log(self.level, progress_msg)
+
+def missing_storage_library_exception(module: str, exc: Exception):
+    """Generate a helpful error for user about why their import failed.
+
+    Meant to be used as:
+
+        try:
+            ...
+        except Import Error as e:
+            raise missing_storage_library_exception('dx') from e
+    """
+    return ImportError(
+        f"{type(exc).__name__}: {exc}\n"
+        f"To use a '{module}' path, stor needs an additional python library. "
+        f"Please specify it as an extra in the installation.\n"
+        f"i.e.,: `pip install stor[{module}]` or `stor[{module}] >= 5` "
+        f"in requirements.txt or `poetry add stor[{module}]`.\n"
+        f"Alternatively, change an existing "
+        f'pyproject.toml file to specify `stor = {{version="5.0", extras = {module}}}`'
+    )

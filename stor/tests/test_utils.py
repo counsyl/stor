@@ -460,3 +460,15 @@ class TestIsWriteableS3(unittest.TestCase):
         self.mock_copy.side_effect = stor.exceptions.FailedUploadError('foo')
         self.assertFalse(utils.is_writeable('s3://stor-test/foo/bar'))
         self.assertFalse(self.mock_remove.called)
+
+class TestStorageLibraryException:
+    def test_generates_appropriate_text(self):
+        try:
+            import thisshouldnotexistatall
+        except ImportError as e:
+            exc = utils.missing_storage_library_exception("dx", e)
+        else:
+            assert False, "this should have raised an import error"
+        assert "dx" in str(exc)
+        assert "thisshouldnotexistatall" in str(exc)
+        assert "To use a 'dx' path, stor needs an additional python library" in str(exc)

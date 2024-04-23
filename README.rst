@@ -20,7 +20,7 @@ Quickstart
 
 ::
 
-    pip install stor
+    pip install stor[dx,swift]
 
 ``stor`` provides both a CLI and a Python library for manipulating Posix
 and OBS with a single, cross-compatible API.
