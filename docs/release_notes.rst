@@ -3,7 +3,7 @@ Release Notes
 
 v4.2.0
 ------
-* Guard dxpy imports in utils so you can use stor without either dxpy or swift installed.
+* Guard dxpy imports in utils so you can use stor without either dxpy or swift installed. (#143)
 
 v4.1.0
 ------
