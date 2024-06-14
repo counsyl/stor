@@ -1960,3 +1960,17 @@ class TestContentType(DXTestCase):
         self.assertEqual(DXPath('dx://P:/C/T').content_type, 'text/plain')
         mock_stat.return_value = {}
         self.assertEqual(DXPath('dx://P:/C/T').content_type, '')
+
+
+class TestMixedPaths(DXTestCase):
+    def test_mixed_paths(self):
+        self.setup_temporary_project()
+        pth = stor.Path(f"dx://{self.project}:/mypath.txt")
+        with pth.open("w") as fp:
+            fp.write("sometext")
+        file_id = pth.canonical_path.name
+        project_id = pth.canonical_path.project
+
+        assert stor.Path(f"dx://{project_id}:/{pth.name}").canonical_path == pth.canonical_path
+        assert stor.Path(f"dx://{project_id}:/{file_id}").canonical_path == pth.canonical_path
+        assert stor.Path(f"dx://{pth.project}:/{file_id}").canonical_path == pth.canonical_path
