@@ -577,7 +577,7 @@ class SwiftPath(OBSPath):
 
     @_swift_retry(exceptions=(NotFoundError, UnavailableError,
                               InconsistentDownloadError, UnauthorizedError))
-    def read_object(self):
+    def read_object(self, mode=None):
         """Reads an individual object from OBS.
 
         Returns:

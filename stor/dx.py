@@ -846,9 +846,9 @@ class DXPath(OBSPath):
                     'Source path ({}) does not exist. Please provide a valid source'
                     .format(upload_obj.source))
 
-    def read_object(self):
+    def read_object(self, mode='r'):
         """Reads an individual object from DX.
-        Note dxpy for Py3 automatically decodes the DXFile.read using utf-8.
+        Note dxpy for Py3 automatically decodes the DXFile.read using utf-8 if str.
 
         Returns:
             bytes: the raw bytes from the object on DX.
@@ -856,11 +856,12 @@ class DXPath(OBSPath):
         if not self.resource:
             raise ValueError('Can only read_object() on a file path, not a project')
         file_handler = dxpy.DXFile(dxid=self.canonical_resource,
-                                   project=self.canonical_project)
+                                   project=self.canonical_project,
+                                   mode=mode)
         with _wrap_dx_calls():
             result = file_handler.read()
-        # TODO (akumar): allow other encoding after update of encoding in dxpy for Py3
-        result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
+        if mode == 'r':
+            result = result.encode('utf-8')  # dxpy for py3 already decodes the data with 'utf-8'
         return result
 
     def write_object(self, content, **kwargs):
