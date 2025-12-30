@@ -14,45 +14,56 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('poetry.lock') }}-${{ hashFiles('pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+
     - name: Install poetry
       run: |
         python -m pip install --upgrade pip
         pip install poetry==${{env.POETRY_VERSION}}
         poetry config --local virtualenvs.in-project true
+
     - name: Install venv
       run: make venv
+
     - name: List versions - pip
       run: |
         mkdir htmlcov
         poetry run pip list | tee htmlcov/pip-list.txt
+
     - name: "List versions: pytest and python"
       run: |
         set -x
         python --version | tee htmlcov/python.txt
         poetry run pytest --version | tee htmlcov/pytest.txt
+
     - name: Test with coverage
       run: make unit-test
+
     - name: Lint
       run: make lint
+
     - name: Doc build
       run: make docs
+
     - name: Build coverage report
       if: always()
       run: |
         cp .coverage htmlcov/.coverage
         poetry run python -m coverage html
+
     - name: Create coverage report artifact
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v4
       # TODO: make this only run if the build step at least ran
       if: always()
       with:
