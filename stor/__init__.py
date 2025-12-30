@@ -22,6 +22,7 @@ See `stor.swift` for more information on Swift-specific functionality.
 """
 try:
     from importlib import metadata
+# TODO: remove fallback once support for Python < 3.8 is dropped
 except ImportError:  # Python < 3.8
     try:
         import importlib_metadata as metadata
