@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+v4.1.1
+------
+* Fix ``UserWarning`` for deprecation of ``pkg_resources``
+* Fall back to ``importlib_metadata`` or `pkg_resources``, whichever is available, to get version info for python <3.8
+
 v4.1.0
 ------
 * Replace ``multiprocessing.ThreadPool`` with ``concurrent.futures.ThreadPoolExecutor``

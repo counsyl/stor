@@ -7,10 +7,10 @@ env:
 jobs:
   test:
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]  # NOTE: 3.6 no longer supported
+        python-version: [3.8]  # TODO: deprecate python <3.10 and run tests on 3.10, 3.11, 3.12...
 
     steps:
     - uses: actions/checkout@v4
