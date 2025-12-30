@@ -68,6 +68,6 @@ jobs:
       if: always()
       with:
         # Artifact name
-        name: html-coverage
+        name: html-coverage-${{ matrix.python-version }}
         # Directory containing files to upload
         path: ./htmlcov
