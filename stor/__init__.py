@@ -20,7 +20,7 @@ functions.
 
 See `stor.swift` for more information on Swift-specific functionality.
 """
-import pkg_resources
+from importlib import metadata
 
 from stor.utils import copy
 from stor.utils import copytree
@@ -34,8 +34,8 @@ from stor import settings
 
 # TODO: Compile this - costs ~700us to do this on import
 try:
-    __version__ = pkg_resources.get_distribution('stor').version
-except pkg_resources.DistributionNotFound:  # pragma: no cover
+    __version__ = metadata.version("stor")
+except metadata.PackageNotFoundError:  # pragma: no cover
     # we are not pip installed in environment
     __version__ = None
 
