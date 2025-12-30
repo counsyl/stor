@@ -43,6 +43,7 @@ stor = "stor.cli:main"
 branch = true
 source = ["stor"]
 omit = [
+    "*__init__.py",
     "stor/tests/test_posix_path_compat.py",
     "stor/tests/test_integration_swift.py",
     "stor/tests/test_integration_s3.py",
