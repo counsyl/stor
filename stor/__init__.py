@@ -20,7 +20,16 @@ functions.
 
 See `stor.swift` for more information on Swift-specific functionality.
 """
-import pkg_resources
+try:
+    from importlib import metadata
+# TODO: remove fallback once support for Python < 3.8 is dropped
+except ImportError:  # Python < 3.8
+    try:
+        import importlib_metadata as metadata
+    except ImportError:
+        # Fall back to pkg_resources for Python < 3.8 if importlib_metadata not available
+        import pkg_resources
+        metadata = None
 
 from stor.utils import copy
 from stor.utils import copytree
@@ -32,10 +41,12 @@ from stor.base import Path
 from stor import settings
 
 
-# TODO: Compile this - costs ~700us to do this on import
 try:
-    __version__ = pkg_resources.get_distribution('stor').version
-except pkg_resources.DistributionNotFound:  # pragma: no cover
+    if metadata is not None:
+        __version__ = metadata.version("stor")
+    else:
+        __version__ = pkg_resources.get_distribution("stor").version
+except Exception:  # pragma: no cover
     # we are not pip installed in environment
     __version__ = None
 
